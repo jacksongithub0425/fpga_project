@@ -16,14 +16,14 @@ style and the annotated detector output.
 
 | Input snippet | Annotated output |
 |---|---|
-| <img src="assets/input_sample_01.png" width="260" alt="Input sample with left-facing terminals"> | <img src="assets/output_sample_01.png" width="260" alt="Detected male terminals with red boxes"> |
-| <img src="assets/input_sample_02.png" width="260" alt="Input sample with circular endpoints"> | <img src="assets/output_sample_02.png" width="260" alt="Detected ferrule endpoints with green boxes"> |
+| <img src="input_sample_01.png" width="260" alt="Input sample with left-facing terminals"> | <img src="output_sample_01.png" width="260" alt="Detected male terminals with red boxes"> |
+| <img src="input_sample_02.png" width="260" alt="Input sample with circular endpoints"> | <img src="output_sample_02.png" width="260" alt="Detected ferrule endpoints with green boxes"> |
 
 Additional output examples:
 
 | Male detections | Ferrule detections | Page count summary | Dense connector area |
 |---|---|---|---|
-| <img src="assets/output_sample_03.png" width="180" alt="Male terminal output sample"> | <img src="assets/output_sample_02.png" width="180" alt="Ferrule output sample"> | <img src="assets/output_sample_04.png" width="180" alt="Page summary count output"> | <img src="assets/output_sample_01.png" width="180" alt="Annotated connector area output"> |
+| <img src="output_sample_03.png" width="180" alt="Male terminal output sample"> | <img src="output_sample_02.png" width="180" alt="Ferrule output sample"> | <img src="output_sample_04.png" width="180" alt="Page summary count output"> | <img src="output_sample_01.png" width="180" alt="Annotated connector area output"> |
 
 Annotation legend:
 
@@ -130,4 +130,3 @@ handoff points are:
 
 This split keeps PDF-specific and control-heavy logic in software while moving
 streaming pixel operations to the FPGA fabric.
-
