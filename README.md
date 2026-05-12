@@ -141,7 +141,4 @@ include those files.
 
 ## Project Goal
 
-The goal is to demonstrate a practical hardware/software co-design workflow:
-start from a working Python computer-vision pipeline, identify the throughput
-bottlenecks, move the regular streaming workloads into FPGA logic, and preserve
-the flexible control-flow and PDF-specific processing on the CPU.
+This project builds a hardware/software co-design pipeline for accelerating cable assembly drawing analysis. It starts with a Python-based computer-vision reference model for terminal detection and counting, then offloads regular, streaming-friendly image-processing tasks to FPGA logic. The CPU remains responsible for flexible tasks such as PDF parsing, control flow, result aggregation, and annotation generation. This structure follows a host/accelerator model similar to modern GPU-accelerated systems, where the host manages irregular software tasks and the accelerator handles throughput-oriented data-parallel kernels
