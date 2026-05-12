@@ -25,6 +25,8 @@ Additional output examples:
 |---|---|---|---|
 | <img src="output_sample_03.png" width="180" alt="Male terminal output sample"> | <img src="output_sample_02.png" width="180" alt="Ferrule output sample"> | <img src="output_sample_04.png" width="180" alt="Page summary count output"> | <img src="output_sample_01.png" width="180" alt="Annotated connector area output"> |
 
+*In the male-terminal detection results, pins 3, 4, 5, 6, 7, 8, 9, 10, 1, and 2 are identified as dummy pins since they have no wire connections. These pins are not included in the final terminal count
+
 Annotation legend:
 
 - `M#`: male terminal, drawn in red.
