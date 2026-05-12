@@ -1,0 +1,17 @@
+# Local Python environments and caches
+hls/.venv/
+__pycache__/
+*.pyc
+
+# Generated HLS/Vivado output
+hls/*/*/solution1/
+logs/
+*.rpt
+*.jou
+
+# Batch/debug outputs
+batch_out*/
+
+# Binary/generated archives and test vectors
+*.bin
+*.zip

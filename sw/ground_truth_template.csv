@@ -1,0 +1,4 @@
+pdf_path,page,male_true,female_true,ferrule_true
+example_01.pdf,0,29,3,37
+example_02.pdf,0,6,6,0
+example_03.pdf,1,14,2,18
