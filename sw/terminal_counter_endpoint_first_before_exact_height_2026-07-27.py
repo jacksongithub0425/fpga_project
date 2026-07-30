@@ -502,33 +502,20 @@ def side_template_anchor(template: np.ndarray, side: str) -> Tuple[float, float]
 def build_endpoint_patch(endpoint_x: float, endpoint_y: float, side: str,
                          img_w: int, img_h: int,
                          max_template_w: int, max_template_h: int) -> Tuple[int, int, int, int]:
-    # Match the integer endpoint coordinates packed for patch_extract_core.
-    endpoint_x_i = int(round(endpoint_x))
-    endpoint_y_i = int(round(endpoint_y))
-
-    # Use the same exact rational integer math as patch_extract_core.
-    outward_w = (max_template_w * 12) // 5
-    inward_w = (max_template_w * 7) // 5
-    patch_h = (max_template_h * 16) // 5
+    outward_w = int(max_template_w * 2.4)
+    inward_w = int(max_template_w * 1.4)
+    patch_h = int(max_template_h * 3.2)
 
     if side == "left":
-        x0 = endpoint_x_i - outward_w
-        x1 = endpoint_x_i + inward_w
+        x0 = endpoint_x - outward_w
+        x1 = endpoint_x + inward_w
     else:
-        x0 = endpoint_x_i - inward_w
-        x1 = endpoint_x_i + outward_w
+        x0 = endpoint_x - inward_w
+        x1 = endpoint_x + outward_w
 
-    # A half-open interval derived from y0 contains exactly patch_h rows
-    # before image-boundary clipping, including when patch_h is odd.
-    y0 = endpoint_y_i - patch_h // 2
-    y1 = y0 + patch_h
-    # Clamp inline rather than via clamp_box(): x0/y0 cap at img_w-2/img_h-2
-    # instead of img_w-1/img_h-1, so the minimum-size bump below cannot push
-    # x1/y1 past the image edge.  patch_extract_core.cpp indexes a fixed-size
-    # BRAM array and must never address outside it, and numpy's silent slice
-    # clipping would otherwise hide the difference here.
-    x0 = max(0, min(int(round(x0)), img_w - 2))
-    y0 = max(0, min(int(round(y0)), img_h - 2))
+    y0 = endpoint_y - patch_h / 2
+    y1 = endpoint_y + patch_h / 2
+    x0, y0, _, _ = clamp_box(x0, y0, 1, 1, img_w, img_h)
     x1 = max(x0 + 2, min(int(round(x1)), img_w))
     y1 = max(y0 + 2, min(int(round(y1)), img_h))
     return x0, y0, x1, y1

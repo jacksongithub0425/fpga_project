@@ -17,7 +17,19 @@ from typing import Optional, Sequence
 import numpy as np
 import struct
 
-# AXI4-Lite register offsets (must match axi_lite_regs in block design)
+# AXI4-Lite register offsets (must match axi_lite_regs in block design).
+#
+# This is a SYSTEM map, not any single core's HLS map, and it cannot become
+# one: it spans binarize_core, patch_extract_core, class_score_core, the
+# candidate feeder and the template streamer, and four of its registers fan
+# out to more than one core.  It is specified in docs/pl_interface_contract.md
+# §7.1, which also lists what the wrapper owes each core.  The wrapper does
+# not exist yet — until it does, every offset below is provisional.
+#
+# Do not "fix" these against a generated xpatch_*_hw.h; that header describes
+# one core's CTRL bundle (patch_extract_core's now starts at 0x10 for
+# bin_image and runs to 0x68) and reconciling the two by hand is how the
+# 14-vs-16-byte result-record mismatch in §6.3 happened.
 _REG_CTRL          = 0x00
 _REG_STATUS        = 0x04
 _REG_GRAY_ADDR     = 0x08
@@ -32,6 +44,13 @@ _REG_SCORE_THRESH  = 0x2C
 _REG_FERRULE_THRESH= 0x30
 _REG_SCORE_MARGIN  = 0x34
 _REG_TEMPL_ADDR    = 0x38
+# Contract §2/§7 additions for the final patch_extract_core interface
+# (m_axi + explicit stride + status) — provisional, per the §7.1 note above.
+_REG_STRIDE_BYTES  = 0x3C   # row stride of the binary image buffer, >= img_w
+_REG_BUFFER_BYTES  = 0x40   # 32-bit (§2.1); must be >= stride * img_h
+_REG_PE_FLAGS      = 0x44   # PE status: bit0 global-invalid, bit1 TLAST mism.
+_REG_PE_REJECTED   = 0x48   # descriptors rejected (valid=0 records)
+_REG_PE_PROCESSED  = 0x4C   # descriptors consumed from the stream
 
 _CTRL_START        = 0x01
 _CTRL_RESET        = 0x02
@@ -44,23 +63,146 @@ _KIND_FERRULE  = 3  # tentative — postprocess_ps validates via ferrule_shape_m
 
 _KIND_NAMES = {0: "unknown", 1: "male", 2: "female", 3: "ferrule"}
 
-# Candidate struct layout in DDR3 (little-endian, 8 bytes each):
-#   uint16 ep_x, uint16 ep_y, uint8 side, uint8 pad,
-#   uint16 max_tw, uint16 max_th
-_CAND_STRUCT_FMT  = "<HHBBHHxx"   # 12 bytes with padding
-_CAND_STRUCT_SIZE = struct.calcsize(_CAND_STRUCT_FMT)
+# Candidate descriptor in DDR3 — one 64-bit little-endian word per candidate,
+# consumed verbatim by patch_extract_core's cand_in AXI4-Stream port
+# (hls/patch_extract/patch_extract_core.h:6-12):
+#   bits [15:0] ep_x, [31:16] ep_y, [33:32] side, [47:34] max_tw, [63:48] max_th
+#
+# Bit-packed rather than byte-aligned because it has to be: byte-aligning all
+# five fields costs 2+2+1+1+2+2 = 10 bytes and the AXIS word is 8, so side is
+# narrowed to 2 bits and max_tw to 14.
+#
+# The previous "<HHBBHHxx" here was wrong twice over — 12-byte stride against
+# an 8-byte word (desynchronising the stream after candidate 0), and wrong
+# field placement even for candidate 0, where the core decoded max_tw as 0 and
+# max_th as the driver's max_tw.
+_CAND_STRUCT_FMT  = "<Q"
+_CAND_STRUCT_SIZE = struct.calcsize(_CAND_STRUCT_FMT)   # 8
 
-# Result struct layout from PL (16 bytes each):
-#   float32 score, uint8 kind, uint8 cand_id, uint16 box_x,
-#   uint16 box_y, uint16 box_w, uint16 box_h
+
+def pack_candidate(ep_x: int, ep_y: int, side_code: int,
+                   max_tw: int, max_th: int) -> bytes:
+    """Build one cand_in AXIS word.
+
+    Field widths are checked rather than masked: a value that does not fit is
+    an upstream bug, and truncating it silently would corrupt the neighbouring
+    field instead of failing.
+    """
+    if not 0 <= ep_x <= 0xFFFF:
+        raise ValueError(f"ep_x {ep_x} exceeds 16 bits")
+    if not 0 <= ep_y <= 0xFFFF:
+        raise ValueError(f"ep_y {ep_y} exceeds 16 bits")
+    if not 0 <= side_code <= 0x3:
+        raise ValueError(f"side {side_code} exceeds 2 bits")
+    if not 0 <= max_tw <= 0x3FFF:
+        raise ValueError(f"max_tw {max_tw} exceeds 14 bits")
+    if not 0 <= max_th <= 0xFFFF:
+        raise ValueError(f"max_th {max_th} exceeds 16 bits")
+
+    word = (ep_x
+            | (ep_y      << 16)
+            | (side_code << 32)
+            | (max_tw    << 34)
+            | (max_th    << 48))
+    return struct.pack(_CAND_STRUCT_FMT, word)
+
+# Result struct layout from PL.  KNOWN BROKEN (contract §6.3, class_score
+# D7): this format is 14 bytes while the PL emits 16-byte records, and the
+# field placement disagrees with the core even for record 0.  §6.3 is still
+# OPEN (per-kind scores and the match location are also missing from the
+# record), so the format is left as-is rather than half-fixed — do not
+# trust results decoded through it until §6.3 closes.
 _RESULT_STRUCT_FMT  = "<fBBHHHH"
-_RESULT_STRUCT_SIZE = struct.calcsize(_RESULT_STRUCT_FMT)
+_RESULT_STRUCT_SIZE = struct.calcsize(_RESULT_STRUCT_FMT)   # 14, not 16
+
+# Patch metadata record from patch_extract_core (contract §6.2), 16 bytes,
+# one per dispatched candidate, in dispatch order:
+#   uint16 cand_id, uint16 status, uint16 x0, uint16 y0,
+#   uint16 patch_w, uint16 patch_h, uint32 reserved
+# status is unpacked whole and masked: bit 0 = valid, bits 9:1 = reason.
+_META_STRUCT_FMT  = "<HHHHHHI"
+_META_STRUCT_SIZE = struct.calcsize(_META_STRUCT_FMT)       # 16
+
+_META_REASON_NAMES = {
+    0: "ep_x >= img_w",
+    1: "ep_y >= img_h",
+    2: "max_tw outside [4, 216]",
+    3: "max_th outside [4, 96]",
+    4: "side not in {0, 1}",
+    5: "patch_w > 820",
+    6: "patch_h > 307",
+    7: "patch smaller than template after clipping",
+    8: "global image configuration invalid",
+}
+
+
+def unpack_patch_metadata(buf: bytes) -> list[dict]:
+    """Decode a block of §6.2 metadata records.
+
+    Returns one dict per record: cand_id, valid, reason (raw bitmask),
+    reasons (decoded names), x0, y0, patch_w, patch_h.
+
+    Exactly NUM_CANDS records come back, one per input descriptor in input
+    order, and every one describes a descriptor the PL actually read — the
+    core consumes the whole batch regardless of where TLAST lands (§5).  So
+    valid=False always carries at least one reason bit, and status == 0
+    exactly is unreachable.  (It formerly marked a filler ordinal emitted
+    after an early TLAST; that path no longer exists.)
+    """
+    if len(buf) % _META_STRUCT_SIZE:
+        raise ValueError(
+            f"metadata block of {len(buf)} bytes is not a whole number of "
+            f"{_META_STRUCT_SIZE}-byte records")
+    records = []
+    for off in range(0, len(buf), _META_STRUCT_SIZE):
+        cand_id, status, x0, y0, pw, ph, _res = struct.unpack_from(
+            _META_STRUCT_FMT, buf, off)
+        reason = status >> 1
+        records.append({
+            "cand_id": cand_id,
+            "valid":   bool(status & 1),
+            "reason":  reason,
+            "reasons": [_META_REASON_NAMES[b] for b in _META_REASON_NAMES
+                        if reason & (1 << b)],
+            "x0": x0, "y0": y0, "patch_w": pw, "patch_h": ph,
+        })
+    return records
+
+# Must match SIDE_CODE in patch_extract_generate_golden.py and the side
+# encoding in patch_extract_core.cpp:71.  Looked up rather than compared, so a
+# misspelled side raises instead of silently becoming "right".
+_SIDE_CODE = {"left": 0, "right": 1}
 
 _MAX_CANDIDATES = 64
 _MAX_TEMPL_W    = 216
 _MAX_TEMPL_H    = 96
-_MAX_PATCH_W    = 1024
-_MAX_PATCH_H    = 320
+
+
+def _validate_batch_size(n: int) -> None:
+    """Raise if a batch of `n` candidates will not fit the DMA buffers.
+
+    Module level rather than inline in run_candidates() so it is reachable
+    without PYNQ: run_candidates() cannot be called off the board, and a
+    boundary this easy to get wrong should not be a rule that only hardware
+    can check.  See test_cand_packing.test_batch_size_boundary.
+    """
+    if n > _MAX_CANDIDATES:
+        raise ValueError(
+            f"{n} candidates exceeds the driver buffer limit of "
+            f"{_MAX_CANDIDATES}; split the page into batches or raise "
+            f"_MAX_CANDIDATES and the _cand_buf/_result_buf allocations "
+            f"with it.  This is a host-side allocation bound, not a PL "
+            f"one — patch_extract_core takes num_cands as a 16-bit "
+            f"register and has no per-candidate storage.")
+
+
+# Post-clip patch bound (contract §3/§4.1).  This is the EXACT envelope the
+# 216x96 template cap implies, not a round number — it is what lets the
+# matcher's patch_buf fit the xc7z020 (224 BRAM18K vs 352 at the former
+# 1024x320).  Must track PE_MAX_PATCH_W/H in patch_extract_core.h and
+# MAX_PATCH_W/H in tme_top.h; see hls/template_match/ab_bram/.
+_MAX_PATCH_W    = 820
+_MAX_PATCH_H    = 307
 
 
 def _float_to_q88(f: float) -> int:
@@ -78,15 +220,11 @@ class PLPipeline:
         self._allocate  = allocate
 
         # AXI4-Lite control block (auto-detected from .hwh)
-        self._binarize_core = getattr(self._ol, "binarize_core_0", None)
-        self._binarize_dma = getattr(self._ol, "axi_dma_0", None)
-        self._direct_binarize = self._binarize_core is not None and self._binarize_dma is not None
-
-        self._ctrl = getattr(self._ol, "axi_lite_regs_0", None)
+        self._ctrl = self._ol.axi_lite_regs_0
 
         # AXI DMA instances
-        self._dma_gray = getattr(self._ol, "dma_gray", None)
-        self._dma_results = getattr(self._ol, "dma_results", None)
+        self._dma_gray    = self._ol.dma_gray      # S2MM: gray → PL binarize
+        self._dma_results = self._ol.dma_results   # MM2S: PL results → PS
 
         # Contiguous DMA-coherent buffers
         max_img = 2560 * 3600
@@ -97,17 +235,16 @@ class PLPipeline:
 
         self._img_w: int = 0
         self._img_h: int = 0
+        # Row stride of the binary image buffer (contract §2).  Compact for
+        # now — the binarizer's stream-to-DDR writer that would introduce
+        # padding does not exist yet — but everything downstream reads this
+        # attribute rather than assuming stride == img_w, so a padded layout
+        # is a one-line change here instead of a hunt.
+        self._stride_bytes: int = 0
 
-        if self._ctrl is None and not self._direct_binarize:
-            raise RuntimeError(
-                "Overlay does not expose either binarize_core_0/axi_dma_0 "
-                "or axi_lite_regs_0."
-            )
-
-        # Apply reset on init for the full-pipeline register block.
-        if self._ctrl is not None:
-            self._ctrl.write(_REG_CTRL, _CTRL_RESET)
-            self._ctrl.write(_REG_CTRL, 0)
+        # Apply reset on init
+        self._ctrl.write(_REG_CTRL, _CTRL_RESET)
+        self._ctrl.write(_REG_CTRL, 0)
 
     # ------------------------------------------------------------------
     def binarize_page(self, gray_np: np.ndarray, threshold: int) -> None:
@@ -115,82 +252,33 @@ class PLPipeline:
         h, w = gray_np.shape
         self._img_h = h
         self._img_w = w
+        self._stride_bytes = w   # compact until the §1 DDR writer lands
         n = h * w
-        if n > self._gray_buf.size:
-            raise ValueError(
-                f"Image {w}x{h} ({n} pixels) exceeds PL buffer capacity "
-                f"({self._gray_buf.size} pixels)"
-            )
 
+        # Copy into DMA buffer
         self._gray_buf[:n] = gray_np.ravel()
-        try:
-            self._gray_buf.flush()
-        except AttributeError:
-            pass
 
-        if self._direct_binarize:
-            self._run_direct_binarize_dma(w, h, threshold, n)
-        else:
-            self._run_pipeline_binarize(w, h, threshold, n)
-
-        try:
-            self._bin_buf.invalidate()
-        except AttributeError:
-            pass
-
-        self._align_binarize_buffer(h, w, n)
-
-    def _run_direct_binarize_dma(self, w: int, h: int, threshold: int, n: int) -> None:
-        """Run the A3.3 direct HLS-core + AXI-DMA overlay."""
-        core = self._binarize_core
-        dma = self._binarize_dma
-        core.register_map.img_w = w
-        core.register_map.img_h = h
-        core.register_map.threshold = threshold
-
-        dma.recvchannel.transfer(self._bin_buf[:n])
-        core.write(0x00, 0x01)
-        dma.sendchannel.transfer(self._gray_buf[:n])
-
-        dma.sendchannel.wait()
-        dma.recvchannel.wait()
-
-    def _run_pipeline_binarize(self, w: int, h: int, threshold: int, n: int) -> None:
-        """Run the full-pipeline register-block overlay."""
-        if self._ctrl is None or self._dma_gray is None:
-            raise RuntimeError("Full-pipeline binarize control/DMA IP is not available.")
-
+        # Configure PL
         self._ctrl.write(_REG_IMG_W,      w)
         self._ctrl.write(_REG_IMG_H,      h)
         self._ctrl.write(_REG_THRESHOLD,  threshold)
         self._ctrl.write(_REG_GRAY_ADDR,  self._gray_buf.physical_address)
         self._ctrl.write(_REG_BIN_ADDR,   self._bin_buf.physical_address)
 
+        # Kick DMA (S2MM: PS → PL binarize_core input)
         self._dma_gray.sendchannel.transfer(self._gray_buf[:n])
         self._dma_gray.sendchannel.wait()
 
+        # Start binarize FSM
         self._ctrl.write(_REG_CTRL, _CTRL_START)
         self._wait_status(_STATUS_ALL_DONE)
 
-    def _align_binarize_buffer(self, h: int, w: int, n: int) -> None:
-        """Align raw PL binarize output to cv2 image coordinates in place."""
-        raw = np.frombuffer(self._bin_buf, dtype=np.uint8, count=n).reshape(h, w)
-        aligned = np.roll(raw, shift=(-1, -1), axis=(0, 1))
-        aligned[-1, :] = 0   # bottom border (was wrapped from top row)
-        aligned[:,  -1] = 0  # right border (was wrapped from left col)
-        raw[:] = aligned     # write back to the shared DMA buffer in place
-        try:
-            self._bin_buf.flush()
-        except AttributeError:
-            pass
-
-    def binary_image(self, copy: bool = True) -> np.ndarray:
-        """Return the latest cv2-aligned binary image produced by binarize_page."""
-        h, w = self._img_h, self._img_w
-        if w == 0 or h == 0:
-            raise RuntimeError("No binary image is available; call binarize_page first.")
-        view = np.frombuffer(self._bin_buf, dtype=np.uint8, count=h * w).reshape(h, w)
-        return view.copy() if copy else view
+        # binarize_core wrote _bin_buf by physical address, behind the CPU's
+        # back.  Drop any cache lines the CPU still holds for it: without this,
+        # suppress_text()'s read-modify-write below reads stale bytes and
+        # writes them back over pixels the PL just produced.  No-op on a
+        # coherent platform.
+        self._bin_buf.invalidate()
 
     # ------------------------------------------------------------------
     def suppress_text(self, words: Sequence[dict]) -> None:
@@ -199,25 +287,36 @@ class PLPipeline:
         Replicates build_text_suppressed_binary() (line 229) using direct
         numpy writes into the PYNQ DMA buffer (which is mmap'd into
         userspace) — no DMA transfer needed.
+
+        Cache ownership of _bin_buf alternates and both halves are explicit:
+        binarize_page() invalidates after the PL writes it, and this method
+        flushes after the CPU writes it.  The PL reads the buffer by physical
+        address via _REG_BIN_ADDR, which bypasses PYNQ's DMA driver and so
+        gets no cache maintenance for free.
         """
         expand = 3
         h, w = self._img_h, self._img_w
+        stride = self._stride_bytes
         if w == 0:
             return
 
-        # View the binary buffer as a 2D array (zero-copy)
+        # Strided 2D view of the binary buffer (zero-copy).  The previous
+        # count=h*w reshape assumed a compact buffer; with stride > img_w it
+        # silently produced a skewed view — every row shifted progressively
+        # left, so suppression zeroed the wrong pixels with no error
+        # (contract §2.1).  Slicing a (h, stride) view down to w columns is
+        # correct for any stride >= w, compact included.
         bin_view = np.frombuffer(self._bin_buf, dtype=np.uint8,
-                                 count=h * w).reshape(h, w)
+                                 count=h * stride).reshape(h, stride)[:, :w]
         for word in words:
             x0 = max(0, int(word["x0"] - expand))
             y0 = max(0, int(word["y0"] - expand))
             x1 = min(w, int(word["x1"] + expand))
             y1 = min(h, int(word["y1"] + expand))
             bin_view[y0:y1, x0:x1] = 0
-        try:
-            self._bin_buf.flush()
-        except AttributeError:
-            pass
+
+        # Push the suppressed boxes out to DDR before the PL reads the page.
+        self._bin_buf.flush()
 
     # ------------------------------------------------------------------
     def run_candidates(
@@ -237,13 +336,20 @@ class PLPipeline:
             kind, score, endpoint, side, box, male_score, female_score,
             ferrule_score, id (id is set by postprocess_ps)
         """
-        if self._ctrl is None or self._dma_results is None:
-            raise RuntimeError("Candidate/result PL pipeline IP is not available in this overlay.")
-
         if not candidates:
             return []
 
-        n = min(len(candidates), _MAX_CANDIDATES)
+        # Reject, do not truncate.  This was `min(len(candidates),
+        # _MAX_CANDIDATES)`, which silently dropped every candidate past the
+        # 64th — a page with 65 endpoints returned 64 results and looked
+        # entirely healthy, because nothing downstream compares the result
+        # count against the input count.  The bound is a driver/ABI limit, not
+        # a PL one: _cand_buf and _result_buf are allocated at
+        # _MAX_CANDIDATES * struct size, and patch_extract_core itself has no
+        # per-candidate array and takes num_cands as a 16-bit register.  So
+        # raising here is the whole fix; there is no matching hardware check.
+        n = len(candidates)
+        _validate_batch_size(n)
 
         # ---- Pack candidate structs into buffer ----
         from terminal_counter_endpoint_first import MATCH_SCALES
@@ -251,30 +357,78 @@ class PLPipeline:
 
         offset = 0
         for i, cand in enumerate(candidates[:n]):
-            ep_x = int(round(cand["x"]))
-            ep_y = int(round(cand["y"]))
-            side_code = 0 if cand.get("side", "left") == "left" else 1
+            # collect_endpoint_candidates() stores coords as "endpoint": (x, y)
+            ep_xf, ep_yf = cand["endpoint"]
+            ep_x = int(round(ep_xf))
+            ep_y = int(round(ep_yf))
 
-            # max_tw/max_th: worst case across all templates at largest scale
+            side = cand.get("side", "left")
+            if side not in _SIDE_CODE:
+                raise ValueError(
+                    f"candidate {i}: side {side!r} is neither 'left' nor "
+                    f"'right' — a typo here used to silently become 'right', "
+                    f"mirroring the patch about the endpoint"
+                )
+            side_code = _SIDE_CODE[side]
+
+            # max_tw/max_th: worst case across all templates at largest
+            # scale.  int(round(...)) — NOT int(...) — because the actual
+            # template transmitted to the PL is resized with
+            # int(round(base * scale)); truncating here underestimates the
+            # real template by one pixel at half-integer products and feeds
+            # every §4 bound a value one short (contract §4.5: the
+            # descriptor must describe the real template, not a
+            # re-derivation of it).
             max_tw = 0
             max_th = 0
-            for templ_list in side_templates.get(cand.get("side", "left"), {}).values():
+            for templ_list in side_templates.get(side, {}).values():
                 for t in templ_list:
-                    max_tw = max(max_tw, int(t.shape[1] * max_scale))
-                    max_th = max(max_th, int(t.shape[0] * max_scale))
+                    max_tw = max(max_tw, int(round(t.shape[1] * max_scale)))
+                    max_th = max(max_th, int(round(t.shape[0] * max_scale)))
             max_tw = max(max_tw, 4)
             max_th = max(max_th, 4)
 
-            packed = struct.pack(_CAND_STRUCT_FMT,
-                                 ep_x, ep_y, side_code, 0, max_tw, max_th)
+            # Enforce §4.1 before dispatch: the PL will reject these with a
+            # reason code, but software generating an illegal descriptor is
+            # a configuration bug worth an exception, not a silent valid=0
+            # record downstream.
+            if not (4 <= max_tw <= _MAX_TEMPL_W):
+                raise ValueError(
+                    f"candidate {i}: max_tw {max_tw} outside [4, {_MAX_TEMPL_W}]"
+                    f" — template bank exceeds the frozen envelope (§4.1)")
+            if not (4 <= max_th <= _MAX_TEMPL_H):
+                raise ValueError(
+                    f"candidate {i}: max_th {max_th} outside [4, {_MAX_TEMPL_H}]"
+                    f" — template bank exceeds the frozen envelope (§4.1)")
+            if not (0 <= ep_x < self._img_w and 0 <= ep_y < self._img_h):
+                raise ValueError(
+                    f"candidate {i}: endpoint ({ep_x},{ep_y}) outside "
+                    f"{self._img_w}x{self._img_h} (§4.1)")
+
+            packed = pack_candidate(ep_x, ep_y, side_code, max_tw, max_th)
             self._cand_buf[offset:offset + _CAND_STRUCT_SIZE] = np.frombuffer(packed, dtype=np.uint8)
             offset += _CAND_STRUCT_SIZE
+
+        # Zero the tail so a shorter batch cannot leave a previous run's
+        # descriptors where the PL might fetch them, then push the writes out
+        # of the CPU cache.  The PL reads this buffer by physical address via
+        # _REG_CAND_ADDR below, which bypasses PYNQ's DMA driver and so gets no
+        # cache maintenance for free.  (_bin_buf is fed the same way and needs
+        # the same treatment — see the note in suppress_text.)
+        self._cand_buf[offset:] = 0
+        self._cand_buf.flush()
 
         # ---- Configure and start PL ----
         self._ctrl.write(_REG_CAND_ADDR,   self._cand_buf.physical_address)
         self._ctrl.write(_REG_RESULT_ADDR, self._result_buf.physical_address)
         self._ctrl.write(_REG_NUM_CANDS,   n)
         self._ctrl.write(_REG_BIN_ADDR,    self._bin_buf.physical_address)
+        # Image geometry for patch_extract_core's §4 validation.  The stride
+        # is explicit (§2) and buffer_bytes bounds every DDR read; a
+        # misconfiguration here comes back as PE_FLAGS bit 0 plus reason
+        # bit 8 in every metadata record, not as silent wrong pixels.
+        self._ctrl.write(_REG_STRIDE_BYTES, self._stride_bytes)
+        self._ctrl.write(_REG_BUFFER_BYTES, len(self._bin_buf))
 
         # Thresholds (Q8.8) — passed in as arguments, not module constants
         self._ctrl.write(_REG_SCORE_THRESH,   _float_to_q88(score_thresh))
@@ -283,6 +437,28 @@ class PLPipeline:
 
         self._ctrl.write(_REG_CTRL, _CTRL_START)
         self._wait_status(_STATUS_ALL_DONE)
+
+        # ---- Check extractor status (§7) ----
+        # Without this, the §4.3 rejected-batch path is indistinguishable
+        # from a clean run.  Flags are fatal (configuration bugs); a nonzero
+        # rejected count is surfaced but not fatal — the §4.1 pre-checks
+        # above should make it unreachable, so it indicates model drift.
+        pe_flags     = self._ctrl.read(_REG_PE_FLAGS)
+        pe_rejected  = self._ctrl.read(_REG_PE_REJECTED)
+        pe_processed = self._ctrl.read(_REG_PE_PROCESSED)
+        if pe_flags & 0x1:
+            raise RuntimeError(
+                "patch_extract_core: global image configuration invalid "
+                f"(img {self._img_w}x{self._img_h}, stride "
+                f"{self._stride_bytes}, buffer {len(self._bin_buf)})")
+        if pe_flags & 0x2:
+            raise RuntimeError(
+                f"patch_extract_core: TLAST/num_cands mismatch — "
+                f"processed {pe_processed} of {n} descriptors")
+        if pe_rejected:
+            print(f"[tme_driver] WARNING: PL rejected {pe_rejected}/{n} "
+                  f"candidates that passed the PS-side §4.1 checks — "
+                  f"validation models have drifted")
 
         # ---- Read results ----
         result_bytes = n * _RESULT_STRUCT_SIZE
@@ -298,7 +474,7 @@ class PLPipeline:
             results.append({
                 "kind":         _KIND_NAMES.get(kind_byte, "unknown"),
                 "score":        float(score),
-                "endpoint":     (cand.get("x", 0.0), cand.get("y", 0.0)),
+                "endpoint":     cand["endpoint"],
                 "side":         cand.get("side", "left"),
                 "box":          (int(bx), int(by), int(bw), int(bh)),
                 "male_score":   -1.0,   # individual scores not returned by PL in this mode

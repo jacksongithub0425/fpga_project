@@ -31,7 +31,7 @@ void binarize_core(
 #pragma HLS INTERFACE s_axilite  port=img_w      bundle=CTRL
 #pragma HLS INTERFACE s_axilite  port=img_h      bundle=CTRL
 #pragma HLS INTERFACE s_axilite  port=threshold  bundle=CTRL
-#pragma HLS INTERFACE s_axilite  port=return    bundle=CTRL
+#pragma HLS INTERFACE mode=s_axilite port=return bundle=CTRL
 
     // Two stored rows (oldest and previous).
     // The current row is consumed live from gray_in.
@@ -50,10 +50,16 @@ void binarize_core(
     int iw = (int)img_w;
     int ih = (int)img_h;
 
+    // Tripcount avg = benchmark page 9792×6336, max = BINARIZE_MAX_W/H.
+    // LOOP_FLATTEN off: flattened col-wrap logic (col==iw → reset mux)
+    // was the 6.179 ns critical path; per-row refill overhead is ~2 cycles
+    // per 9792-pixel row, negligible.
     main_loop: for (int row = 0; row < ih; row++) {
-        for (int col = 0; col < iw; col++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=6400 avg=6336
+        col_loop: for (int col = 0; col < iw; col++) {
 #pragma HLS PIPELINE II=1
-#pragma HLS LOOP_TRIPCOUNT min=100 max=9000000 avg=8700000
+#pragma HLS LOOP_FLATTEN off
+#pragma HLS LOOP_TRIPCOUNT min=1 max=9856 avg=9792
 
             // 1. Read new pixel from stream
             bpix_t in_px = gray_in.read();

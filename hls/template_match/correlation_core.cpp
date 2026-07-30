@@ -28,7 +28,11 @@ void correlation_core(
 
     int pw = (int)patch_w;
     int tw = (int)templ_w;
-    int rw = pw - tw;
+    // Full valid-correlation width — must match rw in tme_top.cpp exactly.
+    // This guard bounds both the tile break and the writeback; if it lags
+    // tme_top's rw by one, the last output column is never written but is
+    // still read by norm_cols (contract §4.4, option 1).
+    int rw = pw - tw + 1;
 
     // Segment register file: fully partitioned so 16 reads are free each cycle.
     ap_uint<8> seg[SEG_W];

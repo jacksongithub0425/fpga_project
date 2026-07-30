@@ -67,8 +67,14 @@ void tme_top(
     int ph = (int)patch_h;
     int tw = (int)templ_w;
     int th = (int)templ_h;
-    int rw = pw - tw;   // result map width
-    int rh = ph - th;   // result map height
+    // Full valid-correlation dimensions.  The +1 matters: without it the
+    // final possible row and column of every search are silently omitted and
+    // pw == tw yields zero positions instead of one.  cv2.matchTemplate's
+    // result is (pw-tw+1) x (ph-th+1), so the golden model already assumes
+    // this.  correlation_core computes its own rw the same way — the two
+    // must stay in lockstep (contract §4.4, option 1).
+    int rw = pw - tw + 1;   // result map width
+    int rh = ph - th + 1;   // result map height
 
     // ---- 1. Read patch into BRAM ----------------------------------------
     load_patch: for (int r = 0; r < ph; r++) {
@@ -152,13 +158,14 @@ void tme_top(
 
         // Compute normalized score for each output column
         norm_cols: for (int u = 0; u < rw; u++) {
-#pragma HLS PIPELINE II=8
+#pragma HLS PIPELINE II=6
 #pragma HLS LOOP_TRIPCOUNT min=1 max=MAX_RESULT_W avg=300
-            float denom_sq = (float)templ_energy * (float)isq_col[u];
-            float rsqrt_val = norm_rsqrt(denom_sq);
-            float score = (float)num_acc[u] * rsqrt_val;
+            fixed_t denom_sq = (fixed_t)templ_energy * (fixed_t)isq_col[u];
+            fixed_t rsqrt_val = norm_rsqrt(denom_sq);
+            fixed_t score_fx  = (fixed_t)num_acc[u] * rsqrt_val;
 
             // Clamp to [-1, 1] (floating-point representation for output)
+            float score = (float)score_fx;
             if (score > 1.0f)  score = 1.0f;
             if (score < -1.0f) score = -1.0f;
 
