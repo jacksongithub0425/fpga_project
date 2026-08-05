@@ -170,6 +170,73 @@ Two cautions on the numbers in the table above:
 - Narrowing the counters did not improve timing (§8). The widths are right on
   correctness grounds; do not cite them as a timing result.
 
+### 3.1 The DMA transfer length is a second bound on the patch envelope
+
+**`820 × 307 = 251,740` bytes must fit in one AXI DMA transfer, and on the
+bring-up platform the ceiling is 262,143 bytes.** PYNQ reports
+`buffer_max_size = 262143` for both DMA instances in the standalone extractor
+image — `2^18 − 1`, set by the DMA's 18-bit buffer-length register
+(`c_sg_length_width`). §5 gives every valid patch its own pixel `TLAST`, so one
+patch is exactly one S2MM transfer, and the payload is `patch_w × patch_h`
+bytes with no header. The current envelope therefore clears the bound with
+**10,403 bytes (≈10.2 KiB) to spare** — a 4% margin, not a comfortable one.
+
+This is recorded because it is invisible from the source. Nothing in
+`patch_extract_core.h`, `tme_top.h` or the golden generators mentions it; it
+lives in the block design's DMA configuration. **Anyone proposing a larger
+`PE_MAX_PATCH_W × PE_MAX_PATCH_H` must check this bound alongside the three
+constants §3 requires moving together.**
+
+Two notes on how it interacts with what is already here:
+
+- **It is a block-design parameter, not a law.** `c_sg_length_width` is
+  configurable up to 26 bits (67,108,863 bytes). Raising it is a BD edit plus
+  a re-implementation — cheap, but neither free nor invisible, and it must be
+  a deliberate decision rather than something discovered after a patch
+  silently truncates.
+- **It very nearly coincides with the BRAM cliff §3 already describes.**
+  `patch_buf` is 16 cyclic banks that stay at 8 BRAM18K each only while every
+  bank is under the 16,384-word depth step — `16 × 16,384 = 262,144` bytes for
+  the whole buffer, one byte above the DMA's 262,143. So the first envelope
+  large enough to need a second DMA transfer is also, to within a byte, the
+  first one that doubles the matcher's BRAM back toward the 125% that did not
+  fit the part. The two bounds are effectively the same wall. That is a
+  convenient accident, not a designed relationship — it does not survive a
+  change to the bank count, so check both.
+
+The metadata stream is nowhere near either bound: 16 bytes × `NUM_CANDS <= 64`
+(§7.1.1 item 2) is 1,024 bytes per batch.
+
+**How this bound is actually tested — the `hw` suite.** Until 2026-08-04 nothing
+exercised it. The matcher's cosim manifest tops out at a 4,480-byte patch, so
+every pre-silicon run verified arithmetic and left the transfer bound entirely
+untested; and it cannot be tested in simulation even in principle, because an
+RTL co-simulation contains no DMA and this is a DMA parameter.
+
+`tme_generate_golden.py` therefore writes a third suite,
+`tb_tme_cases_hw.txt` — the cosim cases plus `stress-max-envelope`, whose
+820 × 307 patch is a single **251,740-byte** transfer, 10,403 bytes under the
+ceiling. (It also carries `stress-max-result`, a second 820 × 307 patch under a
+4 × 4 template — same transfer size, but it is there for §4.4's result-map
+bound rather than this one; see §8.) `sw/tme_standalone_bringup.py` sends it to the board and prints the
+headroom it actually observed. Three details make it evidence rather than
+decoration:
+
+- The stress case is **lifted from the already-solved csim case object**, not
+  re-solved, so the board and csim run byte-identical pixels by construction.
+- The bring-up script reads the DMA's **own** `buffer_max_size` rather than
+  trusting the 262,143 above, and says so when the two disagree. The bound is
+  a block-design parameter; a BD edit can move it without touching this repo.
+- `build_tme_standalone.tcl` sets `c_sg_length_width = 18` **deliberately, to
+  match the extractor image**. The point is to reproduce the platform's
+  constraint, not to engineer around it.
+
+Note what the suite still does not cover: it proves 251,740 bytes *fits*, not
+that 262,144 bytes *fails*. The failing side is unreachable from software —
+`validate_geometry()` rejects it before `ap_start`, which is the correct
+behaviour and also means the truncation path can only be reached by
+deliberately breaking the validator.
+
 ---
 
 ## 4. Descriptor validity
@@ -398,7 +465,9 @@ it when the feeder is specified (see §8).
 Pixel `TLAST` moves from once-per-batch to once-per-valid-patch. This is what
 lets the matcher frame patches without the PS having to recompute the clamped
 geometry independently — the duplicated-clamping-ladder hazard disappears
-because the geometry is transmitted, not re-derived.
+because the geometry is transmitted, not re-derived. It also makes each patch
+exactly one DMA transfer on the PS side, which is where §3.1's 262,143-byte
+transfer bound attaches.
 
 ### 5.1 Score-stream framing — **OPEN, but does NOT block the D1/D2 repair**
 
@@ -592,15 +661,38 @@ wrapper.** Each core's generated `x<core>_hw.h` is therefore the authoritative
 map for that core, and `sw/tme_driver.py` is rewritten around one window per
 core instead of one window overall.
 
-**Status: adopted architecture, not an implemented system.** Nothing below
-except §7.1.2 describes code that exists. Today `sw/tme_driver.py` still talks
-to a single `self._ctrl` window at the old `0x00`–`0x4C` offsets, and
-`patch_extract_core` is the **only** core that currently presents the coherent
-one-slave interface this section requires — `binarize_core`,
-`template_match_core` and `class_score_core` have not been checked, let alone
+**Status: proven on hardware for one core, still a work list for the rest.**
+This is no longer an adopted-but-unbuilt architecture. A standalone PL image
+(`patch_extract_standalone.bit`) carrying `patch_extract_core` plus two AXI
+DMAs and nothing else loads under PYNQ, and the core's `register_map`
+reproduces the §7.1.2 table field for field — `bin_image_1`/`bin_image_2`,
+`img_w`, `img_h`, `stride_bytes`, `buffer_bytes`, `num_cands`, and the three
+`sts_*` registers with their Clear-on-Read `ap_vld` companions. PS sequencing
+works exactly as this section assumed it would: write the scalars, arm the
+metadata S2MM, set `ap_start`, push descriptors on the candidate MM2S, poll
+`ap_idle`. **§8 records what that run does and does not establish** — the
+architecture is validated, the core's full behaviour is not.
+
+What has *not* changed: `sw/tme_driver.py` still talks to a single
+`self._ctrl` window at the old `0x00`–`0x4C` offsets — the standalone
+notebook drives the registers directly, so the per-core driver rewrite is
+still owed. `template_match_core` now also presents the coherent one-slave
+interface (2026-08-04: its `return` port moved from raw `ap_ctrl_hs` pins
+into the `CTRL` bundle, so every scalar, the results and start/done live in
+one `s_axi_CTRL` map — `patch_w 0x10`, `patch_h 0x18`, `templ_w 0x20`,
+`templ_h 0x28`, `result_score 0x30` + `ap_vld 0x34`, `result_x 0x40/0x44`,
+`result_y 0x50/0x54`; regenerated by synthesis, do not transcribe by hand).
+It takes no `m_axi` pointer, so the `offset=slave` trap does not arise there.
+`binarize_core` and `class_score_core` have not been checked, let alone
 fixed, and the same `offset=slave` trap that split the extractor three ways
-applies to every one of them that takes an `m_axi` pointer. Treat §7.1.1 as a
-work list, not a description.
+applies to every one of them that takes an `m_axi` pointer.
+
+So §7.1.1 remains a work list for items 1, 2, 4 and 5. Item 3 is the one that
+moved: the Clear-on-Read companions are now confirmed present on real
+silicon rather than inferred from the generated header. Note that confirms
+their *existence*, not the driver discipline — no run has yet read a `sts_*`
+register twice and watched the second read come back empty, which is the
+hazard item 3 actually names.
 
 Rationale: a wrapper that fans a single START out to four cores and mirrors
 shared registers into each of them is itself a piece of RTL that masters four
@@ -758,9 +850,135 @@ constants awaiting the per-core rewrite, not a map to implement.
 
 ## 8. Implementation gates
 
-**Timing.** Re-measured after the two changes the previous revision was
-waiting on — the `m_axi` conversion and the §3 narrowing to 11/9-bit patch
-counters — both of which have landed. `patch_extract_core` now estimates
+**Board clock: 31.25 MHz — 32.000 ns period.** The bring-up platform clocks the
+PL at 31.25 MHz, 6.4× slower than the 5.000 ns period every HLS estimate below
+was taken against. Against 32.000 ns the extractor's 4.815 ns estimate has
+≈27 ns of headroom and the matcher's 6.978 ns has ≈25 ns. **The extractor's
+−1.165 ns and the matcher's −3.328 ns are therefore moot for bring-up.**
+Neither gates getting the pipeline running end to end.
+
+Four consequences, three of which are constraints rather than relief:
+
+- **Do not re-target HLS to 32 ns.** Those figures describe RTL scheduled
+  under `create_clock -period 5ns`. Re-synthesising at 32 ns produces
+  *different* RTL: HLS chains far more operations per cycle and the critical
+  path grows to fill whatever period it is given, so the estimate would come
+  back marginal again while latency in cycles drops. The headroom comes from
+  synthesising tight and clocking slow. Keep the 5 ns constraint in
+  `package_provisional.tcl` and the matcher's `run_hls.tcl`.
+- **Deferred, not discharged.** 31.25 MHz is a bring-up choice, and every one
+  of these numbers returns the moment the clock is raised for throughput — at
+  which point the matcher's correlation is the thing that decides how high the
+  clock can go. The timing work moves from a *does-it-work* gate to a
+  *how-fast* gate. Move it; do not delete it.
+- **A generated bitstream is not timing closure** — and the real slack is now
+  measured, so this bullet is no longer an instruction. See
+  **"Post-route slack — measured"** below. Two things came back that this
+  section had assumed otherwise about: the implementation is constrained at
+  **20 ns, not 32 ns**, and the binding path is **reset distribution**, not
+  any of the paths estimated below.
+- **Nothing else in §8 is affected.** Coverage, the binarize-to-extractor
+  integration case, and the short-stream timeout ownership in §7.1.1 item 4
+  are independent of clock rate.
+
+### Post-route slack — measured (2026-08-04)
+
+Read off two standalone implementations under Vivado 2025.2, both routed.
+**These are the first real place-and-route numbers in this document;
+everything else called "timing" above is an HLS estimate.**
+
+| | extractor | **matcher** |
+|---|---|---|
+| project | `tc25/.../patch_extract_standalone` | `tc25/.../tme_standalone` |
+| WNS | **+10.144 ns** | **+3.537 ns** |
+| TNS | 0.000, 0 failing / 45,918 | 0.000, 0 failing / 46,820 |
+| WHS / THS | +0.020 / 0.000 ns | +0.023 / 0.000 ns |
+| budget consumed (period − WNS) | 9.856 ns | 16.463 ns |
+| worst-path data delay | 9.073 ns | **16.332 ns** |
+| slack at the board's 32 ns | ≈ +22.14 ns | ≈ **+15.54 ns** |
+| verdict | all constraints met | all constraints met, fully routed |
+
+The last two rows are **not** the same quantity and an earlier revision of this
+section conflated them. `period − WNS` is the whole launch-to-capture budget —
+data path *plus* setup time, clock uncertainty and skew — and it is the figure
+that stays fixed when you re-time the design to a different period, which is
+why the 32 ns row is derived from it. The data-path delay is what the report
+attributes to the path itself. They differ by ~0.13–0.78 ns here. Use the
+first to re-time, the second to describe where the time goes.
+
+**The matcher meets timing at 50 MHz.** That is worth stating plainly, because
+every prior statement about matcher timing in this document and in
+`package_provisional.tcl` derives from the HLS estimate of 6.547 ns against a
+5.000 ns target — a figure that describes a 200 MHz ambition nothing has ever
+required. At the constraint actually implemented the design closes with
++3.537 ns to spare, and at the board's period it has ≈15.5 ns. **The HLS
+"timing failure" has never been a bring-up gate and is not one now**; §8's
+existing judgement was right, and is now measured rather than argued.
+
+The matcher's full-image utilisation is also well under the part: 14,665 LUT
+(27.6%), 18,076 FF (17.0%), 115 BRAM tiles (82.1%), 34 DSP (15.5%) — for the
+core *plus* both DMAs, both SmartConnects and the PS. Note the LUT figure
+against HLS's 34.6k (64%) estimate for the core alone: **HLS over-estimated
+LUTs by roughly 2.4×**. BRAM is the resource that is genuinely tight, exactly
+as §3 says.
+
+Two findings matter more than the numbers themselves.
+
+**1. The constrained period is 20 ns, not 32 ns.** The report's only clock is
+`clk_fpga_0` at **20.000 ns / 50.000 MHz**, so `WNS = +10.144 ns` means the
+longest routed path is **9.856 ns** — not that there are 10 ns of margin at the
+board's period. Quote it as *"+10.144 ns against a 20 ns constraint"*; the bare
+number invites exactly the misreading this section was set up to avoid.
+
+Why the two differ: the BD requests `PCW_FPGA0_PERIPHERAL_FREQMHZ = 50` with no
+board preset, and the handoff records `PCW_FCLK0_PERIPHERAL_DIVISOR0 = 8`,
+`DIVISOR1 = 4` — a divisor product of 32. Vivado computes 50 MHz from those,
+i.e. it assumes a 1600 MHz source. The board reports 31.25 MHz, and
+`1600 / 1000 = 50 / 31.25 = 1.6` exactly, so the most likely explanation is
+that PYNQ applies the same divisor pair to a **1000 MHz** PL PLL. **That last
+step is an inference, not a measurement** — the divisor arithmetic is read from
+the handoff, the 31.25 MHz is read from the board, and nothing has yet
+confirmed the source rate. Settle it in one line the next time the board is up:
+
+```python
+from pynq import Clocks; print(Clocks.fclk0_mhz)
+```
+
+Either way the design is **over-constrained by 1.6×**, which is the safe
+direction: at the board's 32 ns the true slack on that path is ≈ **+22.14 ns**.
+
+**2. Both designs are routing-bound, and neither binds where the estimates
+said.**
+
+| | worst path | data delay | routing share | logic levels |
+|---|---|---|---|---|
+| extractor | `proc_sys_reset_0/…PR_OUT_DFF[0]` → `patch_extract_core_0/CTRL_s_axi_U/FSM_onehot_rstate_reg[1]/R` | 9.073 ns | **93.6%** | 1 (LUT1) |
+| matcher | `correlation_core/…Pipeline_load_seg/trunc_ln57_reg…` → `…/seg_231_fu_1516_reg[4]` | 16.332 ns | **93.3%** | 3 (2×LUT6, MUXF7) |
+
+The extractor's binding path is **reset distribution** — a high-fanout net, not
+any of the 4.815 ns counter recurrences tabulated below, none of which appear
+near the top. The matcher's is the **fully-partitioned `seg[SEG_W]` register
+file** inside `correlation_core`'s `load_seg` stage (`tme_top.h` sets
+`SEG_W = PAR_COLS + MAX_TEMPL_W = 232`), which is a placement-and-fanout
+problem created by `ARRAY_PARTITION complete`, not an arithmetic one.
+
+That is the answer to the question this section posed — "if it is not
+[enormous], something other than the paths estimated below is binding". Both
+answers are: yes, and it is wiring.
+
+**Do not read 16.332 ns as a floor.** Both paths are >93% routing at ≤3 logic
+levels, and both met a constraint with room to spare — at which point Vivado
+stops optimising. A tighter constraint would produce different placement and
+different numbers. So these figures bound what the *current builds* achieve;
+they do **not** establish a maximum clock. Anyone raising the clock should
+re-implement at the target period and read the result, not invert a delay from
+a build that was never asked to go faster. What the figures do establish is where to look first when that
+happens — reset replication for the extractor, `seg[]` fanout for the matcher
+— and that in neither case is it the loop arithmetic below.
+
+**Timing (HLS estimates).** Re-measured after the two changes the previous
+revision was waiting on — the `m_axi` conversion and the §3 narrowing to
+11/9-bit patch counters — both of which have landed. `patch_extract_core` now estimates
 **4.815 ns** against a 3.650 ns effective budget (5.000 ns target − 1.350 ns
 uncertainty), i.e. **effective estimated slack of −1.165 ns**. The
 corresponding 207.68 MHz is simply the reciprocal of the estimate, not a
@@ -803,11 +1021,132 @@ An earlier revision of this section stated the report showed no separate
 current one attributes an `icmp` there. Both descriptions were accurate for
 the build in front of them; the path list above supersedes.
 
-**Still do not optimise this yet** — but for a different reason than before.
-The blocker is no longer "pending changes will move the path", it is that
-4.815 ns is an estimate with the uncertainty allowance already spent, and only
-place-and-route can say whether that matters. Take this to implementation and
-read real slack before touching the loops.
+**Still do not optimise this yet** — and now for a third reason. It was
+"pending changes will move the path"; then it was "4.815 ns is an estimate
+with the uncertainty allowance already spent, and only place-and-route can say
+whether that matters". It is now simply that at 31.25 MHz nothing here is
+close to binding. Read the real post-route slack off the standalone
+implementation, record it above, and leave the loops alone until the clock is
+raised.
+
+**Hardware bring-up — the extractor runs standalone.** A PL image containing
+only `patch_extract_core`, one MM2S/S2MM DMA carrying the candidate and pixel
+streams, and a second S2MM-only DMA carrying metadata, loads under PYNQ and
+the core behaves as this document specifies. Established on real silicon:
+
+- **§7.1.2's map is the real map.** `register_map` matches the generated
+  header field for field, Clear-on-Read companions included.
+- **§4.3, the globally-invalid path.** `img_w = 0` with one descriptor returns
+  `status = 0x0200` (reason bit 8, `valid` clear), `sts_flags = 0x1`,
+  `rejected = 1`, `processed = 1`, and completes normally. That is a reported
+  rejection replacing the silent 4-beat read of `bin_image[0][0..1]` this
+  section named as the old failure mode.
+- **§6.2's record ABI.** `"<HHHHHHI"` unpacks correctly at a 16-byte stride
+  across a four-record batch.
+- **§4.1/§4.2 per-descriptor rejection.** `max_tw = 0` returns
+  `status = 0x0008` — reason bit 2 — while the three valid descriptors in the
+  same batch return `0x0001` with correct geometry.
+- **Non-compact stride (§2.1).** A 64 × 64 image at `stride_bytes = 72`
+  extracts pixel-exact patches against the golden formula. First evidence the
+  stride arithmetic is right in hardware and not only in csim.
+- **Per-patch pixel `TLAST` (§5).** Each valid patch delivers exactly
+  `patch_w × patch_h` beats and then TLASTs, with the sentinel fill beyond it
+  untouched; the invalid descriptor contributes no pixel beats, observable
+  because the three armed receives line up with candidates 0, 2 and 3 and
+  compare clean. That is the hardware form of the manifest's
+  `count = valid ? patch_w * patch_h : 0` assertion.
+- **§7's status surface over a mixed batch.** `processed = 4`,
+  `rejected = 1`, `flags = 0x0`.
+
+What it did **not** establish, and must not be read as covering:
+
+- **The `TLAST`/`NUM_CANDS` cross-check is half-tested.** Its clear path is
+  exercised (`flags = 0x0` on correctly framed batches), its set path is not:
+  PYNQ's `sendchannel.transfer()` asserts `TLAST` on the last beat of whatever
+  buffer it is handed, so producing a genuine mismatch needs a feeder that can
+  misplace the marker deliberately.
+- **Everything ran at 64 × 64.** The high-coordinate cases and the full
+  820 × 307 envelope — which is where §3, §3.1 and the 11/9-bit counters are
+  actually load-bearing — exist only in the testbench.
+- **Nothing downstream was present.** This is the extractor plus DMAs, not the
+  pipeline, and it says nothing about §1's coordinate frame, which needs the
+  binarizer.
+- **One check in the globally-invalid run is inconclusive**, not passing: it
+  reads the S2MM `idle` bit on a channel that was never armed, where a
+  never-started channel and a channel that received data are not
+  distinguishable. The no-pixel-reads claim rests on the multi-descriptor run
+  instead.
+
+**Hardware bring-up — the matcher, image built and ready to run (2026-08-04).**
+A second standalone PL image carries `template_match_core` and nothing else:
+
+```
+PS M_AXI_GP0 -> smartconnect -> axi_dma_patch S_AXI_LITE   (0x41E0_0000)
+                            |-> axi_dma_templ S_AXI_LITE   (0x41E1_0000)
+                            \-> tme_top_0     s_axi_CTRL   (0x4000_0000)
+
+axi_dma_patch M_AXIS_MM2S (8-bit) -> tme_top_0 patch_stream
+axi_dma_templ M_AXIS_MM2S (8-bit) -> tme_top_0 templ_stream
+both M_AXI_MM2S -> smartconnect -> PS S_AXI_HP0
+```
+
+Built by `vivado/tme_standalone/build_tme_standalone.tcl` (in the repo — unlike
+the extractor's BD, which exists only as a project under `tc25/`), driven by
+`sw/tme_standalone_bringup.py`. Both DMAs are **MM2S-only**: both matcher
+streams are PL inputs and the results return over AXI4-Lite, so there is no
+S2MM anywhere. Adding one would be a change to §5.1/§6.3, not a wiring
+convenience.
+
+Established so far, all off-board:
+
+- **The image builds, fits and closes timing** — see the post-route table
+  above; fully routed, 0 routing errors, 82% BRAM.
+- **The single-slave surface is real.** The exported IP has no raw
+  `ap_start`/`ap_done` pins; `s_axi_CTRL` is the only control interface, which
+  is what makes PS sequencing possible without wrapper RTL. §7.1.2's rule held
+  for this core without needing the three-way repair the extractor did.
+- **The vectors are validated.** `csim -argv "hw"` passes 9/9, so a board
+  failure is a hardware finding rather than a bad golden. Three of those nine
+  were added on 2026-08-04 after an audit showed the suite could not have
+  caught several classes of failure:
+
+  | case | what it covers that nothing else did |
+  |---|---|
+  | `equality-negative` | a winning score that is **negative** (−0.732374). Every other score in every suite is exactly 0.0 or 1.0 — bit patterns `0x00000000` and `0x3F800000` — so the sign bit of `result_score` was never exercised on a register software reinterprets as raw IEEE-754. `anti-match` does not cover it: it puts −1.0 in the result *map* but reports +0.12 as its best. |
+  | `equality-different` | a non-round mantissa (0.009578), for the same float-transport reason. |
+  | `stress-max-result` | the **maximum result map, 817 × 304**, with the peak at its final cell (816, 303). `stress-max-envelope` maximises *storage* but its map is only 605 × 212, so the top 212 entries of `sti_col`/`sii_col`/`si_col` — arrays declared at `MAX_RESULT_W` = 817 — had never been written, and `isq_slide`/`norm_cols` had never run past `u = 604`. Grayscale rather than binary by necessity: a 4 × 4 binary window recurs within a few hundred of the 248,368 positions, so there would be no unique peak to assert. |
+
+**Not yet run on silicon.** Nothing below is claimed until it is:
+
+- the arithmetic on real hardware against exact-location golden;
+- §3.1's 251,740-byte single transfer (see §3.1 — this is the whole reason the
+  `hw` suite exists);
+- PS sequencing through one window: write geometry, arm both MM2S, `ap_start`,
+  poll `ap_done`, read `result_score`/`result_x`/`result_y` with their
+  Clear-on-Read `ap_vld` companions;
+- that the `static` patch/template BRAMs do not leak between invocations —
+  the script re-runs a 64 × 48 case *after* the 820 × 307 one specifically to
+  test the shrink direction, which the suite order otherwise would not.
+
+**What it will not establish, by construction: framing.** `tme_top` ignores
+`TLAST` and reads exactly `patch_w × patch_h` beats, and the bring-up script
+writes the geometry out of band, so the DMA length and the core's expectation
+agree because software made them agree. That is precisely the agreement the
+extractor→matcher seam does not get for free, and it is why item 3 of
+`package_provisional.tcl`'s banner stays OPEN. A green run here says the
+matcher works when told the truth about its input; it says nothing about how
+it comes to know it.
+
+**Software-side geometry validation is mandatory and now exists.**
+`validate_geometry()` in `sw/tme_standalone_bringup.py` enforces §4.1's bounds,
+§4.4's `patch >= templ` (equality legal), and §3.1's transfer bound *before*
+`ap_start`. This is not defensive politeness: **`tme_top` has no validation
+path, no reason bitmask and no status register** — unlike `patch_extract_core`,
+it takes the four scalars at face value and indexes its BRAMs with them. An
+oversized `patch_w` overruns `patch_buf[307][820]` into the neighbouring row
+and returns a confident wrong answer; `patch_w < templ_w` returns the core's
+`best_score` initialiser of **-2.0** at (0,0). The validator has a
+`--selftest` mode that needs neither PYNQ nor a bitstream.
 
 **Coverage.** Largely discharged. The testbench now exercises high in-range
 coordinates (a procedural 9800 × 6400 page at stride 9856, which is what makes
@@ -857,11 +1196,11 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 | Core | Work |
 |---|---|
 | `binarize_core` | DDR writer owns raw→logical mapping (§1); zero-fill last row and column |
-| `patch_extract_core` | `m_axi` pointer + explicit stride + address arithmetic; 16-bit page coords; 11/9-bit patch counters; §4 validation with wide-type overflow checks (§2.1); metadata stream (§6.2); per-patch pixel `TLAST`; `NUM_CANDS`; status registers |
-| `template_match_core` | result-dimension off-by-one (§4.4) — **done**: `+1` in *both* `tme_top.cpp` and `correlation_core.cpp`, `MAX_RESULT_W/H` = `MAX_PATCH − 4 + 1` = 817/304. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**, 224 BRAM18K. **Remaining: timing** (6.978 ns vs a 3.650 ns effective budget, −3.328 ns — it misses even the raw 5 ns target, so this is desktop work, not a place-and-route question); **a golden/TB that actually validates it** (`tme_tb.cpp` checks score only against a `0.0 @ (0,0)` golden, which an always-zero DUT passes — needs location assertions, a unique nonzero match, the final row/column, patch==template equality, and the maximum-storage case); the generator's `int()`-vs-`round()` oracle drift (§4.5); and consuming per-patch framing and transmitted geometry |
+| `patch_extract_core` | `m_axi` pointer + explicit stride + address arithmetic; 16-bit page coords; 11/9-bit patch counters; §4 validation with wide-type overflow checks (§2.1); metadata stream (§6.2); per-patch pixel `TLAST`; `NUM_CANDS`; status registers. **Standalone hardware bring-up passed** — see §8 for scope and for what it does not cover |
+| `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, which is cv2's TM_CCOEFF_NORMED exactly; **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies — csim 21/21, RTL cosim 5/5. The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 — that last is a **C simulation of the board vectors, not a hardware result**; nothing has run on silicon yet. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
 | `class_score_core` | parked. D1/D2 are repairable now (reorder flush-before-merge, §5.1); D6/D7/D8 and the per-kind-score/match-location gaps wait on §6.3 |
 | `sw/tme_driver.py` | buffer sizes per §2.2; stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; result unpack per §6.3; enforce §4.1 and §4.5 before dispatch |
-| template pipeline | `max_tw` / `max_th` from post-round template dimensions (§4.5) |
+| template pipeline | `max_tw` / `max_th` from post-round template dimensions (§4.5); stream templates as **RAW binarized bytes** — the matcher computes ΣT/ΣT² in-core since 2026-08-04, and the mean-subtracted int8+128 encoding it replaced must not come back (it wraps: binary T−mean spans ±255) |
 
 ---
 
@@ -890,10 +1229,26 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 6. **§7.1 item 4** — who owns the short-stream timeout and the PL reset that
    recovers from it, and over what scope. New in §5's framing decision;
    nothing owns it today.
-7. **Matcher timing** — 6.978 ns against a 3.650 ns effective budget
-   (−3.328 ns) and over even the raw 5.000 ns period. Unlike the extractor's
-   −1.165 ns, this cannot be deferred to place-and-route: an estimate above
-   the target period does not close by routing. Desktop work, and it gates
-   integration.
+7. ~~**Matcher timing**~~ — **closed as a gate, 2026-08-04, by measurement.**
+   The standalone matcher image implements and routes with **WNS +3.537 ns
+   against a 20 ns constraint** (longest routed path 16.463 ns; ≈+15.5 ns at
+   the board's 32 ns), all constraints met. See the post-route table in §8.
+
+   The HLS estimate of 6.547 ns is against a 5.000 ns target, i.e. a 200 MHz
+   ambition **nothing in this pipeline has ever required** — it was never the
+   number that decided whether the design works. What remains true: the
+   matcher cannot be clocked at 200 MHz, and the 5 ns synthesis constraint
+   stays (§8) because the headroom comes from synthesising tight and clocking
+   slow.
+
+   What is *not* closed is how high the clock can go. The measured 16.463 ns
+   is not a floor — it is what a build that met its constraint with room to
+   spare happened to produce, and >93% of it is routing at 3 logic levels.
+   Re-implement at the target period before claiming any maximum frequency,
+   and expect `correlation_core`'s partitioned `seg[]` fanout (§8) to be the
+   thing to fix, not the loop arithmetic.
+8. **Larger patch envelopes now have a second bound** — §3.1. Not blocking
+   today (251,740 of 262,143 bytes used), listed so it is not rediscovered
+   the hard way.
 
 Everything else in this document is settled and implementable.
