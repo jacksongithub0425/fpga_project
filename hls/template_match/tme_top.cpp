@@ -1,27 +1,41 @@
 #include "tme_top.h"
+#include <hls_math.h>
 
 // -----------------------------------------------------------------------
 // Template Matching Engine — top-level HLS function
 //
-// Computes TM_CCOEFF_NORMED between a search patch and a scaled template:
+// Computes TM_CCOEFF_NORMED between a search patch and a scaled template.
+// cv2's definition, with T̄ the template mean and Ī the per-window mean:
 //
-//   R(u,v) = Σ T'(x,y)·I(u+x,v+y) / sqrt( Σ T'² · Σ I(u+x,v+y)² )
+//   R(u,v) = Σ (T−T̄)(I−Ī) / sqrt( Σ(T−T̄)² · Σ(I−Ī)² )
 //
-// where T' = T - mean(T).  For binary images mean(T) ≈ constant, so
-// T' is precomputed offline (embedded in the stream as signed bytes).
+// Multiplying numerator and denominator by N = tw·th turns every term into
+// an integer sum the hardware can accumulate exactly:
+//
+//   R(u,v) = (N·ΣTI − ΣT·ΣI) / sqrt( (N·ΣT² − (ΣT)²) · (N·ΣI² − (ΣI)²) )
+//
+// so the template streams as RAW uint8 pixels — no offline mean-subtraction,
+// no int8 re-encoding (the previous int8+128 encoding wrapped for binary
+// 0/255 templates, whose mean-subtracted range is ±255).  ΣT and ΣT² are
+// computed during template load; ΣI and ΣI² ride the same sliding window
+// that already existed for the old (mean-less, i.e. wrong) denominator.
+// Float arithmetic enters once, at the final sqrt/divide — every sum
+// feeding it is exact, and the sums fit their types by construction (see
+// tme_top.h).  A flat window (ΣI² variance 0) scores exactly 0, matching
+// cv2's convention, and a flat template zeroes the whole surface.
 //
 // Operating mode: max-loc-only.
 // Returns the (score, x, y) of the best match.  The full result map
-// is never stored — only the running maximum is tracked.
+// is never stored — only the running maximum is tracked.  Ties keep the
+// first (row-major) occurrence, same as cv2.minMaxLoc.
 //
 // AXI4-Stream inputs:
 //   patch_stream  — search patch pixels, row-major, uint8
-//   templ_stream  — template pixels (mean-subtracted, as int8 cast to uint8+128),
-//                   followed by 4-byte trailer: {templ_mean_u8, templ_energy_hi,
-//                   templ_energy_lo_hi, templ_energy_lo_lo} (big-endian float32)
+//   templ_stream  — template pixels, row-major, uint8, raw
 //
-// AXI4-Lite outputs (s_axilite):
-//   result_score, result_x, result_y
+// AXI4-Lite (bundle CTRL — §7.1.2: every s_axilite port, return included,
+// names the same bundle):
+//   patch_w/patch_h/templ_w/templ_h in, result_score/result_x/result_y out
 // -----------------------------------------------------------------------
 
 void tme_top(
@@ -39,12 +53,12 @@ void tme_top(
 #pragma HLS INTERFACE axis      port=templ_stream
 #pragma HLS INTERFACE s_axilite port=patch_w      bundle=CTRL
 #pragma HLS INTERFACE s_axilite port=patch_h      bundle=CTRL
-#pragma HLS INTERFACE s_axilite port=templ_w      bundle=CTRL
-#pragma HLS INTERFACE s_axilite port=templ_h      bundle=CTRL
+#pragma HLS INTERFACE s_axilite port=templ_w     bundle=CTRL
+#pragma HLS INTERFACE s_axilite port=templ_h     bundle=CTRL
 #pragma HLS INTERFACE s_axilite port=result_score bundle=CTRL
 #pragma HLS INTERFACE s_axilite port=result_x     bundle=CTRL
 #pragma HLS INTERFACE s_axilite port=result_y     bundle=CTRL
-#pragma HLS INTERFACE ap_ctrl_hs port=return
+#pragma HLS INTERFACE s_axilite port=return       bundle=CTRL
 
     // ---- Buffers --------------------------------------------------------
     static ap_uint<8> patch_buf[MAX_PATCH_H][MAX_PATCH_W];
@@ -55,13 +69,14 @@ void tme_top(
     // elements per cycle from the same row.
 #pragma HLS ARRAY_PARTITION variable=patch_buf cyclic factor=PAR_COLS dim=2
 
-    // Numerator accumulator (cross-correlation), one per output column.
-    static acc_t num_acc[MAX_RESULT_W];
-#pragma HLS ARRAY_PARTITION variable=num_acc cyclic factor=PAR_COLS dim=1
-
-    // Per-column sum-of-squares of patch pixels in the current window.
-    static acc_t isq_col[MAX_RESULT_W];
-#pragma HLS ARRAY_PARTITION variable=isq_col cyclic factor=PAR_COLS dim=1
+    // Per-output-column window sums, accumulated across template rows:
+    // ΣTI (cross-correlation), ΣI² and ΣI (denominator/numerator terms).
+    static sumsq_t sti_col[MAX_RESULT_W];
+#pragma HLS ARRAY_PARTITION variable=sti_col cyclic factor=PAR_COLS dim=1
+    static sumsq_t sii_col[MAX_RESULT_W];
+#pragma HLS ARRAY_PARTITION variable=sii_col cyclic factor=PAR_COLS dim=1
+    static sum_t si_col[MAX_RESULT_W];
+#pragma HLS ARRAY_PARTITION variable=si_col cyclic factor=PAR_COLS dim=1
 
     int pw = (int)patch_w;
     int ph = (int)patch_h;
@@ -85,23 +100,32 @@ void tme_top(
         }
     }
 
-    // ---- 2. Read template into BRAM + compute template energy -----------
-    // Template is streamed as mean-subtracted int8 values stored as
-    // (val + 128) so they fit in uint8.  Decode back here.
-    acc_t templ_energy = 0;
+    // ---- 2. Read template into BRAM + template-side sums ----------------
+    sum_t   t_sum = 0;   // ΣT
+    sumsq_t t_sq  = 0;   // ΣT²
     load_templ: for (int r = 0; r < th; r++) {
         for (int c = 0; c < tw; c++) {
 #pragma HLS PIPELINE II=1
             pix_stream_t px = templ_stream.read();
-            // Decode: stored as uint8 = actual_int8 + 128
-            ap_int<9> val = (ap_int<9>)px.data - 128;
-            templ_buf[r][c] = px.data;   // keep encoded form for MAC
-            templ_energy += (acc_t)(val * val);
+            ap_uint<8> tv = px.data;
+            templ_buf[r][c] = tv;
+            t_sum += tv;
+            t_sq  += (sumsq_t)(tv * tv);
         }
     }
 
+    ap_uint<16> n_px = (ap_uint<16>)(tw * th);   // N ≤ 20736
+
+    // Template variance term N·ΣT² − (ΣT)², constant for the whole search.
+    // ap_uint products widen automatically (16×32→48, 24×24→48); the
+    // difference is ≥ 0 by the variance inequality.
+    wide_t dt   = (wide_t)(n_px * t_sq) - (wide_t)(t_sum * t_sum);
+    float  dt_f = (float)dt;
+
     // ---- 3. Sliding window correlation + normalization ------------------
-    float best_score = -1.0f;
+    // Start below any reachable score so the first window always wins the
+    // initial comparison — best-so-far semantics identical to cv2.minMaxLoc.
+    float best_score = -2.0f;
     ap_uint<16> best_x = 0, best_y = 0;
 
     slide_v: for (int v = 0; v < rh; v++) {
@@ -110,8 +134,9 @@ void tme_top(
         // Reset column accumulators for this output row band
         reset_acc: for (int u = 0; u < rw; u++) {
 #pragma HLS PIPELINE II=1
-            num_acc[u] = 0;
-            isq_col[u] = 0;
+            sti_col[u] = 0;
+            sii_col[u] = 0;
+            si_col[u]  = 0;
         }
 
         // Accumulate over template height rows
@@ -119,7 +144,7 @@ void tme_top(
 #pragma HLS LOOP_TRIPCOUNT min=4 max=MAX_TEMPL_H avg=50
             int pr = v + dy;
 
-            // Build mean-subtracted template row (decode from stored uint8+128)
+            // Stage template row into registers for correlation_core
             ap_uint<8> t_row[MAX_TEMPL_W];
 #pragma HLS ARRAY_PARTITION variable=t_row complete dim=1
             for (int c = 0; c < tw; c++) {
@@ -127,22 +152,28 @@ void tme_top(
                 t_row[c] = templ_buf[dy][c];
             }
 
-            // Accumulate numerator (cross-correlation)
-            correlation_core(patch_buf[pr], t_row, num_acc, patch_w, templ_w);
+            // Accumulate ΣTI (cross-correlation numerator sum)
+            correlation_core(patch_buf[pr], t_row, sti_col, patch_w, templ_w);
 
-            // Accumulate I² for normalization denominator.
-            // Incremental sliding-window: O(patch_w) per row instead of O(patch_w*templ_w).
-            //   isq_win = sum_{x=0}^{tw-1} patch[pr][u+x]^2
-            //   isq_win[u+1] = isq_win[u] + patch[pr][u+tw]^2 - patch[pr][u]^2
-            acc_t isq_win = 0;
+            // Accumulate ΣI² and ΣI for the window statistics.
+            // Incremental sliding-window: O(patch_w) per row instead of
+            // O(patch_w*templ_w).  Row-window bounds: ΣI² ≤ 216·255² <
+            // 2^24, ΣI ≤ 216·255 < 2^16 — one spare bit each.
+            //   win[u+1] = win[u] + f(patch[pr][u+tw]) - f(patch[pr][u])
+            ap_uint<25> rsq_win = 0;
+            ap_uint<17> rs_win  = 0;
             isq_init: for (int x = 0; x < MAX_TEMPL_W; x++) {
 #pragma HLS PIPELINE II=1
 #pragma HLS LOOP_TRIPCOUNT min=4 max=216 avg=80
                 if (x >= tw) break;
                 ap_uint<8> pv = patch_buf[pr][x];
-                isq_win += (acc_t)(pv * pv);
+                rsq_win += (ap_uint<25>)(pv * pv);
+                rs_win  += pv;
             }
-            if (rw > 0) isq_col[0] += isq_win;
+            if (rw > 0) {
+                sii_col[0] += rsq_win;
+                si_col[0]  += rs_win;
+            }
 
             isq_slide: for (int u = 1; u < MAX_RESULT_W; u++) {
 #pragma HLS PIPELINE II=1
@@ -150,22 +181,35 @@ void tme_top(
                 if (u >= rw) break;
                 ap_uint<8> pv_in  = patch_buf[pr][u + tw - 1];
                 ap_uint<8> pv_out = patch_buf[pr][u - 1];
-                isq_win = isq_win + (acc_t)(pv_in * pv_in)
-                                  - (acc_t)(pv_out * pv_out);
-                isq_col[u] += isq_win;
+                rsq_win = rsq_win + (ap_uint<25>)(pv_in * pv_in)
+                                  - (ap_uint<25>)(pv_out * pv_out);
+                rs_win  = rs_win + pv_in - pv_out;
+                sii_col[u] += rsq_win;
+                si_col[u]  += rs_win;
             }
         }
 
         // Compute normalized score for each output column
         norm_cols: for (int u = 0; u < rw; u++) {
-#pragma HLS PIPELINE II=6
+#pragma HLS PIPELINE II=4
 #pragma HLS LOOP_TRIPCOUNT min=1 max=MAX_RESULT_W avg=300
-            fixed_t denom_sq = (fixed_t)templ_energy * (fixed_t)isq_col[u];
-            fixed_t rsqrt_val = norm_rsqrt(denom_sq);
-            fixed_t score_fx  = (fixed_t)num_acc[u] * rsqrt_val;
+            sumsq_t sti = sti_col[u];
+            sumsq_t sii = sii_col[u];
+            sum_t   si  = si_col[u];
 
-            // Clamp to [-1, 1] (floating-point representation for output)
-            float score = (float)score_fx;
+            // Exact integer numerator and window variance term.
+            num_t  num = (num_t)(wide_t)(n_px * sti) - (num_t)(wide_t)(si * t_sum);
+            wide_t di  = (wide_t)(n_px * sii) - (wide_t)(si * si);
+
+            float score;
+            if (di == 0 || dt == 0) {
+                // Flat window or flat template: cv2 emits exactly 0 here.
+                score = 0.0f;
+            } else {
+                score = (float)num / hls::sqrtf(dt_f * (float)di);
+            }
+
+            // Clamp float rounding to the mathematical range
             if (score > 1.0f)  score = 1.0f;
             if (score < -1.0f) score = -1.0f;
 
