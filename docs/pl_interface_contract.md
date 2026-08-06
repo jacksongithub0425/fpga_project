@@ -418,6 +418,372 @@ This is also the current silent-failure path worth naming: with `img_w = 0`
 today, every candidate clips to a 4-beat read of `bin_image[0][0..1]` and the
 core reports normal completion. That must become a reported rejection.
 
+### 4.6 Flat templates are illegal input — `dt == 0` is an ABI violation
+
+**Decision: a template with no pixel variation must be rejected by host
+software before the first DMA transfer. The matcher's per-window zero for
+`dt == 0` is a defensive fallback, not a contract term, and nothing may depend
+on the value it produces.**
+
+Notation — all exact integers over one template-sized window of `N = tw · th`
+8-bit pixels, as computed in `tme_top.cpp`:
+
+```
+dt  = N·ΣT²  − (ΣT)²      template variance term, = N²·Var(T)
+di  = N·ΣI²  − (ΣI)²      window   variance term, = N²·Var(I)
+num = N·ΣTI  − ΣT·ΣI      covariance term
+```
+
+#### The three domains
+
+| domain | meaning | contract |
+|---|---|---|
+| `dt > 0 && di > 0` | ordinary case | the mathematical TM_CCOEFF_NORMED expression `num / √(dt·di)` |
+| `di == 0` | **legal** — a flat search window inside a legal patch | score is **+0.0**; this *is* a contract term |
+| `dt == 0` | **illegal** — a flat template | rejected by the ABI before dispatch; the DUT's `0.0f` is a defensive fallback only |
+
+A flat *window* is ordinary input — `blank-patch` and `half-blank-peak` in
+`tme_generate_golden.py` are built from them, and OpenCV agrees, since a zero
+denominator falls through its clamp ladder to `num = 0`. A flat *template* is
+not input at all: it carries no information any matcher can use, the two
+implementations disagree about what to return for it, and OpenCV does not even
+agree with itself — see the next section.
+
+#### OpenCV's epsilon test is *not* exactly `dt == 0`
+
+OpenCV's `common_matchTemplate` (`modules/imgproc/src/templmatch.cpp`) takes an
+early return *before* any correlation is computed:
+
+```cpp
+templNorm = templSdv[0]*templSdv[0] + ... ;        // summed population variance
+if( templNorm < DBL_EPSILON && method == CV_TM_CCOEFF_NORMED )
+{
+    result = Scalar::all(1);                       // ONES, not zeros
+    return;
+}
+```
+
+`templSdv` comes from `meanStdDev`, whose divisor is `N` and not `N − 1`, so
+the quantity `templNorm` *represents* is the population variance, `dt / N²`.
+It is not *computed* that way. On the CPU uint8 path `meanStdDev` accumulates
+`ΣT` and `ΣT²` in **integer** block accumulators — those are exact — and only
+then scales in `double`, forming `ΣT²/N − (ΣT/N)²`: a difference of two nearly
+equal doubles. For a flat template the exact answer is 0 while the computed
+answer is whatever that cancellation leaves behind, neither necessarily 0 nor
+necessarily below `DBL_EPSILON`. `matchTemplate` consumes that result and then
+takes the epsilon branch above.
+
+The equivalence therefore holds in one direction only:
+
+```
+template is flat   ⇔   dt == 0                        exact, over integers
+dt >  0            ⇒   templNorm  ≫  DBL_EPSILON      proved below, CPU uint8 path
+dt == 0            ⇏   templNorm  <  DBL_EPSILON      FAILS
+```
+
+**A measured counterexample.** Against the OpenCV installed in `hls/.venv`
+(5.0.0), a 7 × 7 template filled with 2 has exact `dt = 0`, and:
+
+```
+cv2.meanStdDev  →  templNorm = 4.440892098500627e-16
+DBL_EPSILON     =              2.220446049250313e-16
+```
+
+It misses the early return, so OpenCV goes on to correlate a zero-variance
+template and returns something other than ones. **What it returns depends on
+the patch, and on the dispatch**, so a number is only meaningful with both
+attached. Against a 10 × 10 patch cut from a 16 × 16 ramp (`p[r][c] = 16r + c`):
+
+| flat 7 × 7 template | generic path | IPP path |
+|---|---|---|
+| all-2 | peak 5.494174e−08, min 2.747087e−08 | identical |
+| all-127 | peak 5.494174e−08, **min 0.0** | **entire map exactly 0.0** |
+
+Two things fall out of that table. Exactly `0.0` is on the menu — under IPP the
+whole result map for an all-127 template *is* zero, and even on the generic path
+zero appears in it. And identical inputs give different results depending on
+which implementation OpenCV dispatched to, which is why the oracle pins the path
+rather than trusting whichever one the build happens to use. None of these
+figures generalises to another patch; that is the point.
+
+This is not one unlucky size either: at 7 × 7, **157 of the 256 possible flat
+fills** miss the branch; at 40 × 30, 24 of 256; at 4 × 4, 8 × 8 and 216 × 96,
+none do (generic path, IPP disabled — see below). Whether a mathematically flat
+template reaches the branch depends on the rounding of one subtraction inside
+`meanStdDev` — not on anything the caller can inspect, and not on `N` in any
+pattern worth memorising.
+
+Two consequences, both load-bearing:
+
+- **There is no single answer OpenCV gives for a flat template.** It fills the
+  result with ones when the early return fires (the mechanism is visible in the
+  source above; the historical behaviour is discussed in OpenCV issue #5688),
+  and otherwise correlates normally and returns a value that depends on the
+  patch **and** on which implementation it dispatched to — which, as the table
+  above shows, includes an entire result map of exactly 0.0. So the DUT's `0.0`
+  can coincide with OpenCV's, and that coincidence means nothing. Any claim that
+  "cv2 emits exactly 0" for a flat template is false; so is any claim that it
+  reliably emits 1.0; and so is any claim of agreement built on a matching zero.
+- **This makes host-side rejection more valuable, not less.** `min(templ) ==
+  max(templ)` decides on the integers themselves: it rejects every flat
+  template and nothing else, with no dependence on floating-point luck.
+  Deferring to OpenCV's epsilon test would inherit a branch a flat template may
+  or may not take.
+
+#### The direction that does hold: no legal non-flat template is mistaken for flat
+
+The `⇒` above is the one the pipeline depends on — a template the host accepts
+must never be one OpenCV takes the early return on, or the two would be scoring
+different sets of inputs. That direction has eleven orders of margin:
+
+- `dt = ½ ΣᵢΣⱼ (Tᵢ − Tⱼ)²`. Take `v` to be a most-common pixel value and
+  `k = #{i : Tᵢ ≠ v}`; a non-flat template has `1 ≤ k ≤ N − 1`. Every one of the
+  `k·(N − k)` cross pairs contributes at least 1, because the pixels are
+  integers and differ. So `dt ≥ k·(N − k) ≥ N − 1`, and the bound is attained
+  (`k = 1`, `δ = 1`). The minimum **nonzero** `dt` at fixed `N` is exactly
+  `N − 1`; brute force over small `N` agrees.
+- The smallest legal template is 4 × 4 (§4.1), so the **global** legal minimum
+  nonzero `dt` is **15**, at `N = 16`.
+- The minimum nonzero *population* variance is `(N − 1)/N²`, which falls as `N`
+  grows, so its floor sits at the largest legal template, `N = 20,736`:
+  **4.822298 × 10⁻⁵**.
+
+That floor is 2.17 × 10¹¹ times `DBL_EPSILON` (2.220446 × 10⁻¹⁶). What makes
+this a *proof* and not five lucky measurements is that the roundoff can be
+bounded — **on OpenCV's generic C path, `uint8` input, `binary64` scaling**:
+
+- `ΣT ≤ 20,736 · 255 = 5,287,680` and `ΣT² ≤ 20,736 · 255² = 1,348,358,400`.
+  Both are accumulated in integers and both are far under `2⁵³`, so both are
+  **exact** — there is no accumulation error to bound, only scaling error.
+- `templNorm` is `fl(ΣT²·s) − fl(fl(ΣT·s)²)` with `s = fl(1/N)`, and then
+  `common_matchTemplate` takes the `sqrt` (`templSdv`) and squares it back.
+  Every term is bounded by `max(T)² = 65,025`. Counting conservatively — two
+  roundings into `ΣT²·s`, three into `(ΣT·s)²`, one on the difference, and the
+  `sqrt`/square round trip — gives about `11u · 65,025 ≈ 7.94 × 10⁻¹¹` with
+  `u = 2⁻⁵³ ≈ 1.11 × 10⁻¹⁶`. Call it **under 10⁻¹⁰**. (Omitting the `sqrt` and
+  its squaring would give `8u ≈ 5.8 × 10⁻¹¹` — the same conclusion, but it is
+  not the whole path.)
+- `10⁻¹⁰` against a legal floor of `4.822298 × 10⁻⁵` leaves five orders of
+  margin, so a legal non-flat template cannot be pushed under `DBL_EPSILON`
+  (eleven orders further down) by any amount of rounding on this path.
+
+**The bound only describes code that runs.** The OpenCV installed here (5.0.0)
+reports `ippIP AVX2`, and an IPP dispatch need not execute the generic source
+the derivation follows. This is not hypothetical: the all-127 row of the table
+above differs between the two paths on identical inputs. So
+`tme_generate_golden.py` calls `cv2.ipp.setUseIPP(False)` and **verifies
+`useIPP()` came back false** before the cross-check oracle or the epsilon
+self-test runs anything — the asserted numbers are then measurements of the path
+the proof is about. The same self-test re-runs with IPP re-enabled and prints
+those figures as **measurement only**; they are not covered by any bound here.
+If the disable ever fails, the self-test says so and downgrades its own language
+rather than keeping the word "proved".
+
+(For the record, on this build the *non-flat* measurements are identical under
+both dispatches — it is the flat, out-of-contract side where they diverge. That
+is luck, not a property to rely on: the pinning is what makes the assertion mean
+something.)
+
+On the generic path the measured error at 4 × 4, 7 × 7, 40 × 30, 212 × 87 and
+216 × 96 peaks at 1.9 × 10⁻¹², about 40 × inside the bound. **No legal non-flat
+uint8 template comes near OpenCV's epsilon test.**
+
+The rest of the pinning still matters: this is an argument about `uint8` inputs
+summed exactly and scaled once in `binary64`. A `float32` intermediate, a fused
+reduction with a different association, or a non-CPU backend (OpenCL/CUDA) would
+need it re-derived. The asymmetry is the point: exact integers cannot be fooled
+in either direction, double-precision cancellation only in the flat one — where
+nothing is scored anyway.
+
+#### Width bounds
+
+The extremes are two-valued at the pixel limits `B = 0`, `V = 255`, split as
+evenly as `N` allows, so `max(dt) = ⌊N²/4⌋ · (V − B)²`. At `N = 20,736`:
+
+| quantity | maximum | width |
+|---|---|---|
+| `dt`, `di` | 6,989,889,945,600 | **43 bits** unsigned |
+| `dt · di` | 48,858,561,451,599,970,959,360,000 | **86 bits** unsigned, 87 signed |
+| `num` | ±6,989,889,945,600 | 43 bits + sign |
+
+`43 + 43 = 86`: the operand-width bound and the exact product bound **agree**,
+so nothing is lost by reasoning in widths rather than exact extremes. Note that
+`dt · di` is a bound on the *mathematics*, not on a signal — `tme_top`
+evaluates `dt_f * (float)di` in float, so there is no 86-bit datapath to look
+for. `|num| ≤ √(dt·di) ≤ max(dt)` by Cauchy–Schwarz.
+
+**The construction intermediates are wider than the results.** `dt` is 43 bits
+and `num` is 43 bits plus sign, but no term either is built from is that narrow:
+
+```
+N·ΣT²  ≤ 20,736 · 1,348,358,400 = 27,959,559,782,400    45 bits
+(ΣT)²  =         5,287,680²     = 27,959,559,782,400    45 bits
+N·ΣTI, ΣT·ΣI     same bound     = 27,959,559,782,400    45 bits
+```
+
+The first two are *equal* at the extreme (an all-255 template) and cancel to
+zero. That is what makes the intermediates worth naming — but it does **not**
+mean the types must be wide enough to hold them.
+
+#### What the widths actually require
+
+Fixed-width two's-complement subtraction is modular:
+
+```
+(A mod 2^W  −  B mod 2^W)  mod 2^W   =   (A − B) mod 2^W
+```
+
+So truncating both 45-bit operands to a common width `W` and subtracting loses
+nothing, **provided the result is representable in `W` bits**. The result width
+binds, not the operand width; the wrap cancels. Since
+`0 ≤ dt ≤ 6,989,889,945,600 < 2^43` and `|num| ≤ 6,989,889,945,600 < 2^43`:
+
+the **joint minimum is `(wide_t, num_t) = (44 unsigned, 44 signed)`**. That is
+one statement about a pair, not two independent budgets, because `num` is
+written `(num_t)(wide_t)(...)`: the inner cast truncates *before* the
+subtraction, so the wrap cancels only if the result is reduced modulo the same
+power of two the operands were.
+
+| `(wide_t, num_t)` | `dt` | `num` | why |
+|---|---|---|---|
+| **(48, 48)** — implemented | ✓ | ✓ | no operand ever wraps; nothing to argue about |
+| **(44, 44)** — joint minimum | ✓ | ✓ | operands reduced mod 2⁴⁴, result reduced mod 2⁴⁴ — the wrap cancels |
+| (43, 44) | ✓ | ✗ | operands reduced mod 2⁴³, then zero-extended into 44-bit signed arithmetic that never reduces them back |
+| (44, 45) | ✓ | ✗ | operands reduced mod 2⁴⁴, result kept in 45 bits — a wrapped operand stays wrapped |
+
+**Widening one of them is not automatically safe.** `(44, 45)` is the
+counter-intuitive row: it gives `num` *more* bits than the minimum and still
+gets the wrong answer, because the truncation happens before the wider signed
+subtraction. So the rule is **not** "`wide_t ≥ 44` and `num_t ≥ 44`":
+
+> Use **equal modular widths** — `wide_t` and `num_t` the same `W ≥ 44` —
+> **or** preserve the 45-bit operands outright (`≥ 45` unsigned / `≥ 46`
+> signed, which `48/48` does). Anything in between needs the argument redone.
+
+A probe compiled against Vitis 2025.2's own `ap_int.h` puts the equal-width
+boundary exactly at 44: 43 wrong, 44 / 45 / 46 correct. 43 fails for the plain
+reason — `|num|` reaches 6,989,889,945,600 and a 43-bit signed value stops at
+`2^42 − 1`. `tme_tb.cpp::bound_case` runs both failing configurations as
+executable witnesses, so the table above is tested rather than asserted:
+
+- **(43, 44)** at the positive maximum: `num` = −1,806,203,076,608 instead of
+  +6,989,889,945,600, while `dt` stays correct — which is exactly why checking
+  `dt` alone would pass this change through.
+- **(44, 45)** on an *ordinary legal input* — a 216 × 96 template with 14,000 of
+  its 20,736 pixels at 255, matched against itself: `num` =
+  −11,460,068,444,416 instead of +6,132,117,600,000. Nothing extreme is
+  required to trip it; it is not a corner case.
+
+**48 / 48 stays.** Not because 44 is unsafe — the pair is provably and
+measurably sufficient — but because 48 lands in the "preserve the operands
+outright" case, where the modular argument is not load-bearing at all: nobody
+reading `dt` or `num` has to reconstruct it to believe the result. Narrowing
+would cost a resynthesis, a fresh cosim and a rebuilt bitstream to save nothing
+anyone has asked for. Treat the widths as a preservation policy, not as a
+correctness cliff — and treat any edit to *either* type as an edit to both.
+
+#### Agreement with OpenCV, stated precisely
+
+For `dt > 0` and `di > 0`, the core evaluates the mathematical
+TM_CCOEFF_NORMED expression using exact integer sufficient statistics followed
+by float normalisation. OpenCV uses a different numerical path (float64
+integral images, plus an explicit near-boundary clamp that snaps any `|num|`
+within 12.5 % of the denominator to ±1), so **agreement is tolerance-based
+rather than bit-exact**. This is not a claim that the core is universally more
+accurate, nor that the tolerance covers only OpenCV's error. Mismatches are
+adjudicated against the independent high-precision oracle in
+`tme_generate_golden.py`, which is neither implementation.
+
+#### Who enforces this
+
+`tme_top` has no validation path, no reason bitmask and no status register
+(§7.1), so rejection lives entirely in host software:
+
+- `sw/tme_standalone_bringup.py::validate_template_content()` — runs **after**
+  the final resize / binarisation / cropping, on the same `bytes` object that is
+  then handed to the DMA. It accepts **`bytes` only**, deliberately including
+  not a read-only `memoryview`: that flag says *this view* cannot write, not
+  that the memory is immutable (a read-only view over a `bytearray` aliases a
+  buffer that can still change under it), and a multi-dimensional view would
+  make `len()` count rows instead of bytes and raise out of `min()`/`max()`
+  before any rule was applied. It requires
+  `len(templ) == templ_w · templ_h`, rejects an empty buffer, and rejects
+  `min(templ) == max(templ)`. The whole manifest / template bank is validated
+  **before the first DMA transfer or `ap_start`**, so one flat entry rejects the
+  batch instead of being discovered five cases in. The same check is repeated
+  inside `run_case()` for direct callers.
+- `hls/template_match/tme_generate_golden.py::score_map()` raises `ValueError`
+  — not `assert` — on `dt == 0`, so the generator's rejection survives
+  `python -O`. Both the generator and the bring-up validator are run under
+  `python` and `python -O` as part of accepting a change here.
+
+What tests this, and where:
+
+| check | where |
+|---|---|
+| flat 4×4 templates (all 0 / 127 / 255) rejected — **on exact integer `dt`, before cv2 is consulted at all** | `tme_standalone_bringup.py --selftest`, `tme_generate_golden.py::selftest_flat_template_rejected` |
+| the surviving OpenCV direction, **asserted**: minimum-nonflat templates at 4×4, 7×7, 40×30, 212×87, 216×96 land above `DBL_EPSILON` and within the 1e-10 roundoff bound of the exact population variance | `tme_generate_golden.py::selftest_opencv_epsilon` |
+| the flat side of the asymmetry — how many of the 256 fills miss the epsilon branch at each size, and what a flat template scores against the named ramp patch under **both** dispatches — **measured and printed, never asserted**, because §4.6 depends on none of it; printing it makes a cv2 version bump visible instead of silently invalidating the numbers quoted above | `tme_generate_golden.py::selftest_opencv_epsilon` |
+| IPP is disabled **and the disable verified** before either the cross-check oracle or the asserted checks run; the self-test downgrades its own wording if it cannot be | `tme_generate_golden.py::use_generic_opencv` |
+| padded / short / empty template buffer rejected | `tme_standalone_bringup.py --selftest` |
+| non-`bytes` buffer rejected — `bytearray`, read-only `memoryview` over a `bytearray`, 2-D `memoryview` | `tme_standalone_bringup.py --selftest` |
+| minimally non-flat template (`dt = 15`) **accepted** | both self-tests — the guard against turning `min == max` into a threshold |
+| mixed bank, one flat entry → the abort **condition** is non-empty. The ordering — that nothing is dispatched before the bank is judged — is `main()`'s statement order and is **not** instrumented by any self-test; it would take a mocked driver or a board run | `tme_standalone_bringup.py --selftest` |
+| DUT on a flat template: raw `0x00000000` at (0,0), both streams drained | `tme_tb.cpp::run_direct_tests` |
+| DUT on the `dt = 15` template: raw `0x3F800000` at (0,0) | `tme_tb.cpp::run_direct_tests` |
+| `max(dt) = 6,989,889,945,600`, the ±`num` extremes, the all-255 cancellation, and **both** width witnesses — (43u, 44s) and (44u, 45s) — in the DUT's own types | `tme_tb.cpp::bound_case` |
+
+The two DUT tests run in **every** suite, before the manifest loop, so they are
+covered by RTL cosim as well as C simulation. They cannot be manifest cases:
+the generator refuses to write a golden for a flat template.
+
+`patch_extract_core::prevalidate()` is **not** affected by that `python -O`
+concern: it is C++ and already uses explicit checks with error counting. The
+word "asserts" elsewhere in §4 is descriptive, not a reference to Python
+`assert`. A repo-wide audit for validation written as `assert` is still worth
+doing on its own merits.
+
+#### RTL
+
+**No RTL change is required to close this section.** The per-window `dt == 0`
+fallback in `norm_cols` stays: it costs nothing and it keeps an out-of-contract
+input from producing a NaN. An early return after the template load would also
+be structurally safe — the core carries no `DATAFLOW` pragma and both stream
+loads are sequential, so returning after both completes every stream read — but
+it buys nothing and would cost a resynthesis, a fresh cosim and a rebuilt
+bitstream. **The current `.bit`/`.hwh` stay valid**, and that was checked
+rather than assumed — the re-synthesis run on 2026-08-05 was compared against
+the RTL `package_provisional.tcl` built on 2026-08-04 from the same sources,
+part and 5 ns clock:
+
+| artifact | result |
+|---|---|
+| `tme_top_CTRL_s_axi.v` | **byte-identical** |
+| generated `xtme_top_hw.h` | **byte-identical** — `0x30` / `0x40` / `0x50` unmoved |
+| resources | 224 BRAM18K, 33 DSP, 18,247 FF, 34,573 LUT — unchanged |
+| timing estimate | 6.547 ns against the 5 ns target — unchanged |
+| other `syn/verilog` files | differ **only** in HLS's `_ln<source-line>` identifiers and `VITIS_LOOP_<line>_n` module names, shifted by exactly the number of comment lines added (+16 before `tme_top.cpp:41`, +22 after `:122`); normalising those away leaves an identical multiset of statements. The reordering observed is across separate `always @(posedge)` blocks, across continuous `assign`s, and among nonblocking assignments **whose destinations are distinct** — none of those carry ordering semantics |
+
+A second full `run_hls.tcl` on the main project the same evening (23:20–23:38,
+after the §4.6 comment corrections landed in `tme_top.cpp` / `tme_top.h`)
+reproduced this independently: **224 BRAM18K, 33 DSP, 18,247 FF, 34,573 LUT and
+6.547 ns**, with csim 23/23, `-argv "hw"` 9/9 and RTL cosim 7/7. Two rounds of
+comment-only edits, same numbers twice.
+
+That last row is the thing to expect from any comment-only edit to
+`tme_top.cpp`: the netlist is unchanged but the generated names are not, so
+"the RTL files are byte-identical" is the wrong acceptance test. Compare the
+CTRL slave, the register map and the resource/timing numbers, and normalise
+`_ln<N>` before diffing anything else.
+
+One caveat for the next person who repeats this comparison: nonblocking-assignment
+order **is** significant when two assignments in the same `always` block target
+the *same* register — the last one wins. That case does not occur in this diff,
+which is why the reordering is benign here. It has to be checked, not assumed.
+
+Closing this section does **not** close §6.3 (the 14-versus-16-byte result
+record) or §7.1 item 4 (timeout / reset ownership). Both remain open.
+
 ---
 
 ## 5. Framing
@@ -853,8 +1219,8 @@ constants awaiting the per-core rewrite, not a map to implement.
 **Board clock: 31.25 MHz — 32.000 ns period.** The bring-up platform clocks the
 PL at 31.25 MHz, 6.4× slower than the 5.000 ns period every HLS estimate below
 was taken against. Against 32.000 ns the extractor's 4.815 ns estimate has
-≈27 ns of headroom and the matcher's 6.978 ns has ≈25 ns. **The extractor's
-−1.165 ns and the matcher's −3.328 ns are therefore moot for bring-up.**
+≈27 ns of headroom and the matcher's 6.547 ns has ≈25 ns. **The extractor's
+−1.165 ns and the matcher's −2.897 ns are therefore moot for bring-up.**
 Neither gates getting the pipeline running end to end.
 
 Four consequences, three of which are constraints rather than relief:
@@ -925,10 +1291,14 @@ as §3 says.
 Two findings matter more than the numbers themselves.
 
 **1. The constrained period is 20 ns, not 32 ns.** The report's only clock is
-`clk_fpga_0` at **20.000 ns / 50.000 MHz**, so `WNS = +10.144 ns` means the
-longest routed path is **9.856 ns** — not that there are 10 ns of margin at the
-board's period. Quote it as *"+10.144 ns against a 20 ns constraint"*; the bare
-number invites exactly the misreading this section was set up to avoid.
+`clk_fpga_0` at **20.000 ns / 50.000 MHz**, so `WNS = +10.144 ns` means
+**9.856 ns** of that 20 ns launch-to-capture budget was consumed — not that
+there are 10 ns of margin at the board's period. Quote it as *"+10.144 ns
+against a 20 ns constraint"*; the bare number invites exactly the misreading
+this section was set up to avoid. And "9.856 ns" is the *budget*, setup,
+uncertainty and skew included; the worst path's own data delay is **9.073 ns**
+(previous paragraph). Neither figure is "the longest routed path" — that phrase
+was used here for both and means neither.
 
 Why the two differ: the BD requests `PCW_FPGA0_PERIPHERAL_FREQMHZ = 50` with no
 board preset, and the handoff records `PCW_FCLK0_PERIPHERAL_DIVISOR0 = 8`,
@@ -1197,10 +1567,10 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 |---|---|
 | `binarize_core` | DDR writer owns raw→logical mapping (§1); zero-fill last row and column |
 | `patch_extract_core` | `m_axi` pointer + explicit stride + address arithmetic; 16-bit page coords; 11/9-bit patch counters; §4 validation with wide-type overflow checks (§2.1); metadata stream (§6.2); per-patch pixel `TLAST`; `NUM_CANDS`; status registers. **Standalone hardware bring-up passed** — see §8 for scope and for what it does not cover |
-| `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, which is cv2's TM_CCOEFF_NORMED exactly; **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies — csim 21/21, RTL cosim 5/5. The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 — that last is a **C simulation of the board vectors, not a hardware result**; nothing has run on silicon yet. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
+| `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, the mathematical TM_CCOEFF_NORMED expression — agreement with cv2 is tolerance-based rather than bit-exact, and only on the `dt>0 && di>0` domain (§4.6); **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies (21 csim / 5 cosim cases at that point; current counts below). The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 — that last is a **C simulation of the board vectors, not a hardware result**; nothing has run on silicon yet. **§4.6 closed 2026-08-05** (flat templates are illegal input, rejected host-side before the first DMA by an exact `min == max` test — OpenCV's `templNorm < DBL_EPSILON` branch is *not* exact in the flat direction, which is an argument for rejecting here rather than deferring to cv2) — no RTL change, plus two direct DUT tests, the dt / ±num width extremes and both width-coupling witnesses, all running in every suite ahead of the manifest loop. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
 | `class_score_core` | parked. D1/D2 are repairable now (reorder flush-before-merge, §5.1); D6/D7/D8 and the per-kind-score/match-location gaps wait on §6.3 |
-| `sw/tme_driver.py` | buffer sizes per §2.2; stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; result unpack per §6.3; enforce §4.1 and §4.5 before dispatch |
-| template pipeline | `max_tw` / `max_th` from post-round template dimensions (§4.5); stream templates as **RAW binarized bytes** — the matcher computes ΣT/ΣT² in-core since 2026-08-04, and the mean-subtracted int8+128 encoding it replaced must not come back (it wraps: binary T−mean spans ±255) |
+| `sw/tme_driver.py` | buffer sizes per §2.2; stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; result unpack per §6.3; enforce §4.1, §4.5 and §4.6 before dispatch |
+| template pipeline | `max_tw` / `max_th` from post-round template dimensions (§4.5); stream templates as **RAW binarized bytes** — the matcher computes ΣT/ΣT² in-core since 2026-08-04, and the mean-subtracted int8+128 encoding it replaced must not come back (it wraps: binary T−mean spans ±255); reject flat templates (`min == max`) after the final resize/binarise/crop and before the first DMA (§4.6) |
 
 ---
 
@@ -1231,8 +1601,9 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
    nothing owns it today.
 7. ~~**Matcher timing**~~ — **closed as a gate, 2026-08-04, by measurement.**
    The standalone matcher image implements and routes with **WNS +3.537 ns
-   against a 20 ns constraint** (longest routed path 16.463 ns; ≈+15.5 ns at
-   the board's 32 ns), all constraints met. See the post-route table in §8.
+   against a 20 ns constraint** (16.463 ns of that budget consumed, of which
+   16.332 ns is the worst path's data delay; ≈+15.5 ns at the board's 32 ns),
+   all constraints met. See the post-route table in §8.
 
    The HLS estimate of 6.547 ns is against a 5.000 ns target, i.e. a 200 MHz
    ambition **nothing in this pipeline has ever required** — it was never the
@@ -1241,9 +1612,10 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
    stays (§8) because the headroom comes from synthesising tight and clocking
    slow.
 
-   What is *not* closed is how high the clock can go. The measured 16.463 ns
-   is not a floor — it is what a build that met its constraint with room to
-   spare happened to produce, and >93% of it is routing at 3 logic levels.
+   What is *not* closed is how high the clock can go. The measured 16.332 ns
+   data delay is not a floor — it is what a build that met its constraint with
+   room to spare happened to produce, and >93% of it is routing at 3 logic
+   levels.
    Re-implement at the target period before claiming any maximum frequency,
    and expect `correlation_core`'s partitioned `seg[]` fanout (§8) to be the
    thing to fix, not the loop arithmetic.

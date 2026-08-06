@@ -14,7 +14,9 @@
 #      (vivado/tme_standalone/build_tme_standalone.tcl) routes with
 #      post-route WNS +3.537 ns against the 20 ns period it is actually
 #      constrained at — all constraints met, fully routed, 0 routing errors,
-#      longest routed path 16.463 ns, ≈+15.5 ns at the board's 32 ns.
+#      16.463 ns of that launch-to-capture budget consumed (setup, uncertainty
+#      and skew included; the worst path's own data delay is 16.332 ns),
+#      ≈+15.5 ns at the board's 32 ns.
 #
 #      HLS still estimates 6.547 ns against the 5.000 ns target, and that is
 #      still true — but 5 ns is a 200 MHz ambition nothing in this pipeline
@@ -23,9 +25,10 @@
 #      from synthesising tight and clocking slow, and re-targeting HLS to the
 #      board period would let the scheduler grow the path to refill it.
 #
-#      What is NOT settled is how high the clock can go.  16.463 ns is not a
-#      floor — >93% of it is routing at 3 logic levels, in a build that met
-#      its constraint with room to spare and so stopped optimising.  The
+#      What is NOT settled is how high the clock can go.  The 16.332 ns data
+#      delay is not a floor — >93% of it is routing at 3 logic levels, in a
+#      build that met its constraint with room to spare and so stopped
+#      optimising.  The
 #      binding path is correlation_core's fully-partitioned seg[] register
 #      file, not the arithmetic.  Re-implement at the target period before
 #      quoting any maximum frequency.
@@ -34,10 +37,13 @@
 #      asserts score AND exact best-match location per case; the suite covers
 #      a unique nonzero match, the final result row/column (§4.4), both
 #      equality axes, negative scores, flat windows, and the 820x307/216x96
-#      maximum-storage case at near-maximum window energies.  csim 21/21,
-#      cosim 7/7 (RTL), and `csim -argv hw` 9/9.  That last one is a C
-#      SIMULATION of the board vectors, NOT a hardware result — nothing has
-#      run on silicon yet; say "csim -argv hw: 9/9", never "hw 9/9".
+#      maximum-storage case at near-maximum window energies.  csim 23/23,
+#      cosim 7/7 (RTL), and `csim -argv hw` 9/9, plus the §4.6 direct DUT
+#      tests and width witnesses ahead of the manifest loop in every suite.
+#      That `hw` one is a C SIMULATION of the board vectors, NOT a hardware
+#      result — nothing has run on silicon yet; say "csim -argv hw: 9/9",
+#      never "hw 9/9".  (The exported -description string below is frozen at
+#      the numbers of the packaged 0.x IP and is deliberately NOT updated.)
 #      The rewrite this validated also
 #      replaced arithmetic that wrapped at real magnitudes and streams the
 #      template as RAW uint8 (the old int8+128 encoding wrapped for binary

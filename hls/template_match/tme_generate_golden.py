@@ -42,24 +42,39 @@ cosim cases plus the two 820 x 307 stress cases, which stress different things.
 251,740 bytes, the single AXI DMA transfer contract §3.1 bounds at 262,143
 (2^18 - 1, from the DMA's 18-bit c_sg_length_width).  The small cases are all
 under 15 KB, so a run limited to them verifies arithmetic and says nothing
-about that bound.  Putting it in *cosim* instead would not help: at ~190M
-cycles it is hours of xsim, and an RTL simulation containing no DMA cannot
-speak to a DMA length bound anyway.  It is a block-design property, so silicon
-is the only place it can be tested.
+about that bound.  Putting it in *cosim* instead would not help: it is
+372-411M cycles (below), against the 2,269,854 cycles the whole cosim suite
+measured — hours of xsim for one case.  And an RTL simulation containing no DMA
+cannot speak to a DMA length bound anyway.  It is a block-design property, so
+silicon is the only place it can be tested.
+
+That bracket is arithmetic off `solution1/syn/report`, not a fitted curve.  The
+case is rh=212 output rows x th=96 template rows = 20,352 `correlation_core`
+calls, each ceil(605/16) = 38 tiles, and a tile is `load_seg` (236 cycles,
+min == max) then `mac_loop` (tw + 6 = 222 at tw=216) — so 458 cycles per tile
+at best and the report's own 509 max at worst, giving 354-394M for correlation
+alone.  The incremental window loops add 20,352 x (tw+1 + rw) = 16.7M and
+everything else under 1M.  Do NOT try to pin it tighter by fitting the four
+measured cosim latencies: four points against four free parameters interpolates
+exactly and then extrapolates to nonsense (it wants a -56,109-cycle constant
+and a NEGATIVE per-tile cost).  The exact figure is a board measurement, not a
+derivation; until one exists, quote the bracket.
 
 `stress-max-result` covers the other axis.  The envelope case maximises
 storage but its result map is only 605 x 212; MAX_RESULT_W/H are 817/304,
 sized for the smallest legal 4 x 4 template.  Until it was added nothing
 wrote the top 212 accumulator entries or ran norm_cols past u = 604.
 
-Three cases exist purely to make the *score* worth transporting: before them
+TWO cases exist purely to make the *score* worth transporting: before them
 every score in cosim and hw was exactly 0.0 or 1.0 — 0x00000000 and
 0x3F800000 — which between them exercise no sign bit and one mantissa bit,
 on a value that crosses AXI4-Lite as raw IEEE-754 for software to
 reinterpret.  `equality-negative` (-0.73) and `equality-different` (0.0096)
-fix that.
+fix that, and they are the whole of it: every other score in
+tb_tme_cases_{cosim,hw}.txt is still exactly 0.0 or 1.0.
 """
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -114,7 +129,21 @@ def score_map(patch, templ):
     st = int(T.sum())
     stt = int((T * T).sum())
     dt = n * stt - st * st
-    assert dt > 0, "flat template — meaningless case, fix the builder"
+    if dt <= 0:
+        # Contract §4.6: a flat template is illegal input, not a scored case.
+        # A ValueError rather than an assert, deliberately: under `python -O`
+        # an assert vanishes and the generator would go on to divide by a zero
+        # denominator, writing a manifest of NaNs — or of whatever cv2 happened
+        # to return — that the TB would then treat as golden.
+        raise ValueError(
+            f"flat template ({tw}x{th}, all pixels = {int(T.flat[0])}): "
+            f"dt = N·ΣT² − (ΣT)² = {dt}. The DUT returns 0 here; cv2 may "
+            f"return ones or a patch-dependent numerical result, INCLUDING "
+            f"zero, and no contractual agreement exists on this illegal "
+            f"domain (its templNorm < DBL_EPSILON branch is not reached by "
+            f"every flat template — a 7x7 of 2s computes 4.44e-16). A "
+            f"coincidental 0 would not make the two agree. No golden can be "
+            f"written for this input. Fix the builder (contract §4.6).")
 
     # Cross-correlation ΣTI via zero-padded FFT, rounded back to the exact
     # integer it represents.  Worst-case FFT noise here is ~1, far under the
@@ -167,6 +196,236 @@ def golden(patch, templ):
             f"cv2 argmax ({rx},{ry}) != exact argmax ({gx},{gy}) "
             f"despite margin {margin:.4f}")
     return score, gx, gy, margin, sii_max
+
+
+def selftest_flat_template_rejected():
+    """The §4.6 rejection must hold under `python -O`, where asserts vanish.
+
+    Run from main() rather than a separate test file: this generator has no
+    test harness of its own, and a rejection path nothing exercises is a
+    rejection path that silently stops working.
+
+    Scope, precisely: the flat cases below are rejected on the INTEGER `dt`,
+    before cv2 is consulted at all, so they say nothing on their own about
+    which side of `DBL_EPSILON` OpenCV puts them.  `selftest_opencv_epsilon()`
+    covers that separately — asserting only the direction §4.6 actually depends
+    on, and reporting the other.
+    """
+    # Both sides of §4.6's asymmetry.  4x4 is a power-of-two N, where cv2's
+    # float64 templNorm is a clean 0 and its early return fires; 7x7 is not,
+    # and 157 of its 256 possible flat fills compute templNorm >= DBL_EPSILON,
+    # miss the branch, and get correlated like any other template.  The
+    # rejection here must not care: it is decided on the exact integer dt, so
+    # it fires identically for both — which is the whole reason the rejection
+    # lives here rather than being delegated to cv2's epsilon test.
+    for h, w, fill in ((4, 4, 0), (4, 4, 127), (4, 4, 255),
+                       (7, 7, 2), (7, 7, 127), (7, 7, 255)):
+        templ = np.full((h, w), fill, np.uint8)
+        patch = np.arange(144, dtype=np.uint8).reshape(12, 12)
+        try:
+            score_map(patch, templ)
+        except ValueError:
+            continue
+        raise RuntimeError(
+            f"score_map accepted a flat {h}x{w} template (all {fill}) — §4.6 "
+            f"says it must raise ValueError. Running under `python -O` with "
+            f"the check written as `assert` is exactly how this regresses.")
+
+    # A template one grey level from flat must still be accepted: dt = 15 at
+    # N = 16, the global legal minimum (§4.6).  The rejection must be
+    # `min == max`, not a threshold someone can drift upward.
+    edge = np.full((4, 4), 127, np.uint8)
+    edge[3, 3] = 128
+    score_map(np.arange(16, dtype=np.uint8).reshape(4, 4) % 7, edge)
+    n = 16
+    st, stt = int(edge.sum()), int((edge.astype(np.int64) ** 2).sum())
+    dt = n * stt - st * st
+    if dt != 15:
+        raise RuntimeError(f"minimum-nonflat template has dt = {dt}, expected 15")
+    print("§4.6 self-test: flat templates rejected on integer dt, dt=15 "
+          "template accepted (no cv2 involved)")
+
+
+def use_generic_opencv() -> bool:
+    """Turn IPP off and CONFIRM it is off.  Returns whether the confirm held.
+
+    §4.6's roundoff bound is derived for OpenCV's generic C path — integer
+    accumulation of ΣT and ΣT², one `binary64` scaling, `sqrt`, then the square
+    in `common_matchTemplate`. A build with IPP enabled (this one reports
+    `ippIP AVX2`) does not necessarily execute that code at all, so the bound
+    would be a statement about source that never ran.
+
+    Called both from `main()` — so the cv2 cross-check oracle is deterministic
+    across machines with different IPP builds — and from the epsilon self-test.
+    It cannot change any written golden: the manifests come from the exact
+    integer/FFT oracle, and cv2 is only ever a cross-check.
+
+    False covers two distinct states — IPP present and still on, and no `cv2.ipp`
+    at all — and neither is "generic path confirmed", so both are treated the
+    same way by `require_generic_opencv`.
+    """
+    try:
+        cv2.ipp.setUseIPP(False)
+        return not cv2.ipp.useIPP()
+    except Exception:                       # no cv2.ipp in this build
+        return False
+
+
+def require_generic_opencv() -> None:
+    """`use_generic_opencv()` or refuse to run.  Raises RuntimeError.
+
+    Downgrading this to a warning was wrong.  The two dispatches do not merely
+    round differently: on an all-127 7x7 against the §4.6 ramp patch, IPP
+    returns an all-zero map and the generic path returns a 5.49e-08 peak, from
+    identical inputs.  So on an IPP build the cv2 cross-check is not a weaker
+    check of the same function, it is a check of a different one, and the
+    epsilon numbers §4.6 quotes are not reproducible from the run that printed
+    them.
+
+    The written goldens would in fact be byte-identical either way — they come
+    from oracle 1, exact integer arithmetic with no cv2 in the path.  Failing
+    anyway is the point: the manifests are only worth what their cross-check is
+    worth, and shipping them from a run whose independent oracle was silently a
+    different function is how an unverified claim gets laundered into the
+    contract.  A generator that cannot check its own output should produce
+    none.
+
+    Remedy, in order: this needs `cv2.ipp.setUseIPP(False)` to take, so first
+    check the build actually exposes `cv2.ipp` (`_ipp_state()` prints
+    `unavailable` if not); failing that, set `OPENCV_IPP=disabled` in the
+    environment BEFORE cv2 is imported, which OpenCV honours at dispatch-table
+    construction and cannot be overridden from Python afterwards.
+    """
+    if use_generic_opencv():
+        return
+    raise RuntimeError(
+        f"refusing to generate: OpenCV's IPP dispatch could not be disabled "
+        f"and confirmed off (IPP is {_ipp_state()}). The cv2 cross-check "
+        f"oracle would then run a different function from the one §4.6's "
+        f"roundoff bound describes — the two disagree on flat input, so this "
+        f"is not a tolerance question. Set OPENCV_IPP=disabled in the "
+        f"environment before importing cv2 and re-run.")
+
+
+def selftest_opencv_epsilon():
+    """Test §4.6's claim about OpenCV's `templNorm < DBL_EPSILON` branch.
+
+    One direction is load-bearing and is ASSERTED: a legal non-flat template
+    must land far above `DBL_EPSILON`, or the host's `min == max` rejection and
+    OpenCV's epsilon test would be judging different sets of inputs.  §4.6
+    bounds the roundoff at under 1e-10 against a legal floor of 4.822298e-05,
+    so this is a proof being checked, not a hope — but the proof describes the
+    GENERIC path, so IPP is disabled and the disable is verified FIRST, and the
+    self-test refuses to run at all if that confirmation does not come.  There
+    is no "measured, not proved" mode here any more: it produced a run that
+    printed PASS beside numbers no proof covered.
+
+    The other direction is NOT asserted, only reported: a mathematically flat
+    template may or may not reach OpenCV's branch, that is float cancellation
+    rather than contract, and nothing here may depend on it.  Printing the
+    counts means a cv2 version bump shows up in the log instead of silently
+    invalidating the numbers quoted in §4.6.
+    """
+    eps = sys.float_info.epsilon
+    ipp_before = _ipp_state()
+    require_generic_opencv()
+    print(f"\n§4.6 OpenCV epsilon self-test (cv2 {cv2.__version__}, "
+          f"DBL_EPSILON = {eps:.6e})")
+    print(f"  IPP: {ipp_before} -> {_ipp_state()} "
+          f"(generic path confirmed — the bound applies)")
+
+    def ramp_scores(tag: str) -> None:
+        """What a flat template actually scores, WITH the patch attached.
+
+        The patch is the one §4.6 names: a 10x10 crop of a 16x16 ramp,
+        `p[r][c] = 16r + c`.  A score quoted without its patch is meaningless —
+        and the two rows below also show the dispatch mattering: an all-127 7x7
+        gives an all-zero map under IPP and a 5.49e-08 peak on the generic path,
+        from identical inputs.  That is the concrete reason the oracle pins the
+        path instead of trusting whichever one the build dispatches to.
+        """
+        ramp = np.arange(256, dtype=np.uint8).reshape(16, 16)[:10, :10].copy()
+        for fill in (2, 127):
+            t = np.full((7, 7), fill, np.uint8)
+            r = cv2.matchTemplate(ramp, t, cv2.TM_CCOEFF_NORMED)
+            print(f"  [info] {tag} flat 7x7 all-{fill:<3d} vs the §4.6 ramp "
+                  f"patch: peak {float(r.max()):.6e}, min {float(r.min()):.6e}")
+
+    def check(tag: str, fatal: bool) -> int:
+        """Minimum-nonflat templates: above epsilon, and inside the bound.
+
+        `fatal` is not just "does a violation raise" — it is whether a bound
+        covers these numbers at all.  Only the generic path has one, so only
+        the generic path may print PASS.  An IPP row that happens to satisfy
+        the same inequality is still an unbounded measurement and prints
+        `[info]`, because a reader scanning for PASS/FAIL cannot otherwise tell
+        which of the two dispatches produced the line.
+        """
+        bad = 0
+        for tw, th in ((4, 4), (7, 7), (40, 30), (212, 87), (216, 96)):
+            t = np.full((th, tw), 127, np.uint8)
+            t[th - 1, tw - 1] = 128
+            n = tw * th
+            tn = float(cv2.meanStdDev(t)[1][0][0] ** 2)
+            exact = (n - 1) / n ** 2
+            err = abs(tn - exact)
+            ok = tn > eps and err <= 1e-10
+            if not ok and fatal:
+                raise RuntimeError(
+                    f"{tw}x{th} minimum-nonflat template on the generic path: "
+                    f"cv2 templNorm {tn!r} vs exact {exact!r} (err {err:.3e}, "
+                    f"above eps: {tn > eps}). §4.6's surviving direction rests "
+                    f"on this; re-derive the bound before trusting it.")
+            bad += not ok
+            print(f"  [{('PASS' if ok else 'FAIL') if fatal else 'info'}] "
+                  f"{tag} {tw:3d}x{th:<3d} non-flat: templNorm {tn:.6e} "
+                  f"(exact {exact:.6e}, err {err:.1e}) — {tn / eps:.2e} x eps")
+        return bad
+
+    try:
+        check("generic  ", fatal=True)
+
+        # REPORTED ONLY: which flat templates reach the early return.  The
+        # sizes are exactly the ones §4.6 quotes, so every number in the
+        # contract is reproducible from this run.
+        for tw, th in ((4, 4), (7, 7), (8, 8), (40, 30), (216, 96)):
+            miss = [f for f in range(256)
+                    if not float(cv2.meanStdDev(np.full((th, tw), f, np.uint8))[1][0][0] ** 2) < eps]
+            print(f"  [info] {tw:3d}x{th:<3d} flat: {len(miss):3d}/256 fills "
+                  f"miss the < DBL_EPSILON branch"
+                  + (f" (e.g. {miss[:4]})" if miss else ""))
+        print("  [info] the misses are correlated as ordinary templates and "
+              "score patch-dependent values; §4.6 depends on none of it")
+
+        ramp_scores("generic  ")
+
+        # The IPP path is what a caller who does NOT disable it will execute.
+        # Measured, never asserted — a bound was not derived for it, so every
+        # line this produces is tagged [info] whatever the numbers come out to.
+        try:
+            cv2.ipp.setUseIPP(True)
+            if cv2.ipp.useIPP():
+                print("  [info] re-checking with IPP ENABLED — measured "
+                      "only, outside the proof; all rows below are [info] "
+                      "even where the generic bound would have been met:")
+                check("IPP      ", fatal=False)
+                ramp_scores("IPP      ")
+        except Exception as exc:                       # noqa: BLE001
+            print(f"  [info] could not re-enable IPP to measure it: {exc}")
+    finally:
+        # Leave the process on the generic path: main() wants it for the
+        # cross-check oracle, and a self-test must not silently change it.
+        # Best-effort here on purpose — raising out of a `finally` would
+        # replace whatever real failure sent us here.  main() re-confirms
+        # afterwards, which is where a failed restore has to be caught.
+        use_generic_opencv()
+
+
+def _ipp_state() -> str:
+    try:
+        return f"useIPP={cv2.ipp.useIPP()} ({cv2.ipp.getIppVersion()})"
+    except Exception:                                  # noqa: BLE001
+        return "unavailable"
 
 
 def check_envelope(patch, templ):
@@ -525,6 +784,18 @@ def write_suite(cases, name, out=Path(".")):
 
 
 def main():
+    # The cv2 cross-check oracle runs on the generic path, so it is the same
+    # arithmetic on every machine and the §4.6 bound describes what actually
+    # executed.  Cannot affect a written golden (those come from oracle 1) —
+    # see require_generic_opencv() for why it is fatal regardless.
+    require_generic_opencv()
+    selftest_flat_template_rejected()
+    selftest_opencv_epsilon()
+    # The epsilon self-test deliberately turns IPP back on to measure it, and
+    # restores the generic path in a `finally` that cannot raise.  Everything
+    # below cross-checks against cv2, so confirm the restore actually took
+    # before a single case is built.
+    require_generic_opencv()
     csim = build_csim()
     cosim = build_cosim(csim)
     write_suite(csim, "csim")

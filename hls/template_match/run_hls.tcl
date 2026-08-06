@@ -23,15 +23,20 @@ open_solution -reset "solution1"
 set_part $part_number
 create_clock -period 5ns -name default   ;# 200 MHz — see the timing note below
 
-# C simulation: full manifest suite, score AND exact-location asserts.
+# C simulation: full manifest suite (23 cases), score AND exact-location
+# asserts, preceded by the §4.6 direct DUT tests and width checks.
 csim_design
 
-# The same vectors sw/tme_standalone_bringup.py sends to the board: the cosim
-# five plus the 820x307 stress-max-envelope case.  Running them here is cheap
-# insurance — it means a board failure is a hardware finding rather than a bad
-# golden, and it is the ONLY pre-silicon check the 251,740-byte §3.1 case gets.
-# (It deliberately does not go to cosim: ~190M cycles is hours of xsim, and an
-# RTL simulation contains no DMA, so it cannot test a DMA length bound anyway.)
+# The same vectors sw/tme_standalone_bringup.py sends to the board: the seven
+# cosim cases plus BOTH 820x307 stress cases, 9 in all.  Running them here is
+# cheap insurance — it means a board failure is a hardware finding rather than a
+# bad golden, and it is the ONLY pre-silicon check the 251,740-byte §3.1 case
+# gets.
+# (It deliberately does not go to cosim: the envelope case is 372-411M cycles
+# -- see tme_generate_golden.py's header for where that bracket comes from --
+# against the 2,269,854 cycles the WHOLE cosim suite measured, so it is hours
+# of xsim on its own.  And an RTL simulation contains no DMA, so it cannot test
+# a DMA length bound anyway.)
 csim_design -argv "hw"
 
 # Synthesize to RTL and check resource/timing estimates
@@ -63,7 +68,9 @@ cosim_design -rtl verilog -argv "cosim"
 #      score AND exact location per case; the suite covers a unique nonzero
 #      match, the final result row/column (§4.4), patch==template equality,
 #      and the 820x307/216x96 maximum-storage case at near-maximum window
-#      energies.  (The rewrite this validated also replaced arithmetic that
+#      energies.  Current counts: csim 23/23, csim -argv "hw" 9/9, RTL cosim
+#      7/7, plus the §4.6 direct tests and width witnesses in every suite.
+#      (The rewrite this validated also replaced arithmetic that
 #      wrapped at real magnitudes — the old ap_fixed accumulators and Q16.16
 #      normalisation only ever passed csim because the sole golden was an
 #      all-zero patch.)  A third suite, selected by -argv "hw" above, carries

@@ -39,10 +39,11 @@ that only silicon can test:
                        without this the top 212 entries of the column
                        accumulators are never written.
 
-Three cases also exist to make `result_score` worth reading: it crosses
+TWO cases also exist to make `result_score` worth reading: it crosses
 AXI4-Lite as raw IEEE-754 bits that this script reinterprets, and before
 `equality-negative` (-0.73) and `equality-different` (0.0096) were added every
 score in the suite was exactly 0.0 or 1.0 — no sign bit, one mantissa bit.
+Those two are still the only ones: the other seven hw scores are 0.0 or 1.0.
 
 The same bytes run through csim (`csim_design -argv "hw"`), so a failure here
 is a hardware finding rather than a bad golden.
@@ -104,6 +105,21 @@ AP_DONE  = 1 << 1
 AP_IDLE  = 1 << 2
 AP_READY = 1 << 3
 
+# AXI DMA register offsets within one channel's block (PG021 Table 2-1), used
+# ONLY on the teardown path — see `close()`.  PYNQ's channel object exposes the
+# `_mmio` and `_offset` these are applied to; going under the driver is
+# deliberate there, because `channel.stop()` busy-spins without a deadline.
+DMA_DMACR    = 0x00       # bit0 RS (run/stop), bit2 Reset (self-clearing)
+DMA_DMASR    = 0x04       # bit0 Halted, bit1 Idle
+DMACR_RS     = 1 << 0
+DMACR_RESET  = 1 << 2
+DMASR_HALTED = 1 << 0
+
+# Buffers whose DMA could not be proved halted. Holding a reference keeps
+# `PynqBuffer.__del__` from calling `freebuffer()` while this process lives.
+# That is a DELAY, not a quarantine — see `close()`.
+_UNSAFE_TO_FREE: list = []
+
 # Contract §4.1 / §3 envelope.  Must track MAX_* in hls/template_match/tme_top.h
 # and PE_MAX_PATCH_* in hls/patch_extract/patch_extract_core.h.
 MAX_PATCH_W, MAX_PATCH_H = 820, 307
@@ -115,9 +131,13 @@ MIN_TEMPL_DIM = 4
 # BD edit can raise it to 26 bits without touching anything in this repo.
 DMA_MAX_BYTES_DEFAULT = 262143
 
-# The stress case runs ~370M cycles at 31.25 MHz — roughly 12 s of wall clock,
-# before any PS overhead.  A 5 s timeout borrowed from the extractor's driver
-# would report a hang on a perfectly healthy run.
+# stress-max-envelope is 372-411M cycles — 11.9-13.2 s at 31.25 MHz before any
+# PS overhead.  (Bracket, not a point: it is arithmetic off the synthesis
+# report's fixed sub-loop latencies; see tme_generate_golden.py's header for
+# the derivation and for why fitting the measured cosim latencies instead does
+# not work.  Nothing has run on silicon yet, so no measured figure exists.)
+# A 5 s timeout borrowed from the extractor's driver would report a hang on a
+# perfectly healthy run; 120 s clears even the top of the bracket 9x.
 DEFAULT_TIMEOUT_S = 120.0
 
 SCORE_TOL = 0.005        # matches MAX_SCORE_ERR in tme_tb.cpp
@@ -188,6 +208,119 @@ def validate_geometry(patch_w: int, patch_h: int, templ_w: int, templ_h: int,
                     f"exceeds the single-transfer bound of {dma_max_bytes:,} B "
                     f"(§3.1)")
     return errs
+
+
+def validate_template_content(templ, templ_w: int, templ_h: int) -> list[str]:
+    """Return reasons this template's PIXELS must not be sent to the matcher.
+
+    Geometry is `validate_geometry`'s job.  This is about content, and there is
+    exactly one content rule — contract §4.6:
+
+        dt = N·ΣT² − (ΣT)²   must be > 0,
+
+    i.e. the template must not be flat.  `min == max` is the *exact* test, not
+    an approximation of one: `dt = ½ ΣᵢΣⱼ (Tᵢ − Tⱼ)²`, which is zero if and
+    only if every pixel is equal.  No threshold and no tolerance is involved,
+    and none should be introduced — the smallest legal nonzero `dt` is 15 (a
+    4×4 template with one pixel one grey level off), and that template is
+    perfectly legal input.
+
+    A flat template is illegal input, not a degenerate case with a defined
+    answer:
+
+      - `tme_top` returns 0.0 for it — a defensive fallback that only keeps
+        0/0 out of `result_score`, explicitly NOT a contract value.
+      - OpenCV may return **ones**, or a patch-dependent numerical result
+        **including zero**; no contractual agreement exists on this illegal
+        domain.  Its `templNorm < DBL_EPSILON` early return fills the ENTIRE
+        result map with ones (historical behaviour: OpenCV issue #5688), but
+        `templNorm` is a double-scaled variance, so a mathematically flat
+        template does not always reach that branch: a 7x7 filled with 2
+        computes `templNorm = 4.44e-16 > DBL_EPSILON` and gets correlated like
+        any other template.  What that then scores is **patch-dependent** —
+        §4.6 pins one patch and gets ~5.5e-08 from an all-2 template and
+        exactly 0.0 from an all-127 one — so no score is quoted here without
+        the patch that produced it.  Measured on the OpenCV installed in
+        `hls/.venv` (5.0.0); see §4.6.
+
+    So a DUT 0.0 that happens to equal a cv2 0.0 here is a coincidence, not
+    agreement, and nothing may be built on it.  Note which side of this is
+    exact: `min == max` decides on the integers and is right every time, while
+    OpenCV's epsilon test is the one that can be fooled.  That is an argument
+    for doing the rejection here, not for deferring to cv2.
+
+    **Call this AFTER the final resize / binarisation / cropping**, on the
+    exact contiguous byte buffer that will be handed to the DMA.  Validating a
+    pre-resize template proves nothing: downscaling a two-pixel stroke can
+    produce a flat result from a perfectly non-flat source, and a crop can cut
+    a window that contains only background.
+
+    The buffer must be **`bytes`**, and nothing else is accepted:
+
+      - a `bytearray` can change between this check and the transfer, which
+        would make this function decorative;
+      - a *read-only* `memoryview` proves nothing either.  `readonly` says this
+        view cannot write, not that the memory is immutable —
+        `memoryview(bytearray(...)).toreadonly()` passes every flag test while
+        the underlying `bytearray` stays writable through its own name;
+      - a multi-dimensional `memoryview` breaks the checks themselves rather
+        than failing them: `len()` returns the first dimension instead of the
+        byte count, and `min()`/`max()` raise `NotImplementedError`.
+
+    The production path (`load_manifest` -> slice of a `bytes` blob ->
+    `run_case`) is `bytes` end to end, so this costs the caller nothing.
+    """
+    errs: list[str] = []
+
+    if not isinstance(templ, bytes):
+        errs.append(
+            f"template buffer is {type(templ).__name__}, not bytes — only an "
+            f"immutable bytes object can be validated and then DMA'd with the "
+            f"guarantee that the two saw the same pixels. A read-only "
+            f"memoryview does not qualify: it can alias a mutable bytearray, "
+            f"and a multi-dimensional one would break len()/min()/max() here "
+            f"(§4.6)")
+        return errs
+
+    n = len(templ)
+    expect = templ_w * templ_h
+    if n == 0:
+        errs.append("template buffer is empty — there is nothing to match "
+                    "against, and the core would read beats that never arrive")
+    elif n != expect:
+        errs.append(
+            f"template buffer is {n} B but geometry {templ_w}x{templ_h} says "
+            f"{expect} B — the core reads exactly templ_w*templ_h beats and "
+            f"ignores TLAST, so a padded or short buffer either desynchronises "
+            f"the stream or silently matches against the wrong pixels")
+    if n and min(templ) == max(templ):
+        errs.append(
+            f"flat template: all {n} pixels are {min(templ)}, so "
+            f"dt = N·ΣT² − (ΣT)² = 0. Illegal input (§4.6) — tme_top would "
+            f"return 0.0 and cv2 may return ones or a patch-dependent value, "
+            f"including zero; there is no agreed answer on this domain. "
+            f"Reject before the first DMA.")
+    return errs
+
+
+def validate_template_bank(cases, templs) -> list[tuple[int, str, list[str]]]:
+    """Content-validate every template in a manifest bank.
+
+    Returns `[(index, tag, reasons), ...]` for each offending case; an empty
+    list means the whole bank is safe to launch.  Whole-bank, not per-case, and
+    called before the first DMA or `ap_start`: discovering a flat entry after
+    five cases have already run leaves the streams in a state nothing here can
+    reason about, and the run has already been meaningless for one candidate.
+
+    Keyed by index rather than tag so a duplicated tag cannot hide a rejection.
+    """
+    bad: list[tuple[int, str, list[str]]] = []
+    for c in cases:
+        templ = templs[c.templ_off:c.templ_off + c.templ_bytes]
+        errs = validate_template_content(templ, c.tw, c.th)
+        if errs:
+            bad.append((c.index, c.tag, errs))
+    return bad
 
 
 def check_result(score: float, x: int, y: int,
@@ -332,9 +465,9 @@ class TmeStandalone:
         # Both are silent, so check rather than trust.
         if not (timeout_s > 0) or timeout_s in (float("inf"),):
             raise ValueError(
-                f"timeout {timeout_s!r} must be finite and positive; the "
-                f"stress cases need ~12 s at 31.25 MHz, so the default is "
-                f"{DEFAULT_TIMEOUT_S:g}")
+                f"timeout {timeout_s!r} must be finite and positive; "
+                f"stress-max-envelope needs 12-13 s at 31.25 MHz, so the "
+                f"default is {DEFAULT_TIMEOUT_S:g}")
         self.timeout_s = float(timeout_s)
         self.ol = Overlay(overlay_path)
 
@@ -532,23 +665,34 @@ class TmeStandalone:
                  pw: int, ph: int, tw: int, th: int):
         """Configure, start, wait, read back.  Returns (score, x, y, seconds).
 
-        Raises ValueError on illegal geometry BEFORE touching `ap_start` —
-        that is the whole point of `validate_geometry`, since the core has no
-        rejection path of its own.
+        Raises ValueError on illegal geometry or illegal template content
+        BEFORE touching `ap_start` — that is the whole point of
+        `validate_geometry` and `validate_template_content`, since the core has
+        no rejection path of its own.
+
+        `main()` validates the entire bank before the first transfer, so on
+        that path these checks can only pass.  They are repeated here for
+        direct callers (a notebook, a bisect script) that never went through
+        the manifest at all, and because the object validated here is the exact
+        one copied into the DMA buffer a few lines below.
         """
         errs = validate_geometry(pw, ph, tw, th, self.dma_max)
         if errs:
             raise ValueError(
                 f"refusing to start the matcher on {pw}x{ph} / {tw}x{th}:\n"
                 + "\n".join(f"    - {e}" for e in errs))
+        # Content check on the same immutable buffer that is DMA'd below; this
+        # subsumes the template length check (§4.6).
+        errs = validate_template_content(templ, tw, th)
+        if errs:
+            raise ValueError(
+                f"refusing to start the matcher on this {tw}x{th} template:\n"
+                + "\n".join(f"    - {e}" for e in errs))
         if len(patch) != pw * ph:
             raise ValueError(f"patch slice is {len(patch)} B, geometry says "
                              f"{pw * ph} B — the core reads exactly "
                              f"patch_w*patch_h beats and ignores TLAST, so a "
                              f"mismatch desynchronises every later case")
-        if len(templ) != tw * th:
-            raise ValueError(f"template slice is {len(templ)} B, geometry says "
-                             f"{tw * th} B")
 
         ctrl = self._r(REG_AP_CTRL)
         if not ctrl & AP_IDLE:
@@ -597,6 +741,11 @@ class TmeStandalone:
         # has consumed every beat of both streams — so by the time it is set,
         # a channel that is still busy is genuinely still busy, which is the
         # "we sent more than the core wanted" case.
+        #
+        # `ap_idle` has exactly the ambiguity `ap_done` does not, for the same
+        # reason the channels do: the core is idle before it starts as well as
+        # after it finishes.  `_wait_done` therefore treats idle as completion
+        # only after it has seen the core busy.
         deadline = t0 + self.timeout_s
         self._wait_done(deadline)
         self._wait_channel(self.ch_patch, deadline, "patch MM2S", n_p)
@@ -646,35 +795,101 @@ class TmeStandalone:
         # Let PYNQ settle its own per-transfer bookkeeping now the channel is
         # idle, rather than leaving a transfer perpetually "outstanding" from
         # the driver's point of view across the whole suite.
+        #
+        # NOT suppressed.  This call is made only after DMASR has already
+        # reported the channel idle, so there is no expected exception left for
+        # it to raise: if it raises anyway, PYNQ and the hardware disagree about
+        # what just happened, and every number this case is about to report was
+        # read under that disagreement.  Swallowing it would turn a driver bug
+        # or a half-finished transfer into a silently passing case.
         try:
             channel.wait()
-        except Exception:                              # noqa: BLE001
-            pass
+        except Exception as exc:                       # noqa: BLE001
+            raise RuntimeError(
+                f"{label}: the channel reported idle, but channel.wait() then "
+                f"raised {type(exc).__name__}: {exc}. PYNQ's view of the "
+                f"transfer and the DMA's status register disagree — treat this "
+                f"case's result as unusable rather than as a pass."
+            ) from exc
 
     def _wait_done(self, deadline: float) -> None:
-        """Poll AP_CTRL until ap_done or ap_idle.
+        """Poll AP_CTRL until ap_done, or until an idle the core can be shown
+        to have REACHED rather than never left.
 
         ap_done is Clear-on-Read, so the first poll that observes it also
         consumes it — hence the latch.  Accepting ap_idle as well means a run
         whose done bit was consumed by something else (an interrupt handler,
         an operator poking register_map from a notebook) still terminates.
+
+        But ap_idle ALONE is not completion.  The core is idle both before it
+        has started and after it has finished, and this loop begins one
+        register write after `ap_start`; taking the first idle at face value
+        reports success for a run that never began — a dropped `ap_start`, a
+        core held in reset, an overlay whose CTRL slave is not the IP we think
+        it is.  Each of those would then be "confirmed" by reading result
+        registers left over from the previous case.  So idle ends the wait only
+        once some poll has observed the core BUSY.  A run short enough to start
+        and finish between two polls is still caught, by the latched ap_done —
+        which is why the two conditions are not redundant.
+
+        Both DMAs are checked on every pass.  A channel that has taken a decode
+        or slave error stops moving beats without telling anyone, and the core
+        then blocks in `patch_stream.read()` for as long as the timeout allows;
+        without this the symptom is a timeout here and the cause is two layers
+        away in the block design.
         """
         seen_done = False
+        seen_busy = False
         while True:
             ctrl = self._r(REG_AP_CTRL)
             if ctrl & AP_DONE:
                 seen_done = True
-            if seen_done or (ctrl & AP_IDLE):
+            if not ctrl & AP_IDLE:
+                seen_busy = True
+            if seen_done or (seen_busy and (ctrl & AP_IDLE)):
                 return
+            # Before sleeping: a DMA error explains a stall that would
+            # otherwise only show up as the timeout below.
+            self._check_channel_error(self.ch_patch, "patch MM2S")
+            self._check_channel_error(self.ch_templ, "template MM2S")
             if time.monotonic() > deadline:
+                if not seen_busy:
+                    raise TimeoutError(
+                        f"the core never left idle within {self.timeout_s:g} s "
+                        f"(AP_CTRL=0x{ctrl:08X}, patch DMA idle="
+                        f"{self._channel_idle(self.ch_patch)}, template DMA "
+                        f"idle={self._channel_idle(self.ch_templ)}). ap_start "
+                        f"was written but the core was never seen out of idle: "
+                        f"either it never started (a dropped ap_start, a core "
+                        f"in reset, or a CTRL slave that is not this IP), or it "
+                        f"ran to completion between two polls AND something "
+                        f"else consumed the Clear-on-Read ap_done first. The "
+                        f"result registers still hold the previous case either "
+                        f"way, so no value read now would mean anything.")
                 raise TimeoutError(
                     f"ap_done never rose within {self.timeout_s:g} s "
-                    f"(AP_CTRL=0x{ctrl:08X}). The core is blocked in a stream "
-                    f"read, wanting beats that never arrived. Either a "
-                    f"transfer was truncated (what §3.1's bound looks like "
-                    f"from the PS), or a DMA never started at all — check "
-                    f"that both channels left the idle state.")
+                    f"(AP_CTRL=0x{ctrl:08X}, patch DMA idle="
+                    f"{self._channel_idle(self.ch_patch)}, template DMA idle="
+                    f"{self._channel_idle(self.ch_templ)}). The core started "
+                    f"and is now blocked in a stream read, wanting beats that "
+                    f"never arrived. Either a transfer was truncated (what "
+                    f"§3.1's bound looks like from the PS), or a DMA stopped "
+                    f"early — a channel still reporting busy above is the one "
+                    f"to look at.")
             time.sleep(0.001)
+
+    @staticmethod
+    def _channel_idle(channel) -> object:
+        """`channel.idle` for a diagnostic message, never raising.
+
+        Only used while building an error string: a driver that cannot read a
+        DMA status register must still be able to report the failure that got
+        it there.
+        """
+        try:
+            return bool(channel.idle)
+        except Exception as exc:                       # noqa: BLE001
+            return f"unreadable ({type(exc).__name__})"
 
     @staticmethod
     def _check_channel_error(channel, label: str) -> None:
@@ -694,50 +909,167 @@ class TmeStandalone:
                 f"internal, 5 slave, 6 decode). The transfer did not complete "
                 f"and the core's stream is now short.")
 
-    def close(self) -> None:
-        """Halt both channels BEFORE releasing the buffers they read.
+    @staticmethod
+    def _halt_channel(channel, label: str, timeout_s: float = 0.5) -> bool:
+        """Bounded low-level halt.  True ONLY on a positive register read-back.
 
-        `freebuffer()` hands CMA pages back to the pool. A channel that is
-        still mid-transfer keeps reading those physical addresses — and
-        mid-transfer is exactly the state a timeout leaves it in, which is the
-        one path where `close()` matters most. Stopping first is not tidiness;
-        without it a timeout can turn into memory corruption somewhere
-        unrelated, long after this script exits.
+        Deliberately not `channel.stop()`: PYNQ clears RS and then spins on
+        `while self.running: pass` with no deadline, so a DMA that will not halt
+        hangs teardown instead of reporting it — and teardown is reached exactly
+        when something has already gone wrong.
 
-        If a channel cannot be stopped, the buffers are deliberately LEAKED.
-        Leaking a few hundred KB of CMA until reboot is strictly better than
-        returning pages the PL may still be writing through.
+        Clearing RS is a *request*; this waits for the acknowledgement. If it
+        does not come, it issues a soft reset (`DMACR.Reset`) and waits again.
+        On **neither** path is `DMASR.Halted` alone sufficient evidence. Per
+        PG021 a soft reset does not abort an AXI transaction the engine already
+        has in flight: it lets that transaction complete gracefully, and
+        `DMACR.Reset` stays asserted until it does. So a read of `Halted == 1`
+        with `Reset` still set can mean "still draining a read that targets the
+        very buffer we are about to free". Quiescence therefore requires
+        **both** `DMACR.Reset == 0` (the bit self-cleared) **and**
+        `DMASR.Halted == 1`, on every path that can return True.
+
+        Applying that to the RS=0 path too is not symmetry for its own sake.
+        The engine this runs against is not necessarily in its power-on state:
+        an earlier `close()` — or an earlier call on the same channel — may
+        have left a reset in flight, and a stuck reset holds `Halted` high
+        forever. A second call that tested `Halted` alone would read that
+        leftover 1 and report a verified halt, so the *first* call correctly
+        refusing to free the buffers would be undone by the next one. Pinned by
+        the repeated-call case in `_selftest_halt_path`.
         """
+        mmio = getattr(channel, "_mmio", None)
+        base = getattr(channel, "_offset", None)
+        if mmio is None or base is None:
+            return False        # cannot verify => must not claim quiescence
+
+        def quiescent() -> bool:
+            if not mmio.read(base + DMA_DMASR) & DMASR_HALTED:
+                return False
+            if mmio.read(base + DMA_DMACR) & DMACR_RESET:
+                return False    # reset still in progress; not yet quiescent
+            return True
+
+        def wait_quiescent() -> bool:
+            end = time.monotonic() + timeout_s
+            while time.monotonic() < end:
+                if quiescent():
+                    return True
+                time.sleep(0.001)
+            return quiescent()
+
+        try:
+            cr = mmio.read(base + DMA_DMACR)
+            mmio.write(base + DMA_DMACR, cr & ~DMACR_RS)
+            if wait_quiescent():
+                return True
+            print(f"  {label} DMA did not halt on RS=0 within {timeout_s:g} s; "
+                  f"issuing DMACR.Reset")
+            mmio.write(base + DMA_DMACR, DMACR_RESET)
+            if wait_quiescent():
+                return True
+            print(f"  {label} DMA not quiescent {timeout_s:g} s after reset: "
+                  f"DMACR=0x{mmio.read(base + DMA_DMACR):08X} "
+                  f"DMASR=0x{mmio.read(base + DMA_DMASR):08X} "
+                  f"(need Reset=0 and Halted=1)")
+            return False
+        except Exception as exc:                       # noqa: BLE001
+            print(f"  {label} DMA halt could not be driven: "
+                  f"{type(exc).__name__}: {exc}")
+            return False
+
+    def _quarantine_buffers(self) -> None:
+        """Hold references so `PynqBuffer.__del__` cannot free the pages yet.
+
+        A DELAY, not a quarantine — see `close()` for why nothing stronger is
+        available from inside this process.
+        """
+        for buf in (getattr(self, "patch_buf", None),
+                    getattr(self, "templ_buf", None)):
+            if buf is not None:
+                _UNSAFE_TO_FREE.append(buf)
+
+    def close(self) -> bool:
+        """Bring both channels to a VERIFIED halt, then release their buffers.
+
+        Returns True only if both halts were verified.
+
+        `freebuffer()` hands CMA pages back to the pool. A channel still
+        mid-transfer keeps reading those physical addresses, and mid-transfer is
+        exactly the state a timeout leaves it in — the path where `close()`
+        matters most.
+
+        What this can and cannot promise, spelled out because an earlier version
+        of this docstring promised something it did not deliver:
+
+          - It CAN establish quiescence positively: RS cleared, then
+            `DMACR.Reset == 0` and `DMASR.Halted == 1` read back together,
+            bounded, with a soft reset as the fallback. When that read-back
+            succeeds, freeing is safe and the pages go back.
+          - It CANNOT protect the memory when quiescence is NOT established.
+            Skipping `freebuffer()` quarantines nothing: `PynqBuffer.__del__`
+            calls it when the object is collected, and process exit releases the
+            CMA pages regardless. **The old "deliberately leaked until reboot"
+            claim was false** — there is no leak to rely on, and code that
+            counted on one was counting on nothing.
+
+        So when the halt cannot be verified, the only honest actions are to hold
+        the buffers for as long as this process lives (a delay, which at least
+        does not hand them back early), to say plainly that the PL may still be
+        reading them, and to name the remedy the operator has to apply:
+        **reset the PL — reload the overlay — before anything else allocates
+        that memory.** This script will not do that itself: it does not know
+        what else in the design is live, and a blind PL reset is its own hazard.
+        """
+        halted_all = True
         for ch, label in ((getattr(self, "ch_patch", None), "patch"),
                           (getattr(self, "ch_templ", None), "template")):
             if ch is None:
                 continue
+            # Settle PYNQ's per-channel bookkeeping for a transfer that
+            # completed.  Raises if nothing was started, which is fine and
+            # expected on an early failure — but say so, so a teardown-time
+            # disagreement is not invisible the way it was in _wait_channel.
             try:
-                if not ch.idle:
-                    ch.stop()
-                else:
-                    # Settle PYNQ's per-channel bookkeeping for a transfer
-                    # that completed. Raises if nothing was started, which is
-                    # fine and expected on an early failure.
+                if ch.idle:
                     try:
                         ch.wait()
-                    except Exception:                  # noqa: BLE001
-                        pass
-            except Exception as exc:                   # noqa: BLE001
-                print(f"WARNING: could not stop the {label} DMA ({exc}). "
-                      f"NOT freeing the DMA buffers — they are leaked on "
-                      f"purpose, because handing that memory back while the "
-                      f"PL may still read it is the worse failure.")
-                return
-
-        for buf in (getattr(self, "patch_buf", None),
-                    getattr(self, "templ_buf", None)):
-            if buf is None:
-                continue
-            try:
-                buf.freebuffer()
+                    except Exception as exc:           # noqa: BLE001
+                        print(f"  note: {label} channel.wait() at close raised "
+                              f"{type(exc).__name__}: {exc} (expected if no "
+                              f"transfer was ever started on it)")
             except Exception:                          # noqa: BLE001
-                pass
+                pass        # `idle` unreadable; the verified halt below decides
+
+            if not self._halt_channel(ch, label):
+                halted_all = False
+
+        if halted_all:
+            for buf in (getattr(self, "patch_buf", None),
+                        getattr(self, "templ_buf", None)):
+                if buf is None:
+                    continue
+                try:
+                    buf.freebuffer()
+                except Exception:                      # noqa: BLE001
+                    pass
+            return True
+
+        self._quarantine_buffers()
+        print("\n" + "!" * 72)
+        print("WARNING: a DMA channel could not be proved halted "
+              "(DMACR.Reset=0 and DMASR.Halted=1 never read back together).")
+        print("The PL may still be issuing AXI reads against the DMA buffers. "
+              "This script is")
+        print("holding those buffers so they are not handed back early, but "
+              "that is a DELAY, not")
+        print("a quarantine: PynqBuffer.__del__ and process exit both release "
+              "the CMA pages,")
+        print("and nothing in this process can prevent it.")
+        print("REMEDY: reset the PL (reload the overlay) before anything else "
+              "allocates CMA.")
+        print("!" * 72)
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -745,10 +1077,11 @@ class TmeStandalone:
 # ---------------------------------------------------------------------------
 
 def selftest() -> int:
-    """Exercise validate_geometry without PYNQ.
+    """Exercise validate_geometry and validate_template_content without PYNQ.
 
-    The validator is the only thing standing between a bad descriptor and
-    silent BRAM corruption, and it is pure Python — so it should not be a
+    The validators are the only thing standing between a bad descriptor and
+    silent BRAM corruption, or between a flat template and a result nobody can
+    interpret (§4.6) — and both are pure Python, so neither should be a
     function only the board can test.
     """
     print("validate_geometry self-test")
@@ -781,7 +1114,15 @@ def selftest() -> int:
     # §3.1 specifically: the envelope must be legal and one byte more must not
     # be, at the recorded bound.  This is the check that fails if anyone
     # "rounds up the envelope for safety".
-    assert not validate_geometry(820, 307, 216, 96), "820x307 must be legal"
+    #
+    # An explicit check, not `assert`: this file is run with `python -O` as
+    # part of its acceptance, and an assert would make that run test less than
+    # the unoptimised one while still printing PASS.
+    envelope_errs = validate_geometry(820, 307, 216, 96)
+    ok = not envelope_errs
+    print(f"  [{'PASS' if ok else 'FAIL'}] 820x307 / 216x96 is legal"
+          + ("" if ok else f" -> {envelope_errs}"))
+    failures += not ok
     over = validate_geometry(820, 320, 216, 96)
     ok = any("§3.1" in e or "patch_h" in e for e in over)
     print(f"  [{'PASS' if ok else 'FAIL'}] §3.1 bound rejects an oversized "
@@ -798,8 +1139,338 @@ def selftest() -> int:
           f"envelope rejects 820x307 (251,740 B)")
     failures += not ok
 
+    failures += _selftest_template_content()
+    failures += _selftest_halt_path()
+
     print(f"\n{'SELF-TEST PASSED' if not failures else f'SELF-TEST FAILED: {failures}'}")
     return 0 if not failures else 1
+
+
+class _FakeDmaMmio:
+    """A DMA channel's register block, for testing the teardown halt off-board.
+
+    Models only what `_halt_channel` touches: DMACR at `base`, DMASR at
+    `base + 4`, and the ways a real engine can and cannot come to rest.
+
+    `reset_self_clears=False` is the important one: it models an engine that
+    raises `Halted` while `DMACR.Reset` stays asserted — a reset still draining
+    an in-flight AXI transaction, per PG021 — which must NOT be accepted as
+    quiescent, because that transaction can still be reading the buffer.
+
+    `DMACR.Reset` is modelled as genuinely self-clearing hardware: once a reset
+    is in flight it reads 1 until the reset completes, and writing 0 to that bit
+    does not clear it. That detail is what keeps the repeated-call case honest —
+    a fake where the halt path could scrub the bit itself would let a stuck
+    reset look resolved on the second call for reasons no real engine offers.
+    """
+
+    def __init__(self, base: int = 0, halt_on_rs: bool = True,
+                 halt_on_reset: bool = True, reset_self_clears: bool = True):
+        self.base = base
+        self.halt_on_rs = halt_on_rs
+        self.halt_on_reset = halt_on_reset
+        self.reset_self_clears = reset_self_clears
+        self.regs = {base + DMA_DMACR: DMACR_RS, base + DMA_DMASR: 0}
+        self.reset_seen = False
+        self.reset_in_flight = False
+
+    def read(self, off: int) -> int:
+        return self.regs.get(off, 0)
+
+    def write(self, off: int, val: int) -> None:
+        if off != self.base + DMA_DMACR:
+            self.regs[off] = val
+            return
+        if val & DMACR_RESET:
+            self.reset_seen = True
+            if self.halt_on_reset:
+                self.regs[self.base + DMA_DMASR] |= DMASR_HALTED
+            # A reset that never completes stays in flight forever.
+            self.reset_in_flight = not self.reset_self_clears
+        elif not val & DMACR_RS and self.halt_on_rs:
+            self.regs[self.base + DMA_DMASR] |= DMASR_HALTED
+        # Self-clearing bit: readable as 1 only while the reset is in flight,
+        # and not writable to 0 by software.
+        val = val | DMACR_RESET if self.reset_in_flight else val & ~DMACR_RESET
+        self.regs[off] = val
+
+
+class _FakeChannel:
+    """Enough of a PYNQ send channel for `_halt_channel` and `close()`."""
+
+    def __init__(self, mmio, offset: int = 0):
+        self._mmio = mmio
+        self._offset = offset
+        self.waited = False
+
+    @property
+    def idle(self) -> bool:
+        return bool(self._mmio.read(self._offset + DMA_DMASR) & 0x02)
+
+    def wait(self) -> None:
+        self.waited = True
+
+
+class _FakeBuffer:
+    def __init__(self):
+        self.freed = False
+
+    def freebuffer(self) -> None:
+        self.freed = True
+
+
+def _exit_status(cases_ok: bool, halt_ok: bool) -> int:
+    """0 only if the cases passed AND teardown proved the DMAs halted.
+
+    A separate function so the second half of that rule is testable off the
+    board: a run that leaves a DMA in an unknown state is not a clean run, and
+    the way that stops being true is someone dropping `halt_ok` from the
+    expression while the printed warning still appears to cover it.
+    """
+    return 0 if (cases_ok and halt_ok) else 1
+
+
+def _selftest_halt_path() -> int:
+    """Exercise `_halt_channel` off the board.
+
+    This is the path that decides whether the CMA buffers may be handed back,
+    and it only ever runs when something has already gone wrong — so without
+    this it would be written once and first executed during a failure on real
+    hardware.  What each case pins:
+
+      - a halt is claimed ONLY on a `DMACR.Reset == 0` **and**
+        `DMASR.Halted == 1` read-back, never on the absence of an exception;
+      - an engine that ignores RS=0 still gets the soft reset, and the reset is
+        actually issued;
+      - an engine that ignores both is reported as unhalted **and the call
+        returns**, bounded — the failure that PYNQ's own `stop()` cannot report
+        because it spins forever;
+      - an engine whose reset never self-clears is unhalted on the first call
+        AND on every call after it, so a leftover `Halted == 1` cannot be
+        mistaken for fresh evidence;
+      - a channel whose registers are not reachable is unhalted by default,
+        because "cannot verify" must never read as "verified".
+
+    Non-zero `_offset` is used in one case: the S2MM block sits at 0x30, and an
+    offset bug would otherwise poke DMACR of the wrong channel.
+    """
+    print("\nDMA halt path self-test (close() / §CMA teardown)")
+    failures = 0
+    t = 0.05        # short deadline; the point is boundedness, not duration
+
+    def report(ok: bool, label: str, detail: str = "") -> int:
+        print(f"  [{'PASS' if ok else 'FAIL'}] {label}{detail}")
+        return 0 if ok else 1
+
+    mm = _FakeDmaMmio()
+    ok = TmeStandalone._halt_channel(_FakeChannel(mm), "fake", t) is True
+    failures += report(ok, "halts on RS=0, verified by DMASR.Halted read-back")
+
+    mm = _FakeDmaMmio(base=0x30, halt_on_rs=False)
+    got = TmeStandalone._halt_channel(_FakeChannel(mm, 0x30), "fake", t)
+    ok = (got is True and mm.reset_seen)
+    failures += report(ok, "ignores RS=0 -> soft reset issued and verified, at "
+                           "offset 0x30", "" if ok else f" -> {got}, "
+                           f"reset_seen={mm.reset_seen}")
+
+    mm = _FakeDmaMmio(halt_on_rs=False, halt_on_reset=False)
+    start = time.monotonic()
+    got = TmeStandalone._halt_channel(_FakeChannel(mm), "fake", t)
+    elapsed = time.monotonic() - start
+    ok = (got is False and mm.reset_seen and elapsed < 5.0)
+    failures += report(ok, f"never halts -> returns False in {elapsed:.2f}s "
+                           f"(bounded, unlike PYNQ's stop())",
+                       "" if ok else f" -> {got}")
+
+    # Halted goes high but DMACR.Reset never self-clears: a reset still
+    # draining an in-flight AXI read. Accepting this would free a buffer the
+    # engine is reading, which is the exact failure close() exists to prevent.
+    mm = _FakeDmaMmio(halt_on_rs=False, reset_self_clears=False)
+    got = TmeStandalone._halt_channel(_FakeChannel(mm), "fake", t)
+    halted_high = bool(mm.read(DMA_DMASR) & DMASR_HALTED)
+    reset_high = bool(mm.read(DMA_DMACR) & DMACR_RESET)
+    ok = (got is False and halted_high and reset_high)
+    failures += report(ok, "reset stuck (Halted=1 but Reset=1) -> False, not "
+                           "accepted on Halted alone",
+                       "" if ok else f" -> {got}, Halted={halted_high}, "
+                                     f"Reset={reset_high}")
+
+    # ...and calling it AGAIN on that same stuck engine must still say False.
+    # This is the case that fails if the Reset==0 requirement is applied only
+    # on the post-reset path: the second call enters with Halted already high
+    # from the first call's reset, satisfies a Halted-only test immediately,
+    # and returns True — quietly reversing the first call's correct refusal to
+    # free the buffers.  close() calls this once per channel, but a caller that
+    # retries teardown, or a second TmeStandalone against a channel a previous
+    # run left mid-reset, hits exactly this entry state.
+    got2 = TmeStandalone._halt_channel(_FakeChannel(mm), "fake", t)
+    still_reset = bool(mm.read(DMA_DMACR) & DMACR_RESET)
+    ok = (got2 is False and still_reset)
+    failures += report(ok, "reset stuck, called a SECOND time -> still False "
+                           "(a leftover Halted=1 is not evidence)",
+                       "" if ok else f" -> {got2}, Reset={still_reset}")
+
+    class _NoRegs:
+        pass
+
+    got = TmeStandalone._halt_channel(_NoRegs(), "fake", t)
+    ok = got is False
+    failures += report(ok, "unreachable registers -> False ('cannot verify' is "
+                           "not 'verified')", "" if ok else f" -> {got}")
+
+    # --- close() itself: the buffers must follow the halt, all or nothing ---
+    def make_dut(ok_patch: bool, ok_templ: bool):
+        dut = TmeStandalone.__new__(TmeStandalone)     # no board, no __init__
+        dut.ch_patch = _FakeChannel(_FakeDmaMmio(halt_on_rs=ok_patch,
+                                                 halt_on_reset=ok_patch))
+        dut.ch_templ = _FakeChannel(_FakeDmaMmio(halt_on_rs=ok_templ,
+                                                 halt_on_reset=ok_templ))
+        dut.patch_buf, dut.templ_buf = _FakeBuffer(), _FakeBuffer()
+        return dut
+
+    held = len(_UNSAFE_TO_FREE)
+    dut = make_dut(True, True)
+    got = dut.close()
+    ok = (got is True and dut.patch_buf.freed and dut.templ_buf.freed
+          and len(_UNSAFE_TO_FREE) == held)
+    failures += report(ok, "close(): both halts verified -> both buffers freed",
+                       "" if ok else f" -> {got}, freed="
+                                     f"{dut.patch_buf.freed}/{dut.templ_buf.freed}")
+
+    for label, (p, t_) in (("patch fails", (False, True)),
+                           ("template fails", (True, False))):
+        held = len(_UNSAFE_TO_FREE)
+        dut = make_dut(p, t_)
+        got = dut.close()
+        ok = (got is False and not dut.patch_buf.freed
+              and not dut.templ_buf.freed
+              and len(_UNSAFE_TO_FREE) == held + 2)
+        failures += report(ok, f"close(): {label} -> NEITHER buffer freed, "
+                               f"both held",
+                           "" if ok else f" -> {got}, freed="
+                                         f"{dut.patch_buf.freed}/{dut.templ_buf.freed}")
+
+    # ...and that a failed halt reaches the exit status, not just stdout.
+    cases = ((True, True, 0), (True, False, 1), (False, True, 1),
+             (False, False, 1))
+    bad = [(a, b, _exit_status(a, b), want) for a, b, want in cases
+           if _exit_status(a, b) != want]
+    ok = not bad
+    failures += report(ok, "exit status: 0 only when the cases passed AND the "
+                           "halt was verified", "" if ok else f" -> {bad}")
+
+    return failures
+
+
+def _selftest_template_content() -> int:
+    """Exercise the §4.6 content rejection, off the board.
+
+    Written with explicit checks rather than `assert` so it still tests
+    something under `python -O` — the same reason the golden generator raises
+    ValueError instead of asserting.
+    """
+    print("\nvalidate_template_content self-test (§4.6)")
+    failures = 0
+
+    def report(ok: bool, label: str, detail: str = "") -> int:
+        print(f"  [{'PASS' if ok else 'FAIL'}] {label}{detail}")
+        return 0 if ok else 1
+
+    # Flat 4x4 templates at three fills.  0 and 255 are the values the
+    # binarized pipeline actually produces (all background / all ink, i.e. a
+    # crop that caught nothing or everything); 127 is there so the rejection
+    # cannot be a special case for the extremes.
+    for fill in (0, 127, 255):
+        templ = bytes([fill]) * 16
+        errs = validate_template_content(templ, 4, 4)
+        ok = any("flat template" in e for e in errs)
+        failures += report(ok, f"flat 4x4 all-{fill:<3} rejected",
+                           "" if ok else f" -> {errs or 'ACCEPTED'}")
+
+    # Minimally non-flat: fifteen 127s and one 128.  dt = 16*258319 - 2033^2
+    # = 15, the global legal minimum (§4.6).  This must be ACCEPTED — it is
+    # the guard against anyone turning `min == max` into a variance threshold.
+    minimal = bytes([127] * 15 + [128])
+    errs = validate_template_content(minimal, 4, 4)
+    n, st = 16, sum(minimal)
+    dt = n * sum(v * v for v in minimal) - st * st
+    ok = not errs and dt == 15
+    failures += report(ok, f"minimally non-flat 4x4 accepted (dt={dt})",
+                       "" if ok else f" -> {errs}")
+
+    # Padded / short buffers.  The core reads exactly templ_w*templ_h beats and
+    # ignores TLAST, so a length mismatch is silent corruption, not an error
+    # the hardware reports.
+    for label, buf in (("padded (+1 B)", bytes(range(16)) + b"\x00"),
+                       ("short  (-1 B)", bytes(range(15))),
+                       ("empty", b"")):
+        errs = validate_template_content(buf, 4, 4)
+        ok = bool(errs)
+        failures += report(ok, f"wrong-length template {label} rejected",
+                           "" if ok else " -> ACCEPTED")
+
+    # Only `bytes` is accepted.  Each of these is a buffer this function cannot
+    # honestly validate, and the last two are the reason a "read-only
+    # memoryview" exemption was removed rather than tightened:
+    #
+    #   bytearray               mutable outright
+    #   readonly memoryview     `readonly` is a property of the VIEW; the
+    #                           bytearray it aliases is still writable, as the
+    #                           mutation below demonstrates
+    #   2-D memoryview          len() counts rows, not bytes, and min()/max()
+    #                           raise NotImplementedError — the checks would
+    #                           crash rather than reject
+    backing = bytearray(b"\x00\x01" * 8)
+    ro_view = memoryview(backing).toreadonly()
+    two_d = memoryview(bytes(range(16))).cast("B", (4, 4))
+    for label, buf in (("mutable bytearray", bytearray(range(16))),
+                       ("read-only memoryview over a bytearray", ro_view),
+                       ("2-D memoryview", two_d)):
+        try:
+            errs = validate_template_content(buf, 4, 4)
+            ok = any("not bytes" in e for e in errs)
+            detail = "" if ok else f" -> {errs or 'ACCEPTED'}"
+        except Exception as exc:                       # noqa: BLE001
+            ok, detail = False, f" -> raised {type(exc).__name__}: {exc}"
+        failures += report(ok, f"{label} rejected", detail)
+
+    # ...and the reason the read-only view is not good enough, made explicit:
+    # it passed every flag check while its backing store stayed writable.
+    before = bytes(ro_view)
+    backing[0] = 0xFF
+    ok = (ro_view.readonly and bytes(ro_view) != before)
+    failures += report(ok, "read-only memoryview aliased a buffer that changed "
+                           "under it (readonly=True throughout)")
+
+    # A mixed bank: two legal templates around one flat one.  The whole bank
+    # must be rejected, by index, BEFORE any launch — main() calls exactly this
+    # function before the first DMA descriptor is written.
+    def mk(index, toff, tag):
+        return Case([str(index), "40", "30", "4", "4", "0", str(toff),
+                     "0.500000", "0", "0", "999.000000", "edge", tag])
+
+    bank = (bytes(range(0, 64, 4))[:16]      # varied
+            + bytes([255]) * 16              # FLAT — the one that must fire
+            + bytes(range(16, 32)))          # varied
+    cases = [mk(0, 0, "bank-good-a"), mk(1, 16, "bank-flat"),
+             mk(2, 32, "bank-good-b")]
+    bad = validate_template_bank(cases, bank)
+    ok = ([(i, t) for i, t, _ in bad] == [(1, "bank-flat")])
+    failures += report(ok, "mixed bank: only the flat entry is reported",
+                       "" if ok else f" -> {[(i, t) for i, t, _ in bad]}")
+
+    # ...and the abort CONDITION is non-empty.  Label this for what it is: a
+    # check on the return value, nothing more.  Whether the run actually stops
+    # before the first DMA descriptor or `ap_start` is a property of main()'s
+    # statement ORDER, and nothing here instruments either — no fake DUT, no
+    # register writes, no PYNQ at all.  The ordering itself is enforced (and
+    # commented) at the `content_bad` / `bad` gate in main(), and only a board
+    # run or a mocked driver could test it.
+    ok = bool(bad)
+    failures += report(ok, "mixed bank: abort CONDITION is non-empty "
+                           "(main()'s ordering is not instrumented here)")
+
+    return failures
 
 
 # ---------------------------------------------------------------------------
@@ -818,11 +1489,11 @@ def main() -> int:
     ap.add_argument("--templ-dma", help="overlay attribute for the template MM2S")
     ap.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_S,
                     help=f"per-case timeout in seconds (default "
-                         f"{DEFAULT_TIMEOUT_S:g}; the stress case needs ~12 s "
-                         f"at 31.25 MHz)")
+                         f"{DEFAULT_TIMEOUT_S:g}; stress-max-envelope needs "
+                         f"12-13 s at 31.25 MHz)")
     ap.add_argument("--selftest", action="store_true",
-                    help="run the geometry-validator self-test and exit; "
-                         "needs no board")
+                    help="run the geometry and §4.6 template-content validator "
+                         "self-tests and exit; needs no board")
     args = ap.parse_args()
 
     if args.selftest:
@@ -870,10 +1541,18 @@ def main() -> int:
         # tme_tb.cpp validates its manifest before touching the DUT: a bad row
         # halfway through should not be discovered after five good cases have
         # already run.
-        print("\n--- geometry validation (§4.1 / §3.1, before any start) ---")
+        # Nothing below this point may run if ANY case is rejected: the whole
+        # bank is judged before the first DMA descriptor is written and before
+        # ap_start is ever asserted (§4.6).
+        print("\n--- validation (§4.1 / §3.1 geometry, §4.6 template content;"
+              " before any DMA or ap_start) ---")
         bad = False
+        content_bad = {idx: errs
+                       for idx, _tag, errs in validate_template_bank(cases,
+                                                                     templs)}
         for c in cases:
             errs = validate_geometry(c.pw, c.ph, c.tw, c.th, dut.dma_max)
+            errs = errs + content_bad.get(c.index, [])
             status = "OK" if not errs else "REJECT"
             print(f"  [{status:6}] {c.tag:<24} patch {c.pw}x{c.ph} "
                   f"({c.patch_bytes:,} B)  templ {c.tw}x{c.th}")
@@ -881,7 +1560,9 @@ def main() -> int:
                 print(f"             - {e}")
             bad |= bool(errs)
         if bad:
-            print("\nA manifest case is outside the envelope. Not starting.")
+            print("\nA manifest case is outside the envelope or carries an "
+                  "illegal template. Not starting — the whole bank is "
+                  "rejected, not just the offending case.")
             return 1
 
         print("\n--- cases ---")
@@ -974,9 +1655,15 @@ def main() -> int:
               "vivado/tme_standalone/post_route_wns.txt.")
         ok_overall = (not aborted and passed == len(cases)
                       and reinvoke_ok is not False)
-        return 0 if ok_overall else 1
     finally:
-        dut.close()
+        # A teardown that cannot prove the DMAs halted leaves the board in an
+        # unknown state, so it must not be reportable as a clean run — the
+        # warning close() prints scrolls past, an exit status does not.
+        halt_ok = dut.close()
+    if not halt_ok:
+        print("EXIT 1: the cases may have passed, but teardown could not prove "
+              "the DMAs were halted (see the warning above).")
+    return _exit_status(ok_overall, halt_ok)
 
 
 if __name__ == "__main__":

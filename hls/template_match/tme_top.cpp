@@ -21,8 +21,28 @@
 // that already existed for the old (mean-less, i.e. wrong) denominator.
 // Float arithmetic enters once, at the final sqrt/divide — every sum
 // feeding it is exact, and the sums fit their types by construction (see
-// tme_top.h).  A flat window (ΣI² variance 0) scores exactly 0, matching
-// cv2's convention, and a flat template zeroes the whole surface.
+// tme_top.h).
+//
+// Degenerate inputs (contract §4.6):
+//   di == 0  flat search WINDOW — legal input, contractual score +0.0.
+//            cv2 agrees: its zero denominator falls through the clamp
+//            ladder to num = 0.
+//   dt == 0  flat TEMPLATE — illegal input, rejected by host software
+//            before the first DMA.  The zero below is a defensive fallback
+//            that keeps a NaN out of result_score; it is NOT a contract
+//            value, and it must not be read as matching cv2.  cv2 may return
+//            ones or a patch-dependent numerical result, INCLUDING zero; no
+//            contractual agreement exists on this illegal domain.  (Its
+//            templNorm < DBL_EPSILON early return fills the map with ones,
+//            but templNorm is a double-scaled variance, so a flat template
+//            does not always reach that branch: a 7x7 of 2s computes
+//            4.44e-16 > DBL_EPSILON and gets correlated like any other.)
+//
+// On dt > 0 && di > 0 this is the mathematical TM_CCOEFF_NORMED expression.
+// cv2 evaluates it along a different numerical path (float64 integral
+// images, plus a near-boundary clamp to ±1), so agreement with cv2 is
+// tolerance-based, not bit-exact; the generator's high-precision integer
+// oracle is what adjudicates a disagreement.
 //
 // Operating mode: max-loc-only.
 // Returns the (score, x, y) of the best match.  The full result map
@@ -119,6 +139,17 @@ void tme_top(
     // Template variance term N·ΣT² − (ΣT)², constant for the whole search.
     // ap_uint products widen automatically (16×32→48, 24×24→48); the
     // difference is ≥ 0 by the variance inequality.
+    //
+    // dt itself needs only 43 bits (max 6,989,889,945,600 at N = 20,736,
+    // half 0 / half 255), while BOTH intermediates reach 27,959,559,782,400 —
+    // 45 bits — on an all-255 template, where they are equal and cancel.
+    // 48 bits holds each intermediate outright.  That is a preservation
+    // POLICY, not a correctness floor: fixed-width subtraction is modular, so
+    // equal truncation of both operands still cancels, and the joint minimum
+    // is (wide_t, num_t) = (44u, 44s) — the result, not the operands, is what
+    // must fit.  Resize both together or not at all: with wide_t under 45, a
+    // num_t of any OTHER width breaks `num` below while leaving dt correct.
+    // Contract §4.6.
     wide_t dt   = (wide_t)(n_px * t_sq) - (wide_t)(t_sum * t_sum);
     float  dt_f = (float)dt;
 
@@ -203,7 +234,14 @@ void tme_top(
 
             float score;
             if (di == 0 || dt == 0) {
-                // Flat window or flat template: cv2 emits exactly 0 here.
+                // di == 0: flat window — legal, and +0.0 is the contract
+                //          value (§4.6).  cv2 returns 0 here too.
+                // dt == 0: flat template — ILLEGAL input that host software
+                //          must have rejected before the first DMA.  This
+                //          zero only keeps 0/0 out of result_score.  cv2 may
+                //          return ones or a patch-dependent value, including
+                //          zero; a match with this 0.0f would be coincidence,
+                //          not agreement (§4.6).
                 score = 0.0f;
             } else {
                 score = (float)num / hls::sqrtf(dt_f * (float)di);

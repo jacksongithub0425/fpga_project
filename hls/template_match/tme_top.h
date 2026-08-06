@@ -47,6 +47,31 @@ static const int PAR_COLS = 16;
 //   wide_t   N·sumsq, sum²  ≤ 20736·1.349e9 ≈    2.797e13  → 45 bits
 //
 // num = N·ΣTI − ΣT·ΣI is a signed difference of two wide_t values.
+//
+// 48 BITS IS A PRESERVATION POLICY, NOT THE CORRECTNESS MINIMUM (§4.6).  The
+// variance term dt = N·ΣT² − (ΣT)² needs only 43 bits (max 6,989,889,945,600),
+// and |num| ≤ √(dt·di) ≤ that same bound by Cauchy–Schwarz.  Both are
+// differences of 45-bit quantities that are EQUAL at the extreme (an all-255
+// template gives N·ΣT² = (ΣT)² = 27,959,559,782,400 and dt = 0) — but equal
+// truncation of both operands still cancels, because fixed-width subtraction
+// is modular: (A mod 2^W − B mod 2^W) mod 2^W = (A − B) mod 2^W.  What must
+// fit is the RESULT, so the JOINT minimum is (wide_t, num_t) = (44u, 44s),
+// verified against Vitis 2025.2's ap_int.h.  48/48 is kept because it holds
+// each intermediate outright, which makes the modular argument unnecessary
+// rather than merely satisfied; narrowing would buy a resynthesis and nothing.
+//
+// THE TWO WIDTHS ARE ONE DECISION, NOT TWO BUDGETS.  `num` casts
+// (num_t)(wide_t)(...), so the inner truncation happens BEFORE the subtraction
+// and cancels only if the result is reduced by the same modulus.  Do not read
+// the minimum as "each ≥ 44" and widen one of them:
+//     (44u, 44s)  ok — equal modular widths
+//     (43u, 44s)  WRONG — reduced mod 2^43, zero-extended into 44-bit signed
+//     (44u, 45s)  WRONG — reduced mod 2^44, result never reduced back
+//     (48u, 48s)  ok — operands preserved outright, no wrap to cancel
+// The rule: equal widths ≥ 44, or preserve the 45-bit operands (≥45u / ≥46s).
+// tme_tb.cpp's bound_case() runs the extremes and BOTH wrong pairs as
+// executable witnesses — the (44,45) one on an ordinary legal input.
+//
 // The previous types here were ap_fixed<48,24> accumulators and a Q16.16
 // normalisation path; both WRAP at these magnitudes (8.4e6 and 32768
 // integer ceilings respectively).  They only ever passed csim because the
