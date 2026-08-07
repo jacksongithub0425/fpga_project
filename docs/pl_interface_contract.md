@@ -835,7 +835,7 @@ because the geometry is transmitted, not re-derived. It also makes each patch
 exactly one DMA transfer on the PS side, which is where §3.1's 262,143-byte
 transfer bound attaches.
 
-### 5.1 Score-stream framing — **OPEN, but does NOT block the D1/D2 repair**
+### 5.1 Score-stream framing — **SPECIFIED 2026-08-07 (§6.4), consumer unimplemented**
 
 The above frames extractor→matcher. It says nothing about matcher→classifier.
 That gap is real and worth closing, but an earlier version of this section
@@ -852,10 +852,27 @@ until the framing was specified, on the grounds that inferring boundaries from
 - **D1/D2 are ordinary sequencing bugs.** The defect is that the incoming
   tuple is merged into `best_score[]` *before* the previous candidate is
   flushed, and that the flushed record is then labelled with the triggering
-  tuple's `cand_id`. Both are fixed by reordering the loop body — detect the
-  boundary, flush and label the completed candidate, *then* merge the new
-  tuple — with no change to how boundaries are detected and no dependency on
-  this section. See the D1/D2 entries in `class_score_core.cpp`.
+  tuple's `cand_id`. Both are fixed by reordering the loop body, with no
+  change to how boundaries are detected and no dependency on this section.
+  See the D1/D2 entries in `class_score_core.cpp`.
+
+  **But the reordering is not uniform, and an earlier revision of this bullet
+  said it was.** "Flush, then merge" is right for a *candidate change* and
+  wrong for *batch `TLAST`*, because the two boundaries stand in opposite
+  relations to the tuple that triggers them:
+
+  | boundary | the triggering tuple belongs to | correct order |
+  |---|---|---|
+  | `cand_id` changed | the **next** candidate | flush previous (labelled with the previous `cand_id`), reset `best_score[]`, **then** merge |
+  | batch `TLAST` | the candidate **being flushed** | merge, **then** flush |
+
+  Applying "flush then merge" uniformly drops the batch's final tuple from the
+  reduction — invisible unless that tuple is the winner, which is why the
+  repair needs a regression **whose last tuple is the winning one**. The two
+  can also coincide: a `TLAST` arriving on a tuple with a new `cand_id` must
+  flush the previous candidate, reset, merge, and flush again — **two result
+  records out of one input beat**. A loop written around a single
+  `last_for_cand` boolean, as the current one is, cannot express that.
 
 Explicit framing is still preferable and still wanted, for two reasons that
 survive the correction: it removes the reliance on an ordering guarantee that
@@ -864,28 +881,39 @@ lives only in the matcher's FSM and in prose, and it is the only way an
 tuples at all — can occupy its ordinal position in the result stream. The
 second of those is a genuine blocker for §5.1 item 2, just not for D1/D2.
 
-Three things must be specified:
+Three things had to be specified. **All three are answered as of 2026-08-07**
+and the record they imply is §6.4 — but *specified* is not *discharged*. Every
+one of these answers imposes an obligation on `class_score_core`, which is
+parked, so nothing below has a consumer or a test yet. §10 item 4 lists the
+obligations; do not read the answers here as work completed.
 
-1. **How score tuples delimit a candidate.** Explicit `TLAST`-per-candidate on
-   the score stream, or a transmitted tuple count per candidate, or a
-   start-of-candidate sideband. Any of the three removes the dependency on the
-   matcher's emission order; `cand_id` inference is correct today but is an
-   undocumented cross-core invariant rather than a contract term.
-2. **What produces a result for an invalid candidate.** Invalid candidates
-   bypass the matcher entirely (§4), so no score tuples exist for them and
-   `class_score_core` never sees them. Either the classifier is fed the §6.2
-   metadata stream so it can emit a `valid=0` result in the right ordinal
-   position, or something downstream merges the two streams. Unspecified today.
+1. **How score tuples delimit a candidate.** *Settled: ascending `cand_id`,
+   with `TLAST` on the last tuple of the batch — and it is now a **software**
+   guarantee, not a matcher-FSM one.* Under §6.4 the tuples are emitted by the
+   PS, which walks candidates in ordinal order and emits every trial for a
+   candidate before moving on, so the ordering invariant lives in a loop
+   anyone can read instead of in an emission order nobody specified. That is
+   the whole of the upgrade this item asked for; a per-candidate `TLAST` or a
+   transmitted tuple count would add nothing on top of a producer that already
+   counts.
+2. **What produces a result for an invalid candidate.** *Settled: the PS
+   emits a placeholder tuple for it.* Invalid candidates still get a §6.2
+   metadata record, and the PS is already reading that record to decide
+   whether to run a match at all (§7.1, and the seam test in
+   `hls/integration/`). When it decides not to, it emits one tuple with
+   `templ_id = 0xFFFF` — "no template was run" — so the candidate occupies its
+   ordinal position without any core having to hear about it. Neither feeding
+   the metadata stream into `class_score_core` nor a downstream merge is
+   needed.
 3. **Whether every input descriptor yields exactly one software-visible
-   result.** Recommended: **yes** — `NUM_CANDS` in, `NUM_CANDS` results out, in
-   input order, valid or not. That makes the result buffer a fixed-stride array
-   the driver can index by candidate ordinal, and removes any need to
-   re-associate by `cand_id`. It also makes a short read an unambiguous error
-   rather than a plausible outcome.
+   result.** *Settled: **yes**.* `NUM_CANDS` in, `NUM_CANDS` results out, in
+   input order, valid or not. The result buffer is a fixed-stride array the
+   driver indexes by candidate ordinal, no re-association by `cand_id`, and a
+   short read is an unambiguous error rather than a plausible outcome. (1) and
+   (2) are what make this cheap to guarantee: the producer is the PS, and it
+   knows `NUM_CANDS` before it starts.
 
-(1) is an upgrade, not a prerequisite, for D1/D2. (2) and (3) remain genuinely
-open and gate the *integration-signoff* behaviour of `class_score_core`, since
-they decide what the core must emit for candidates it never hears about.
+None of this was ever a prerequisite for D1/D2, and it still is not.
 
 ---
 
@@ -1003,6 +1031,204 @@ PL transmits those two. The real choice is *where the arithmetic happens*, not
 A zero/invalid box must also be defined. Recommend `(0, 0, 0, 0)` reserved to
 mean "no box", valid only when `flags.valid == 0` — so a zero-area box can
 never be confused with a real detection at the page origin.
+
+**One half of the "who has the data" question above is now answered, and it
+went the other way from the guess.** See §6.4: under PS sequencing the PS
+*does* hold the winning template identity, because it chose the template for
+every trial it launched. The match location still has to come from the PL, but
+it already does — `tme_top` returns `result_x`/`result_y` in its AXI4-Lite
+registers, and `hls/integration/pe_tme_tb.cpp` executes the rebasing
+end-to-end. So the sentence above that says *"the match location and winning
+template identity exist only in the PL"* is **half wrong**: the location does,
+the identity does not. **This narrows the gap rather than closing it, and the
+difference matters**: what the PS holds is every *trial's* identity, not the
+identity of the trial `class_score_core` selected. The PL reduces to
+`best_score[kind]` internally and returns a `kind`, so naming the winning
+`(templ_id, match_x, match_y)` needs one of the three options in §6.4 — a
+PS-side argmax whose tie-break matches the core's strict `>`, a widened result
+record, or moving the reduction out of the PL. Until one is chosen the PS
+cannot fill `box_*` either. PL-filling has lost its structural argument
+without PS-filling having gained one.
+
+### 6.4 Matcher score tuple — **SPECIFIED (2026-08-07)**, 128-bit, byte-aligned
+
+*Specified, not discharged: the producer side runs in `hls/integration/`, the
+consumer is parked and untested. §10 item 4 carries the obligation list.*
+
+One per **trial**, where a trial is one (candidate, template) pair actually
+run through the matcher, plus one placeholder per candidate that was never run
+(§5.1 item 2).
+
+```
+[15:0]    cand_id       ordinal of the descriptor within the batch
+[31:16]   templ_id      index into the PS template table; 0xFFFF = no trial
+[47:32]   kind          one 16-bit word: 0=male, 1=female, 2=ferrule
+[63:48]   reserved, zero
+[95:64]   score         IEEE-754 float32
+[111:96]  match_x       best-match offset WITHIN the patch (tme_top result_x)
+[127:112] match_y       (tme_top result_y)
+```
+
+Software layout `"<HHHHfHH"` — 16 bytes, every field naturally aligned.
+
+**Read `kind` as a whole 16-bit word and compare it**, exactly as §6.2 says to
+read `status`. It is not a 2-bit field at bit 32 with 14 bits of headroom to
+be reclaimed later; §6.3 is what bit-packing this ABI looks like afterwards.
+Note also that this `kind` uses the matcher-side encoding (`0=male, 1=female,
+2=ferrule`), which is **not** the §6.3 result encoding (`0=unknown, 1=male,
+2=female, 3=ferrule_tentative`). They are off by one and must be named apart
+in code — the existing `class_score_core.h` comment already documents both,
+which is precisely why they get conflated.
+
+#### The producer is the PS, and that is the decision
+
+`template_match_core` does **not** grow a score-stream port. The tuples are
+assembled in software from what a PS-sequenced match already has in hand:
+
+| field | where the PS gets it |
+|---|---|
+| `cand_id` | the §6.2 metadata record it just read |
+| `templ_id` | **it chose the template** — it wrote `templ_w`/`templ_h` and streamed the pixels |
+| `kind` | its own template table, same source as `templ_id` |
+| `score` | `tme_top`'s `result_score` register |
+| `match_x/y` | `tme_top`'s `result_x`/`result_y` registers |
+
+Nothing in that column needs new hardware, and the middle two rows are the
+whole reason this ABI does not need a template-identity field on the wire from
+the PL: **identity is implied by the invocation.** The PS starts one match per
+(candidate, template) pair, so the answer it reads back is unambiguously that
+pair's. This is a property of the sequencing, not a lucky coincidence — and it
+is the property that stops holding the moment anyone gives the matcher more
+than one template per `ap_start`.
+
+**Per-trial identity is not the same as knowing which trial won, and that
+distinction was elided in the first draft of this section.** `class_score_core`
+reduces the tuples to `best_score[kind]` *inside the PL* and emits one result
+per candidate; the PS is told the winning `kind`, not the winning `templ_id`
+or its `match_x`/`match_y`. So the PS knows every trial it launched and still
+cannot name the one the classifier selected. Since the §6.3 box needs exactly
+that trial's location and template dimensions, this has to be pinned. Three
+ways, and one of them has to be chosen before the classifier is connected:
+
+1. **PS retains the per-kind argmax** (recommended). While emitting tuples the
+   PS also keeps, per `(cand_id, kind)`, the `(templ_id, match_x, match_y)` of
+   the best-scoring trial — a running max it can compute for free over data it
+   is already producing. The PL's returned `tentative_kind` then indexes
+   straight into it. No PL change, no new wire field.
+   **The tie-break must match the core exactly**: `class_score_core` uses
+   `if (score > best_score[kind])`, strictly greater, so the **first** trial
+   reaching the maximum wins. A PS using `>=`, or iterating its bank in a
+   different order, will silently disagree with the PL on ties — and ties are
+   not exotic here, since a template that matches perfectly at two scales
+   scores 1.0 at both.
+2. **PL returns the winning identity.** Widen the §6.3 result record to carry
+   `templ_id` and the winning `match_x`/`match_y`; `[127:112]` is reserved and
+   `class_score_core` already tracks the maximum it would need to remember.
+   Costs a PL change and re-opens §6.3's layout, which is already blocked on
+   the 14-vs-16-byte defect.
+3. **Drop the reduction from the PL.** If the PS is doing the argmax anyway
+   under (1), `class_score_core` is performing a reduction over data the PS
+   holds in full. Worth stating plainly as an option rather than discovering
+   it later; it is not being recommended here, because that call belongs with
+   whoever owns the throughput budget.
+
+Until one is chosen, **the PS cannot fill `box_*`** — which is the same
+blocker §6.3 records, now with its actual cause named.
+
+So the standing condition on this section: **if the matcher is ever changed to
+iterate templates internally for throughput, §6.4 must move into the PL and
+grow a real `templ_id` on the wire.** At that point the framing answers in
+§5.1 revert to being cross-core invariants too. Nothing here is a claim that
+PS sequencing is the right long-term architecture; it is the architecture
+being built, and this is its ABI.
+
+#### `templ_id = 0xFFFF` — the placeholder
+
+A candidate the §4 validation rejected never reaches the matcher and produces
+no trial. The PS emits exactly one tuple for it, with `templ_id = 0xFFFF`,
+`kind = 0xFFFF`, `score = -1.0f`, and `match_x = match_y = 0`.
+
+**`templ_id == 0xFFFF` is the only test. The score is ignored filler and is
+NOT a sentinel.** An earlier revision of this section called `-1.0f` "outside
+TM_CCOEFF_NORMED's `[-1, +1]` range"; that is simply wrong — the range is
+closed, `tme_top` *clamps* to it (`if (score < -1.0f) score = -1.0f`), and a
+perfectly anti-correlated window returns exactly `-1.0f` as a real result.
+Worse, `class_score_core` initialises `best_score[]` to `-1.0f`, so a filler
+`-1.0f` is indistinguishable from "this kind was never scored" at the one
+place it would matter. Any value is equally arbitrary; `-1.0f` is chosen only
+because it cannot *raise* a `best_score[]` entry if it is ever wrongly merged.
+Do not build a second decoding on it.
+
+**Consumers must branch on `templ_id` BEFORE decoding or indexing on `kind`.**
+This is not style. `class_score_core.cpp` currently does
+`best_score[(int)kind]` against `float best_score[3]` with `kind` taken as
+`ap_uint<2>` — so `kind == 3` is already an out-of-bounds write today, latent
+only because nothing emits a 3. A placeholder whose `kind` is `0xFFFF`
+truncates to exactly 3 on that path. So **widening `score_stream_t` to the
+§6.4 layout is not sufficient to connect the classifier**: the widening alone
+preserves the out-of-bounds path and makes it reachable. The un-parking work
+is (a) branch on `templ_id == 0xFFFF` and emit the `valid=0` result without
+touching `best_score[]`, (b) range-check `kind` even after that, and (c) the
+D1/D2 reordering in §5.1 above.
+
+Placeholders must be tested **interior, final, and consecutive** — a rejected
+descriptor between two valid ones, a rejected descriptor as the last in the
+batch (which is where `TLAST` lands on a tuple that must not be merged), and
+two rejections in a row (which is where a "reset on boundary" that assumes a
+preceding merge emits a stale record). The seam suite in `hls/integration/`
+covers the interior case on the producer side; the consumer side has no test
+because the consumer is parked.
+
+This is what makes §5.1 item 3 hold: every descriptor gets at least one tuple,
+so a batch of `NUM_CANDS` descriptors yields `NUM_CANDS` results out of
+`class_score_core` whatever the validation did.
+
+#### Transport: one buffered transfer per batch, and its ceiling
+
+Batch-only `TLAST` (§5.1 item 1) is a statement about the *transport*, not
+just the record: the tuples must cross as **one buffered MM2S transfer** for
+the whole batch. Per-trial transfers would be functionally wrong, not merely
+slower — PYNQ's `sendchannel.transfer()` asserts `TLAST` on the last beat of
+whatever it is given, so a transfer per tuple asserts `TLAST` on *every* tuple
+and `class_score_core` flushes a result per trial instead of per candidate.
+
+That gives the trial count a hard ceiling from §3.1's DMA bound: at 16 bytes
+per tuple, `floor(262143 / 16) = ` **16,383 tuples per batch**.
+
+The *expected* count is well under it but is **not a constant**, and freezing
+one would be the wrong move. Trials per candidate is
+`sum(len(bank) for bank in side_templates[side].values()) × len(MATCH_SCALES)`
+— data-dependent on the template bank on disk. With `len(MATCH_SCALES) == 8`
+and one base template per kind, that is 24 per candidate, so
+`_MAX_CANDIDATES == 64` gives 1,536 trials (24,576 B). More base templates per
+kind scale it linearly.
+
+So the driver must **compute the trial count from the actual bank and validate
+it before allocating or transferring**, against the 16,383 ceiling and against
+its own buffer — the same discipline `DMA_MAX_BYTES` already gets in
+`sw/tme_standalone_bringup.py`, where the DMA's own reported `buffer_max_size`
+wins over the compiled-in constant.
+
+**`class_score_core`'s `#pragma HLS LOOP_TRIPCOUNT max=720` is stale and must
+be corrected when the core is un-parked.** 720 is under the 1,536 that the
+software constants already imply at their minimum, and its derivation is
+recorded nowhere. A `LOOP_TRIPCOUNT` is a scheduling hint and does not bound
+behaviour, so this is not a functional bug — it means the core's reported
+latency is understated by more than 2x, which is exactly the kind of number
+that later gets quoted as a throughput result.
+
+#### What is verified, and what is not
+
+`hls/integration/pe_tme_tb.cpp` runs the producer side of this in C
+simulation: it reads each §6.2 record, decides whether to run a trial, drives
+the matcher with the record's geometry, and rebases `result_x`/`result_y` onto
+the page. Every field in the table above is therefore exercised except the
+tuple's own packing, which has no consumer yet — `class_score_core` is parked
+(§10 item 5) and its 48-bit `score_stream_t` predates this section. **Nothing
+here has run on silicon.** Connecting the classifier means widening
+`score_stream_t` from 48 to 128 bits to match this layout; do that as part of
+un-parking it, not before, so the change lands with a testbench that can see
+it.
 
 ---
 
@@ -1568,7 +1794,8 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 | `binarize_core` | DDR writer owns raw→logical mapping (§1); zero-fill last row and column |
 | `patch_extract_core` | `m_axi` pointer + explicit stride + address arithmetic; 16-bit page coords; 11/9-bit patch counters; §4 validation with wide-type overflow checks (§2.1); metadata stream (§6.2); per-patch pixel `TLAST`; `NUM_CANDS`; status registers. **Standalone hardware bring-up passed** — see §8 for scope and for what it does not cover |
 | `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, the mathematical TM_CCOEFF_NORMED expression — agreement with cv2 is tolerance-based rather than bit-exact, and only on the `dt>0 && di>0` domain (§4.6); **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies (21 csim / 5 cosim cases at that point; current counts below). The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 — that last is a **C simulation of the board vectors, not a hardware result**; nothing has run on silicon yet. **§4.6 closed 2026-08-05** (flat templates are illegal input, rejected host-side before the first DMA by an exact `min == max` test — OpenCV's `templNorm < DBL_EPSILON` branch is *not* exact in the flat direction, which is an argument for rejecting here rather than deferring to cv2) — no RTL change, plus two direct DUT tests, the dt / ±num width extremes and both width-coupling witnesses, all running in every suite ahead of the manifest loop. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
-| `class_score_core` | parked. D1/D2 are repairable now (reorder flush-before-merge, §5.1); D6/D7/D8 and the per-kind-score/match-location gaps wait on §6.3 |
+| extractor → matcher seam | **C simulation done (2026-08-07)** — `hls/integration/`, the first execution of anything downstream of the extractor's outputs. Neither core's own testbench can fail this way, because the thing under test is the PS loop between them: `meta_out` carries one record per *descriptor* and `patch_out` carries pixels for *valid candidates only*, so the PS keeps two cursors, and a loop that advances them together is correct on every batch with nothing rejected and permanently misaligned on the first one without. Pins: record-vs-pixel cursor discipline across a mid-batch rejection, matcher geometry taken from the metadata record rather than re-derived (a clipped candidate whose patch is 106 px where the §4.5 formula says 152), page-vs-patch coordinate rebasing, and `TLAST` landing exactly on beat `patch_w*patch_h` — which `tme_top` ignores by construction, so a framing disagreement is silent in the matcher and corrupts the *next* patch. Both PS bugs are also performed deliberately as negative controls and required to produce a wrong answer, so the suite is known to be able to fail. Result reads `SEAM TEST PASSED (0 errors): 4 descriptors, 3 matcher runs, 2 injected-bug controls` — quote it that way, not as a count of printed PASS lines. **Not synthesised and not cosimulated, on purpose** (no top function of its own; cosim drives one core through an RTL wrapper and cannot run a loop that decides what to do next). The hardware half is a two-core block design and is **not built** |
+| `class_score_core` | parked. D1/D2 are repairable now (reorder flush-before-merge, §5.1); D6/D7/D8 and the per-kind-score/match-location gaps wait on §6.3. Un-parking it now also means widening `score_stream_t` from 48 to the 128-bit §6.4 layout |
 | `sw/tme_driver.py` | buffer sizes per §2.2; stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; result unpack per §6.3; enforce §4.1, §4.5 and §4.6 before dispatch |
 | template pipeline | `max_tw` / `max_th` from post-round template dimensions (§4.5); stream templates as **RAW binarized bytes** — the matcher computes ΣT/ΣT² in-core since 2026-08-04, and the mean-subtracted int8+128 encoding it replaced must not come back (it wraps: binary T−mean spans ±255); reject flat templates (`min == max`) after the final resize/binarise/crop and before the first DMA (§4.6) |
 
@@ -1585,17 +1812,44 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 3. **§2.2** — can CMA satisfy two separately contiguous ~60.2 MiB
    allocations? If not, tiling is a platform requirement and §2 changes.
    Probe: `sw/probe_cma_budget.py`, run on the board with `--overlay`.
-4. **§5.1** — score-stream framing: how candidates are delimited, and how an
-   invalid candidate that bypassed the matcher still produces a result.
-   Blocks the invalid-candidate result path and integration signoff, not the
-   D1/D2 sequencing repair (see the §5.1 correction).
-5. **§6.3** — are `box_*` filled by the PL or dropped from the ABI? PL-filling
-   needs patch origin, match location, and winning template dimensions routed
-   into the classifier. **Also blocks the result path outright**: the driver
-   unpacks 14 bytes while the PL emits 16, so `_result_buf` is under-allocated
-   by 128 bytes at a full 64-candidate batch. `class_score_core` stays
-   disconnected until this is resolved; `test_result_record_size_is_unresolved`
-   in `sw/test_cand_packing.py` is the tripwire.
+4. **§5.1** — **SPECIFIED 2026-08-07, not discharged.** The ABI is written
+   (**§6.4**: 128-bit, 16 bytes, `"<HHHHfHH"`, emitted by the **PS** rather
+   than by `template_match_core`), and the three questions this item asked are
+   answered: framing dissolves because a PS-side producer counts its own
+   output, invalid candidates get a `templ_id = 0xFFFF` placeholder, and
+   `NUM_CANDS` in / `NUM_CANDS` out follows. **It is not closed, because the
+   consumer does not exist yet** — every obligation below lands on
+   `class_score_core`, which is parked, and none of them has a test:
+   - the two boundary orderings of §5.1 (flush-then-merge on a `cand_id`
+     change, merge-then-flush on batch `TLAST`, and both on a `TLAST` that
+     also changes `cand_id`), with a regression whose **last tuple is the
+     winner**;
+   - branching on `templ_id == 0xFFFF` **before** decoding `kind`, since
+     `best_score[(int)kind]` is already an out-of-bounds write at `kind == 3`
+     and a placeholder makes that reachable;
+   - placeholders tested interior, final, and consecutive;
+   - the trial count validated against the 16,383-tuple DMA ceiling before
+     allocation, and `LOOP_TRIPCOUNT max=720` corrected — it is under the
+     1,536 the software constants already imply.
+
+   One standing condition on top: **if the matcher is ever changed to iterate
+   templates internally, §6.4 moves into the PL and grows a real `templ_id` on
+   the wire.**
+5. **§6.3** — are `box_*` filled by the PL or dropped from the ABI? **Narrowed
+   by §6.4, not closed.** The old framing said the PS lacked both the match
+   location and the winning template identity; that was half wrong. The
+   location comes back in `tme_top`'s AXI4-Lite registers, and under PS
+   sequencing every *trial's* identity is implied by its invocation — but the
+   PL reduces internally and returns only a `kind`, so **the PS still cannot
+   name the winning trial**, which is what the box needs. §6.4 lists the three
+   ways to fix that; one must be chosen before the classifier is connected.
+   PL-filling has lost its structural argument without PS-filling having
+   gained one. **Still blocks the result path outright**, unchanged: the
+   driver unpacks 14 bytes while the PL
+   emits 16, so `_result_buf` is under-allocated by 128 bytes at a full
+   64-candidate batch. `class_score_core` stays disconnected until this is
+   resolved; `test_result_record_size_is_unresolved` in
+   `sw/test_cand_packing.py` is the tripwire.
 6. **§7.1 item 4** — who owns the short-stream timeout and the PL reset that
    recovers from it, and over what scope. New in §5's framing decision;
    nothing owns it today.

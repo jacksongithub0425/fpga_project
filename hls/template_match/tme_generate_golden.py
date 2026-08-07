@@ -99,6 +99,28 @@ N_SPOT = 12             # direct dot-product spot checks on the FFT STI
 DMA_MAX_BYTES = 262143
 
 
+def require(cond, msg: str = "") -> None:
+    """`assert`, except it still exists under `python -O`.
+
+    Every check in this file gates either an ORACLE (does the exact-integer
+    map agree with cv2, is the FFT cross-correlation really the integer it was
+    rounded to) or a WRITTEN ARTIFACT (is the stress case still the 820x307
+    envelope, are the tags unique, is the manifest inside MAX_CASES).  An
+    `assert` for that job is a check that disappears in exactly the mode this
+    generator is also expected to run in — the manifests would still be
+    written, unverified, and byte-compared against the verified ones as though
+    the comparison meant something.
+
+    The §4.6 flat-template rejection in `score_map` was already a raise for
+    this reason, with a comment saying so; the remaining 26 checks were not,
+    and are now.  Nothing here is a performance path — the FFT and the cv2
+    cross-check dominate every one of these by orders of magnitude — so there
+    was never anything to buy by letting them be optimised away.
+    """
+    if not cond:
+        raise AssertionError(msg or "generator self-check failed")
+
+
 def bin_noise(rng, h, w, density):
     """Binary image, THRESH_BINARY_INV world: ink = 255, background = 0."""
     return ((rng.random((h, w)) < density) * 255).astype(np.uint8)
@@ -158,11 +180,11 @@ def score_map(patch, templ):
         v = int(spot.integers(0, rh))
         u = int(spot.integers(0, rw))
         direct = int((P[v:v + th, u:u + tw] * T).sum())
-        assert direct == sti[v, u], f"FFT STI off at ({u},{v}): {sti[v, u]} != {direct}"
+        require(direct == sti[v, u], f"FFT STI off at ({u},{v}): {sti[v, u]} != {direct}")
 
     num = n * sti - st * si
     di = n * sii - si * si
-    assert (di >= 0).all()
+    require((di >= 0).all())
     denom = np.sqrt(np.float64(dt) * di.astype(np.float64))
     with np.errstate(divide="ignore", invalid="ignore"):
         smap = np.where(di == 0, 0.0, num / np.where(denom == 0, 1.0, denom))
@@ -186,14 +208,13 @@ def golden(patch, templ):
         margin = 999.0
 
     ref = cv2.matchTemplate(patch, templ, cv2.TM_CCOEFF_NORMED)
-    assert ref.shape == (rh, rw), (
-        f"cv2 map {ref.shape} vs (pw-tw+1, ph-th+1)=({rh},{rw}) — §4.4 drift")
-    assert abs(float(ref[gy, gx]) - score) <= SCORE_XCHECK, (
-        f"oracle disagreement at ({gx},{gy}): {score} vs cv2 {ref[gy, gx]}")
+    require(ref.shape == (rh, rw),
+            f"cv2 map {ref.shape} vs (pw-tw+1, ph-th+1)=({rh},{rw}) — §4.4 drift")
+    require(abs(float(ref[gy, gx]) - score) <= SCORE_XCHECK,
+            f"oracle disagreement at ({gx},{gy}): {score} vs cv2 {ref[gy, gx]}")
     if smap.size > 1 and margin >= 0.01:
         ry, rx = divmod(int(np.argmax(ref)), rw)
-        assert (rx, ry) == (gx, gy), (
-            f"cv2 argmax ({rx},{ry}) != exact argmax ({gx},{gy}) "
+        require((rx, ry) == (gx, gy), f"cv2 argmax ({rx},{ry}) != exact argmax ({gx},{gy}) "
             f"despite margin {margin:.4f}")
     return score, gx, gy, margin, sii_max
 
@@ -431,10 +452,10 @@ def _ipp_state() -> str:
 def check_envelope(patch, templ):
     ph, pw = patch.shape
     th, tw = templ.shape
-    assert MIN_TEMPL_DIM <= tw <= MAX_TEMPL_W, f"tw {tw}"
-    assert MIN_TEMPL_DIM <= th <= MAX_TEMPL_H, f"th {th}"
-    assert tw <= pw <= MAX_PATCH_W, f"pw {pw}"      # equality legal (§4.4 opt 1)
-    assert th <= ph <= MAX_PATCH_H, f"ph {ph}"
+    require(MIN_TEMPL_DIM <= tw <= MAX_TEMPL_W, f"tw {tw}")
+    require(MIN_TEMPL_DIM <= th <= MAX_TEMPL_H, f"th {th}")
+    require(tw <= pw <= MAX_PATCH_W, f"pw {pw}")      # equality legal (§4.4 opt 1)
+    require(th <= ph <= MAX_PATCH_H, f"ph {ph}")
 
 
 def solve(tag, category, builder, base_seed, min_margin=MIN_MARGIN,
@@ -476,7 +497,7 @@ def build_csim():
         templ = bin_noise(rng, 24, 40, 0.3)
         return patch, templ, (0, 0)
     c = solve("blank-patch", "degenerate", blank, 101, min_margin=0.0)
-    assert c["score"] == 0.0
+    require(c["score"] == 0.0)
     cases.append(c)
 
     # Flat and non-flat windows in one search: the di==0 short-circuit must
@@ -506,7 +527,7 @@ def build_csim():
         patch = bin_noise(rng, 48, 64, 0.35)
         return patch, patch.copy(), (0, 0)
     c = solve("equality-identical", "equality", eq_identical, 107)
-    assert c["score"] > 0.999
+    require(c["score"] > 0.999)
     cases.append(c)
 
     # Same geometry, template unrelated to the patch: still one position,
@@ -539,10 +560,9 @@ def build_csim():
         return patch, templ.astype(np.uint8), (0, 0)
     c = solve("equality-negative", "equality", eq_negative, 116,
               min_margin=0.0)
-    assert c["score"] < -0.2, (
-        f"equality-negative scored {c['score']:.4f} — not negative enough to "
+    require(c["score"] < -0.2, f"equality-negative scored {c['score']:.4f} — not negative enough to "
         f"be a sign-bit test")
-    assert abs(c["score"] + 1.0) > 0.01, "score landed on exactly -1.0"
+    require(abs(c["score"] + 1.0) > 0.01, "score landed on exactly -1.0")
     cases.append(c)
 
     # Equality in one dimension only: single-column / single-row maps.
@@ -564,7 +584,7 @@ def build_csim():
         templ = (255 - patch[40:72, 60:108]).astype(np.uint8)
         return patch, templ, None
     c = solve("anti-match", "edge", anti, 112)
-    assert c["score"] < 0.9, "anti-match found a perfect match?"
+    require(c["score"] < 0.9, "anti-match found a perfect match?")
     cases.append(c)
 
     # General uint8 robustness — the pipeline only ever sends 0/255, but the
@@ -586,10 +606,10 @@ def build_csim():
         patch[y0:, x0:] = bin_noise(rng, MAX_TEMPL_H, MAX_TEMPL_W, 0.92)
         return patch, patch[y0:, x0:].copy(), (x0, y0)
     c = solve("stress-max-envelope", "stress", stress_max, 114)
-    assert c["sii_max"] > 1.1e9, (
-        f"stress window ΣI² {c['sii_max']:.3e} too low to stress sumsq_t")
-    assert (c["x"], c["y"]) == (MAX_PATCH_W - MAX_TEMPL_W,
-                                MAX_PATCH_H - MAX_TEMPL_H)
+    require(c["sii_max"] > 1.1e9,
+            f"stress window ΣI² {c['sii_max']:.3e} too low to stress sumsq_t")
+    require((c["x"], c["y"]) == (MAX_PATCH_W - MAX_TEMPL_W,
+                                 MAX_PATCH_H - MAX_TEMPL_H))
     cases.append(c)
 
     # Same envelope, peak near the origin (band v=0 side of the search).
@@ -620,9 +640,8 @@ def build_csim():
     c = solve("stress-max-result", "stress", stress_max_result, 117)
     rw = MAX_PATCH_W - MIN_TEMPL_DIM + 1
     rh = MAX_PATCH_H - MIN_TEMPL_DIM + 1
-    assert (rw, rh) == (817, 304), f"result map {rw}x{rh}, expected 817x304"
-    assert (c["x"], c["y"]) == (rw - 1, rh - 1), (
-        f"peak at ({c['x']},{c['y']}), expected the final cell "
+    require((rw, rh) == (817, 304), f"result map {rw}x{rh}, expected 817x304")
+    require((c["x"], c["y"]) == (rw - 1, rh - 1), f"peak at ({c['x']},{c['y']}), expected the final cell "
         f"({rw - 1},{rh - 1})")
     cases.append(c)
 
@@ -679,7 +698,7 @@ def build_cosim(csim_cases):
         patch = bin_noise(rng, 48, 64, 0.35)
         return patch, patch.copy(), (0, 0)
     c = solve("cosim-eq-identical", "equality", eq_identical, 301)
-    assert c["score"] > 0.999
+    require(c["score"] > 0.999)
     cases.append(c)
 
     cases.append(solve("cosim-final-corner", "peak",
@@ -692,7 +711,7 @@ def build_cosim(csim_cases):
         templ = bin_noise(rng, 12, 16, 0.3)
         return patch, templ, (0, 0)
     c = solve("cosim-blank", "degenerate", blank, 304, min_margin=0.0)
-    assert c["score"] == 0.0
+    require(c["score"] == 0.0)
     cases.append(c)
 
     cases.append(solve("cosim-min-4x4", "edge",
@@ -734,17 +753,16 @@ def build_hw(cosim_cases, csim_cases):
     # transfer.  A patch over the bound would be truncated by the DMA and the
     # matcher would correlate against whatever the tail of its BRAM held.
     ph, pw = stress["patch"].shape
-    assert (pw, ph) == (MAX_PATCH_W, MAX_PATCH_H), (
-        f"stress case is {pw}x{ph}, not the {MAX_PATCH_W}x{MAX_PATCH_H} "
-        f"envelope — it no longer exercises §3.1")
-    assert pw * ph == 251740, f"envelope moved: {pw}x{ph} = {pw * ph} B"
+    require((pw, ph) == (MAX_PATCH_W, MAX_PATCH_H),
+            f"stress case is {pw}x{ph}, not the {MAX_PATCH_W}x{MAX_PATCH_H} "
+            f"envelope — it no longer exercises §3.1")
+    require(pw * ph == 251740, f"envelope moved: {pw}x{ph} = {pw * ph} B")
     for c in cases:
         h, w = c["patch"].shape
-        assert w * h <= DMA_MAX_BYTES, (
-            f"{c['tag']}: patch {w}x{h} = {w * h} B exceeds the §3.1 "
+        require(w * h <= DMA_MAX_BYTES, f"{c['tag']}: patch {w}x{h} = {w * h} B exceeds the §3.1 "
             f"single-transfer bound of {DMA_MAX_BYTES} B")
         th, tw = c["templ"].shape
-        assert tw * th <= DMA_MAX_BYTES, f"{c['tag']}: template too large"
+        require(tw * th <= DMA_MAX_BYTES, f"{c['tag']}: template too large")
 
     print(f"\nhw suite §3.1 headroom: {DMA_MAX_BYTES - pw * ph:,} B "
           f"({pw * ph} of {DMA_MAX_BYTES} used by stress-max-envelope)")
@@ -754,9 +772,9 @@ def build_hw(cosim_cases, csim_cases):
 # ---- Emission ------------------------------------------------------------
 
 def write_suite(cases, name, out=Path(".")):
-    assert len(cases) <= MAX_CASES
+    require(len(cases) <= MAX_CASES)
     tags = [c["tag"] for c in cases]
-    assert len(set(tags)) == len(tags), "duplicate tag"
+    require(len(set(tags)) == len(tags), "duplicate tag")
 
     patches = bytearray()
     templs = bytearray()
