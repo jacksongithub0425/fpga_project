@@ -40,9 +40,15 @@
 #      maximum-storage case at near-maximum window energies.  csim 23/23,
 #      cosim 7/7 (RTL), and `csim -argv hw` 9/9, plus the §4.6 direct DUT
 #      tests and width witnesses ahead of the manifest loop in every suite.
-#      That `hw` one is a C SIMULATION of the board vectors, NOT a hardware
-#      result — nothing has run on silicon yet; say "csim -argv hw: 9/9",
-#      never "hw 9/9".  (The exported -description string below is frozen at
+#      SILICON, 2026-08-07: the same 9 vectors now pass on hardware, 9/9,
+#      score and exact location per case, with the 251,740 B §3.1 transfer
+#      moved in one go, the 817x304 result map's final cell hit, and a clean
+#      re-invocation after the largest case.  The old warning here said the
+#      `hw` suite was a C SIMULATION and that one must never write "hw 9/9" —
+#      that rule existed because there was no hardware result to confuse it
+#      with, and it is retired now that there is one.  Distinguish them by
+#      name: "csim -argv hw" for the simulation, "silicon" for the board.
+#      (The exported -description string below is frozen at
 #      the numbers of the packaged 0.x IP and is deliberately NOT updated.)
 #      The rewrite this validated also
 #      replaced arithmetic that wrapped at real magnitudes and streams the

@@ -95,7 +95,9 @@ bytes are the sentinel `0xA5`, which the page pattern cannot produce.
   wrapper and so cannot run a loop that reads a metadata record and then
   decides what to do next — and the sequencing is the test.
 - **Not silicon.** The hardware half of this seam is a two-core block design
-  on the board. It is not built, and **nothing in this project has run on
-  silicon**. See contract §7.1 and §9.
+  on the board. It is not built. Note that the *matcher alone* now has a
+  hardware result (standalone image, 9/9, contract §8) — that is a different
+  image with one core in it, and it says nothing about this seam, which exists
+  precisely because joining the two is where the PS gets to be wrong.
 - **Not a throughput result.** One matcher invocation per (candidate,
   template) pair is the §6.4 architecture, not a measured rate.

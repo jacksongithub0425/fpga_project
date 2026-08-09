@@ -57,8 +57,15 @@ alone.  The incremental window loops add 20,352 x (tw+1 + rw) = 16.7M and
 everything else under 1M.  Do NOT try to pin it tighter by fitting the four
 measured cosim latencies: four points against four free parameters interpolates
 exactly and then extrapolates to nonsense (it wants a -56,109-cycle constant
-and a NEGATIVE per-tile cost).  The exact figure is a board measurement, not a
-derivation; until one exists, quote the bracket.
+and a NEGATIVE per-tile cost).
+
+**Superseded 2026-08-07 by a board measurement: 13.362 s, i.e. ~418M cycles at
+31.25 MHz** (and 0.676 s for stress-max-result).  The bracket's top was 1.6%
+low — close for the case it was built for, and 11% low on the smaller stress
+case, so do not reuse it as a general model.  It is kept here as the record of
+what was claimed before hardware existed, and because the reasoning about why
+NOT to fit the cosim latencies is still the right reasoning.  Quote the
+measured figure.
 
 `stress-max-result` covers the other axis.  The envelope case maximises
 storage but its result map is only 605 x 212; MAX_RESULT_W/H are 817/304,

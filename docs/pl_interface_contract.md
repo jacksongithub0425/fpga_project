@@ -1473,6 +1473,65 @@ Four consequences, three of which are constraints rather than relief:
   integration case, and the short-stream timeout ownership in §7.1.1 item 4
   are independent of clock rate.
 
+### Silicon — `template_match_core` standalone, 9/9 (2026-08-07)
+
+**The first hardware result in this project.** Everything previously labelled
+`hw` in this document was a C simulation of the board vectors; the rule that
+said to write "csim -argv hw: 9/9" and never "hw 9/9" is retired for this core,
+because there is now a real one to distinguish it from.
+
+Run on a Zynq-7020 (`xc7z020clg400-1`) under PYNQ, from
+`/home/xilinx/jupyter_notebooks/tme_test`, against the `tme_standalone` overlay
+carrying `TermCount:hls:tme_top:0.2`, `axi_dma_patch` and `axi_dma_templ` and
+nothing else. All six transferred files verified by `sha256sum -c` on the board
+before the run.
+
+| | result |
+|---|---|
+| cases | **9/9 passed**, score and **exact** (x, y) per case |
+| §3.1 single transfer | `stress-max-envelope` moved **251,740 B in one transfer**, 10,403 B under the platform's 262,143 B ceiling |
+| DMA bound, read at run time | **262,143 B** — matches the §3.1 constant rather than being assumed equal to it |
+| result-map extremes | `stress-max-result` peaked at **(816, 303)**, the final cell of the 817 × 304 map `MAX_RESULT_W/H` are sized for |
+| re-invocation | `cosim-eq-identical` re-run **after** the 251,740 B case: +1.0000 @ (0,0), PASS |
+| PL clock | `Clocks.fclk0_mhz` = **31.2500 MHz (32.000 ns)** — see the clock note below |
+| preflight | all four geometry registers round-trip 16 bits, are independent, and the core stays idle across the writes |
+| teardown | no unverified-halt warning, so `close()` read back `DMACR.Reset == 0 && DMASR.Halted == 1` on both channels |
+
+Read the last row precisely: a clean teardown is evidenced by the **absence**
+of the warning block `close()` prints on failure, plus a zero exit status.
+That is real evidence — the warning is unconditional on that path and forces
+exit 1 — but it is weaker than a printed confirmation, and `echo $?` is worth
+capturing in future transcripts.
+
+**Two scope limits, because this image is deliberately small.** It contains one
+core and its two DMAs, so a pass says the matcher's arithmetic and its §3.1
+transfer bound work on hardware when the PS tells it the truth about geometry.
+It says nothing about how the matcher *learns* that geometry — the extractor
+seam is C-simulated only (`hls/integration/`, §9) and has no hardware. And it
+says **nothing about timing**: the driver prints that reminder itself. Post-route
+WNS comes from the implementation report, below.
+
+#### First measured runtimes — the derived bracket was low
+
+| case | derived (this document, before the run) | **measured** |
+|---|---|---|
+| `stress-max-envelope` | 372–411M cycles, 11.9–13.2 s | **13.362 s** (≈ 418M cycles at 31.25 MHz) |
+| `stress-max-result` | 18–19M cycles, ≈ 0.6 s | **0.676 s** (≈ 21M cycles) |
+
+The bracket was derived from the synthesis report's fixed sub-loop latencies
+and explicitly excluded PS overhead. Measured, both cases land **above** its top
+— by 1.6% on the envelope case and 11% on the smaller one. The direction and
+the size are what a small fixed per-case overhead looks like (DMA setup plus the
+1 ms poll granularity is ~0.1 s, which is 1% of 13 s and 15% of 0.7 s), so the
+derivation was close for the case it was built for and should not be reused as
+a general model. **Quote the measured figures from here on**; the bracket stays
+only as the record of what was claimed before a board existed.
+
+The 120 s default timeout clears the measured worst case by 9×, which is the
+margin it was chosen for.
+
+---
+
 ### Post-route slack — measured (2026-08-04)
 
 Read off two standalone implementations under Vivado 2025.2, both routed.
@@ -1531,14 +1590,22 @@ board preset, and the handoff records `PCW_FCLK0_PERIPHERAL_DIVISOR0 = 8`,
 `DIVISOR1 = 4` — a divisor product of 32. Vivado computes 50 MHz from those,
 i.e. it assumes a 1600 MHz source. The board reports 31.25 MHz, and
 `1600 / 1000 = 50 / 31.25 = 1.6` exactly, so the most likely explanation is
-that PYNQ applies the same divisor pair to a **1000 MHz** PL PLL. **That last
-step is an inference, not a measurement** — the divisor arithmetic is read from
-the handoff, the 31.25 MHz is read from the board, and nothing has yet
-confirmed the source rate. Settle it in one line the next time the board is up:
+that PYNQ applies the same divisor pair to a **1000 MHz** PL PLL.
 
-```python
-from pynq import Clocks; print(Clocks.fclk0_mhz)
-```
+**The check this paragraph asked for has now run** (2026-08-07, matcher
+bring-up): the driver prints `PL clock (measured): 31.2500 MHz (32.000 ns)`
+before touching the core. So the 31.25 MHz is no longer "read off the board"
+loosely — it is `Clocks.fclk0_mhz` on the running system, and it matches the
+divisor arithmetic exactly.
+
+**What that does and does not settle.** It confirms the resulting PL clock and
+therefore the 1.6× over-constraint, which is all any timing statement here
+depends on. It does **not** directly measure the 1000 MHz source: PYNQ derives
+`fclk0_mhz` from the PLL configuration registers rather than counting edges, so
+`1000 / 32 = 31.25` remains the *explanation* for a number now confirmed by a
+second, independent path. That is a materially stronger position than before
+and still not a counter measurement. Nobody needs to close the remaining gap
+unless the source rate itself starts carrying weight.
 
 Either way the design is **over-constrained by 1.6×**, which is the safe
 direction: at the board's 32 ns the true slack on that path is ≈ **+22.14 ns**.
@@ -1793,7 +1860,7 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 |---|---|
 | `binarize_core` | DDR writer owns raw→logical mapping (§1); zero-fill last row and column |
 | `patch_extract_core` | `m_axi` pointer + explicit stride + address arithmetic; 16-bit page coords; 11/9-bit patch counters; §4 validation with wide-type overflow checks (§2.1); metadata stream (§6.2); per-patch pixel `TLAST`; `NUM_CANDS`; status registers. **Standalone hardware bring-up passed** — see §8 for scope and for what it does not cover |
-| `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, the mathematical TM_CCOEFF_NORMED expression — agreement with cv2 is tolerance-based rather than bit-exact, and only on the `dt>0 && di>0` domain (§4.6); **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies (21 csim / 5 cosim cases at that point; current counts below). The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 — that last is a **C simulation of the board vectors, not a hardware result**; nothing has run on silicon yet. **§4.6 closed 2026-08-05** (flat templates are illegal input, rejected host-side before the first DMA by an exact `min == max` test — OpenCV's `templNorm < DBL_EPSILON` branch is *not* exact in the flat direction, which is an argument for rejecting here rather than deferring to cv2) — no RTL change, plus two direct DUT tests, the dt / ±num width extremes and both width-coupling witnesses, all running in every suite ahead of the manifest loop. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
+| `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, the mathematical TM_CCOEFF_NORMED expression — agreement with cv2 is tolerance-based rather than bit-exact, and only on the `dt>0 && di>0` domain (§4.6); **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies (21 csim / 5 cosim cases at that point; current counts below). The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 in simulation — and, **2026-08-07, the same nine vectors pass on SILICON, 9/9** (§8): the 251,740 B §3.1 transfer moved in one go, the 817×304 map's final cell hit at (816,303), a clean re-invocation after the largest case, and 13.362 s measured for the envelope case. This core's standalone bring-up is done; the extractor seam it feeds is C-simulated only. **§4.6 closed 2026-08-05** (flat templates are illegal input, rejected host-side before the first DMA by an exact `min == max` test — OpenCV's `templNorm < DBL_EPSILON` branch is *not* exact in the flat direction, which is an argument for rejecting here rather than deferring to cv2) — no RTL change, plus two direct DUT tests, the dt / ±num width extremes and both width-coupling witnesses, all running in every suite ahead of the manifest loop. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
 | extractor → matcher seam | **C simulation done (2026-08-07)** — `hls/integration/`, the first execution of anything downstream of the extractor's outputs. Neither core's own testbench can fail this way, because the thing under test is the PS loop between them: `meta_out` carries one record per *descriptor* and `patch_out` carries pixels for *valid candidates only*, so the PS keeps two cursors, and a loop that advances them together is correct on every batch with nothing rejected and permanently misaligned on the first one without. Pins: record-vs-pixel cursor discipline across a mid-batch rejection, matcher geometry taken from the metadata record rather than re-derived (a clipped candidate whose patch is 106 px where the §4.5 formula says 152), page-vs-patch coordinate rebasing, and `TLAST` landing exactly on beat `patch_w*patch_h` — which `tme_top` ignores by construction, so a framing disagreement is silent in the matcher and corrupts the *next* patch. Both PS bugs are also performed deliberately as negative controls and required to produce a wrong answer, so the suite is known to be able to fail. Result reads `SEAM TEST PASSED (0 errors): 4 descriptors, 3 matcher runs, 2 injected-bug controls` — quote it that way, not as a count of printed PASS lines. **Not synthesised and not cosimulated, on purpose** (no top function of its own; cosim drives one core through an RTL wrapper and cannot run a loop that decides what to do next). The hardware half is a two-core block design and is **not built** |
 | `class_score_core` | parked. D1/D2 are repairable now (reorder flush-before-merge, §5.1); D6/D7/D8 and the per-kind-score/match-location gaps wait on §6.3. Un-parking it now also means widening `score_stream_t` from 48 to the 128-bit §6.4 layout |
 | `sw/tme_driver.py` | buffer sizes per §2.2; stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; result unpack per §6.3; enforce §4.1, §4.5 and §4.6 before dispatch |

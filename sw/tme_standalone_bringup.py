@@ -131,13 +131,14 @@ MIN_TEMPL_DIM = 4
 # BD edit can raise it to 26 bits without touching anything in this repo.
 DMA_MAX_BYTES_DEFAULT = 262143
 
-# stress-max-envelope is 372-411M cycles — 11.9-13.2 s at 31.25 MHz before any
-# PS overhead.  (Bracket, not a point: it is arithmetic off the synthesis
-# report's fixed sub-loop latencies; see tme_generate_golden.py's header for
-# the derivation and for why fitting the measured cosim latencies instead does
-# not work.  Nothing has run on silicon yet, so no measured figure exists.)
+# stress-max-envelope takes 13.362 s on silicon at 31.25 MHz — MEASURED
+# 2026-08-07 on the standalone image, not derived.  (stress-max-result: 0.676 s.)
+# The pre-silicon derivation said 372-411M cycles / 11.9-13.2 s; the real figure
+# is ~1.6% above the top of that bracket, which is about what the per-case DMA
+# setup and the 1 ms poll granularity account for.  Keep quoting the measured
+# number.
 # A 5 s timeout borrowed from the extractor's driver would report a hang on a
-# perfectly healthy run; 120 s clears even the top of the bracket 9x.
+# perfectly healthy run; 120 s clears the measured worst case 9x.
 DEFAULT_TIMEOUT_S = 120.0
 
 SCORE_TOL = 0.005        # matches MAX_SCORE_ERR in tme_tb.cpp
