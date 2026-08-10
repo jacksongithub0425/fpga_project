@@ -1,10 +1,18 @@
 // ---------------------------------------------------------------------------
-// pe_tme_tb.cpp — the extractor -> matcher seam, in C simulation.
+// pe_tme_tb.cpp — PS-sequenced integration, in C simulation.
 //
 //   vitis-run.bat --mode hls --tcl run_csim.tcl
 //   (generate first: ../.venv/Scripts/python.exe pe_tme_generate_golden.py)
 //
-// Both cores are verified separately and neither testbench can fail this way,
+// The original extractor -> matcher seam is preserved below.  A second,
+// separately manifested phase runs the real binarizer first, lands its compact
+// logical stream in a C model of simple-mode S2MM DDR, and then executes the
+// same extractor -> matcher handoff.  This is deliberately one executable:
+// the old four-descriptor result stays directly comparable while the new case
+// closes the algorithm/layout C-golden chain without pretending there is a
+// combined synthesizable top.
+//
+// Both downstream cores are verified separately and neither testbench can fail this way,
 // because neither one contains the other.  What runs here is the PS loop that
 // joins them — contract §7.1's open item — written the way the driver will
 // have to write it, and then checked.
@@ -42,7 +50,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <stdint.h>
 #include <vector>
+#include "binarize_core.h"
 #include "patch_extract_core.h"
 #include "tme_top.h"
 
@@ -100,6 +110,7 @@ static void write_cand(hls::stream<cand_stream_t>& s,
     d.data = (ap_uint<64>)packed;
     d.keep = -1; d.strb = -1;
     d.last = (ap_uint<1>)last;
+    d.user = 0; d.id = 0; d.dest = 0;
     s.write(d);
 }
 
@@ -111,6 +122,7 @@ static void push_pixels(hls::stream<pix_stream_t>& s,
         px.data = (ap_uint<8>)p[i];
         px.keep = -1; px.strb = -1;
         px.last = (ap_uint<1>)(i == n - 1);
+        px.user = 0; px.id = 0; px.dest = 0;
         s.write(px);
     }
 }
@@ -119,7 +131,7 @@ static void push_pixels(hls::stream<pix_stream_t>& s,
 // Run one candidate through the matcher exactly as the PS will.
 // ---------------------------------------------------------------------------
 
-static void run_matcher(const unsigned char* patch_bytes, int pw, int ph,
+static bool run_matcher(const unsigned char* patch_bytes, int pw, int ph,
                         const unsigned char* templ_bytes, int tw, int th,
                         float& score, ap_uint<16>& rx, ap_uint<16>& ry)
 {
@@ -128,6 +140,7 @@ static void run_matcher(const unsigned char* patch_bytes, int pw, int ph,
     push_pixels(ts, templ_bytes, tw * th);
     tme_top(ps, ts, (ap_uint<16>)pw, (ap_uint<16>)ph,
             (ap_uint<16>)tw, (ap_uint<16>)th, score, rx, ry);
+    return ps.empty() && ts.empty();
 }
 
 // ---------------------------------------------------------------------------
@@ -170,7 +183,13 @@ static int negative_control(const char* what, const char* why,
         return 1;
     }
     float score; ap_uint<16> rx, ry;
-    run_matcher(&emitted[(size_t)off], pw, ph, templ, tw, th, score, rx, ry);
+    bool drained = run_matcher(&emitted[(size_t)off], pw, ph,
+                               templ, tw, th, score, rx, ry);
+    if (!drained) {
+        printf("  [FAIL] negative control (%s): matcher did not consume its "
+               "declared patch/template payloads\n", what);
+        return 1;
+    }
     int page_x = r.x0 + (int)rx, page_y = r.y0 + (int)ry;
     ran++;
     bool same = (fabs((double)score - r.score) <= SCORE_TOL
@@ -190,7 +209,346 @@ static int negative_control(const char* what, const char* why,
 }
 
 // ---------------------------------------------------------------------------
-int main()
+// One compact binarizer -> extractor -> matcher case.
+//
+// The manifest is intentionally separate from tb_pe_tme_cases.txt.  The old
+// seam suite's padded stride is load-bearing extractor coverage; the v2
+// binarizer's real simple-mode S2MM boundary is compact, so this phase stores
+// its observed W*H output bytes directly with stride == W.
+// ---------------------------------------------------------------------------
+
+static int run_bpe_tme_case()
+{
+    FILE* fp = fopen("tb_bpe_tme_cases.txt", "r");
+    if (!fp) {
+        printf("ERROR: cannot open tb_bpe_tme_cases.txt\n");
+        return 1;
+    }
+
+    int ncand, img_w, img_h, stride, buffer_bytes;
+    int n_templ, templ_bytes, threshold, gray_bytes, bin_bytes;
+    int patch_blob_bytes;
+    if (fscanf(fp, "%d %d %d %d %d %d %d %d %d %d %d",
+               &ncand, &img_w, &img_h, &stride, &buffer_bytes,
+               &n_templ, &templ_bytes, &threshold,
+               &gray_bytes, &bin_bytes, &patch_blob_bytes) != 11) {
+        printf("ERROR: bad three-stage manifest header\n");
+        fclose(fp);
+        return 1;
+    }
+
+    Row r;
+    if (fscanf(fp, "%d %llx %d %d %x %d %d %d %d %d %d %d %d %lf %d %d "
+                   "%d %d %lf %31s %63s",
+               &r.index, &r.packed, &r.last, &r.valid, &r.reason,
+               &r.x0, &r.y0, &r.pw, &r.ph, &r.templ_id, &r.templ_off,
+               &r.tw, &r.th, &r.score, &r.page_x, &r.page_y,
+               &r.ux, &r.uy, &r.margin, r.category, r.tag) != 21) {
+        printf("ERROR: bad three-stage manifest row\n");
+        fclose(fp);
+        return 1;
+    }
+    fclose(fp);
+
+    // Pin the exact case before using any manifest-controlled size for an
+    // allocation or vector index.  The generator hash-pins the same values;
+    // this independent guard makes a stale/partial manifest fail closed.
+    bool manifest_ok =
+        ncand == 1 && img_w == 24 && img_h == 20
+        && stride == 24 && buffer_bytes == 480
+        && n_templ == 1 && templ_bytes == 16 && threshold == 140
+        && gray_bytes == 480 && bin_bytes == 480 && patch_blob_bytes == 168
+        && r.index == 0 && r.packed == 0x00040010000A000CULL
+        && r.last == 1 && r.valid == 1 && r.reason == 0
+        && r.x0 == 3 && r.y0 == 4 && r.pw == 14 && r.ph == 12
+        && r.templ_id == 0 && r.templ_off == 0 && r.tw == 4 && r.th == 4
+        && fabs(r.score - 1.0) < 1e-12
+        && r.page_x == 7 && r.page_y == 5 && r.ux == 4 && r.uy == 1
+        && fabs(r.margin - 0.622036) < 0.0000005
+        && strcmp(r.category, "three-stage") == 0
+        && strcmp(r.tag, "logical-layout-shift") == 0;
+    if (!manifest_ok) {
+        printf("ERROR: three-stage manifest is not the frozen 24x20 case; "
+               "regenerate it with pe_tme_generate_golden.py\n");
+        return 1;
+    }
+
+    int errors = 0;
+    const int total = 480;
+    const int patch_bytes = 168;
+
+    unsigned char* gray = load_file("tb_bpe_tme_gray.bin", gray_bytes);
+    unsigned char* bin_gold = load_file("tb_bpe_tme_bin.bin", bin_bytes);
+    unsigned char* patch_gold = load_file("tb_bpe_tme_patch.bin",
+                                          patch_blob_bytes);
+    unsigned char* templ = load_file("tb_bpe_tme_templs.bin", templ_bytes);
+    if (!gray || !bin_gold || !patch_gold || !templ) {
+        free(gray); free(bin_gold); free(patch_gold); free(templ);
+        return errors + 1;
+    }
+
+    printf("\n=== binarizer -> extractor -> matcher C/golden, compact "
+           "%dx%d page ===\n", img_w, img_h);
+
+    // ---- real binarizer -------------------------------------------------
+    int bin_stage_start = errors;
+    hls::stream<bpix_t> gray_stream("bpe_gray");
+    hls::stream<bpix_t> bin_stream("bpe_bin");
+    for (int i = 0; i < total; ++i) {
+        bpix_t px;
+        px.data = gray[i];
+        px.keep = 1; px.strb = 1;
+        px.last = (ap_uint<1>)(i == total - 1);
+        px.user = 0; px.id = 0; px.dest = 0;
+        gray_stream.write(px);
+    }
+    binarize_core(gray_stream, bin_stream,
+                  (ap_uint<16>)img_w, (ap_uint<16>)img_h,
+                  (ap_uint<8>)threshold);
+
+    std::vector<unsigned char> observed_bin((size_t)total, 0);
+    for (int i = 0; i < total; ++i) {
+        if (bin_stream.empty()) {
+            printf("  [FAIL] binarizer under-produced at beat %d/%d\n", i, total);
+            errors++;
+            break;
+        }
+        bpix_t px = bin_stream.read();
+        unsigned char got = (unsigned char)px.data;
+        observed_bin[(size_t)i] = got;
+        bool last = i == total - 1;
+        if (got != bin_gold[i]) {
+            errors++;
+            if (report_ok())
+                printf("  [FAIL] bin logical (%d,%d)=0x%02x, want 0x%02x\n",
+                       i / img_w, i % img_w, got, bin_gold[i]);
+        }
+        if ((unsigned)px.keep != 1u || (unsigned)px.strb != 1u
+            || (unsigned)px.user != 0u || (unsigned)px.id != 0u
+            || (unsigned)px.dest != 0u || (bool)px.last != last) {
+            errors++;
+            if (report_ok())
+                printf("  [FAIL] bin sideband/TLAST mismatch at beat %d\n", i);
+        }
+    }
+    if (!gray_stream.empty()) {
+        errors++;
+        printf("  [FAIL] binarizer left %d grayscale beats unread\n",
+               (int)gray_stream.size());
+    }
+    if (!bin_stream.empty()) {
+        errors++;
+        printf("  [FAIL] binarizer over-produced %d beats\n",
+               (int)bin_stream.size());
+    }
+    for (int c = 0; c < img_w; ++c) {
+        if (observed_bin[(size_t)(img_h - 1) * img_w + c] != 0) errors++;
+    }
+    for (int rr = 0; rr < img_h; ++rr) {
+        if (observed_bin[(size_t)rr * img_w + img_w - 1] != 0) errors++;
+    }
+    const int witness = 4 * img_w + 12;
+    if (observed_bin[(size_t)witness] != 255) {
+        errors++;
+        printf("  [FAIL] truncation witness logical (4,12)=0x%02x, want "
+               "0xff from 2248 >> 4 = 140\n",
+               observed_bin[(size_t)witness]);
+    } else {
+        printf("  [PASS] truncation witness: logical (4,12)=255 from "
+               "2248 >> 4 = 140 (rounded division would produce 141)\n");
+    }
+    printf("  [%s] binarizer: %d input beats -> %d compact logical bytes, "
+           "exact raster/sidebands/TLAST; final row/column zero\n",
+           errors == bin_stage_start ? "PASS" : "FAIL", total, total);
+
+    // ---- observed compact output is the S2MM DDR image ------------------
+    int extractor_stage_start = errors;
+    hls::stream<cand_stream_t> cand_stream("bpe_cand");
+    hls::stream<ppix_stream_t> patch_stream("bpe_patch");
+    hls::stream<pmeta_stream_t> meta_stream("bpe_meta");
+    write_cand(cand_stream, r.packed, 1);
+
+    ap_uint<32> flags = 0xDEAD, rejected = 0xDEAD, processed = 0xDEAD;
+    patch_extract_core(cand_stream, patch_stream, meta_stream,
+                       &observed_bin[0],
+                       (ap_uint<16>)img_w, (ap_uint<16>)img_h,
+                       (ap_uint<32>)stride, (ap_uint<32>)buffer_bytes,
+                       (ap_uint<16>)1, flags, rejected, processed);
+
+    if (!cand_stream.empty()) {
+        errors++;
+        printf("  [FAIL] extractor left the candidate descriptor unread\n");
+    }
+    if (flags != 0 || rejected != 0 || processed != 1) {
+        errors++;
+        printf("  [FAIL] extractor status flags=0x%x rejected=%u processed=%u, "
+               "want 0/0/1\n", (unsigned)flags, (unsigned)rejected,
+               (unsigned)processed);
+    }
+
+    bool meta_ok = true;
+    int m_x0 = 0, m_y0 = 0, m_pw = 0, m_ph = 0;
+    if (meta_stream.empty()) {
+        errors++;
+        meta_ok = false;
+        printf("  [FAIL] extractor emitted no metadata record\n");
+    } else {
+        pmeta_stream_t m = meta_stream.read();
+        int m_id = (int)m.data.range(15, 0);
+        unsigned m_status = (unsigned)m.data.range(31, 16);
+        m_x0 = (int)m.data.range(47, 32);
+        m_y0 = (int)m.data.range(63, 48);
+        m_pw = (int)m.data.range(79, 64);
+        m_ph = (int)m.data.range(95, 80);
+        unsigned reserved = (unsigned)m.data.range(127, 96);
+        meta_ok = (m_id == r.index && m_status == 1u
+                   && m_x0 == r.x0 && m_y0 == r.y0
+                   && m_pw == r.pw && m_ph == r.ph && reserved == 0u
+                   && (unsigned)m.keep == 0xFFFFu
+                   && (unsigned)m.strb == 0xFFFFu
+                   && (unsigned)m.user == 0u && (unsigned)m.id == 0u
+                   && (unsigned)m.dest == 0u && (bool)m.last);
+        if (!meta_ok) {
+            errors++;
+            printf("  [FAIL] metadata id=%d status=0x%x (%d,%d) %dx%d "
+                   "reserved=0x%x; want 0/1 (%d,%d) %dx%d/0\n",
+                   m_id, m_status, m_x0, m_y0, m_pw, m_ph, reserved,
+                   r.x0, r.y0, r.pw, r.ph);
+        }
+    }
+    if (!meta_stream.empty()) {
+        errors++;
+        printf("  [FAIL] extractor emitted %d extra metadata records\n",
+               (int)meta_stream.size());
+    }
+
+    std::vector<unsigned char> observed_patch((size_t)patch_bytes, 0);
+    for (int i = 0; i < patch_bytes; ++i) {
+        if (patch_stream.empty()) {
+            errors++;
+            printf("  [FAIL] extractor patch under-produced at beat %d/%d\n",
+                   i, patch_bytes);
+            break;
+        }
+        ppix_stream_t px = patch_stream.read();
+        unsigned char got = (unsigned char)px.data;
+        observed_patch[(size_t)i] = got;
+        bool last = i == patch_bytes - 1;
+        if (got != patch_gold[i]) {
+            errors++;
+            if (report_ok())
+                printf("  [FAIL] patch byte %d=0x%02x, want 0x%02x\n",
+                       i, got, patch_gold[i]);
+        }
+        if ((unsigned)px.keep != 1u || (unsigned)px.strb != 1u
+            || (unsigned)px.user != 0u || (unsigned)px.id != 0u
+            || (unsigned)px.dest != 0u || (bool)px.last != last) {
+            errors++;
+            if (report_ok())
+                printf("  [FAIL] patch sideband/TLAST mismatch at beat %d\n", i);
+        }
+    }
+    if (!patch_stream.empty()) {
+        errors++;
+        printf("  [FAIL] extractor over-produced %d patch beats\n",
+               (int)patch_stream.size());
+    }
+    printf("  [%s] extractor: record (%d,%d) %dx%d, %d exact patch beats, "
+           "status 0/0/1\n",
+           meta_ok && errors == extractor_stage_start ? "PASS" : "FAIL",
+           m_x0, m_y0, m_pw, m_ph, patch_bytes);
+
+    // ---- matcher is programmed from the VERIFIED record ----------------
+    if (meta_ok) {
+        float score = 0.0f;
+        ap_uint<16> rx = 0, ry = 0;
+        bool drained = run_matcher(&observed_patch[0], m_pw, m_ph,
+                                   templ, r.tw, r.th, score, rx, ry);
+        uint32_t score_bits = 0;
+        memcpy(&score_bits, &score, sizeof(score_bits));
+        int page_x = m_x0 + (int)rx;
+        int page_y = m_y0 + (int)ry;
+        bool match_ok = drained && score_bits == 0x3F800000u
+                        && fabs((double)score - r.score) <= SCORE_TOL
+                        && (int)rx == r.ux && (int)ry == r.uy
+                        && page_x == r.page_x && page_y == r.page_y;
+        if (!match_ok) {
+            errors++;
+            printf("  [FAIL] matcher score %.6f bits=0x%08x local (%d,%d) "
+                   "page (%d,%d), want %.6f/0x3f800000 local (%d,%d) "
+                   "page (%d,%d); drained=%d\n", (double)score, score_bits,
+                   (int)rx, (int)ry, page_x, page_y, r.score,
+                   r.ux, r.uy, r.page_x, r.page_y, (int)drained);
+        } else {
+            printf("  [PASS] matcher: score +1.000000 (0x3f800000), local "
+                   "(%d,%d) -> page (%d,%d), geometry from metadata\n",
+                   (int)rx, (int)ry, page_x, page_y);
+        }
+    } else {
+        errors++;
+        printf("  [FAIL] matcher not run: extractor metadata was not exact\n");
+    }
+
+    // ---- injected retired-layout control -------------------------------
+    // Legacy v1 storage placed raw (r,c) at the same DDR coordinate.  In
+    // terms of the logical golden that is a +1,+1 shift with zero row/col 0.
+    std::vector<unsigned char> legacy((size_t)total, 0);
+    for (int rr = 1; rr < img_h; ++rr)
+        for (int cc = 1; cc < img_w; ++cc)
+            legacy[(size_t)rr * img_w + cc] =
+                bin_gold[(size_t)(rr - 1) * img_w + cc - 1];
+    std::vector<unsigned char> legacy_patch((size_t)patch_bytes, 0);
+    int legacy_diffs = 0;
+    for (int rr = 0; rr < r.ph; ++rr)
+        for (int cc = 0; cc < r.pw; ++cc) {
+            int k = rr * r.pw + cc;
+            legacy_patch[(size_t)k] =
+                legacy[(size_t)(r.y0 + rr) * img_w + r.x0 + cc];
+            if (legacy_patch[(size_t)k] != patch_gold[k]) legacy_diffs++;
+        }
+    float legacy_score = 0.0f;
+    ap_uint<16> legacy_x = 0, legacy_y = 0;
+    bool legacy_drained = run_matcher(&legacy_patch[0], r.pw, r.ph,
+                                      templ, r.tw, r.th,
+                                      legacy_score, legacy_x, legacy_y);
+    uint32_t legacy_score_bits = 0;
+    memcpy(&legacy_score_bits, &legacy_score, sizeof(legacy_score_bits));
+    bool legacy_detected = legacy_drained && legacy_diffs == 53
+                           && legacy_score_bits == 0x3F800000u
+                           && (int)legacy_x == 5 && (int)legacy_y == 2
+                           && ((int)legacy_x != r.ux || (int)legacy_y != r.uy);
+    if (!legacy_detected) {
+        errors++;
+        printf("  [FAIL] retired-layout control: %d patch differences, score "
+               "%.6f/0x%08x at local (%d,%d), want 53 and +1.0 at the "
+               "wrong peak (5,2)\n", legacy_diffs, (double)legacy_score,
+               legacy_score_bits,
+               (int)legacy_x, (int)legacy_y);
+    } else {
+        printf("  [PASS] retired-layout control: +1,+1 storage changes "
+               "53/%d patch bytes and moves the peak to local (5,2)\n",
+               patch_bytes);
+    }
+
+    if (errors) {
+        printf("\nTHREE-STAGE C/GOLDEN FAILED (%d error%s): expected %d "
+               "gray beats -> %d logical bytes -> %d patch beats -> matcher "
+               "local (%d,%d), page (%d,%d); 1 injected-layout control\n",
+               errors, errors == 1 ? "" : "s", total, total, patch_bytes,
+               r.ux, r.uy, r.page_x, r.page_y);
+    } else {
+        printf("\nTHREE-STAGE C/GOLDEN PASSED (0 errors): %d gray beats -> "
+               "%d logical bytes -> %d patch beats -> matcher local (%d,%d), "
+               "page (%d,%d); 1 injected-layout control\n",
+               total, total, patch_bytes, r.ux, r.uy, r.page_x, r.page_y);
+    }
+
+    free(gray); free(bin_gold); free(patch_gold); free(templ);
+    return errors;
+}
+
+// ---------------------------------------------------------------------------
+static int run_pe_tme_seam()
 {
     // ---- manifest -------------------------------------------------------
     FILE* fp = fopen("tb_pe_tme_cases.txt", "r");
@@ -218,9 +576,10 @@ int main()
     unsigned char* templs = load_file("tb_pe_tme_templs.bin", templ_bytes);
     if (!image || !templs) return 1;
 
-    // ---- strided DDR buffer, as the binarizer's writer leaves it --------
-    // Padding is the sentinel: a stride bug lands on 0xA5, which the page
-    // pattern cannot produce (pattern_block replaces it).
+    // ---- deliberately padded DDR buffer for extractor-only coverage -----
+    // This preserved seam phase does not model the compact v2 S2MM boundary;
+    // the full-chain phase above does. Padding is the sentinel: a stride bug
+    // lands on 0xA5, which the page pattern cannot produce.
     unsigned char* buf = (unsigned char*)malloc((size_t)buffer_bytes);
     memset(buf, SENTINEL, (size_t)buffer_bytes);
     for (int y = 0; y < img_h; y++)
@@ -358,13 +717,19 @@ int main()
 
         // ---- the matcher, driven from the record ------------------------
         float score; ap_uint<16> rx, ry;
-        run_matcher(&emitted[(size_t)patch_off], m_pw, m_ph,
-                    templs + r.templ_off, r.tw, r.th, score, rx, ry);
+        bool matcher_drained = run_matcher(
+            &emitted[(size_t)patch_off], m_pw, m_ph,
+            templs + r.templ_off, r.tw, r.th, score, rx, ry);
 
         int page_x = m_x0 + (int)rx, page_y = m_y0 + (int)ry;
         bool s_ok = fabs((double)score - r.score) <= SCORE_TOL;
         bool l_ok = ((int)rx == r.ux && (int)ry == r.uy);
         bool p_ok = (page_x == r.page_x && page_y == r.page_y);
+        if (!matcher_drained) {
+            errors++;
+            printf("  [FAIL] %s: matcher left patch/template beats unread\n",
+                   r.tag);
+        }
         if (!(s_ok && l_ok && p_ok)) {
             errors++;
             printf("  [FAIL] %s: score %.6f (want %.6f), local (%d,%d) want "
@@ -460,5 +825,19 @@ int main()
            errors ? "SEAM TEST FAILED" : "SEAM TEST PASSED",
            errors, errors == 1 ? "" : "s",
            ncand, n_patches_seen, neg_ctl_ran);
+    return errors;
+}
+
+int main()
+{
+    g_reported = 0;
+    int three_stage_errors = run_bpe_tme_case();
+    g_reported = 0;
+    int seam_errors = run_pe_tme_seam();
+    int errors = three_stage_errors + seam_errors;
+    printf("\n%s: three-stage errors=%d, seam errors=%d\n",
+           errors ? "INTEGRATION C/GOLDEN FAILED"
+                  : "INTEGRATION C/GOLDEN PASSED",
+           three_stage_errors, seam_errors);
     return errors ? 1 : 0;
 }

@@ -71,8 +71,26 @@ Row (fixed numeric fields first, strings last, so a C++ reader can scan):
 Invalid rows carry templ_id = -1 and zeros for every matcher field; they
 still carry x0/y0/patch_w/patch_h, because the record reports geometry even
 when valid=0 and the TB checks that too.
+
+The same run also writes a separate, deliberately small three-stage case:
+
+    tb_bpe_tme_gray.bin     24x20 grayscale input to binarize_core
+    tb_bpe_tme_bin.bin      exact compact logical binarizer golden
+    tb_bpe_tme_patch.bin    exact 14x12 extractor patch golden
+    tb_bpe_tme_templs.bin   one literal raw 4x4 matcher template
+    tb_bpe_tme_cases.txt    one descriptor, using the row schema above
+
+Its header preserves the seven PE->TME fields above, then appends:
+
+    threshold gray_blob_bytes bin_blob_bytes patch_blob_bytes
+
+This is a separate manifest because the PE->TME suite has one global 512x384
+pre-binarized page and load-bearing rejected-descriptor ordering.  Folding a
+24x20 grayscale case into that manifest would either lie about the global page
+or destroy the cursor-skew coverage that suite exists to provide.
 """
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -82,9 +100,17 @@ import numpy as np
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE.parent / "patch_extract"))
 sys.path.insert(0, str(_HERE.parent / "template_match"))
+sys.path.insert(0, str(_HERE.parents[1] / "sw"))
 
 import patch_extract_generate_golden as PE      # noqa: E402
 import tme_generate_golden as TME               # noqa: E402
+import binarize_dma_checks as BIN                # noqa: E402
+
+_EXPECTED_BIN_ORACLE = (_HERE.parents[1] / "sw" / "binarize_dma_checks.py")
+if Path(BIN.__file__).resolve() != _EXPECTED_BIN_ORACLE.resolve():
+    raise RuntimeError(
+        f"imported the wrong binarizer oracle: {BIN.__file__}; expected "
+        f"{_EXPECTED_BIN_ORACLE}")
 
 # A page big enough to hold an unclipped 152x96 patch with room around it,
 # small enough that csim stays seconds.  Stride deliberately EXCEEDS img_w:
@@ -106,6 +132,28 @@ MAX_TW, MAX_TH = 40, 30
 # The best-vs-runner-up separation that lets the TB assert an EXACT location
 # instead of a neighbourhood.  Same role as MIN_MARGIN in tme_generate_golden.
 MIN_MARGIN = 0.02
+
+# Separate binarize -> extractor -> matcher case.  Compact stride is
+# deliberate: it is the layout the unchanged simple-mode S2MM produces.  The
+# PE -> TME suite above already covers a non-compact stride independently.
+BPE_IMG_W, BPE_IMG_H = 24, 20
+BPE_STRIDE = BPE_IMG_W
+BPE_BUFFER_BYTES = BPE_STRIDE * BPE_IMG_H
+BPE_THRESHOLD = 140
+BPE_TW = BPE_TH = 4
+
+# Fixed hashes make oracle drift fatal even under ``python -O``.  In
+# particular, generating the literal template by cropping the DUT output
+# would let the retired raw-layout shift follow itself through the matcher and
+# turn this case into a tautology.
+BPE_HASHES = {
+    "gray":  "ede44a0efa7757102f18bd583983d4b262a6e5f7141bd5a13302d8be555573b3",
+    "bin":   "118ac39fb5cfed72a7e024cddee9045ae43157710600e0772f91fe50bd829a57",
+    "patch": "3a97be1698cea0fc1805683ccba6f2e62b4ed1742196023b561e7b9e5ba47c0d",
+    "templ": "f00dc88ec2407e1e83e7a0c43949506f46f526b586c2bcc7c2990c35b5d24f8f",
+}
+BPE_CASES_SHA256 = (
+    "ed90565eec56a4aa816d7ba12f64a146cabb95b58548254f304d65ba111a740b")
 
 
 def descriptors():
@@ -179,6 +227,198 @@ def offset_template(image, x0, y0, pw, ph, tag):
     raise RuntimeError(f"{tag}: no off-patch template gave a unique sub-unity peak")
 
 
+def _sha256(blob):
+    return hashlib.sha256(blob).hexdigest()
+
+
+def build_bpe_case():
+    """Compose the established binarizer, extractor and matcher oracles.
+
+    Every check is an explicit raise rather than an assert: this function is
+    run under ``python -O`` as an acceptance gate, so a disabled assertion
+    must not be able to publish unchecked vectors.
+    """
+    yy, xx = np.mgrid[0:BPE_IMG_H, 0:BPE_IMG_W]
+    gray = ((53 * yy + 29 * xx + 7 * yy * xx + 172) & 0xFF).astype(np.uint8)
+    if int(gray[3, 11]) != 0x71:
+        raise RuntimeError(
+            f"BPE gray formula drifted at (3,11): got 0x{gray[3, 11]:02x}, "
+            "expected the pre-witness value 0x71")
+    gray[3, 11] = 0x79
+
+    # Use the board suite's exact v2.0 HLS oracle rather than adding another
+    # copy of the Gaussian/truncation/layout arithmetic here.
+    bin_image = BIN.cpu_golden(gray, BPE_THRESHOLD)
+
+    c = PE.cand(12, 10, "left", BPE_TW, BPE_TH,
+                "logical-layout-shift", category="three-stage")
+    valid, reason, x0, y0, x1, y1 = PE.model_validate(
+        c, BPE_IMG_W, BPE_IMG_H)
+    pw, ph = x1 - x0, y1 - y0
+    packed = PE.pack(c)
+
+    # Literal, not a crop of observed output.  It happens to equal the exact
+    # CPU-golden crop at local (4,1); keeping the bytes literal is what makes a
+    # DUT storage shift move the peak instead of moving the template with it.
+    templ = np.array([
+        [255, 255,   0,   0],
+        [255, 255, 255,   0],
+        [  0,   0,   0, 255],
+        [255,   0,   0, 255],
+    ], dtype=np.uint8)
+    patch = np.ascontiguousarray(bin_image[y0:y1, x0:x1])
+    score, ux, uy, margin, _ = TME.golden(patch, templ)
+
+    # ---- frozen input/geometry/output ---------------------------------
+    if not valid or reason != 0:
+        raise RuntimeError(
+            f"BPE descriptor must be valid with reason 0, got "
+            f"valid={valid} reason=0x{reason:x}")
+    if packed != 0x00040010000A000C:
+        raise RuntimeError(
+            f"BPE packed descriptor drifted: 0x{packed:016x}")
+    if (x0, y0, x1, y1, pw, ph) != (3, 4, 17, 16, 14, 12):
+        raise RuntimeError(
+            "BPE geometry drifted: "
+            f"box=({x0},{y0})..({x1},{y1}) patch={pw}x{ph}")
+    if gray.shape != (20, 24) or gray.size != 480:
+        raise RuntimeError(f"BPE gray shape drifted: {gray.shape}")
+    if bin_image.shape != (20, 24) or bin_image.size != 480:
+        raise RuntimeError(f"BPE binary shape drifted: {bin_image.shape}")
+    if patch.shape != (12, 14) or patch.size != 168:
+        raise RuntimeError(f"BPE patch shape drifted: {patch.shape}")
+    if templ.shape != (4, 4) or templ.size != 16:
+        raise RuntimeError(f"BPE template shape drifted: {templ.shape}")
+    if not np.array_equal(templ, patch[1:5, 4:8]):
+        raise RuntimeError(
+            "literal BPE template no longer equals the exact golden crop at "
+            "local (4,1)")
+    if (int(np.count_nonzero(bin_image)), int(np.count_nonzero(patch)),
+            int(np.count_nonzero(templ))) != (279, 115, 8):
+        raise RuntimeError(
+            "BPE nonzero counts drifted: "
+            f"page={np.count_nonzero(bin_image)} "
+            f"patch={np.count_nonzero(patch)} "
+            f"template={np.count_nonzero(templ)}")
+    if (np.count_nonzero(bin_image[0, :]) != 0
+            or np.count_nonzero(bin_image[-1, :]) != 0
+            or np.count_nonzero(bin_image[:, 0]) != 0
+            or np.count_nonzero(bin_image[:, -1]) != 0):
+        raise RuntimeError("BPE logical border is not all zero")
+
+    # HLS's exact truncation decision.  The modified input is the top-left
+    # kernel tap for logical (4,12): sum 2248 truncates to 140 but rounds to
+    # 141, so threshold 140 must produce 255 and a rounding implementation
+    # must disagree at this byte.
+    win = gray[3:6, 11:14].astype(np.int32)
+    weighted_sum = int(
+        win[0, 0] + 2 * win[0, 1] + win[0, 2]
+        + 2 * win[1, 0] + 4 * win[1, 1] + 2 * win[1, 2]
+        + win[2, 0] + 2 * win[2, 1] + win[2, 2])
+    trunc = weighted_sum >> 4
+    rounded = (weighted_sum + 8) >> 4
+    if (weighted_sum, trunc, rounded, int(bin_image[4, 12])) != (
+            2248, 140, 141, 255):
+        raise RuntimeError(
+            "BPE truncation witness drifted: "
+            f"sum={weighted_sum} trunc={trunc} rounded={rounded} "
+            f"pixel={int(bin_image[4, 12])}")
+
+    # The exact-integer matcher oracle must retain a unique, well-separated
+    # perfect peak in the intended coordinate frame.
+    expected_margin = 0.6220355269907727
+    if abs(score - 1.0) > 1e-12 or (ux, uy) != (4, 1):
+        raise RuntimeError(
+            f"BPE matcher golden drifted: score={score} local=({ux},{uy})")
+    if abs(margin - expected_margin) > 1e-12:
+        raise RuntimeError(
+            f"BPE matcher margin drifted: {margin} != {expected_margin}")
+    if (x0 + ux, y0 + uy) != (7, 5):
+        raise RuntimeError(
+            f"BPE page rebase drifted: ({x0 + ux},{y0 + uy})")
+
+    # Inject the retired raw stream layout in the golden model.  A suite that
+    # still gave the right answer under this control would not test the
+    # boundary it claims to test.
+    legacy = np.zeros_like(bin_image)
+    legacy[2:, 2:] = bin_image[1:-1, 1:-1]
+    legacy_patch = np.ascontiguousarray(legacy[y0:y1, x0:x1])
+    n_legacy_diff = int(np.count_nonzero(legacy_patch != patch))
+    legacy_score, legacy_x, legacy_y, _, _ = TME.golden(
+        legacy_patch, templ)
+    if n_legacy_diff != 53:
+        raise RuntimeError(
+            f"BPE legacy-layout control drifted to {n_legacy_diff} patch "
+            "mismatches; expected 53")
+    if (abs(legacy_score - 1.0) > 1e-12
+            or (legacy_x, legacy_y) != (5, 2)):
+        raise RuntimeError(
+            "BPE legacy-layout control no longer moves the peak exactly one "
+            f"pixel: score={legacy_score} local=({legacy_x},{legacy_y})")
+    if (legacy_x, legacy_y) == (ux, uy):
+        raise RuntimeError(
+            "BPE legacy-layout control still gives the golden location; the "
+            "case cannot detect the raw/logical boundary regression")
+
+    blobs = {
+        "gray": gray.tobytes(),
+        "bin": bin_image.tobytes(),
+        "patch": patch.tobytes(),
+        "templ": templ.tobytes(),
+    }
+    for name, expected in BPE_HASHES.items():
+        observed = _sha256(blobs[name])
+        if observed != expected:
+            raise RuntimeError(
+                f"BPE {name} hash drifted: {observed} != {expected}")
+
+    row = dict(index=0, packed=packed, last=1, valid=1, reason=reason,
+               x0=x0, y0=y0, pw=pw, ph=ph, templ_id=0, templ_off=0,
+               tw=BPE_TW, th=BPE_TH, score=score,
+               page_x=x0 + ux, page_y=y0 + uy, ux=ux, uy=uy,
+               margin=margin, category="three-stage",
+               tag="logical-layout-shift")
+    return row, blobs, weighted_sum, n_legacy_diff
+
+
+def write_bpe_case(out):
+    row, blobs, weighted_sum, n_legacy_diff = build_bpe_case()
+    (out / "tb_bpe_tme_gray.bin").write_bytes(blobs["gray"])
+    (out / "tb_bpe_tme_bin.bin").write_bytes(blobs["bin"])
+    (out / "tb_bpe_tme_patch.bin").write_bytes(blobs["patch"])
+    (out / "tb_bpe_tme_templs.bin").write_bytes(blobs["templ"])
+
+    header = (
+        f"1 {BPE_IMG_W} {BPE_IMG_H} {BPE_STRIDE} {BPE_BUFFER_BYTES} "
+        f"1 {len(blobs['templ'])} {BPE_THRESHOLD} {len(blobs['gray'])} "
+        f"{len(blobs['bin'])} {len(blobs['patch'])}")
+    line = (
+        f"{row['index']} {row['packed']:016x} {row['last']} {row['valid']} "
+        f"{row['reason']:04x} {row['x0']} {row['y0']} {row['pw']} "
+        f"{row['ph']} {row['templ_id']} {row['templ_off']} {row['tw']} "
+        f"{row['th']} {row['score']:.6f} {row['page_x']} {row['page_y']} "
+        f"{row['ux']} {row['uy']} {row['margin']:.6f} {row['category']} "
+        f"{row['tag']}")
+    manifest = (header + "\n" + line + "\n").encode("ascii")
+    manifest_hash = _sha256(manifest)
+    if manifest_hash != BPE_CASES_SHA256:
+        raise RuntimeError(
+            f"BPE manifest hash drifted: {manifest_hash} != "
+            f"{BPE_CASES_SHA256}")
+    (out / "tb_bpe_tme_cases.txt").write_bytes(manifest)
+
+    print(
+        f"BPE case: page {BPE_IMG_W}x{BPE_IMG_H} threshold {BPE_THRESHOLD}, "
+        f"patch {row['pw']}x{row['ph']} @({row['x0']},{row['y0']}), "
+        f"score {row['score']:+.6f}, local ({row['ux']},{row['uy']}) -> "
+        f"page ({row['page_x']},{row['page_y']}), margin "
+        f"{row['margin']:.4f}")
+    print(
+        f"  truncation control PASS: sum {weighted_sum} >> 4 = 140; "
+        f"legacy-layout control PASS: {n_legacy_diff}/168 bytes differ, "
+        "peak moves to (5,2)")
+
+
 def main():
     # The cv2 cross-check inside TME.golden must run on the generic path for
     # the same reason it must there: an IPP build dispatches to a different
@@ -244,6 +484,11 @@ def main():
         f"{r['margin']:.6f} {r['category']} {r['tag']}"
         for r in rows]
     (out / "tb_pe_tme_cases.txt").write_text("\n".join(lines) + "\n")
+
+    # Separate global geometry and a separate summary: the existing seam's
+    # 4-descriptor/3-run evidence remains byte-for-byte and semantically
+    # unchanged.
+    write_bpe_case(out)
 
     print(f"page {IMG_W}x{IMG_H} stride {STRIDE}, {len(rows)} descriptors "
           f"({n_valid} valid), templates {len(templ_blob)} B")
