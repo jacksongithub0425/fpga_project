@@ -1,0 +1,6 @@
+# Board artifacts must survive checkout byte-for-byte: BUILD_INFO.txt records
+# their SHA-256, and an EOL-normalised .hwh would no longer match it.
+*.bit -text
+*.hwh -text
+*.dcp -text
+vivado/three_stage_combined/board_bundle/** -text
