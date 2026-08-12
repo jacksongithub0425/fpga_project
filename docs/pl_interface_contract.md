@@ -4,14 +4,18 @@
 implementation starts; everything else is settled and should be treated as
 binding.
 
-**Purpose.** `patch_extract_core`'s boundary arithmetic is verified and
-`binarize_core` works, but the two cannot be connected: the image interface,
-the coordinate frame, the descriptor validity rules and the result ABI are all
-unresolved, and each one reaches into more than one core. This document freezes
-them so the remaining work is implementation rather than negotiation.
+**Purpose.** Freeze the boundaries between the PL stages. The coordinate frame,
+image interface, descriptor validity rules and result ABI are settled here. A
+narrow three-stage C/golden harness now executes those decisions across
+`binarize_core`, `patch_extract_core` and `template_match_core`: its generator
+self-checks and Vitis HLS 2025.2 CSim pass. The combined block design, DMA
+sequencing and silicon path remain implementation work.
 
 **Scope.** `binarize_core` → DDR → `patch_extract_core` → `template_match_core`
-→ `class_score_core` → `sw/tme_driver.py`.
+→ `sw/tme_driver.py`. (`class_score_core` was removed from the MVP on
+2026-08-11 — classification, the per-candidate reduction and box construction
+are PS-side; see §5.1, §6.3, §6.4 and §10 items 4–5. Its sections are retained
+as the design record for the contingency that re-instates a PL classifier.)
 
 **How to use it.** Anything below is a contract term. If an implementation
 disagrees with this document, the implementation is wrong — or this document
@@ -21,25 +25,29 @@ gets amended first, deliberately.
 
 ## 1. Coordinate frame
 
-**Decision: DDR holds logical, detector-aligned coordinates. The binarizer's
-stream-to-DDR writer owns the transformation.**
+**Decision: DDR holds logical, detector-aligned coordinates. `binarize_core`'s
+output scheduler owns the transformation and border fill; a simple-mode S2MM
+stores that already-logical compact stream unchanged.**
 
-`binarize_core` emits a raster where the beat at raw `(r, c)` carries the
-Gaussian result whose 3×3 window is centred at logical `(r-1, c-1)`, valid only
-for `r >= 2, c >= 2`. Raw rows/cols 0 and 1 are pipeline fill and read 0.
+Internally, the Gaussian/threshold result computed at raw `(r, c)` belongs at
+logical `(r-1, c-1)`, valid only for `r >= 2, c >= 2`. Raw rows/columns 0 and 1
+are pipeline fill and read 0.
 
-The writer stores raw `(r, c)` at logical `(r-1, c-1)` for `r >= 1, c >= 1`,
-and discards raw row 0 and raw column 0.
+The core's output scheduler consumes raw row 0 without output, discards raw
+column 0, and emits raw `(r, c)` for `r >= 1, c >= 1` at logical
+`(r-1, c-1)`. It appends one zero suffix to every mapped row and one all-zero
+final row. The result is exactly `img_w * img_h` AXI-stream beats in compact
+logical row-major order, with `TLAST` only on the final beat.
 
 Consequences, which are the point of choosing this option:
 
 - Logical rows `0 .. img_h-2` and columns `0 .. img_w-2` are filled directly.
   Logical row 0 and column 0 inherit the natural zeros from raw row 1 and
   column 1, which is already the correct border value.
-- **Logical row `img_h-1` and column `img_w-1` are never produced** and must be
-  written as 0 by the writer. 0 means "no ink" under `THRESH_BINARY_INV`, so a
-  border can never fabricate a feature. This fill is mandatory, not cosmetic —
-  without it those pixels are whatever the buffer held before.
+- **Logical row `img_h-1` and column `img_w-1` have no raw 3×3 result** and are
+  emitted as 0 by `binarize_core`. 0 means "no ink" under
+  `THRESH_BINARY_INV`, so a border can never fabricate a feature. This fill is
+  mandatory, not cosmetic.
 - `patch_extract_core` does no coordinate correction at all. It reads logical
   coordinates from logical storage.
 - Text-suppression rectangles keep using logical coordinates, unchanged.
@@ -48,7 +56,8 @@ Consequences, which are the point of choosing this option:
 **Rejected alternatives, recorded so they are not revisited:** adding `+1` to
 `build_endpoint_patch()` or to the descriptor endpoint. Both also shift
 clipping behaviour and the reported boxes, which are detector outputs, not
-storage details. Ownership belongs at the storage boundary.
+storage details. Ownership belongs in the binarizer output scheduler at the
+stream/storage boundary.
 
 ### 1.1 Golden model
 
@@ -58,6 +67,30 @@ OpenCV**. `binarize_core` computes `sum >> 4` — truncation — while
 an OpenCV comparison bit-exact. Either the golden replicates the truncation
 (as `binarize_generate_golden.py` already does) or the HLS rounding changes;
 do not compare against stock OpenCV and apply a tolerance to paper over it.
+
+**C/golden case passed under Vitis HLS 2025.2 CSim on 2026-08-09.**
+`hls/integration/` runs a separate 24×20 case at threshold 140 through the live
+C sources for `binarize_core` → `patch_extract_core` →
+`template_match_core`. It checked all 480 compact logical raster bytes and
+sidebands, the zero final row/column, the complete extractor metadata record
+and 168-byte patch, then a raw 4×4 template match at score `+1.000000`, local
+`(4,1)`, rebased to page `(7,5)`. The truncating Gaussian witness and legacy
+raw-layout mutation also passed their controls. The generator passed in both
+normal and `python -O` modes under NumPy 2.5.1 / OpenCV 5.0.0. Recorded result:
+
+```
+THREE-STAGE C/GOLDEN PASSED (0 errors): 480 gray beats -> 480 logical bytes -> 168 patch beats -> matcher local (4,1), page (7,5); 1 injected-layout control
+SEAM TEST PASSED (0 errors): 4 descriptors, 3 matcher runs, 2 injected-bug controls
+INTEGRATION C/GOLDEN PASSED: three-stage errors=0, seam errors=0
+```
+
+Vitis also reported `CSim done with 0 errors` (15 s CSim, 19 s total
+`vitis-run`). This is C simulation with PS/DDR staging modelled between function
+calls; the timings are host diagnostics, not throughput. It is not a combined
+HLS top or RTL cosimulation, a direct stream between hardware cores, a combined
+block design, a DMA execution or a silicon result. The pre-existing extractor
+→ matcher seam remains a separate phase and retains its rejection, clipping,
+non-compact stride and injected-bug coverage.
 
 ---
 
@@ -72,11 +105,19 @@ do not compare against stock OpenCV and apply a tolerance to paper over it.
 | `stride_bytes` | runtime, `>= img_w` |
 | `buffer_bytes` | `>= stride_bytes * img_h` |
 
-- Stride is explicit and **must not be assumed equal to `img_w`**. The current
-  2D array signature `bin_image[PE_MAX_IMG_H][PE_MAX_IMG_W]` hardcodes a
-  2560-byte stride; that is one of the things being removed.
-- Stride **should** be rounded up to a 64-byte multiple for AXI burst
-  efficiency. 9856 is already 77×128.
+- The extractor's input ABI is stride-general and **must not assume
+  `stride_bytes == img_w`**. The old 2D array signature
+  `bin_image[PE_MAX_IMG_H][PE_MAX_IMG_W]` hardcoded a 2560-byte stride; that is
+  one of the things removed.
+- The current direct binarizer → simple-mode S2MM path is specifically compact:
+  `binarize_core` emits exactly `img_w * img_h` logical beats, S2MM writes them
+  consecutively, and the extractor is programmed with
+  `stride_bytes = img_w`, `buffer_bytes = img_w * img_h` for that buffer.
+- A non-compact buffer remains legal extractor input, but it requires a
+  producer that actually creates the row padding (for example a row-aware
+  writer or a PS repack). The current simple S2MM is not such a producer.
+  Rounding stride up to a 64-byte multiple is an efficiency recommendation only
+  for those padded producers; it does not reinterpret a compact DMA stream.
 - The lower bound is 3, not 2: a 3×3 kernel needs three rows and columns to
   produce any valid output at all.
 
@@ -835,7 +876,18 @@ because the geometry is transmitted, not re-derived. It also makes each patch
 exactly one DMA transfer on the PS side, which is where §3.1's 262,143-byte
 transfer bound attaches.
 
-### 5.1 Score-stream framing — **SPECIFIED 2026-08-07 (§6.4), consumer unimplemented**
+### 5.1 Score-stream framing — **CLOSED for the MVP 2026-08-11: no PL consumer**
+
+> **Decision (2026-08-11).** `class_score_core` is removed from the MVP, so
+> the matcher→classifier stream this section frames does not exist in the
+> MVP: the PS sequences one matcher invocation per (candidate, template,
+> scale) trial and reduces the scores itself, holding a running per-kind
+> argmax under strictly-greater comparison over a frozen trial order (§6.4
+> option 1, extended to the whole reduction). Everything below is retained
+> unchanged as the design record this decision was made against, and becomes
+> binding again only under §6.4's standing condition (a matcher that iterates
+> templates internally). Re-open only if a benchmark of the completed PS
+> classification identifies it as a meaningful bottleneck.
 
 The above frames extractor→matcher. It says nothing about matcher→classifier.
 That gap is real and worth closing, but an earlier version of this section
@@ -882,10 +934,11 @@ tuples at all — can occupy its ordinal position in the result stream. The
 second of those is a genuine blocker for §5.1 item 2, just not for D1/D2.
 
 Three things had to be specified. **All three are answered as of 2026-08-07**
-and the record they imply is §6.4 — but *specified* is not *discharged*. Every
-one of these answers imposes an obligation on `class_score_core`, which is
-parked, so nothing below has a consumer or a test yet. §10 item 4 lists the
-obligations; do not read the answers here as work completed.
+and the record they imply is §6.4. When this section was only *specified*,
+every answer imposed an obligation on `class_score_core`; with the 2026-08-11
+decision those obligations lapse for the MVP (there is no PL consumer to
+carry them) and survive only as §6.4's contingency work list. §10 item 4
+records the closure.
 
 1. **How score tuples delimit a candidate.** *Settled: ascending `cand_id`,
    with `TLAST` on the last tuple of the batch — and it is now a **software**
@@ -956,9 +1009,40 @@ at 16 plus a bitmask from 17. Every field here is 16-bit aligned; software
 unpacks `status` whole and masks it. Splitting `valid` out as a named bit
 position in the ABI is how §6.3 got bit-packed in the first place.
 
-### 6.3 Classification result record — **OPEN**, 128-bit, byte-aligned
+### 6.3 Classification result record — **REMOVED FROM THE MVP ABI (2026-08-11)**
 
-The current 128-bit bit-packed layout is incompatible with the driver's
+> **Decision (2026-08-11).** This record is deleted from the MVP rather than
+> repaired. It never acquired a producer: the current overlay
+> (`three_stage_combined`, 2026-08-11) carries no `class_score_core`, no
+> `axi_lite_regs`, and no result DMA, so the 14-vs-16-byte defect below is
+> resolved by removing the path, not by widening the driver's unpack to 16
+> bytes. What replaces it, all PS-side in `sw/tme_driver.py`:
+>
+> - `match_template()` reads `tme_top_0`'s `result_score` / `result_x` /
+>   `result_y` AXI4-Lite registers per trial (§7.1), latching each
+>   Clear-on-Read `ap_vld` once;
+> - the PS holds the per-kind scores and the running argmax (strict `>`,
+>   frozen trial order — §6.4 option 1), so nothing fabricates `-1.0`
+>   sentinels;
+> - the PS retains the winning trial's template and constructs the box
+>   itself, in absolute logical-page coordinates (§1):
+>
+>   ```
+>   box_x = patch_x0 + match_x     # patch origin from the §6.2 metadata record
+>   box_y = patch_y0 + match_y
+>   box_w = winning template width      # post-§4.5 rounding — the streamed one
+>   box_h = winning template height
+>   ```
+>
+>   which is exactly the rebasing `hls/integration/pe_tme_tb.cpp` executed in
+>   C simulation.
+>
+> `test_result_record_size_is_unresolved` in `sw/test_cand_packing.py` — the
+> tripwire that held this section open — is retired with the record it
+> guarded. The layout analysis below is retained as the design record for a
+> future PL classifier (§6.4's standing condition).
+
+The (now removed) 128-bit bit-packed layout was incompatible with the driver's
 14-byte `"<fBBHHHH"` unpack, whose own comment claims 16 bytes. Depending on
 how the DMA and the driver's transfer length interact, the 14-vs-16-byte
 stride mismatch may surface as a DMA transfer error, a stalled/short transfer,
@@ -1009,11 +1093,13 @@ constraint reshapes the "PS-filling is cheaper" argument below: PS-filling is
 cheaper only for the *patch origin*, which the PS knows; the location and the
 winning template identity must come from the PL either way.
 
-**Still open:** whether `box_*` is filled by `class_score_core` or by the PS.
-Right now the core zeroes those bits unconditionally and the driver unpacks
-them into a `box` tuple it hands to callers, so software consumes `(0,0,0,0)`
-as though it were a real box. Either the core fills them or the ABI drops the
-field — publishing zeros as data is the worst of the three.
+**The question this section stayed open on** (answered 2026-08-11: the PS
+fills the box — see the decision banner above): whether `box_*` is filled by
+`class_score_core` or by the PS. The parked core zeroes those bits
+unconditionally and the old driver unpacked them into a `box` tuple it handed
+to callers, so software consumed `(0,0,0,0)` as though it were a real box.
+Either the core fills them or the ABI drops the field — publishing zeros as
+data was the worst of the three.
 
 Whichever way it goes, the box is defined as **absolute logical-page
 coordinates** `(x, y, w, h)` in the frame of §1, not patch-relative.
@@ -1050,10 +1136,16 @@ record, or moving the reduction out of the PL. Until one is chosen the PS
 cannot fill `box_*` either. PL-filling has lost its structural argument
 without PS-filling having gained one.
 
-### 6.4 Matcher score tuple — **SPECIFIED (2026-08-07)**, 128-bit, byte-aligned
+### 6.4 Matcher score tuple — **OPTION 1 ADOPTED (2026-08-11); not materialised in the MVP**
 
-*Specified, not discharged: the producer side runs in `hls/integration/`, the
-consumer is parked and untested. §10 item 4 carries the obligation list.*
+*Status history: specified 2026-08-07 with the producer side running in
+`hls/integration/` and the consumer parked. On 2026-08-11 option 1 below was
+adopted and extended: `class_score_core` is removed from the MVP, so the PS
+does not merely retain the argmax alongside a tuple stream — the PS-side
+argmax IS the reduction, and no tuple stream is materialised on any wire.
+The record layout below is retained as the ABI of record for the standing
+condition at the end of this section (a matcher that iterates templates
+internally), which is when a physical stream would come back.*
 
 One per **trial**, where a trial is one (candidate, template) pair actually
 run through the matcher, plus one placeholder per candidate that was never run
@@ -1223,12 +1315,12 @@ that later gets quoted as a throughput result.
 simulation: it reads each §6.2 record, decides whether to run a trial, drives
 the matcher with the record's geometry, and rebases `result_x`/`result_y` onto
 the page. Every field in the table above is therefore exercised except the
-tuple's own packing, which has no consumer yet — `class_score_core` is parked
-(§10 item 5) and its 48-bit `score_stream_t` predates this section. **Nothing
-here has run on silicon.** Connecting the classifier means widening
-`score_stream_t` from 48 to 128 bits to match this layout; do that as part of
+tuple's own packing — which, under the 2026-08-11 decision, never crosses a
+wire in the MVP: the PS consumes its own values in place. **Nothing here has
+run on silicon.** If a PL classifier is ever re-instated, connecting it means
+widening its 48-bit `score_stream_t` to this 128-bit layout as part of
 un-parking it, not before, so the change lands with a testbench that can see
-it.
+it — together with the rest of the contingency work list in §10 item 4.
 
 ---
 
@@ -1275,9 +1367,11 @@ one `s_axi_CTRL` map — `patch_w 0x10`, `patch_h 0x18`, `templ_w 0x20`,
 `templ_h 0x28`, `result_score 0x30` + `ap_vld 0x34`, `result_x 0x40/0x44`,
 `result_y 0x50/0x54`; regenerated by synthesis, do not transcribe by hand).
 It takes no `m_axi` pointer, so the `offset=slave` trap does not arise there.
-`binarize_core` and `class_score_core` have not been checked, let alone
-fixed, and the same `offset=slave` trap that split the extractor three ways
-applies to every one of them that takes an `m_axi` pointer.
+`binarize_core` likewise has AXI-stream pixel input/output plus one `CTRL`
+AXI-Lite bundle for `img_w`, `img_h`, `threshold` and `return`; it has no
+`m_axi` pointer or image-address register, so that trap does not apply to it.
+`class_score_core` has not been checked, and the trap still applies to any core
+that actually takes an `m_axi` pointer.
 
 So §7.1.1 remains a work list for items 1, 2, 4 and 5. Item 3 is the one that
 moved: the Clear-on-Read companions are now confirmed present on real
@@ -1299,14 +1393,16 @@ overhead starts to matter — but it is an optimisation, not a prerequisite.
 
 Five things, none of which the per-core decision answers on its own:
 
-1. **Two distinct commands, not one START.** `BINARIZE` runs `binarize_core`
-   alone; `RUN_CANDIDATES` runs feeder → `patch_extract_core` →
-   `template_match_core` → `class_score_core`. Today both drive the same
-   `_CTRL_START` bit and both wait on the same `_STATUS_ALL_DONE`, which only
-   worked because a wrapper was assumed to know which subset a given START
-   meant. With per-core control the driver states it explicitly: it writes
-   `ap_start` to the cores that command actually runs, and waits on those
-   cores' `ap_done`.
+1. **Distinct commands, not one START.** `BINARIZE` runs `binarize_core`
+   alone; `EXTRACT` runs the candidate feeder → `patch_extract_core`;
+   `MATCH` runs one `tme_top` invocation per (candidate, template, scale)
+   trial under PS sequencing (2026-08-11: `class_score_core` is out of the
+   MVP, so there is no fourth stage — the reduction is the PS's own loop).
+   The old driver drove a single `_CTRL_START` bit and waited on one
+   `_STATUS_ALL_DONE`, which only worked because a wrapper was assumed to
+   know which subset a given START meant. With per-core control the driver
+   states it explicitly: it writes `ap_start` to the cores that command
+   actually runs, and waits on those cores' `ap_done`.
 2. **`NUM_CANDS <= 64`,** enforced host-side before dispatch. This is a
    driver buffer bound (`_cand_buf`/`_result_buf` are allocated at
    `_MAX_CANDIDATES × struct`), not a PL limit — `patch_extract_core` takes
@@ -1332,15 +1428,17 @@ Five things, none of which the per-core decision answers on its own:
    next batch does not inherit a half-transferred patch. **Assign this before
    the feeder is built** — it is the one item here that is a design gap rather
    than a transcription.
-5. **Address-register ownership.** Under a wrapper, `BIN_ADDR` was one PS
-   write mirrored into two cores. Per-core, it is two writes to two registers
-   and the driver owns their consistency. Same for `IMG_W`/`IMG_H`
-   (binarizer + extractor) and `NUM_CANDS` (extractor + feeder). The DMA
-   address registers are different in kind: `CAND_ADDR` and `RESULT_ADDR`
-   belong to AXI DMA instances driven through PYNQ's DMA driver, not to any
-   HLS core, and `TEMPL_ADDR` belongs to the template streamer. Do not fold
-   DMA-owned addresses into a core's map because they sat adjacent in the old
-   one.
+5. **Address-register ownership.** The grayscale source physical address is
+   programmed into the grayscale MM2S DMA. The binary destination physical
+   address is programmed into the binary S2MM DMA, and that same physical
+   address is written to `patch_extract_core`'s `CTRL.bin_image` pointer before
+   extraction. The driver owns consistency between those two writes; this is a
+   DMA destination plus an HLS pointer, not one address mirrored into two HLS
+   cores. `IMG_W`/`IMG_H` are still shared configuration (binarizer +
+   extractor), as is `NUM_CANDS` (extractor + feeder). `CAND_ADDR` and
+   `RESULT_ADDR` belong to AXI DMA instances driven through PYNQ's DMA driver,
+   and `TEMPL_ADDR` belongs to the template streamer. Do not fold DMA-owned
+   addresses into a core's map because they sat adjacent in the old one.
 
 #### 7.1.2 Per-core surface — settled and implemented
 
@@ -1401,8 +1499,8 @@ here so the option stays costed rather than forgotten:
 |---|---|---|---|
 | `0x00` | `CTRL` — bit0 START, bit1 RESET | W | wrapper (fans out to four `ap_start`) |
 | `0x04` | `STATUS` — bit3 ALL_DONE | R | wrapper (AND of four `ap_done`) |
-| `0x08` | `GRAY_ADDR` | W | `binarize_core` `m_axi` offset |
-| `0x0C` | `BIN_ADDR` | W | **shared**: `binarize_core` write + `patch_extract_core` `bin_image` |
+| `0x08` | `GRAY_ADDR` | W | grayscale-input MM2S DMA source |
+| `0x0C` | `BIN_ADDR` | W | binary-output S2MM DMA destination + `patch_extract_core` `bin_image` (same physical buffer) |
 | `0x10` | `IMG_W` | W | **shared**: `binarize_core` + `patch_extract_core` |
 | `0x14` | `IMG_H` | W | **shared**: `binarize_core` + `patch_extract_core` |
 | `0x18` | `THRESHOLD` | W | `binarize_core` |
@@ -1421,15 +1519,17 @@ here so the option stays costed rather than forgotten:
 
 What building it would cost, beyond the RTL itself:
 
-- **Four registers are shared** (`BIN_ADDR`, `IMG_W`, `IMG_H`, `NUM_CANDS`).
-  The wrapper mirrors one PS write into two or more core registers — which is
-  the actual benefit on offer, and under §7.1.1 item 5 becomes the driver's job
-  instead.
-- **`BIN_ADDR` is 32-bit in the driver, 64-bit at `patch_extract_core`'s
-  `bin_image` offset.** The wrapper would zero-extend. Per-core, the driver
-  writes `0x10` and `0x14` and owns the high half explicitly — which is
-  arguably better, since §2.1's 32-bit offset assumption then has one visible
-  place to fail.
+- **Three configuration values fan out across participants** (`IMG_W`,
+  `IMG_H`, `NUM_CANDS`). A wrapper could mirror one PS write to the relevant
+  HLS cores/feeder; under §7.1.1 item 5 that fan-out is the driver's job.
+  `BIN_ADDR` is different: it coordinates a binary S2MM destination with the
+  extractor's `bin_image` pointer, so the wrapper would have to program two
+  different kinds of interface, not mirror a value between HLS cores.
+- **The deferred `BIN_ADDR` field is 32-bit while `patch_extract_core`'s
+  `bin_image` offset is 64-bit.** The wrapper would zero-extend. Per-core, the
+  driver programs the DMA destination and writes extractor offsets `0x10` and
+  `0x14`, owning the high half explicitly — which is arguably better, since
+  §2.1's 32-bit offset assumption then has one visible place to fail.
 - **`CTRL`/`STATUS` are sequencing, not a passthrough**, which is why §7.1.1
   item 1 has to be answered either way. A wrapper does not remove that
   decision; it only moves it into RTL, where it is harder to change.
@@ -1469,9 +1569,9 @@ Four consequences, three of which are constraints rather than relief:
   section had assumed otherwise about: the implementation is constrained at
   **20 ns, not 32 ns**, and the binding path is **reset distribution**, not
   any of the paths estimated below.
-- **Nothing else in §8 is affected.** Coverage, the binarize-to-extractor
-  integration case, and the short-stream timeout ownership in §7.1.1 item 4
-  are independent of clock rate.
+- **Nothing else in §8 is affected.** The passed three-stage C/golden CSim
+  (§1.1), the still-unbuilt combined BD/DMA/silicon path, and the short-stream
+  timeout ownership in §7.1.1 item 4 are independent of clock rate.
 
 ### Silicon — `template_match_core` standalone, 9/9 (2026-08-07)
 
@@ -1828,12 +1928,23 @@ same streams **without draining** — so if the core ever truncates again, the
 failure appears as the second batch receiving the first batch's patches, which
 is the actual hazard, not merely as a flag on the run that caused it.
 
-C simulation, synthesis and a ten-transaction Verilog co-simulation all pass.
+For `patch_extract_core` itself, C simulation, synthesis and a ten-transaction
+Verilog co-simulation all pass.
 
-Two gaps remain, and neither is a testbench detail:
+**The binarizer boundary now has one passed narrow C/golden chain case.** The
+separate phase in `hls/integration/` uses a 24×20 page, exact truncating
+binarizer oracle, compact DDR staging, one valid extractor descriptor and one
+matcher invocation. Generator self-checks passed in normal and `python -O`
+modes, and Vitis HLS 2025.2 CSim verified the 480-byte logical raster, 14×12
+patch at `(3,4)`, score `+1.000000` at local `(4,1)` / page `(7,5)`, plus the
+truncation and legacy-layout controls. The older extractor → matcher seam also
+remains unchanged and passed in the same run, including its rejection,
+clipping, two-cursor, non-compact-stride and injected-bug controls. This closes
+the C/golden execution gate only; it does not claim a combined top, RTL
+cosimulation, direct stream, block design, DMA execution or silicon result.
 
-- **The binarize-to-extractor integration case** is still absent — see §1.1 for
-  what its golden must model.
+One system gap remains, and it is not a testbench detail:
+
 - **A short candidate stream cannot be tested at all**, by design. §5 makes the
   core read exactly `NUM_CANDS` descriptors, so a feeder that delivers fewer
   blocks in `cand_in.read()` with `ap_done` low. That is the intended failure
@@ -1858,12 +1969,13 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 
 | Core | Work |
 |---|---|
-| `binarize_core` | DDR writer owns raw→logical mapping (§1); zero-fill last row and column |
+| `binarize_core` | Output scheduler owns raw→logical mapping and emits the mandatory zero final row/column (§1); exactly `img_w * img_h` compact logical beats feed an unchanged simple-mode S2MM. The 24×20 three-stage C/golden case passed byte-for-byte under Vitis HLS 2025.2 CSim; there is no combined BD/DMA/silicon claim |
 | `patch_extract_core` | `m_axi` pointer + explicit stride + address arithmetic; 16-bit page coords; 11/9-bit patch counters; §4 validation with wide-type overflow checks (§2.1); metadata stream (§6.2); per-patch pixel `TLAST`; `NUM_CANDS`; status registers. **Standalone hardware bring-up passed** — see §8 for scope and for what it does not cover |
 | `template_match_core` | result-dimension off-by-one (§4.4) — **done**. `MAX_PATCH` narrowed to the exact 820 × 307 envelope (§3) — **done**. **Golden/TB — done (2026-08-04)**, and it forced an arithmetic rewrite: the old `ap_fixed<48,24>` accumulators wrap at 8.4e6 against window ΣI² up to 1.35e9, the Q16.16 normalisation wraps at 32768, the Newton rsqrt diverges outside x∈(0,3), and the denominator omitted window-mean subtraction — it only ever passed csim because the sole golden was an all-zero patch. The core now computes exact integer sums and normalises once in float: `(N·ΣTI − ΣT·ΣI)/√((N·ΣT²−(ΣT)²)(N·ΣI²−(ΣI)²))`, the mathematical TM_CCOEFF_NORMED expression — agreement with cv2 is tolerance-based rather than bit-exact, and only on the `dt>0 && di>0` domain (§4.6); **the template streams as RAW uint8** (the old mean-subtracted int8+128 encoding wrapped for binary templates) and ΣT/ΣT² are computed in-core. `tme_tb.cpp` is manifest-driven (`-argv "cosim"` selects the RTL subset, same pattern as the extractor) and asserts score AND exact location: unique nonzero peaks (seed-searched margins), the final row/column, both equality axes, negative scores, flat windows, and the 820×307/216×96 maximum-storage case at near-maximum energies (21 csim / 5 cosim cases at that point; current counts below). The old generator's §4.5 `int()`-vs-`round()` drift is moot for the TB (the suite is synthetic); §4.5 stays owned by the template pipeline. Post-rewrite: 224 BRAM18K (80%, unchanged), 33 DSP, timing estimate **6.547 ns** (was 6.978) — over the raw 5 ns period, but that target was never required: the standalone image **routes with WNS +3.537 ns against the 20 ns constraint actually implemented** (§8), so timing is closed as a gate. A third TB suite, `-argv "hw"`, carries the cosim cases plus both 820×307 stress cases to silicon — the only test of §3.1's 251,740-byte single DMA transfer, and the only one that fills the 817×304 result map `MAX_RESULT_W/H` are sized for. csim 23/23, RTL cosim 7/7, and `csim -argv hw` 9/9 in simulation — and, **2026-08-07, the same nine vectors pass on SILICON, 9/9** (§8): the 251,740 B §3.1 transfer moved in one go, the 817×304 map's final cell hit at (816,303), a clean re-invocation after the largest case, and 13.362 s measured for the envelope case. This core's standalone bring-up is done; the extractor seam it feeds is C-simulated only. **§4.6 closed 2026-08-05** (flat templates are illegal input, rejected host-side before the first DMA by an exact `min == max` test — OpenCV's `templNorm < DBL_EPSILON` branch is *not* exact in the flat direction, which is an argument for rejecting here rather than deferring to cv2) — no RTL change, plus two direct DUT tests, the dt / ±num width extremes and both width-coupling witnesses, all running in every suite ahead of the manifest loop. **Remaining: consuming per-patch framing and transmitted geometry** — workable for bring-up under §7.1 PS sequencing now that `return` sits in the single `CTRL` bundle, with `sw/tme_standalone_bringup.py` supplying the geometry the core cannot validate for itself |
 | extractor → matcher seam | **C simulation done (2026-08-07)** — `hls/integration/`, the first execution of anything downstream of the extractor's outputs. Neither core's own testbench can fail this way, because the thing under test is the PS loop between them: `meta_out` carries one record per *descriptor* and `patch_out` carries pixels for *valid candidates only*, so the PS keeps two cursors, and a loop that advances them together is correct on every batch with nothing rejected and permanently misaligned on the first one without. Pins: record-vs-pixel cursor discipline across a mid-batch rejection, matcher geometry taken from the metadata record rather than re-derived (a clipped candidate whose patch is 106 px where the §4.5 formula says 152), page-vs-patch coordinate rebasing, and `TLAST` landing exactly on beat `patch_w*patch_h` — which `tme_top` ignores by construction, so a framing disagreement is silent in the matcher and corrupts the *next* patch. Both PS bugs are also performed deliberately as negative controls and required to produce a wrong answer, so the suite is known to be able to fail. Result reads `SEAM TEST PASSED (0 errors): 4 descriptors, 3 matcher runs, 2 injected-bug controls` — quote it that way, not as a count of printed PASS lines. **Not synthesised and not cosimulated, on purpose** (no top function of its own; cosim drives one core through an RTL wrapper and cannot run a loop that decides what to do next). The hardware half is a two-core block design and is **not built** |
-| `class_score_core` | parked. D1/D2 are repairable now (reorder flush-before-merge, §5.1); D6/D7/D8 and the per-kind-score/match-location gaps wait on §6.3. Un-parking it now also means widening `score_stream_t` from 48 to the 128-bit §6.4 layout |
-| `sw/tme_driver.py` | buffer sizes per §2.2; stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; result unpack per §6.3; enforce §4.1, §4.5 and §4.6 before dispatch |
+| binarizer → extractor → matcher C/golden | **Passed under Vitis HLS 2025.2 CSim (2026-08-09).** A separate `hls/integration/` phase preserves the extractor → matcher seam above and adds one deterministic 24×20 page at threshold 140. It verified exact truncating Gaussian arithmetic, 480 compact logical output beats and sidebands, zero final borders, the §6.2 metadata record, a 168-byte 14×12 patch at `(3,4)`, and raw-template matcher score `+1.000000` at local `(4,1)` / page `(7,5)` with margin 0.622036. Truncation and legacy raw-layout controls passed; the generator also passed normal and `python -O` self-checks. Results: `THREE-STAGE C/GOLDEN PASSED (0 errors): 480 gray beats -> 480 logical bytes -> 168 patch beats -> matcher local (4,1), page (7,5); 1 injected-layout control` and `INTEGRATION C/GOLDEN PASSED: three-stage errors=0, seam errors=0`; Vitis reported `CSim done with 0 errors`. The harness models PS/DDR staging between C core calls: this is not a combined top or cosim, direct core stream, combined BD, DMA run or silicon result |
+| `class_score_core` | **removed from the MVP (2026-08-11)** — classification, the per-candidate reduction and box construction are PS-side (§5.1, §6.3, §6.4; §10 items 4–5). Not in the `three_stage_combined` overlay. Reconsider only if a benchmark of the completed PS classification identifies it as a meaningful bottleneck; the un-parking work list (D1/D2 reordering, `templ_id` branch before `kind`, `score_stream_t` widening to §6.4, `LOOP_TRIPCOUNT` correction) is preserved in §6.4 and §10 item 4 |
+| `sw/tme_driver.py` | rewrite against the `three_stage_combined` overlay (§7.1: one `register_map` window per core — `binarize_core_0`, `patch_extract_core_0`, `tme_top_0` — plus the five DMAs `axi_dma_binarize`, `dma_pe_data`, `dma_pe_meta`, `axi_dma_patch`, `axi_dma_templ`); explicit backends (CPU / PL-binarize / PL-extract / PL-all) with **no silent FPGA→CPU fallback**; `match_template()` reads `tme_top_0`'s scalar result registers and the PS owns argmax (strict `>`, frozen trial order) and box construction (§6.3); stride-aware `suppress_text()` (§2.1); `buffer_bytes` register width; `NUM_CANDS`; enforce §4.1, §4.5 and §4.6 before dispatch |
 | template pipeline | `max_tw` / `max_th` from post-round template dimensions (§4.5); stream templates as **RAW binarized bytes** — the matcher computes ΣT/ΣT² in-core since 2026-08-04, and the mean-subtracted int8+128 encoding it replaced must not come back (it wraps: binary T−mean spans ±255); reject flat templates (`min == max`) after the final resize/binarise/crop and before the first DMA (§4.6) |
 
 ---
@@ -1879,44 +1991,42 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
 3. **§2.2** — can CMA satisfy two separately contiguous ~60.2 MiB
    allocations? If not, tiling is a platform requirement and §2 changes.
    Probe: `sw/probe_cma_budget.py`, run on the board with `--overlay`.
-4. **§5.1** — **SPECIFIED 2026-08-07, not discharged.** The ABI is written
-   (**§6.4**: 128-bit, 16 bytes, `"<HHHHfHH"`, emitted by the **PS** rather
-   than by `template_match_core`), and the three questions this item asked are
-   answered: framing dissolves because a PS-side producer counts its own
-   output, invalid candidates get a `templ_id = 0xFFFF` placeholder, and
-   `NUM_CANDS` in / `NUM_CANDS` out follows. **It is not closed, because the
-   consumer does not exist yet** — every obligation below lands on
-   `class_score_core`, which is parked, and none of them has a test:
-   - the two boundary orderings of §5.1 (flush-then-merge on a `cand_id`
-     change, merge-then-flush on batch `TLAST`, and both on a `TLAST` that
-     also changes `cand_id`), with a regression whose **last tuple is the
-     winner**;
-   - branching on `templ_id == 0xFFFF` **before** decoding `kind`, since
-     `best_score[(int)kind]` is already an out-of-bounds write at `kind == 3`
-     and a placeholder makes that reachable;
-   - placeholders tested interior, final, and consecutive;
-   - the trial count validated against the 16,383-tuple DMA ceiling before
-     allocation, and `LOOP_TRIPCOUNT max=720` corrected — it is under the
-     1,536 the software constants already imply.
+4. ~~**§5.1**~~ — **CLOSED for the MVP, 2026-08-11, by architecture
+   decision: `class_score_core` is removed from the MVP.** The PS owns the
+   whole per-candidate reduction: it sequences one matcher invocation per
+   (candidate, template, scale) trial, reads `tme_top_0`'s scalar results,
+   and keeps a running per-kind argmax using **strictly-greater comparison
+   (`if score > best_score`, never `>=`) over a frozen trial order**, so the
+   first trial reaching the maximum wins ties deterministically — the same
+   tie-break the CPU baseline's `best_template_match_local`/
+   `classify_endpoint` already implement, which is what makes CPU/PL parity
+   checkable. The §6.4 answers stand as design record; with no PL consumer,
+   the tuples are never materialised on a wire, and every obligation this
+   item listed (boundary-ordering regressions, the `templ_id == 0xFFFF`
+   branch, placeholder coverage, the 16,383-tuple ceiling check, the
+   `LOOP_TRIPCOUNT` correction) lapses for the MVP and is preserved in §6.4
+   as the contingency work list. Re-open only if a benchmark of the completed
+   PS classification identifies it as a meaningful bottleneck.
 
-   One standing condition on top: **if the matcher is ever changed to iterate
-   templates internally, §6.4 moves into the PL and grows a real `templ_id` on
-   the wire.**
-5. **§6.3** — are `box_*` filled by the PL or dropped from the ABI? **Narrowed
-   by §6.4, not closed.** The old framing said the PS lacked both the match
-   location and the winning template identity; that was half wrong. The
-   location comes back in `tme_top`'s AXI4-Lite registers, and under PS
-   sequencing every *trial's* identity is implied by its invocation — but the
-   PL reduces internally and returns only a `kind`, so **the PS still cannot
-   name the winning trial**, which is what the box needs. §6.4 lists the three
-   ways to fix that; one must be chosen before the classifier is connected.
-   PL-filling has lost its structural argument without PS-filling having
-   gained one. **Still blocks the result path outright**, unchanged: the
-   driver unpacks 14 bytes while the PL
-   emits 16, so `_result_buf` is under-allocated by 128 bytes at a full
-   64-candidate batch. `class_score_core` stays disconnected until this is
-   resolved; `test_result_record_size_is_unresolved` in
-   `sw/test_cand_packing.py` is the tripwire.
+   The standing condition survives the closure: **if the matcher is ever
+   changed to iterate templates internally, §6.4 moves into the PL and grows
+   a real `templ_id` on the wire** — and this item's work list comes back
+   with it.
+5. ~~**§6.3**~~ — **CLOSED 2026-08-11: `box_*` is filled by the PS, and the
+   §6.3 record is deleted from the MVP ABI rather than repaired.** The record
+   had no producer — the `three_stage_combined` overlay carries no
+   `class_score_core`, no `axi_lite_regs`, and no result DMA — so the
+   14-vs-16-byte defect is resolved by removing the path, **not** by widening
+   the driver's 14-byte unpack to 16. `match_template()` reads `tme_top_0`'s
+   `result_score`/`result_x`/`result_y` registers per trial, the PS retains
+   the winning trial's template, and constructs
+   `box = (patch_x0 + match_x, patch_y0 + match_y, templ_w, templ_h)` in
+   absolute logical-page coordinates (§1) — the rebasing
+   `hls/integration/pe_tme_tb.cpp` already executed in C simulation. Per-kind
+   scores are PS state under the same argmax, so the `-1.0` sentinel
+   fabrication goes away with the record.
+   `test_result_record_size_is_unresolved` in `sw/test_cand_packing.py`, the
+   tripwire that held this item open, is retired with the record it guarded.
 6. **§7.1 item 4** — who owns the short-stream timeout and the PL reset that
    recovers from it, and over what scope. New in §5's framing decision;
    nothing owns it today.

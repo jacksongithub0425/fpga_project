@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from tme_driver import (_CAND_STRUCT_SIZE, _MAX_CANDIDATES,
-                        _RESULT_STRUCT_SIZE, _validate_batch_size,
+                        _META_STRUCT_SIZE, _validate_batch_size,
                         pack_candidate)
 
 # The generator's manifest.  Its packed_hex column is an independent
@@ -170,7 +170,7 @@ def test_batch_size_boundary():
 def test_batch_limit_matches_buffer_allocation():
     """The limit is only meaningful if the buffers are actually that size.
 
-    _MAX_CANDIDATES bounds the batch because _cand_buf and _result_buf are
+    _MAX_CANDIDATES bounds the batch because _cand_buf and _meta_buf are
     allocated at _MAX_CANDIDATES * struct size (PLPipeline.__init__).  If the
     limit is raised without the allocations, the guard starts admitting
     batches that overrun them — so tie them together here rather than trusting
@@ -179,56 +179,54 @@ def test_batch_limit_matches_buffer_allocation():
     Scope: this proves the *allocation* scales with the limit.  For the
     CANDIDATE path that is the whole story, because 8 bytes is also the PL's
     wire size and test_matches_generator_manifest checks the layout against
-    the core's own manifest.  For the RESULT path it is not — see
-    test_result_record_size_is_unresolved.
+    the core's own manifest.  The metadata path additionally relies on
+    _META_STRUCT_SIZE matching the PL's §6.2 record, which the extractor's
+    own golden manifest covers.
     """
     src = (Path(__file__).resolve().parent / "tme_driver.py").read_text(
         encoding="utf-8")
-    for buf in ("_cand_buf", "_result_buf"):
-        needle = f"self.{buf}"
-        line = next((l for l in src.splitlines()
-                     if needle in l and "allocate(" in l), None)
-        assert line is not None, f"could not find the {buf} allocation"
-        assert "_MAX_CANDIDATES" in line, (
+    # The allocation statement may wrap; search a whitespace-flattened copy
+    # of the source rather than individual lines.
+    flat = " ".join(src.split())
+    for buf in ("_cand_buf", "_meta_buf"):
+        needle = f"self.{buf} = allocate("
+        start = flat.find(needle)
+        assert start >= 0, f"could not find the {buf} allocation"
+        stmt = flat[start:start + 120]
+        assert "_MAX_CANDIDATES" in stmt, (
             f"{buf} is not sized from _MAX_CANDIDATES, so the batch guard "
-            f"does not actually protect it: {line.strip()}")
+            f"does not actually protect it: {stmt}")
 
     assert _CAND_STRUCT_SIZE == 8, "candidate word is one 64-bit AXIS beat"
+    assert _META_STRUCT_SIZE == 16, "§6.2 metadata record is 128 bits"
 
 
-def test_result_record_size_is_unresolved():
-    """Tripwire: the driver's result record does NOT match the PL's.
+def test_result_record_path_stays_deleted():
+    """Tripwire, inverted 2026-08-11: the §6.3 result record must NOT exist.
 
-    The driver unpacks 14 bytes ("<fBBHHHH") while class_score_core emits a
-    128-bit / 16-byte record, and contract §6.3 is still OPEN on the
-    replacement layout.  A 14-vs-16 stride mismatch is the same class of bug
-    already fixed once on the candidate path, where it desynchronised the
-    stream after record 0.
+    This test used to assert the driver's known-wrong 14-byte unpack so the
+    14-vs-16 mismatch could not be half-fixed.  §6.3 was then CLOSED by
+    removing the record from the MVP ABI outright — the overlay has no
+    class_score_core and no result DMA, match_template() reads tme_top_0's
+    scalar result registers, and the PS owns argmax and box construction
+    (contract §10 items 4-5).
 
-    So the result buffer is NOT proven safe by the allocation check above:
-    _result_buf is 64 * 14 bytes, and 64 records of the PL's actual 16 bytes
-    is 1024 — 128 bytes past the end.  This test therefore asserts the
-    CURRENT, KNOWN-WRONG value rather than accepting either size.  Accepting
-    "14 or 16" would make the test pass in both the broken and the fixed
-    state, which is the one thing it must not do.
-
-    When §6.3 is resolved this test fails on purpose.  Fixing it means:
-    re-check the _result_buf allocation, the DMA transfer length in
-    run_candidates(), and _RESULT_STRUCT_FMT together — then update the
-    expected value here.
-
-    Until then class_score_core stays disconnected.
+    So the guarded failure mode is now the record CREEPING BACK without a
+    contract amendment: a _RESULT_STRUCT_FMT reappearing in the driver means
+    someone is unpacking a stream that nothing in the MVP produces.  If a PL
+    classifier is ever re-instated (§6.4's standing condition), amend §6.3
+    first, then replace this test with layout assertions against the new
+    record.
     """
-    assert _RESULT_STRUCT_SIZE == 14, (
-        f"_RESULT_STRUCT_SIZE is {_RESULT_STRUCT_SIZE}, not the 14 this "
-        f"tripwire was written against. If §6.3 has been resolved, re-check "
-        f"the _result_buf allocation and the DMA transfer length against the "
-        f"new record size, then update this test.")
-
-    pl_record_bytes = 16          # class_score_core's 128-bit record
-    assert _RESULT_STRUCT_SIZE != pl_record_bytes, (
-        "driver and PL result records now agree — resolve §6.3 and retire "
-        "this tripwire")
+    import tme_driver
+    assert not hasattr(tme_driver, "_RESULT_STRUCT_FMT"), (
+        "a result-record format is back in tme_driver — §6.3 was closed by "
+        "DELETING this path (2026-08-11); amend the contract before "
+        "reintroducing it")
+    assert not hasattr(tme_driver, "_RESULT_STRUCT_SIZE"), (
+        "a result-record size is back in tme_driver — §6.3 was closed by "
+        "DELETING this path (2026-08-11); amend the contract before "
+        "reintroducing it")
 
 
 def main() -> int:

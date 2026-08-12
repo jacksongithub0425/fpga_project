@@ -16,26 +16,38 @@ build artifacts are intentionally excluded from this public repository.
 
 ## System Overview
 
-The pipeline keeps file handling, PDF rendering, text/vector extraction, and
-final post-processing in the processing system (PS). The programmable logic
-(PL) accelerates the streaming image kernels and per-candidate classification.
+The pipeline keeps file handling, PDF rendering, text/vector extraction,
+classification, and final post-processing in the processing system (PS). The
+programmable logic (PL) accelerates the streaming image kernels: binarization,
+patch extraction, and template-match scoring. Classification — the
+per-candidate score reduction and box construction — is deliberately PS-side
+in the MVP (decision 2026-08-11, `docs/pl_interface_contract.md` §10 items
+4–5): the PS sequences one matcher invocation per (candidate, template, scale)
+trial, keeps a strictly-greater running argmax over a frozen trial order, and
+builds the detection box from the patch origin plus the matcher's reported
+location.
 
 ```text
-PS: ARM Linux / Python                  PL: FPGA fabric
+PS: ARM Linux / Python                  PL: FPGA fabric (three_stage_combined)
 
 PDF input
   |
   v
-page_render_ps      ---- gray image DMA ----> binarize_core
-text/vector logic   <--- binary image DDR ---
+page_render_ps      ---- gray image MM2S ---> binarize_core
+text/vector logic   <--- binary image S2MM --
   |
   v
-candidate_gen_ps    ---- candidates DMA ----> patch_extract_core
-                                         --> template_match_core
-                                         --> class_score_core
-                                         --> result buffer
+candidate_gen_ps    ---- candidates MM2S ---> patch_extract_core
+                    <--- patch pixels S2MM --
+                    <--- metadata S2MM ------
   |
   v
+match sequencer     ---- patch MM2S --------> template_match_core (tme_top)
+(per trial)         ---- template MM2S ----->
+                    <--- score/x/y regs -----
+  |
+  v
+classify_ps: per-kind argmax, box construction
 postprocess_ps: heuristics, NMS, annotation, reporting
 ```
 
@@ -71,9 +83,9 @@ data/, docs/, tb/
 |---|---|---|
 | `binarize_core` | Applies a 3x3 Gaussian blur and threshold to a grayscale page image. | Streams pixels row by row and writes a binary page buffer. |
 | `patch_extract_core` | Builds candidate-centered search windows from the binary page image. | Matches the patch boundary logic used by the Python pipeline. |
-| `template_match` / `tme_top` | Computes template-match scores over a search patch. | Uses a pipelined MAC-based correlation path. |
-| `class_score_core` | Ranks template scores and emits a tentative class result. | Applies threshold and score-margin logic. |
-| `tme_driver.py` | Coordinates software/accelerator handoff. | Intended for PYNQ buffer allocation, DMA, and register control. |
+| `template_match` / `tme_top` | Computes template-match scores over a search patch. | Exact-integer TM_CCOEFF_NORMED; standalone silicon bring-up passed 9/9 (2026-08-07). |
+| `class_score_core` | (Parked — removed from the MVP, 2026-08-11.) | Classification and box construction run on the PS; revisit only if benchmarking the completed PS classification shows a bottleneck. |
+| `tme_driver.py` | Coordinates software/accelerator handoff. | Per-core register windows against the `three_stage_combined` overlay; explicit CPU/PL backend selection, no silent fallback. |
 
 ## Toolchain
 
@@ -129,15 +141,22 @@ include those files.
 
 ## Roadmap
 
-- Complete PS/PL integration through PYNQ buffers and DMA.
-- Validate HLS cores against CPU baseline behavior.
-- Package HLS cores into a Vivado block design.
-- Replace selected HLS modules with optimizied SystemVerilog:
+- ~~Package HLS cores into a Vivado block design~~ — done: the
+  `three_stage_combined` overlay (binarize, patch extract, template match,
+  five AXI DMAs) is routed with a matching `.bit`/`.hwh` (2026-08-11).
+- Board gates, in order: CMA budget probe (contract §2.2) and the full-size
+  63,078,400-byte DMA transfer; overlay introspection (`ip_dict`,
+  `register_map`); then per-stage driver bring-up (`binarize_page`,
+  `extract_candidates`, `match_template`) with explicit CPU-parity checks.
+- Integrate `detect_page()` one PL stage at a time behind explicit detector
+  backends (CPU / PL-binarize / PL-extract / PL-all) — no silent
+  FPGA-to-CPU fallback during validation.
+- Benchmark the completed PS classification; reconsider `class_score_core`
+  only if that measurement identifies classification as a bottleneck.
+- Replace selected HLS modules with optimized SystemVerilog (Phase B):
   - `template_match_core.sv`
   - `binarize_core.sv`
   - `patch_extract_core.sv`
-  - AXI DMA reader/writer blocks
-  - AXI-Lite control register block
 
 ## Project Goal
 

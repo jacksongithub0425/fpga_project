@@ -15,3 +15,14 @@ batch_out*/
 # Binary/generated archives and test vectors
 *.bin
 *.zip
+
+# Vitis HLS/XSim transient output
+hls/**/*.log
+hls/**/*.pb
+hls/**/*.wdb
+hls/**/xsim.dir/
+hls/**/dfx_runtime.txt
+hls/integration/pe_tme_seam/
+
+# Deterministic integration manifests
+hls/integration/tb_*_tme_cases.txt

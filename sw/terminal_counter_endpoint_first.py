@@ -1129,7 +1129,6 @@ def detect_page(page: fitz.Page,
     candidates = collect_endpoint_candidates(segments, clean_bin, words, img_w, img_h)
 
     raw_detections: List[dict] = []
-    counters = {"male": 1, "female": 1, "ferrule": 1, "unknown": 1}
 
     def build_detection(cand: dict) -> Optional[dict]:
         side = cand["side"]
@@ -1231,7 +1230,7 @@ def detect_page(page: fitz.Page,
             "pin": pin,
             "pin_label": pin_label,
             "wire_label": wire_label,
-            "id": det_id,
+            "id": None,  # assigned after dedupe by the renum loop below
             "side": side,
             "male_score": result["male_score"],
             "female_score": result["female_score"],

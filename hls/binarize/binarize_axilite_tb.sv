@@ -6,12 +6,12 @@
 // No board needed; runs entirely on the PC.
 //
 // Six checks (same as the Python step 0):
-//   1. ap_idle high after reset
+//   1. AP_CTRL.ap_idle high after reset
 //   2. img_w   round-trip (16-bit field, walking patterns)
 //   3. img_h   round-trip (16-bit field, walking patterns)
 //   4. threshold round-trip (8-bit field, walking patterns)
 //   5. threshold stable across 100 reads
-//   6. ap_idle still high (no spurious start)
+//   6. AP_CTRL.ap_idle still high (no spurious start)
 //
 // Run from FPGA/hls/binarize/:
 //   xvlog -sv binarize_axilite_tb.sv
@@ -48,10 +48,6 @@ module binarize_axilite_tb;
     logic        rready;
     logic [31:0] rdata;
 
-    // Block-level handshake (driven inert from outside)
-    logic ap_start = 0;
-    wire  ap_done, ap_idle, ap_ready;
-
     // AXIS gray_in (held inactive — IP must remain idle)
     logic        gray_tvalid = 0;
     wire         gray_tready;
@@ -73,10 +69,6 @@ module binarize_axilite_tb;
     binarize_core dut (
         .ap_clk             (ap_clk),
         .ap_rst_n           (ap_rst_n),
-        .ap_start           (ap_start),
-        .ap_done            (ap_done),
-        .ap_idle            (ap_idle),
-        .ap_ready           (ap_ready),
 
         .gray_in_TDATA      (gray_tdata),
         .gray_in_TVALID     (gray_tvalid),
@@ -154,6 +146,18 @@ module binarize_axilite_tb;
     int errors = 0;
     int passes = 0;
 
+    task automatic check_idle(input string label);
+        logic [31:0] ctrl;
+        axil_read(ADDR_AP_CTRL, ctrl);
+        if (ctrl[2] === 1'b1) begin
+            $display("  [PASS] %s (AP_CTRL=0x%08h)", label, ctrl);
+            passes++;
+        end else begin
+            $display("  [FAIL] %s (AP_CTRL=0x%08h)", label, ctrl);
+            errors++;
+        end
+    endtask
+
     task automatic check_rw(
         input logic [5:0]  addr,
         input logic [31:0] wval,
@@ -192,15 +196,9 @@ module binarize_axilite_tb;
         $display("  Step 0 (sim) - binarize_core AXI-Lite check");
         $display("======================================================");
 
-        // ---- 1. ap_idle high after reset (read block-level pin;
-        //         this HLS slave does not expose AP_CTRL at offset 0x00) ----
-        if (ap_idle === 1'b1) begin
-            $display("  [PASS] ap_idle high after reset (block-level pin)");
-            passes++;
-        end else begin
-            $display("  [FAIL] ap_idle low after reset (block-level pin = %b)", ap_idle);
-            errors++;
-        end
+        // ---- 1. ap_idle high after reset. With return bundled into CTRL,
+        //         block control is AP_CTRL[2], not a raw top-level pin. ----
+        check_idle("ap_idle high after reset");
 
         // ---- 2. img_w (16-bit) ----
         $display("\n  -- img_w (16-bit) --");
@@ -237,31 +235,26 @@ module binarize_axilite_tb;
         end
 
         // ---- 6. ap_idle still high (no spurious start) ----
-        if (ap_idle === 1'b1) begin
-            $display("  [PASS] ap_idle still high after all writes (block-level pin)");
-            passes++;
-        end else begin
-            $display("  [FAIL] ap_idle dropped (block-level pin = %b)", ap_idle);
-            errors++;
-        end
+        check_idle("ap_idle still high after all scalar writes");
 
         // ---- Summary ----
         $display("\n======================================================");
         $display("  SUMMARY: %0d pass, %0d fail", passes, errors);
-        if (errors == 0)
+        if (errors == 0) begin
             $display("  STEP 0 (sim) PASS");
-        else
+            $display("======================================================");
+            $finish;
+        end else begin
             $display("  STEP 0 (sim) FAIL");
-        $display("======================================================");
-
-        $finish;
+            $display("======================================================");
+            $fatal(1, "binarize AXI-Lite test failed with %0d error(s)", errors);
+        end
     end
 
     // Watchdog
     initial begin
         #500_000;
-        $display("  [FAIL] watchdog timeout");
-        $finish;
+        $fatal(1, "binarize AXI-Lite watchdog timeout");
     end
 
 endmodule

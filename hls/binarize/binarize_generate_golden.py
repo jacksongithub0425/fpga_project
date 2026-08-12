@@ -6,7 +6,7 @@ Run from the binarize/ directory:
 
 Writes:
     tb_gray.bin              - raw uint8 grayscale pixels, row-major
-    tb_bin_golden.bin        - expected binary output (uint8, 0 or 255)
+    tb_bin_golden.bin        - exact compact logical output (uint8, 0 or 255)
     tb_binarize_params.txt   - "threshold img_w img_h"
 """
 
@@ -43,9 +43,10 @@ print(f"Otsu threshold (from 4× downsampled): {threshold}")
 
 # Replicate binarize_core.cpp exactly using pure numpy integer arithmetic.
 #
-# The HLS streaming core has a 1-row + 1-col pipeline latency: the output
-# pixel at buffer position (row, col) contains the Gaussian result whose
-# 3×3 window CENTER is at input position (row-1, col-1), not (row, col).
+# The HLS arithmetic uses a truncating shift. The stream internally produces
+# a raw result at (row,col) whose 3×3 window is centred at (row-1,col-1).
+# binarize_core's output scheduler maps that beat to the same logical
+# (row-1,col-1) coordinate before compact S2MM storage.
 #
 # blur_valid[r, c] = floor(kernel_sum / 16) for 3×3 center at (r+1, c+1).
 # Shape: (img_h-2, img_w-2).
@@ -57,12 +58,18 @@ blur_valid = (
 ) >> 4
 blur_valid = blur_valid.clip(0, 255).astype(np.uint8)
 
-# HLS output at (row, col) = blur_valid[row-2, col-2] for row>=2, col>=2.
-# Rows 0-1 and cols 0-1 are 0 (pipeline fill, no complete window yet).
+# In logical storage the valid centres occupy rows 1..h-2 and cols 1..w-2.
+# Logical row/col 0 are the natural pipeline-fill zeros; the final row/col are
+# explicitly appended as zeros so stale DDR can never fabricate border ink.
 # THRESH_BINARY_INV: 255 where blurred <= threshold, else 0.
 bin_img = np.zeros((img_h, img_w), dtype=np.uint8)
-bin_img[2:, 2:] = np.where(blur_valid <= threshold, np.uint8(255), np.uint8(0))
-print(f"Binary image: {np.count_nonzero(bin_img)} white pixels (lines)")
+bin_img[1:-1, 1:-1] = np.where(
+    blur_valid <= threshold, np.uint8(255), np.uint8(0))
+print(
+    "Logical binary image: "
+    f"{np.count_nonzero(bin_img)} white pixels (lines); "
+    "final row/column zero-filled"
+)
 
 # ---- Write files --------------------------------------------------------
 Path("tb_gray.bin").write_bytes(gray.tobytes())

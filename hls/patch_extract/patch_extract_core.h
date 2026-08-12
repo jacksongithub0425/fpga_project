@@ -6,11 +6,13 @@
 // ---------------------------------------------------------------------------
 // patch_extract_core — final interface per docs/pl_interface_contract.md.
 //
-// The binary page lives in PS DDR (written by the binarizer's stream-to-DDR
-// writer in the LOGICAL frame of contract §1) and is read over AXI (m_axi,
-// offset=slave — the PS writes the buffer's physical address into the CTRL
-// register, matching _REG_BIN_ADDR in sw/tme_driver.py).  The row stride is
-// explicit and runtime (§2); it must never be assumed equal to img_w.
+// The binary page lives in PS DDR. binarize_core v2 schedules its AXIS output
+// directly in the LOGICAL frame of contract §1; simple-mode S2MM stores that
+// compact stream, and the PS writes the same destination buffer's physical
+// address into this core's m_axi offset=slave CTRL register (matching
+// _REG_BIN_ADDR in sw/tme_driver.py). The row stride is explicit and runtime
+// (§2); it must never be assumed equal to img_w. A later writer may add row
+// padding, but the current binarizer/S2MM boundary uses stride == img_w.
 // ---------------------------------------------------------------------------
 
 // Candidate descriptor packed into 64 bits for AXI4-Stream transport (§6.1):
