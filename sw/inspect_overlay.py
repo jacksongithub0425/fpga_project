@@ -60,7 +60,18 @@ def main() -> int:
         print(f"CANNOT RUN: pynq is not importable ({exc})")
         return 2
 
-    ol = Overlay(args.overlay)
+    # Loading the overlay is an environment step, not a check: a missing .bit
+    # or an absent .hwh sidecar must exit 2, because the runbook reads a 1
+    # from this script as "the overlay and the driver disagree — go fix
+    # _CORE_NAMES or the block design", which would be the wrong hunt
+    # entirely for a file that was never copied.
+    try:
+        ol = Overlay(args.overlay)
+    except Exception as exc:                           # noqa: BLE001
+        print(f"CANNOT RUN: could not load {args.overlay} "
+              f"({type(exc).__name__}: {exc}) — check that the .bit and its "
+              f"matching .hwh are both present, with the same basename")
+        return 2
     failures: list[str] = []
 
     try:
@@ -93,7 +104,15 @@ def main() -> int:
             failures.append(f"missing IP: {core_name}")
             continue
         ip = getattr(ol, core_name)
-        rmap = ip.register_map
+        try:
+            rmap = ip.register_map
+        except Exception as exc:                       # noqa: BLE001
+            failures.append(
+                f"{core_name}: register_map unavailable "
+                f"({type(exc).__name__}: {exc}) — the .hwh carries no "
+                f"register data for this IP, so the driver cannot address "
+                f"it by name")
+            continue
         print(f"\n--- {core_name} ---\n{rmap}")
         have = {r for r in dir(rmap) if not r.startswith("_")}
         missing = expected_regs - have

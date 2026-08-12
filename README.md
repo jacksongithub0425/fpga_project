@@ -61,21 +61,30 @@ hls/
   binarize/         HLS grayscale-to-binary image core and testbench
   patch_extract/    HLS patch extraction core
   template_match/   HLS template matching engine
-  class_score/      HLS score ranking and classification core
+  class_score/      parked — removed from the MVP (2026-08-11)
+  integration/      binarize -> extract -> match C/golden harness
 
 sw/
   terminal_counter_endpoint_first.py   CPU baseline and integration target
-  tme_driver.py                        PYNQ/PL driver work
-  *_terminal_*.py                      batch, sweep, and evaluation utilities
+  tme_driver.py                        PYNQ driver for the combined overlay
+  tme_standalone_bringup.py            matcher standalone bring-up (silicon 9/9)
+  BOARD_RUNBOOK.md                     ordered board gates
+  probe_cma_budget.py                  gate 1: CMA budget (contract 2.2)
+  inspect_overlay.py                   gate 2: overlay vs driver cross-check
+  board_gate_full_dma.py               gate 3: full-size DMA transfer
+  test_*.py                            host-side tests, no board required
   *_ter/                               small template assets
   old_code/                            archived Python experiments
 
-rtl/
-  Reserved for Phase B SystemVerilog implementations
+docs/
+  pl_interface_contract.md   the binding PS/PL interface contract
 
-data/, docs/, tb/
-  Reserved project folders
+vivado/
+  three_stage_combined/      overlay reconstruction Tcl + board bundle
 ```
+
+Phase B SystemVerilog (`rtl/`) has no sources yet; the directory appears when
+the first one lands.
 
 ## Implemented Accelerator Blocks
 
@@ -110,16 +119,17 @@ The local virtual environment should not be committed.
 
 ## Running HLS Builds
 
-Each HLS block has its own `run_hls.tcl` script. For example:
+Each HLS block has its own `run_hls.tcl` script. Vitis HLS 2025.2 ships no
+standalone `vitis_hls` launcher — runs go through `vitis-run --mode hls`:
 
 ```powershell
 cd hls\binarize
-vitis_hls -f run_hls.tcl
+vitis-run --mode hls -f run_hls.tcl
 ```
 
 ```powershell
 cd hls\template_match
-vitis_hls -f run_hls.tcl
+vitis-run --mode hls -f run_hls.tcl
 ```
 
 Some testbench scripts generate raw `.bin` vectors from private drawing data.
@@ -147,10 +157,14 @@ include those files.
 - ~~Package HLS cores into a Vivado block design~~ — done: the
   `three_stage_combined` overlay (binarize, patch extract, template match,
   five AXI DMAs) is routed with a matching `.bit`/`.hwh` (2026-08-11).
-- Board gates, in order: CMA budget probe (contract §2.2) and the full-size
-  63,078,400-byte DMA transfer; overlay introspection (`ip_dict`,
-  `register_map`); then per-stage driver bring-up (`binarize_page`,
-  `extract_candidates`, `match_template`) with explicit CPU-parity checks.
+- Board gates, in order (each PASS is a precondition of the next — see
+  [sw/BOARD_RUNBOOK.md](sw/BOARD_RUNBOOK.md), which is authoritative):
+  1. CMA budget probe (contract §2.2);
+  2. overlay introspection (`ip_dict`, `register_map`) against the driver;
+  3. the full-size 63,078,400-byte DMA transfer, verified bit-exactly.
+
+  Then per-stage driver bring-up (`binarize_page`, `extract_candidates`,
+  `match_template`) with explicit CPU-parity checks.
 - Integrate `detect_page()` one PL stage at a time behind explicit detector
   backends (CPU / PL-binarize / PL-extract / PL-all) — no silent
   FPGA-to-CPU fallback during validation.

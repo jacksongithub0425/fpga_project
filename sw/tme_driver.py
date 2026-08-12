@@ -61,7 +61,7 @@ import numpy as np
 # Importable without PYNQ (their module only imports pynq lazily).
 from tme_standalone_bringup import (DMA_MAX_BYTES_DEFAULT, MAX_PATCH_H,
                                     MAX_PATCH_W, MAX_TEMPL_H, MAX_TEMPL_W,
-                                    validate_geometry,
+                                    check_result, validate_geometry,
                                     validate_template_content)
 
 # ap_ctrl_hs bits at CTRL offset 0x00 — fixed by the protocol, not by any
@@ -73,7 +73,7 @@ _AP_IDLE = 1 << 2
 
 # Candidate descriptor in DDR3 — one 64-bit little-endian word per candidate,
 # consumed verbatim by patch_extract_core's cand_in AXI4-Stream port
-# (hls/patch_extract/patch_extract_core.h:6-12):
+# (hls/patch_extract/patch_extract_core.h, the descriptor banner at h:18):
 #   bits [15:0] ep_x, [31:16] ep_y, [33:32] side, [47:34] max_tw, [63:48] max_th
 #
 # Bit-packed rather than byte-aligned because it has to be: byte-aligning all
@@ -170,7 +170,7 @@ def unpack_patch_metadata(buf: bytes) -> list[dict]:
 
 
 # Must match SIDE_CODE in patch_extract_generate_golden.py and the side
-# encoding in patch_extract_core.cpp:71.  Looked up rather than compared, so a
+# encoding in patch_extract_core.cpp:189.  Looked up rather than compared, so a
 # misspelled side raises instead of silently becoming "right".
 _SIDE_CODE = {"left": 0, "right": 1}
 
@@ -201,6 +201,129 @@ def _validate_batch_size(n: int) -> None:
             f"with it.  This is a host-side allocation bound, not a PL "
             f"one — patch_extract_core takes num_cands as a 16-bit "
             f"register and has no per-candidate storage.")
+
+
+# Buffers whose DMA could not be proved quiescent.  Holding a reference keeps
+# PynqBuffer.__del__ from calling freebuffer() while this process lives — a
+# DELAY, not a quarantine.  Same device as _RETAINED_DMA_BUFFERS in
+# binarize_dma_checks.py and _UNSAFE_TO_FREE in tme_standalone_bringup.py; see
+# PLPipeline.close().
+_RETAINED_BUFFERS: list = []
+
+# Global image-configuration bounds, mirroring PE_MIN_IMG_DIM / PE_MAX_IMG_W/H
+# in hls/patch_extract/patch_extract_core.h.
+_MIN_IMG_DIM = 3
+_MAX_IMG_W = 9856
+_MAX_IMG_H = 6400
+
+_REASON_NAMES_BY_BIT = _META_REASON_NAMES     # same numbering, §4.2
+
+
+def predict_patch_box(ep_x: int, ep_y: int, side_code: int,
+                      max_tw: int, max_th: int,
+                      img_w: int, img_h: int) -> tuple[int, int, int, int]:
+    """Replicate patch_extract_core's post-clip patch box, exactly.
+
+    Returns (x0, y0, patch_w, patch_h) — the same numbers the §6.2 record
+    reports for this descriptor.
+
+    This is a HOST-SIDE PREDICTOR FOR REJECTION ONLY.  The §6.2 record stays
+    authoritative for the geometry a match actually runs on (the seam test's
+    clipped-candidate lesson: re-derivation is how the PS ends up matching a
+    106 px patch with a 152 px assumption).  It exists because a rejected
+    descriptor produces NO pixel payload, so a driver that arms a patch
+    receive for it strands that transfer — see extract_candidates.
+
+    The arithmetic is the core's, decomposition and clamp order included
+    (patch_extract_core.cpp): the x2.4 / x1.4 / x3.2 rationals are computed
+    as 2v + floor(2v/5), v + floor(2v/5), 3v + floor(v/5); the upper clamp on
+    x0/y0 runs BEFORE the lower clamp; the 2-pixel minimum-size bump runs
+    last.  `_selftest_predictor` proves the replication against all 66 rows
+    of the extractor's own golden manifest — do not edit one side of it
+    without re-running that.
+    """
+    tw_2fifths = (2 * max_tw) // 5
+    outward_w = 2 * max_tw + tw_2fifths        # x2.4
+    inward_w = max_tw + tw_2fifths             # x1.4
+    patch_h = 3 * max_th + max_th // 5         # x3.2
+
+    if side_code == 0:                         # left
+        x0, x1 = ep_x - outward_w, ep_x + inward_w
+    else:
+        x0, x1 = ep_x - inward_w, ep_x + outward_w
+    y0 = ep_y - patch_h // 2
+    y1 = y0 + patch_h
+
+    # Clamp order is load-bearing: upper first, so the lower clamp still wins
+    # on a small image.
+    if x0 > img_w - 2:
+        x0 = img_w - 2
+    if y0 > img_h - 2:
+        y0 = img_h - 2
+    if x0 < 0:
+        x0 = 0
+    if y0 < 0:
+        y0 = 0
+    if x1 > img_w:
+        x1 = img_w
+    if y1 > img_h:
+        y1 = img_h
+    if x1 <= x0 + 1:
+        x1 = x0 + 2
+    if y1 <= y0 + 1:
+        y1 = y0 + 2
+    return x0, y0, x1 - x0, y1 - y0
+
+
+def predict_global_invalid(img_w: int, img_h: int, stride_bytes: int,
+                           buffer_bytes: int) -> bool:
+    """Mirror the core's §4.3 global image-configuration test."""
+    footprint = stride_bytes * img_h
+    return (img_w < _MIN_IMG_DIM or img_w > _MAX_IMG_W or
+            img_h < _MIN_IMG_DIM or img_h > _MAX_IMG_H or
+            stride_bytes < img_w or
+            footprint > buffer_bytes or
+            footprint > 0xFFFFFFFF)
+
+
+def predict_reject_reasons(ep_x: int, ep_y: int, side_code: int,
+                           max_tw: int, max_th: int,
+                           img_w: int, img_h: int, stride_bytes: int,
+                           buffer_bytes: int) -> list[int]:
+    """Reason bits patch_extract_core would set for this descriptor (§4.2).
+
+    Empty list means the core will accept it and emit a patch.  Used to
+    reject host-side BEFORE dispatch, because the PL's rejection is not a
+    recoverable outcome for this driver: no pixels are emitted for a rejected
+    candidate, so an armed patch receive for it never completes.
+    """
+    if predict_global_invalid(img_w, img_h, stride_bytes, buffer_bytes):
+        return [8]                              # §4.3: bit 8 only
+
+    reasons: list[int] = []
+    if ep_x >= img_w:
+        reasons.append(0)
+    if ep_y >= img_h:
+        reasons.append(1)
+    if not 4 <= max_tw <= _MAX_TEMPL_W:
+        reasons.append(2)
+    if not 4 <= max_th <= _MAX_TEMPL_H:
+        reasons.append(3)
+    if side_code > 1:
+        reasons.append(4)
+
+    _, _, pw, ph = predict_patch_box(ep_x, ep_y, side_code, max_tw, max_th,
+                                     img_w, img_h)
+    if pw > _MAX_PATCH_W:
+        reasons.append(5)
+    if ph > _MAX_PATCH_H:
+        reasons.append(6)
+    # Post-clip, and NOT implied by the range checks above: an image narrower
+    # than the template, or a candidate clipped against an edge, reaches this
+    # with a perfectly legal descriptor.
+    if pw < max_tw or ph < max_th:
+        reasons.append(7)
+    return sorted(reasons)
 
 
 def compute_cand_envelope(side_templates: dict, side: str,
@@ -344,6 +467,11 @@ class PLPipeline:
         # Staged-patch state for match_candidate's one-copy-per-candidate path.
         self._staged_patch: Optional[tuple[int, int]] = None
 
+        # Set by _start(), cleared only when a stage completes cleanly.  If it
+        # is still set at close(), a failure left the PL mid-transaction and
+        # the CMA pages must not go back to the pool — see close().
+        self._transfers_outstanding = False
+
     # -- generic helpers ----------------------------------------------------
 
     @staticmethod
@@ -354,8 +482,28 @@ class PLPipeline:
                 return val
         return DMA_MAX_BYTES_DEFAULT
 
-    def _start(self, core) -> None:
+    def _start(self, core, label: str) -> None:
+        """Write ap_start, after proving the core is idle.
+
+        The idle check is not optional and the silicon-proven bring-up has
+        it too (`run_case`): under ap_ctrl_hs, writing ap_start to a BUSY
+        core leaves the bit pending, and the still-running invocation
+        consumes the beats just armed for the new one as the tail of its own
+        read.  Nothing downstream can detect that — the results register
+        fine, against the wrong pixels.  It is reachable whenever a previous
+        invocation raised (a timeout, a DMA error) and the caller carried on
+        to the next candidate, which is the natural recovery.
+        """
+        ctrl = core.read(_AP_CTRL_OFF)
+        if not ctrl & _AP_IDLE:
+            raise RuntimeError(
+                f"{label}: core is not idle before start "
+                f"(AP_CTRL=0x{ctrl:08X}) — a previous invocation is still "
+                f"running or left beats in a stream. Starting now would let "
+                f"it consume this run's data; reload the overlay rather than "
+                f"retrying.")
         core.write(_AP_CTRL_OFF, _AP_START)
+        self._transfers_outstanding = True
 
     def _wait_done(self, core, deadline: float, label: str,
                    channels: Sequence[tuple] = ()) -> None:
@@ -425,16 +573,35 @@ class PLPipeline:
     # -- stage 1: binarize ---------------------------------------------------
 
     def _ensure_image_bufs(self, h: int, w: int) -> None:
+        """(Re)allocate the gray/binary pair, leaving no freed buffer reachable.
+
+        The attributes are cleared BEFORE the old buffers are freed and are
+        reassigned only once both new allocations have succeeded.  Order
+        matters: this is the §2.2 allocation — 2 x 60.2 MiB of separately
+        contiguous CMA at full page size — and it is the one most likely to
+        raise. Freeing first and assigning last would leave `self._bin_buf`
+        (or both) pointing at returned pages, and the `len(...) < n` guard
+        would then skip reallocation on a smaller retry and DMA straight into
+        memory the pool has already handed to someone else.
+        """
         n = h * w
-        if self._gray_buf is None or len(self._gray_buf) < n:
-            for buf in (self._gray_buf, self._bin_buf):
-                if buf is not None:
-                    buf.freebuffer()
-            # Two SEPARATELY contiguous CMA allocations — this pair is what
-            # the §2.2 gate is about; at the 9856×6400 maximum it is the
-            # 2 × 60.2 MiB probe_cma_budget.py exists to test.
-            self._gray_buf = self._allocate(shape=(n,), dtype=np.uint8)
-            self._bin_buf = self._allocate(shape=(n,), dtype=np.uint8)
+        if self._gray_buf is not None and len(self._gray_buf) >= n:
+            return
+
+        old = (self._gray_buf, self._bin_buf)
+        self._gray_buf = None
+        self._bin_buf = None
+        self._img_w = self._img_h = 0        # the view is no longer valid
+        for buf in old:
+            if buf is not None:
+                buf.freebuffer()
+        gray = self._allocate(shape=(n,), dtype=np.uint8)
+        try:
+            binary = self._allocate(shape=(n,), dtype=np.uint8)
+        except Exception:
+            gray.freebuffer()
+            raise
+        self._gray_buf, self._bin_buf = gray, binary
 
     def binarize_page(self, gray_np: np.ndarray, threshold: int) -> np.ndarray:
         """Run binarize_core over a full page.  Returns a (h, w) uint8 view
@@ -442,8 +609,32 @@ class PLPipeline:
 
         Sequence (§7.1): write scalars, arm the binary S2MM, ap_start, send
         the gray page on MM2S, wait core + both channels, invalidate.
+
+        Input validation mirrors the cpu_golden-verified path in
+        binarize_dma_checks.run_binarize_once, because every one of these is
+        a silent-wrong-answer mode rather than an error the core reports: a
+        non-uint8 page unsafe-casts on the way into the DMA buffer (a float
+        page normalised to [0,1] binarizes as near-black and every downstream
+        stage runs on garbage), a page outside 3..9856 x 3..6400 is what the
+        extractor later rejects as global_invalid, and a threshold outside
+        0..255 does not fit the core's register.
         """
+        gray_np = np.asarray(gray_np)
+        if gray_np.ndim != 2:
+            raise ValueError(f"gray page must be 2-D, got shape "
+                             f"{gray_np.shape}")
+        if gray_np.dtype != np.uint8:
+            raise ValueError(
+                f"gray page must be uint8, got {gray_np.dtype} — assigning it "
+                f"into the DMA buffer would unsafe-cast every pixel silently")
         h, w = gray_np.shape
+        if not _MIN_IMG_DIM <= w <= _MAX_IMG_W or not _MIN_IMG_DIM <= h <= _MAX_IMG_H:
+            raise ValueError(
+                f"image {w}x{h} outside [{_MIN_IMG_DIM}, {_MAX_IMG_W}] x "
+                f"[{_MIN_IMG_DIM}, {_MAX_IMG_H}] (§2, §4.3)")
+        if not 0 <= int(threshold) <= 255:
+            raise ValueError(f"threshold {threshold} does not fit the core's "
+                             f"unsigned 8-bit register")
         n = h * w
         self._ensure_image_bufs(h, w)
         self._img_h, self._img_w = h, w
@@ -461,7 +652,7 @@ class PLPipeline:
         # Arm the receive first: the core produces output beats as input
         # arrives, and an unarmed S2MM backpressures into the core mid-page.
         self._dma_binarize.recvchannel.transfer(self._bin_buf[:n])
-        self._start(self._binarize)
+        self._start(self._binarize, "binarize_core")
         self._dma_binarize.sendchannel.transfer(self._gray_buf[:n])
 
         self._wait_done(self._binarize, deadline, "binarize_core",
@@ -476,6 +667,7 @@ class PLPipeline:
         # doing it explicitly costs nothing and does not depend on that
         # staying true.
         self._bin_buf.invalidate()
+        self._transfers_outstanding = False
         return self.binary_view()
 
     def binary_view(self) -> np.ndarray:
@@ -504,7 +696,14 @@ class PLPipeline:
         DMA driver and so gets no cache maintenance for free.
         """
         if self._img_w == 0:
-            return
+            # Raise rather than no-op: this module's rule is that a stage
+            # either ran or failed loudly.  A caller that suppresses before
+            # binarizing believes suppression happened, and the page that
+            # reaches extraction still has its text — spurious matches with
+            # no error anywhere.
+            raise RuntimeError("binarize_page() must run before "
+                               "suppress_text(); there is no binary page to "
+                               "suppress into")
         expand = 3
         h, w = self._img_h, self._img_w
         bin_view = self.binary_view()
@@ -567,24 +766,37 @@ class PLPipeline:
 
             max_tw, max_th = compute_cand_envelope(side_templates, side, scales)
 
-            # Enforce §4.1 before dispatch: the PL would reject these with a
-            # reason code, but software generating an illegal descriptor is a
-            # configuration bug worth an exception — and (framing note above)
-            # a rejected descriptor also strands its armed patch receive.
-            if not (4 <= max_tw <= _MAX_TEMPL_W):
+            # Enforce the WHOLE of §4.1/§4.3 before dispatch, not just the
+            # descriptor-field ranges.  This is not defensive politeness: a
+            # descriptor the PL rejects emits no pixel payload, so the patch
+            # receive armed for it below never completes and the failure
+            # surfaces as an unexplained per-candidate timeout with the batch
+            # already half-consumed.  predict_reject_reasons() replicates the
+            # core's own arithmetic (proven against its golden manifest by
+            # _selftest_predictor), so anything it passes, the PL accepts.
+            #
+            # Two of these are NOT implied by the field ranges and were the
+            # gap: the global image configuration (§4.3, rejects the whole
+            # batch), and the post-clip `patch < template` test, which a
+            # legal 216-wide template hits on any image narrower than 216 or
+            # at a candidate clipped against an edge.
+            if ep_x < 0 or ep_y < 0:
                 raise ValueError(
-                    f"candidate {i}: max_tw {max_tw} outside "
-                    f"[4, {_MAX_TEMPL_W}] — template bank exceeds the frozen "
-                    f"envelope (§4.1)")
-            if not (4 <= max_th <= _MAX_TEMPL_H):
+                    f"candidate {i}: endpoint ({ep_x},{ep_y}) is negative; "
+                    f"the descriptor field is unsigned (§6.1)")
+            reasons = predict_reject_reasons(
+                ep_x, ep_y, side_code, max_tw, max_th,
+                self._img_w, self._img_h, self._stride_bytes,
+                len(self._bin_buf))
+            if reasons:
                 raise ValueError(
-                    f"candidate {i}: max_th {max_th} outside "
-                    f"[4, {_MAX_TEMPL_H}] — template bank exceeds the frozen "
-                    f"envelope (§4.1)")
-            if not (0 <= ep_x < self._img_w and 0 <= ep_y < self._img_h):
-                raise ValueError(
-                    f"candidate {i}: endpoint ({ep_x},{ep_y}) outside "
-                    f"{self._img_w}x{self._img_h} (§4.1)")
+                    f"candidate {i} (ep {ep_x},{ep_y} {side}, template "
+                    f"{max_tw}x{max_th}, image {self._img_w}x{self._img_h}): "
+                    f"patch_extract_core would reject this descriptor — "
+                    + "; ".join(_REASON_NAMES_BY_BIT[b] for b in reasons)
+                    + ". A rejected candidate produces no patch pixels, so "
+                      "dispatching it would strand this batch's patch "
+                      "receive (§4.1/§4.3).")
 
             packed = pack_candidate(ep_x, ep_y, side_code, max_tw, max_th)
             self._cand_buf[offset:offset + _CAND_STRUCT_SIZE] = \
@@ -613,7 +825,7 @@ class PLPipeline:
         meta_bytes = n * _META_STRUCT_SIZE
         self._dma_pe_meta.recvchannel.transfer(self._meta_buf[:meta_bytes])
 
-        self._start(self._extract)
+        self._start(self._extract, "patch_extract_core")
         self._dma_pe_data.sendchannel.transfer(
             self._cand_buf[:n * _CAND_STRUCT_SIZE])
 
@@ -630,7 +842,18 @@ class PLPipeline:
             self._patch_rx_buf.invalidate()
             raw_patches.append(np.array(self._patch_rx_buf))  # full-bound copy
             got = getattr(self._dma_pe_data.recvchannel, "transferred", None)
-            transferred.append(int(got) if got else None)
+            # `is None`, not truthiness: a transferred count of 0 is a real
+            # (and damning) measurement, and treating it as "attribute
+            # absent" would drop the framing cross-check on exactly the run
+            # that needs it.  Absence itself fails closed below.
+            if got is None:
+                raise RuntimeError(
+                    f"candidate {i}: this PYNQ build's S2MM channel exposes "
+                    f"no `transferred` count, so the §6.2-record-vs-TLAST "
+                    f"framing cross-check cannot run. Refusing to slice "
+                    f"patches on unverified lengths (a framing disagreement "
+                    f"is silent in the matcher and corrupts the NEXT patch).")
+            transferred.append(int(got))
 
         self._wait_done(self._extract, deadline, "patch_extract_core",
                         channels=((self._dma_pe_data.sendchannel, "cand MM2S"),
@@ -675,7 +898,7 @@ class PLPipeline:
                     f"candidate {i}: valid=0 ({rec['reasons']}) survived the "
                     f"§4.1 pre-checks — model drift")
             nbytes = rec["patch_w"] * rec["patch_h"]
-            if transferred[i] is not None and transferred[i] != nbytes:
+            if transferred[i] != nbytes:
                 raise RuntimeError(
                     f"candidate {i}: DMA moved {transferred[i]} B but the "
                     f"§6.2 record says {rec['patch_w']}x{rec['patch_h']} = "
@@ -685,6 +908,31 @@ class PLPipeline:
             rec["patch"] = raw_patches[i][:nbytes].reshape(
                 rec["patch_h"], rec["patch_w"])
             out.append(rec)
+
+        # The record stays authoritative for geometry; this only asserts that
+        # the host-side predictor which cleared these candidates for dispatch
+        # still agrees with the core.  A disagreement means the two models
+        # have drifted — and since the predictor is what decides whether a
+        # patch receive gets armed, drift is how this batch's receives stop
+        # lining up with its candidates.
+        for i, (cand, rec) in enumerate(zip(candidates, out)):
+            side_code = _SIDE_CODE[cand.get("side", "left")]
+            ep_x = int(round(cand["endpoint"][0]))
+            ep_y = int(round(cand["endpoint"][1]))
+            max_tw, max_th = compute_cand_envelope(
+                side_templates, cand.get("side", "left"), scales)
+            want = predict_patch_box(ep_x, ep_y, side_code, max_tw, max_th,
+                                     self._img_w, self._img_h)
+            have = (rec["x0"], rec["y0"], rec["patch_w"], rec["patch_h"])
+            if want != have:
+                raise RuntimeError(
+                    f"candidate {i}: predict_patch_box says {want} but the "
+                    f"§6.2 record says {have} — the host-side geometry model "
+                    f"has drifted from patch_extract_core. Re-run "
+                    f"tme_driver.py --selftest-predictor against the "
+                    f"extractor's golden manifest before trusting any batch.")
+
+        self._transfers_outstanding = False
         return out
 
     # -- stage 3: template match ----------------------------------------------
@@ -736,7 +984,7 @@ class PLPipeline:
         # the template DMA sits backpressured for most of the run — normal.
         self._dma_patch.sendchannel.transfer(self._tme_patch_buf[:pw * ph])
         self._dma_templ.sendchannel.transfer(self._tme_templ_buf[:n_t])
-        self._start(self._tme)
+        self._start(self._tme, "tme_top")
 
         self._wait_done(self._tme, deadline, "tme_top",
                         channels=((self._dma_patch.sendchannel, "patch MM2S"),
@@ -758,6 +1006,21 @@ class PLPipeline:
                 f"not written by this invocation")
 
         score = struct.unpack("<f", struct.pack("<I", score_bits))[0]
+
+        # Contract sanity on the readback, independent of any golden: -2.0 is
+        # the core's never-scored initialiser, the score is clamped to
+        # [-1, 1] in tme_top so out-of-range is not rounding, and x/y must
+        # land inside the (pw-tw+1) x (ph-th+1) result map.  Without this a
+        # desynchronised run's garbage location flows straight into
+        # match_candidate's box arithmetic and is reported as a detection.
+        errs = check_result(score, x, y, pw, ph, tw_, th_)
+        if errs:
+            raise RuntimeError(
+                f"tme_top returned a result that violates the contract "
+                f"({pw}x{ph} patch, {tw_}x{th_} template):\n"
+                + "\n".join(f"    - {e}" for e in errs))
+
+        self._transfers_outstanding = False
         return score, x, y, elapsed
 
     def match_template(self, patch: np.ndarray,
@@ -828,14 +1091,142 @@ class PLPipeline:
 
     # -- teardown --------------------------------------------------------------
 
-    def close(self) -> None:
-        """Release DMA buffers."""
-        for buf in (self._gray_buf, self._bin_buf, self._cand_buf,
-                    self._meta_buf, self._patch_rx_buf, self._tme_patch_buf,
-                    self._tme_templ_buf):
-            if buf is None:
-                continue
+    def close(self) -> bool:
+        """Release DMA buffers — but only ones no DMA can still be writing.
+
+        Returns True if everything was freed, False if buffers were retained.
+
+        close() is most often called from an exception handler, which is
+        exactly when a transfer may still be outstanding: every failure path
+        here (a timeout, a DMA error, a contract-violating readback) leaves
+        the PL mid-transaction.  Handing those CMA pages back then is not a
+        leak-vs-tidy trade — an S2MM with an open command writes the beats
+        that do eventually arrive into whatever the pool has since handed to
+        someone else, and an MM2S keeps reading them.  Both silicon-proven
+        scripts refuse to free in that state (tme_standalone_bringup.close()
+        requires DMACR.Reset==0 and DMASR.Halted==1; binarize_dma_checks
+        parks buffers in _RETAINED_DMA_BUFFERS), and this now matches them.
+
+        Retention is a DELAY, not a quarantine: the module-level list holds
+        strong references so PynqBuffer.__del__ cannot run, but process exit
+        still releases the pages.  Reload the overlay (which resets the PL)
+        before starting another run in the same session.
+        """
+        bufs = [b for b in (self._gray_buf, self._bin_buf, self._cand_buf,
+                            self._meta_buf, self._patch_rx_buf,
+                            self._tme_patch_buf, self._tme_templ_buf)
+                if b is not None]
+
+        channels = [(self._dma_binarize.sendchannel, "gray MM2S"),
+                    (self._dma_binarize.recvchannel, "bin S2MM"),
+                    (self._dma_pe_data.sendchannel, "cand MM2S"),
+                    (self._dma_pe_data.recvchannel, "patch S2MM"),
+                    (self._dma_pe_meta.recvchannel, "meta S2MM"),
+                    (self._dma_patch.sendchannel, "tme patch MM2S"),
+                    (self._dma_templ.sendchannel, "tme templ MM2S")]
+        busy = []
+        for ch, name in channels:
+            try:
+                if not ch.idle:
+                    busy.append(name)
+            except Exception:                              # noqa: BLE001
+                busy.append(f"{name} (state unreadable)")
+
+        if busy or self._transfers_outstanding:
+            _RETAINED_BUFFERS.extend(bufs)
+            why = []
+            if busy:
+                why.append("channels still busy: " + ", ".join(busy))
+            if self._transfers_outstanding:
+                why.append("a transfer was left outstanding by a failed run")
+            print("[tme_driver] NOT freeing %d DMA buffers (%s). They are "
+                  "retained for the life of this process; reload the overlay "
+                  "before running again." % (len(bufs), "; ".join(why)))
+            self._gray_buf = self._bin_buf = None
+            return False
+
+        for buf in bufs:
             try:
                 buf.freebuffer()
-            except Exception:
-                pass
+            except Exception:                              # noqa: BLE001
+                _RETAINED_BUFFERS.append(buf)
+        self._gray_buf = self._bin_buf = None
+        return True
+
+
+# -----------------------------------------------------------------------
+# Offline self-test: prove the host-side reject predictor against the
+# extractor's own golden manifest.  Needs no PYNQ and no board.
+#
+#     python3 tme_driver.py --selftest-predictor
+#
+# This is what makes extract_candidates' pre-dispatch rejection safe to rely
+# on.  The predictor decides whether a patch receive gets armed, so if it
+# disagrees with patch_extract_core the driver either strands a transfer or
+# refuses a legal candidate — and the manifest is an independent oracle for
+# exactly that: 66 candidates with the core's own post-clip x0/y0/x1/y1 and
+# valid flag, generated by patch_extract_generate_golden.py and already
+# validated against the RTL by csim and cosim.
+# -----------------------------------------------------------------------
+
+def _selftest_predictor() -> int:
+    from pathlib import Path
+
+    manifest = (Path(__file__).resolve().parents[1] / "hls" / "patch_extract"
+                / "tb_patch_extract_cases_csim.txt")
+    if not manifest.exists():
+        print(f"CANNOT RUN: {manifest} not found — run "
+              f"patch_extract_generate_golden.py from hls/patch_extract/ "
+              f"first. This check is not meaningful without it.")
+        return 2
+
+    lines = manifest.read_text().strip().splitlines()
+    img_w, img_h = (int(v) for v in lines[0].split()[:2])
+    print(f"predictor self-test against {manifest.name} "
+          f"(image {img_w}x{img_h})")
+
+    box_bad = valid_bad = 0
+    n = 0
+    for line in lines[1:]:
+        f = line.split()
+        ep_x, ep_y, side = int(f[3]), int(f[4]), int(f[5])
+        max_tw, max_th = int(f[6]), int(f[7])
+        x0, y0, x1, y1 = int(f[8]), int(f[9]), int(f[10]), int(f[11])
+        want_valid = f[14] == "1"
+        name = f[-1]
+        n += 1
+
+        got = predict_patch_box(ep_x, ep_y, side, max_tw, max_th, img_w, img_h)
+        want = (x0, y0, x1 - x0, y1 - y0)
+        if got != want:
+            box_bad += 1
+            print(f"  BOX  {name}: predicted {got}, manifest {want}")
+
+        # buffer_bytes = the compact page: the manifest's cases are all run
+        # against a legal global configuration, so any predicted reject must
+        # come from the per-descriptor rules.
+        reasons = predict_reject_reasons(ep_x, ep_y, side, max_tw, max_th,
+                                         img_w, img_h, img_w, img_w * img_h)
+        if bool(reasons) == want_valid:
+            valid_bad += 1
+            print(f"  VALID {name}: predicted reasons {reasons}, manifest "
+                  f"valid={want_valid}")
+
+    print(f"\n{n} candidates: {n - box_bad} box matches, "
+          f"{n - valid_bad} validity matches")
+    if box_bad or valid_bad:
+        print("FAIL: the host-side model disagrees with patch_extract_core. "
+              "extract_candidates() must not be used until this passes.")
+        return 1
+    print("PASS: predict_patch_box and predict_reject_reasons agree with the "
+          "core on every manifest candidate.")
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+    if "--selftest-predictor" in sys.argv:
+        raise SystemExit(_selftest_predictor())
+    print(__doc__)
+    print("Run with --selftest-predictor to check the host-side geometry "
+          "model against the extractor's golden manifest.")

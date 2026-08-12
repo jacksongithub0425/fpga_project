@@ -4,8 +4,15 @@ Unit test for the candidate descriptor packing in tme_driver.
     python test_cand_packing.py        # from sw/
     pytest test_cand_packing.py
 
-Needs no hardware and no PYNQ: tme_driver's module-level imports are numpy and
-struct only, and everything PYNQ-specific is imported lazily inside methods.
+Needs no hardware and no PYNQ: nothing tme_driver imports at module level
+pulls in pynq (it imports numpy, struct, time, typing and the pure
+validators from tme_standalone_bringup), and everything PYNQ-specific is
+imported lazily inside methods.
+
+test_matches_generator_manifest needs the extractor's golden manifest, which
+is a generated file and is not committed:
+
+    cd ../hls/patch_extract && python patch_extract_generate_golden.py
 """
 
 from __future__ import annotations
@@ -29,7 +36,7 @@ MANIFEST = (Path(__file__).resolve().parents[1]
 
 
 def decode(word: int) -> tuple[int, int, int, int, int]:
-    """Field extraction exactly as patch_extract_core.cpp:69-73 does it."""
+    """Field extraction exactly as patch_extract_core.cpp:187-191 does it."""
     return (
         word & 0xFFFF,           # ep_x
         (word >> 16) & 0xFFFF,   # ep_y
@@ -75,8 +82,13 @@ def test_fields_do_not_bleed():
 
 
 def test_matches_generator_manifest():
-    """Cross-check against all 59 golden candidates, including the 65535
-    endpoints and the 0-width/height degenerate descriptors."""
+    """Cross-check against every golden candidate, including the 65535
+    endpoints and the 0-width/height degenerate descriptors.
+
+    The row count is deliberately not asserted — it tracks the generator's
+    case list (66 at the time of writing) and pinning it here turns every
+    added case into a spurious failure.  `n > 0` is the real invariant.
+    """
     # Fail rather than skip.  This is the only check here with an independent
     # oracle; quietly passing without it would report a green suite that had
     # verified nothing but its own arithmetic.
@@ -185,14 +197,29 @@ def test_batch_limit_matches_buffer_allocation():
     """
     src = (Path(__file__).resolve().parent / "tme_driver.py").read_text(
         encoding="utf-8")
-    # The allocation statement may wrap; search a whitespace-flattened copy
-    # of the source rather than individual lines.
+    # The allocation statement may wrap, so search a whitespace-flattened
+    # copy — but bound the search at THIS statement's closing paren, not at a
+    # fixed character count.  A fixed window (the first version used 120
+    # chars) runs past the end of a short statement into the next
+    # allocation, which also mentions _MAX_CANDIDATES; the assertion then
+    # passes on its neighbour's text and the guard becomes vacuous exactly
+    # when someone hard-codes a literal size here.
     flat = " ".join(src.split())
     for buf in ("_cand_buf", "_meta_buf"):
         needle = f"self.{buf} = allocate("
         start = flat.find(needle)
         assert start >= 0, f"could not find the {buf} allocation"
-        stmt = flat[start:start + 120]
+        depth, end = 0, None
+        for i in range(start + len(needle) - 1, len(flat)):
+            if flat[i] == "(":
+                depth += 1
+            elif flat[i] == ")":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        assert end is not None, f"{buf} allocation call is unterminated"
+        stmt = flat[start:end]
         assert "_MAX_CANDIDATES" in stmt, (
             f"{buf} is not sized from _MAX_CANDIDATES, so the batch guard "
             f"does not actually protect it: {stmt}")
@@ -219,14 +246,28 @@ def test_result_record_path_stays_deleted():
     record.
     """
     import tme_driver
-    assert not hasattr(tme_driver, "_RESULT_STRUCT_FMT"), (
-        "a result-record format is back in tme_driver — §6.3 was closed by "
-        "DELETING this path (2026-08-11); amend the contract before "
-        "reintroducing it")
-    assert not hasattr(tme_driver, "_RESULT_STRUCT_SIZE"), (
-        "a result-record size is back in tme_driver — §6.3 was closed by "
-        "DELETING this path (2026-08-11); amend the contract before "
-        "reintroducing it")
+    for name in ("_RESULT_STRUCT_FMT", "_RESULT_STRUCT_SIZE"):
+        assert not hasattr(tme_driver, name), (
+            f"{name} is back in tme_driver — §6.3 was closed by DELETING "
+            f"this path (2026-08-11); amend the contract before "
+            f"reintroducing it")
+
+    # hasattr on the module is not enough on its own: a class attribute
+    # (PLPipeline._RESULT_STRUCT_FMT), a renamed constant, or an inline
+    # struct.unpack inside a new collect_results() all reintroduce the same
+    # ABI without tripping it.  Grep the source for the shape of the thing.
+    src = (Path(__file__).resolve().parent / "tme_driver.py").read_text(
+        encoding="utf-8")
+    assert "_RESULT_STRUCT" not in src, (
+        "a result-record struct is back in tme_driver.py under some "
+        "spelling — see §6.3 (closed by removal, 2026-08-11)")
+    # Scope to the matcher stage itself: close() legitimately inspects every
+    # channel, including receive channels, to decide whether freeing is safe.
+    matcher_stage = src.split("# -- stage 3")[-1].split("# -- teardown")[0]
+    assert "recvchannel" not in matcher_stage, (
+        "the matcher stage grew an S2MM receive — tme_top returns its "
+        "result in AXI4-Lite scalar registers and the overlay has no "
+        "result DMA (§6.3, §10 item 5)")
 
 
 def main() -> int:

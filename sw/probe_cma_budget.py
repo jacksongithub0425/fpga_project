@@ -30,7 +30,7 @@ regions, and contiguity is exactly the property that degrades with use.
 So: re-run after a reboot, and re-run in the real application's environment
 and allocation order before trusting the result.  Which is why --overlay
 exists.  Loading a bitstream itself allocates from the pool, and the driver
-allocates _cand_buf and _result_buf as well; probing a pristine pool and then
+allocates _cand_buf and _meta_buf as well; probing a pristine pool and then
 allocating in a different order in production is how a gate passes here and
 fails in the field.
 """

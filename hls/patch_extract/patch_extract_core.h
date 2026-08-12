@@ -10,7 +10,7 @@
 // directly in the LOGICAL frame of contract §1; simple-mode S2MM stores that
 // compact stream, and the PS writes the same destination buffer's physical
 // address into this core's m_axi offset=slave CTRL register (matching
-// _REG_BIN_ADDR in sw/tme_driver.py). The row stride is explicit and runtime
+// register_map.bin_image_1/_2 in sw/tme_driver.py). The row stride is explicit and runtime
 // (§2); it must never be assumed equal to img_w. A later writer may add row
 // padding, but the current binarizer/S2MM boundary uses stride == img_w.
 // ---------------------------------------------------------------------------

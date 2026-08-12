@@ -37,7 +37,7 @@
 //
 // bin_image is an AXI master with offset=slave: the PS writes the DDR
 // buffer's physical address into the CTRL bundle (the driver's
-// _REG_BIN_ADDR).  The pixel at logical (x, y) lives at byte offset
+// register_map.bin_image_1/_2).  The pixel at logical (x, y) lives at byte offset
 // y * stride_bytes + x.  stride_bytes is runtime and MUST NOT be assumed
 // equal to img_w — the previous 2D-array signature hardcoded a 2560-byte
 // stride, and that assumption is exactly what this port replaced.

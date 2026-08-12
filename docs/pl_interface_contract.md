@@ -189,9 +189,12 @@ Two cautions on the numbers in the table above:
 
 - **820 × 307 is the exact reachable envelope, and it is adopted.** It is not
   a round number and must not be rounded up: `max_tw <= 216` and
-  `max_th <= 96` imply `patch_w <= 820` and `patch_h <= 307` exactly, and
-  `hls/template_match/ab_bram/` retains the A/B synthesis showing why the
-  difference matters. At the former 1024 × 320 the matcher needed **352
+  `max_th <= 96` imply `patch_w <= 820` and `patch_h <= 307` exactly. The A/B
+  synthesis showing why the difference matters **was not retained in the
+  repository** — an earlier revision of this line cited
+  `hls/template_match/ab_bram/`, which does not exist in the tree; the
+  numbers below are the record, and re-running the A/B is the only way to
+  re-derive them. At the former 1024 × 320 the matcher needed **352
   BRAM18K against 280 available — 125%, not implementable at all**; at
   820 × 307 it needs **224 (80%)**. `patch_buf` is 16 cyclic banks, and
   820 × 307 drops each below the 16 384-word depth step, halving it from 16 to
@@ -822,8 +825,11 @@ order **is** significant when two assignments in the same `always` block target
 the *same* register — the last one wins. That case does not occur in this diff,
 which is why the reordering is benign here. It has to be checked, not assumed.
 
-Closing this section does **not** close §6.3 (the 14-versus-16-byte result
-record) or §7.1 item 4 (timeout / reset ownership). Both remain open.
+Closing this section did **not** close §6.3 (the 14-versus-16-byte result
+record) or §7.1 item 4 (timeout / reset ownership). **§6.3 has since been
+closed separately — 2026-08-11, by deleting the record from the MVP ABI
+rather than resizing it (§10 item 5). §7.1 item 4 (= §10 item 6) is the one
+that remains open.**
 
 ---
 
@@ -1072,8 +1078,9 @@ legitimately uses a different encoding (`0=male, 1=female, 2=ferrule`) — the
 two must be named apart in code, not merged.
 
 **This record is incomplete as proposed — one score is not enough.** The
-software contract (`run_candidates()` in `sw/tme_driver.py`) returns
-`male_score`, `female_score` and `ferrule_score` per candidate, and
+software contract (`run_candidates()` in `sw/tme_driver.py` — the method the
+2026-08-11 rewrite replaced with `extract_candidates()` / `match_candidate()`)
+returns `male_score`, `female_score` and `ferrule_score` per candidate, and
 `postprocess_ps` consumes them; the driver currently fabricates `-1.0` for all
 three, which is a placeholder, not a design. `class_score_core` already
 accumulates `best_score[kind]` internally, so the data exists at the point of
@@ -1132,9 +1139,11 @@ identity of the trial `class_score_core` selected. The PL reduces to
 `best_score[kind]` internally and returns a `kind`, so naming the winning
 `(templ_id, match_x, match_y)` needs one of the three options in §6.4 — a
 PS-side argmax whose tie-break matches the core's strict `>`, a widened result
-record, or moving the reduction out of the PL. Until one is chosen the PS
-cannot fill `box_*` either. PL-filling has lost its structural argument
-without PS-filling having gained one.
+record, or moving the reduction out of the PL. ~~Until one is chosen the PS
+cannot fill `box_*` either.~~ (**Chosen 2026-08-11: the PS-side argmax, with
+the reduction moved out of the PL entirely — see this section's banner.**)
+PL-filling has lost its structural argument without PS-filling having gained
+one.
 
 ### 6.4 Matcher score tuple — **OPTION 1 ADOPTED (2026-08-11); not materialised in the MVP**
 
@@ -1216,16 +1225,27 @@ ways, and one of them has to be chosen before the classifier is connected:
 2. **PL returns the winning identity.** Widen the §6.3 result record to carry
    `templ_id` and the winning `match_x`/`match_y`; `[127:112]` is reserved and
    `class_score_core` already tracks the maximum it would need to remember.
-   Costs a PL change and re-opens §6.3's layout, which is already blocked on
-   the 14-vs-16-byte defect.
+   Costs a PL change and re-opens §6.3's layout, which at the time of
+   writing was blocked on the 14-vs-16-byte defect (resolved 2026-08-11 by
+   removing the record; re-opening the layout now means specifying a new one
+   from scratch).
 3. **Drop the reduction from the PL.** If the PS is doing the argmax anyway
    under (1), `class_score_core` is performing a reduction over data the PS
    holds in full. Worth stating plainly as an option rather than discovering
    it later; it is not being recommended here, because that call belongs with
    whoever owns the throughput budget.
+   **This is what the 2026-08-11 decision did.** Removing `class_score_core`
+   from the MVP *is* option 3, executed with option 1's tie-break discipline
+   — hence the heading's "option 1, extended to the whole reduction". The
+   "not recommended" above is the state of the argument on 2026-08-07, kept
+   so the reversal is visible rather than silent.
 
-Until one is chosen, **the PS cannot fill `box_*`** — which is the same
-blocker §6.3 records, now with its actual cause named.
+~~Until one is chosen, **the PS cannot fill `box_*`**~~ — **superseded
+2026-08-11: option 1 was chosen (see this section's heading and status
+note), so the PS does fill `box_*`, and §6.3 no longer records a blocker.**
+The sentence is kept struck through rather than deleted because it names the
+actual cause — the PS holding every trial's identity but not the winner's —
+which is precisely what the adopted PS-side argmax resolves.
 
 So the standing condition on this section: **if the matcher is ever changed to
 iterate templates internally for throughput, §6.4 must move into the PL and
@@ -1357,10 +1377,14 @@ metadata S2MM, set `ap_start`, push descriptors on the candidate MM2S, poll
 `ap_idle`. **§8 records what that run does and does not establish** — the
 architecture is validated, the core's full behaviour is not.
 
-What has *not* changed: `sw/tme_driver.py` still talks to a single
-`self._ctrl` window at the old `0x00`–`0x4C` offsets — the standalone
-notebook drives the registers directly, so the per-core driver rewrite is
-still owed. `template_match_core` now also presents the coherent one-slave
+**The driver rewrite has since landed (2026-08-11).** `sw/tme_driver.py`
+no longer has a `self._ctrl` window or any `_REG_*` constant: it resolves
+`binarize_core_0`, `patch_extract_core_0` and `tme_top_0` by name in the
+`three_stage_combined` overlay and addresses each through its own
+`register_map`, never a transcribed offset. (Until that date it talked to a
+single window at the old `0x00`–`0x4C` offsets, which matched no per-core
+map and no hardware; §7.1.3 keeps that map as a costed, unadopted option.)
+`template_match_core` now also presents the coherent one-slave
 interface (2026-08-04: its `return` port moved from raw `ap_ctrl_hs` pins
 into the `CTRL` bundle, so every scalar, the results and start/done live in
 one `s_axi_CTRL` map — `patch_w 0x10`, `patch_h 0x18`, `templ_w 0x20`,
@@ -1370,8 +1394,9 @@ It takes no `m_axi` pointer, so the `offset=slave` trap does not arise there.
 `binarize_core` likewise has AXI-stream pixel input/output plus one `CTRL`
 AXI-Lite bundle for `img_w`, `img_h`, `threshold` and `return`; it has no
 `m_axi` pointer or image-address register, so that trap does not apply to it.
-`class_score_core` has not been checked, and the trap still applies to any core
-that actually takes an `m_axi` pointer.
+`class_score_core` was never checked and now does not need to be — it is out
+of the MVP (2026-08-11) and absent from the overlay. The trap itself still
+applies to any core that actually takes an `m_axi` pointer.
 
 So §7.1.1 remains a work list for items 1, 2, 4 and 5. Item 3 is the one that
 moved: the Clear-on-Read companions are now confirmed present on real
@@ -1404,8 +1429,9 @@ Five things, none of which the per-core decision answers on its own:
    states it explicitly: it writes `ap_start` to the cores that command
    actually runs, and waits on those cores' `ap_done`.
 2. **`NUM_CANDS <= 64`,** enforced host-side before dispatch. This is a
-   driver buffer bound (`_cand_buf`/`_result_buf` are allocated at
-   `_MAX_CANDIDATES × struct`), not a PL limit — `patch_extract_core` takes
+   driver buffer bound (`_cand_buf`/`_meta_buf` are allocated at
+   `_MAX_CANDIDATES × struct`; there is no `_result_buf` since §10 item 5
+   closed), not a PL limit — `patch_extract_core` takes
    `num_cands` as a 16-bit register and has no per-candidate storage. Reject
    above it; do not truncate. The feeder must derive `TLAST` from the *same*
    value the extractor gets, or §5's cross-check compares a number against
@@ -1416,9 +1442,10 @@ Five things, none of which the per-core decision answers on its own:
    loses the result the second time. Software reads each once per run and
    latches it; anything that must survive to a later read is the driver's
    variable, not the core's register. Errors must be sticky *per command* —
-   a `RUN_CANDIDATES` that trips `PE_FLAGS` bit 0 must still report it after
+   an `EXTRACT` that trips `sts_flags` bit 0 must still report it after
    the batch completes, which it does only because §4.3 completes normally
-   rather than returning early.
+   rather than returning early. (Named `RUN_CANDIDATES` / `PE_FLAGS` before
+   2026-08-11, after the unified wrapper this section already rejected.)
 4. **Short-stream timeout and reset ownership — the open one.** §5 makes a
    feeder that delivers fewer than `NUM_CANDS` beats block the extractor in
    `cand_in.read()` with `ap_done` low, deliberately. Nothing currently owns
@@ -1435,10 +1462,13 @@ Five things, none of which the per-core decision answers on its own:
    extraction. The driver owns consistency between those two writes; this is a
    DMA destination plus an HLS pointer, not one address mirrored into two HLS
    cores. `IMG_W`/`IMG_H` are still shared configuration (binarizer +
-   extractor), as is `NUM_CANDS` (extractor + feeder). `CAND_ADDR` and
-   `RESULT_ADDR` belong to AXI DMA instances driven through PYNQ's DMA driver,
-   and `TEMPL_ADDR` belongs to the template streamer. Do not fold DMA-owned
+   extractor), as is `NUM_CANDS` (extractor + feeder). `CAND_ADDR` belongs to
+   an AXI DMA instance driven through PYNQ's DMA driver (`dma_pe_data` MM2S),
+   and `TEMPL_ADDR` likewise (`axi_dma_templ`). Do not fold DMA-owned
    addresses into a core's map because they sat adjacent in the old one.
+   **There is no `RESULT_ADDR`**: the overlay has no result DMA, and results
+   come back in `tme_top_0`'s AXI4-Lite scalar registers (§6.3, §10 item 5).
+   Adding one back would be a change to §5.1/§6.3, not a wiring convenience.
 
 #### 7.1.2 Per-core surface — settled and implemented
 
@@ -1491,7 +1521,8 @@ stable** — adding or reordering a port moves every offset after it.
 Recorded, not adopted. `sw/tme_driver.py` was written against one `self._ctrl`
 window whose offsets (`_REG_CTRL = 0x00` … `_REG_PE_PROCESSED = 0x4C`) match no
 per-core HLS map and never could, because they span four cores plus the DMA
-plumbing; its own comment says "must match `axi_lite_regs` in block design".
+plumbing; its own comment said "must match `axi_lite_regs` in block design"
+(that file was rewritten on 2026-08-11 and the offsets are gone from it).
 That register file is what a wrapper would have to implement, and it is kept
 here so the option stays costed rather than forgotten:
 
@@ -1535,8 +1566,10 @@ What building it would cost, beyond the RTL itself:
   decision; it only moves it into RTL, where it is harder to change.
 
 Revisit this once the pipeline is stable and per-transaction PS overhead is
-measured, not before. Until then the driver's `0x00`–`0x4C` offsets are dead
-constants awaiting the per-core rewrite, not a map to implement.
+measured, not before. The `0x00`–`0x4C` offsets are no longer in the driver
+at all — the 2026-08-11 rewrite deleted them (§7.1) — so this table is a
+specification of what a wrapper would have to implement, not a description
+of anything that exists.
 
 ---
 
@@ -1879,7 +1912,12 @@ Established so far, all off-board:
   | `equality-different` | a non-round mantissa (0.009578), for the same float-transport reason. |
   | `stress-max-result` | the **maximum result map, 817 × 304**, with the peak at its final cell (816, 303). `stress-max-envelope` maximises *storage* but its map is only 605 × 212, so the top 212 entries of `sti_col`/`sii_col`/`si_col` — arrays declared at `MAX_RESULT_W` = 817 — had never been written, and `isq_slide`/`norm_cols` had never run past `u = 604`. Grayscale rather than binary by necessity: a 4 × 4 binary window recurs within a few hundred of the 248,368 positions, so there would be no unique peak to assert. |
 
-**Not yet run on silicon.** Nothing below is claimed until it is:
+**~~Not yet run on silicon.~~ — SUPERSEDED 2026-08-07: it ran, 9/9.** Every
+bullet below was established by the silicon result recorded earlier in this
+same section ("Silicon — `template_match_core` standalone, 9/9"). The list is
+kept because it is the pre-registered statement of what the run had to prove,
+which is what makes that result a test rather than a demonstration; read it
+as the checklist that was discharged, not as outstanding work:
 
 - the arithmetic on real hardware against exact-location golden;
 - §3.1's 251,740-byte single transfer (see §3.1 — this is the whole reason the
@@ -1986,8 +2024,9 @@ surplus. `run_invalid_config()` makes the same assertion for the §4.3 path.
    `tme_top.cpp` and `correlation_core.cpp`, `MAX_RESULT_W/H` = 817/304,
    §4.1 relaxed to `>=`.
 2. ~~**matcher does not fit the part**~~ — **resolved**: `MAX_PATCH` narrowed
-   to the exact 820 × 307 envelope, 352 → 224 BRAM18K (125% → 80%). See §3 and
-   `hls/template_match/ab_bram/`.
+   to the exact 820 × 307 envelope, 352 → 224 BRAM18K (125% → 80%). See §3,
+   which also records that the supporting A/B synthesis run was not retained
+   in the repository.
 3. **§2.2** — can CMA satisfy two separately contiguous ~60.2 MiB
    allocations? If not, tiling is a platform requirement and §2 changes.
    Probe: `sw/probe_cma_budget.py`, run on the board with `--overlay`.
