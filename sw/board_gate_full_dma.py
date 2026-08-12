@@ -19,6 +19,20 @@ It drives the transfer through tme_driver.PLPipeline.binarize_page(), so a
 PASS also validates the driver's binarize path — the first of the three
 per-stage validations (contract §9, sw/tme_driver.py row).
 
+WHAT "FULL-SIZE" MEANS HERE, PRECISELY.  A bit-exact page does not prove the
+envelope: a short S2MM leaves the tail of the destination holding whatever
+was there before, and a compare can pass over bytes the PL never wrote.  So
+the gate asserts, explicitly and in its own output:
+
+  - MM2S transferred == 63,078,400 B and S2MM transferred == 63,078,400 B
+    (fail closed if PYNQ does not expose the counts);
+  - no pre-fill sentinel byte survives anywhere in the visible page — 0xAA
+    cannot be a legitimate output, since binarize_core emits only 0 or 255;
+  - a 64-byte guard tail past the page is untouched, catching the opposite
+    error of an S2MM that wrote too much.
+
+Only with all four does "the full 63,078,400-byte envelope moved" follow.
+
 EVERYTHING HERE WORKS IN ROW STRIPS, AND THAT IS NOT AN OPTIMISATION.  The
 board has 512 MB of DDR with no swap, of which the CMA pool (~128 MB by
 default) is already carved out and two 60.2 MiB CMA buffers are spoken for.
@@ -280,6 +294,46 @@ def main() -> int:
         print(f"  PL round trip (copy-in + 2 x {n:,} B DMA + core): "
               f"{elapsed:.2f} s")
 
+        # ---- Assert the DMA ENVELOPE, not just the pixels ----
+        #
+        # This is the gate's actual claim and it does not follow from a
+        # bit-exact compare.  A short S2MM leaves the tail of the buffer
+        # holding whatever was there before; if that happened to match the
+        # golden — or if the compare only ever looked at what was written —
+        # the page would verify while the full 63,078,400-byte transfer had
+        # never occurred.  binarize_page() checks these too; the gate
+        # re-asserts them from the reported measurements so the claim is
+        # made here, visibly, in the log that gets kept.
+        stats = pl.last_transfer_stats
+        if not stats:
+            print("FAIL: the driver reported no transfer statistics, so the "
+                  "full-envelope claim cannot be made")
+            return 1
+        print(f"  DMA envelope: MM2S {stats['mm2s_bytes']:,} B, "
+              f"S2MM {stats['s2mm_bytes']:,} B, "
+              f"guard {stats['guard_bytes_checked']} B intact, "
+              f"{stats['sentinel_bytes_remaining']} sentinel bytes left")
+        envelope_errs = []
+        if stats["mm2s_bytes"] != n:
+            envelope_errs.append(
+                f"MM2S moved {stats['mm2s_bytes']:,} B, expected {n:,}")
+        if stats["s2mm_bytes"] != n:
+            envelope_errs.append(
+                f"S2MM moved {stats['s2mm_bytes']:,} B, expected {n:,}")
+        if stats["guard_bytes_clobbered"]:
+            envelope_errs.append(
+                f"{stats['guard_bytes_clobbered']} guard bytes past the page "
+                f"were overwritten — the S2MM wrote beyond its bound")
+        if stats["sentinel_bytes_remaining"]:
+            envelope_errs.append(
+                f"{stats['sentinel_bytes_remaining']:,} output bytes still "
+                f"hold the pre-fill sentinel — never written by the PL")
+        if envelope_errs:
+            print("FAIL: the full-size DMA envelope was not met:")
+            for e in envelope_errs:
+                print(f"  - {e}")
+            return 1
+
         t0 = time.monotonic()
         mism, first = compare_strips(binary, gray, cpu_golden)
         print(f"  verified against the CPU oracle in "
@@ -292,9 +346,10 @@ def main() -> int:
                   f"CPU={cpu_val}")
             return 1
 
-        print(f"PASS: full {n:,}-byte transfer each way, output bit-exact "
-              f"against the truncating-Gaussian oracle ({elapsed:.2f} s "
-              f"wall for the PL round trip).")
+        print(f"PASS: {n:,} B moved each way (both counts asserted, guard "
+              f"intact, no unwritten bytes), output bit-exact against the "
+              f"truncating-Gaussian oracle ({elapsed:.2f} s wall for the PL "
+              f"round trip).")
         return 0
     except Exception as exc:                           # noqa: BLE001
         print(f"FAIL: {type(exc).__name__}: {exc}")

@@ -11,6 +11,17 @@ downstream of it assumes the answer is yes:
 They must be *separately* contiguous.  They do not need to be contiguous with
 each other, and this probe does not require that.
 
+**It allocates in the driver's real order**, not just the two big buffers:
+`PLPipeline.__init__` takes five smaller regions (candidate, metadata, patch
+receive, matcher patch and matcher template) out of the pool BEFORE
+`binarize_page()` asks for the two full-page ones.  CMA fragmentation is
+order-dependent — a small buffer landing mid-pool is exactly what breaks a
+later 60.2 MiB contiguous request — so probing the easy order would answer a
+different question than the driver asks.  Sizes are imported from
+`tme_driver` so the two cannot drift; if that import fails the probe says so,
+falls back to the two-buffer sequence, and reports a **weaker capacity
+preflight** (exit 2) rather than claiming the §2.2 gate.
+
     sudo python3 probe_cma_budget.py --overlay /path/to/terminal_counter.bit
 
 Exit status: 0 = both buffers allocated and usable, 1 = the §2.2 gate FAILS
@@ -39,6 +50,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 # Contract §2 maxima.  Keep in sync with PE_MAX_IMG_W / PE_MAX_IMG_H in
 # hls/patch_extract/patch_extract_core.h.
@@ -106,6 +118,50 @@ def _verify(buf, seed: int, name: str) -> str | None:
     return None
 
 
+def driver_allocation_plan() -> tuple[list, str]:
+    """The driver's real allocation sequence: (name, nbytes) in order.
+
+    Returns (plan, note).  Fragmentation is order-dependent, so a probe that
+    asks only for the two big buffers is answering an easier question than
+    the driver asks: PLPipeline.__init__ takes five smaller regions out of
+    the pool FIRST, and only then does binarize_page() request the two
+    full-page ones.  Those five can land anywhere, including in the middle of
+    what would otherwise have been a contiguous 60.2 MiB run.
+
+    Sizes are imported from tme_driver rather than restated, so the probe
+    cannot drift from the thing it is meant to predict.  If the driver is not
+    importable the caller falls back to the two-buffer probe and must
+    describe the result as the weaker preflight it is.
+    """
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from tme_driver import (_CAND_STRUCT_SIZE, _MAX_CANDIDATES,
+                            _MAX_PATCH_BYTES, _MAX_TEMPL_H, _MAX_TEMPL_W,
+                            _META_STRUCT_SIZE, _OUTPUT_GUARD_BYTES)
+
+    plan = [
+        # PLPipeline.__init__, in source order.
+        ("cand_buf",      _MAX_CANDIDATES * _CAND_STRUCT_SIZE),
+        ("meta_buf",      _MAX_CANDIDATES * _META_STRUCT_SIZE),
+        ("patch_rx_buf",  _MAX_PATCH_BYTES),
+        ("tme_patch_buf", _MAX_PATCH_BYTES),
+        ("tme_templ_buf", _MAX_TEMPL_W * _MAX_TEMPL_H),
+        # binarize_page -> _ensure_image_bufs, at the §2 maximum page.
+        ("grayscale",     BUF_BYTES),
+        ("binary",        BUF_BYTES + _OUTPUT_GUARD_BYTES),
+    ]
+    small = sum(n for name, n in plan[:5])
+    note = (f"driver order: 5 smaller buffers ({_fmt(small)} total) before "
+            f"the two full-page ones")
+    return plan, note
+
+
+def fallback_allocation_plan() -> tuple[list, str]:
+    """Just the two page buffers — the weaker preflight."""
+    return ([("grayscale", BUF_BYTES), ("binary", BUF_BYTES)],
+            "two-buffer preflight only (driver order NOT reproduced)")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -158,24 +214,45 @@ def main() -> int:
               "allocates from this pool, so a pass here is weaker evidence "
               "than a pass with --overlay.")
 
-    bufs: list = []
-    names = ("grayscale", "binary")
+    # Reproduce the DRIVER'S allocation sequence, not a convenient one.
     try:
-        for i, name in enumerate(names):
+        plan, plan_note = driver_allocation_plan()
+        faithful = True
+    except Exception as exc:                     # noqa: BLE001
+        plan, plan_note = fallback_allocation_plan()
+        faithful = False
+        print(f"\n  WARNING: could not import the driver's buffer sizes "
+              f"({exc}).")
+        print("  Falling back to allocating only the two full-page buffers. "
+              "CMA fragmentation is ORDER-DEPENDENT, so this asks an easier "
+              "question than the driver does and the result below is a "
+              "weaker capacity preflight, not the §2.2 gate.")
+    print(f"\n  allocation plan — {plan_note}")
+    for name, nbytes in plan:
+        print(f"    {name:<14} {_fmt(nbytes)}")
+
+    bufs: list = []
+    names = tuple(name for name, _ in plan)
+    try:
+        for name, nbytes in plan:
             try:
-                buf = allocate(shape=(BUF_BYTES,), dtype="u1")
+                buf = allocate(shape=(nbytes,), dtype="u1")
             except Exception as exc:             # noqa: BLE001 — report anything
-                print(f"\nFAIL: {name} buffer ({_fmt(BUF_BYTES)}) — {exc}")
+                print(f"\nFAIL: {name} buffer ({_fmt(nbytes)}) — {exc}")
+                if bufs:
+                    print(f"  ({len(bufs)} earlier buffer(s) were already "
+                          f"held when this one failed — that is the point of "
+                          f"probing in the driver's order.)")
                 return _fail_report()
             bufs.append(buf)
             base = buf.physical_address
-            print(f"\n  {name:<10} allocated  phys=0x{base:X}..0x"
-                  f"{base + BUF_BYTES - 1:X}  {_fmt(BUF_BYTES)}")
+            print(f"\n  {name:<14} allocated  phys=0x{base:X}..0x"
+                  f"{base + nbytes - 1:X}  {_fmt(nbytes)}")
 
             # §3 / §2.1: the linear offset is 32-bit.  A region above 4 GiB is
             # unusable under the current address contract even though CMA was
             # perfectly willing to hand it over.
-            end = base + BUF_BYTES
+            end = base + nbytes
             if end > ADDR_LIMIT:
                 print(f"FAIL: {name} ends at 0x{end:X}, past the 2^32 limit "
                       f"the 32-bit linear-offset contract assumes (§2.1, §3). "
@@ -183,19 +260,23 @@ def main() -> int:
                       f"end-to-end or this allocation cannot be used.")
                 return _fail_report()
 
-        # Overlap.  Two allocators, two descriptors, one region is a real
-        # failure mode and neither buffer's own readback would notice it: each
-        # would find its own last write intact.  The distinct seeds below are
-        # what make aliasing visible.
-        pa, pb = bufs[0].physical_address, bufs[1].physical_address
-        if pa < pb + BUF_BYTES and pb < pa + BUF_BYTES:
-            print(f"\nFAIL: the two buffers OVERLAP — "
-                  f"0x{pa:X}..0x{pa + BUF_BYTES - 1:X} and "
-                  f"0x{pb:X}..0x{pb + BUF_BYTES - 1:X}. They must be two "
-                  f"independent regions.")
-            return _fail_report()
-        print(f"\n  no overlap; gap between regions: "
-              f"0x{abs(pa - pb) - BUF_BYTES:X} B")
+        # Overlap, checked across every pair.  Two allocators, two
+        # descriptors, one region is a real failure mode and neither buffer's
+        # own readback would notice it: each would find its own last write
+        # intact.  The distinct seeds below are what make aliasing visible.
+        for i in range(len(bufs)):
+            for j in range(i + 1, len(bufs)):
+                pa, na = bufs[i].physical_address, plan[i][1]
+                pb, nb = bufs[j].physical_address, plan[j][1]
+                if pa < pb + nb and pb < pa + na:
+                    print(f"\nFAIL: {names[i]} and {names[j]} OVERLAP — "
+                          f"0x{pa:X}..0x{pa + na - 1:X} and "
+                          f"0x{pb:X}..0x{pb + nb - 1:X}. They must be "
+                          f"independent regions.")
+                    return _fail_report()
+        pg, pb_ = (bufs[-2].physical_address, bufs[-1].physical_address)
+        print(f"\n  no overlap between any pair; gap between the two "
+              f"full-page regions: 0x{abs(pg - pb_) - BUF_BYTES:X} B")
         print("  (they need not be adjacent — §2.2 requires two separately "
               "contiguous regions, not one 120.3 MiB region)")
 
@@ -203,8 +284,8 @@ def main() -> int:
         # that an aliased pair fails: the second stamp would overwrite the
         # first, and the first buffer's readback then finds the wrong seed.
         # Verifying each buffer immediately after stamping it would pass.
-        print(f"\n  stamping one byte per {PAGE} B page "
-              f"({BUF_BYTES // PAGE:,} pages per buffer)...")
+        print(f"\n  stamping one byte per {PAGE} B page across all "
+              f"{len(bufs)} buffers...")
         for i, buf in enumerate(bufs):
             _stamp(buf, seed=0xA5 + i * 0x11)
 
@@ -237,33 +318,40 @@ def main() -> int:
                 print("Same reason as flush: the readback would not be "
                       "trustworthy. Not reporting a result.")
                 return 2
-        print("  flushed and invalidated both buffers")
+        print(f"  flushed and invalidated all {len(bufs)} buffers")
 
         for i, (buf, name) in enumerate(zip(bufs, names)):
             err = _verify(buf, seed=0xA5 + i * 0x11, name=name)
             if err:
                 print(f"\nFAIL: {err}")
                 print("The allocation succeeded but the memory does not hold "
-                      "what was written to it. If both buffers report this, "
-                      "suspect aliasing; if one does, suspect an unbacked "
-                      "region.")
+                      "what was written to it. If several buffers report "
+                      "this, suspect aliasing; if one does, suspect an "
+                      "unbacked region.")
                 return _fail_report()
-            print(f"  {name:<10} verified  ({BUF_BYTES // PAGE:,} pages)")
+            print(f"  {name:<14} verified  ({max(1, len(buf) // PAGE):,} pages)")
 
         after = _read_cma_meminfo()
         if after:
             print(f"\n  CmaFree with both held: "
                   f"{_fmt(after.get('CmaFree', 0))}")
 
-        print("\n§2.2 GATE PASSES — for this boot, this pool state, and this "
-              "allocation order.")
+        if faithful:
+            print("\n§2.2 GATE PASSES — for this boot, this pool state, and "
+                  "the driver's own allocation order.")
+        else:
+            print("\nWEAKER CAPACITY PREFLIGHT PASSES — the two full-page "
+                  "buffers can be allocated, but NOT in the driver's order "
+                  "(its five smaller buffers were never taken out of the "
+                  "pool first). Do NOT record this as the §2.2 gate: copy "
+                  "tme_driver.py next to this script and re-run.")
         if not args.overlay:
             print("Re-run with --overlay before recording it; a no-overlay "
                   "pass is the weaker result.")
-        print("Note the driver still allocates 2560 x 3600 (~8.8 MiB) each — "
-              "raising PLPipeline's max_img to the §2 maxima is a separate "
-              "change, and it must allocate in the same order probed here.")
-        return 0
+        print("The driver allocates its image buffers lazily, at the actual "
+              "page size, so a page smaller than the §2 maximum probed here "
+              "asks less of the pool than this run did.")
+        return 0 if faithful else 2
     finally:
         for buf in bufs:
             try:

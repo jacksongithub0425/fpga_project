@@ -203,6 +203,17 @@ def _validate_batch_size(n: int) -> None:
             f"register and has no per-candidate storage.")
 
 
+# S2MM output-integrity checking for the binarize stage.
+#
+# 0xAA cannot be a legitimate binarize_core output: the core emits
+# THRESH_BINARY_INV results, so every visible byte is 0 or 255.  Pre-filling
+# the destination with it therefore turns "the S2MM wrote fewer bytes than it
+# claimed" into an exact, countable observation rather than an inference from
+# a byte that happened to look plausible.  The guard tail past the visible
+# page catches the opposite error — an S2MM that wrote too much.
+_S2MM_SENTINEL = 0xAA
+_OUTPUT_GUARD_BYTES = 64
+
 # Buffers whose DMA could not be proved quiescent.  Holding a reference keeps
 # PynqBuffer.__del__ from calling freebuffer() while this process lives — a
 # DELAY, not a quarantine.  Same device as _RETAINED_DMA_BUFFERS in
@@ -472,6 +483,10 @@ class PLPipeline:
         # the CMA pages must not go back to the pool — see close().
         self._transfers_outstanding = False
 
+        # Populated by binarize_page() with the measured DMA byte counts and
+        # output-integrity results, so a caller can assert them itself.
+        self.last_transfer_stats: Optional[dict] = None
+
     # -- generic helpers ----------------------------------------------------
 
     @staticmethod
@@ -561,6 +576,31 @@ class PLPipeline:
                 f"and the DMA's status register disagree; treat this run's "
                 f"data as unusable.") from exc
 
+    def _require_usable(self, what: str) -> None:
+        """Refuse to proceed if a previous stage left a transfer outstanding.
+
+        `_transfers_outstanding` is set by `_start` and cleared only when a
+        stage completes cleanly, so it is still set exactly when a stage
+        raised — a timeout, a DMA error, a contract-violating readback.  In
+        that state the PL is mid-transaction: a DMA may still have a command
+        against the CMA pages, the cores' streams hold partial data, and
+        `ap_done`/`ap_vld` are unread.
+
+        **There is no in-process recovery from that and this driver does not
+        pretend otherwise.** Retrying would arm new transfers alongside the
+        stale ones; reallocating would hand the pages back while a DMA still
+        targets them. The only sound reset is reloading the overlay, which
+        means building a new PLPipeline. So every entry point refuses, and
+        says so.
+        """
+        if self._transfers_outstanding:
+            raise RuntimeError(
+                f"refusing to {what}: a previous stage left a transfer "
+                f"outstanding, so the PL is mid-transaction and its DMAs may "
+                f"still be reading or writing this process's CMA pages. "
+                f"There is no in-process retry — reload the overlay "
+                f"(construct a new PLPipeline) before running anything else.")
+
     @staticmethod
     def _read_scalar(core, name: str) -> int:
         return int(getattr(core.register_map, name))
@@ -583,10 +623,23 @@ class PLPipeline:
         (or both) pointing at returned pages, and the `len(...) < n` guard
         would then skip reallocation on a smaller retry and DMA straight into
         memory the pool has already handed to someone else.
+
+        Freeing is refused outright while a transfer is outstanding — see
+        `_require_usable`.  That check is what makes the ordering above a
+        belt-and-braces measure rather than the only defence: the dangerous
+        case is not a failed allocation but a failed *transfer*, after which
+        a DMA still holds a command against these exact pages.
         """
         n = h * w
-        if self._gray_buf is not None and len(self._gray_buf) >= n:
+        need_bin = n + _OUTPUT_GUARD_BYTES
+        if (self._gray_buf is not None and len(self._gray_buf) >= n
+                and self._bin_buf is not None
+                and len(self._bin_buf) >= need_bin):
             return
+
+        # Reallocation frees CMA pages.  Never do that with a DMA command
+        # possibly still outstanding against them.
+        self._require_usable("reallocate the image buffers")
 
         old = (self._gray_buf, self._bin_buf)
         self._gray_buf = None
@@ -597,11 +650,33 @@ class PLPipeline:
                 buf.freebuffer()
         gray = self._allocate(shape=(n,), dtype=np.uint8)
         try:
-            binary = self._allocate(shape=(n,), dtype=np.uint8)
+            # The binary buffer carries a guard tail past the visible page so
+            # an S2MM overrun has somewhere to land where it can be SEEN.
+            binary = self._allocate(shape=(need_bin,), dtype=np.uint8)
         except Exception:
             gray.freebuffer()
             raise
         self._gray_buf, self._bin_buf = gray, binary
+
+    def _scan_for_sentinel(self, nbytes: int) -> int:
+        """Count bytes in the visible page the S2MM never wrote.
+
+        `_S2MM_SENTINEL` (0xAA) cannot be a legitimate output value: the core
+        emits `THRESH_BINARY_INV` results, which are 0 or 255 only.  So any
+        surviving sentinel byte is a byte the PL did not produce, and the
+        count is exact rather than heuristic.
+
+        Scanned in chunks so a full page does not allocate a 60 MB bool
+        temporary on a board that has ~350 MB of userspace.
+        """
+        remaining = 0
+        step = 4 << 20
+        for off in range(0, nbytes, step):
+            end = min(off + step, nbytes)
+            chunk = np.frombuffer(self._bin_buf, dtype=np.uint8,
+                                  count=end - off, offset=off)
+            remaining += int(np.count_nonzero(chunk == _S2MM_SENTINEL))
+        return remaining
 
     def binarize_page(self, gray_np: np.ndarray, threshold: int) -> np.ndarray:
         """Run binarize_core over a full page.  Returns a (h, w) uint8 view
@@ -618,7 +693,24 @@ class PLPipeline:
         stage runs on garbage), a page outside 3..9856 x 3..6400 is what the
         extractor later rejects as global_invalid, and a threshold outside
         0..255 does not fit the core's register.
+
+        Three things are asserted about the transfer itself, because
+        "the visible bytes are correct" does not prove "the DMA moved what it
+        was told to":
+
+        - both channels' `transferred` counts must equal `img_w * img_h`
+          exactly (fail closed if PYNQ does not expose them);
+        - no `_S2MM_SENTINEL` byte may survive in the visible page — that
+          would be a byte the S2MM never wrote, which a bit-exact compare
+          cannot see if the sentinel happens to agree with the golden;
+        - the guard tail past the visible page must be untouched, which
+          catches an S2MM that wrote too much.
+
+        `last_transfer_stats` holds the measurements afterwards so a caller
+        (the board gate) can assert and report them itself rather than
+        trusting that this method checked.
         """
+        self._require_usable("run binarize_page")
         gray_np = np.asarray(gray_np)
         if gray_np.ndim != 2:
             raise ValueError(f"gray page must be 2-D, got shape "
@@ -642,6 +734,11 @@ class PLPipeline:
 
         self._gray_buf[:n] = gray_np.ravel()
         self._gray_buf.flush()
+
+        # Poison the whole destination, guard tail included, so every byte
+        # the S2MM fails to write stays visibly unwritten.
+        self._bin_buf[:] = _S2MM_SENTINEL
+        self._bin_buf.flush()
 
         rm = self._binarize.register_map
         rm.img_w = w
@@ -667,6 +764,49 @@ class PLPipeline:
         # doing it explicitly costs nothing and does not depend on that
         # staying true.
         self._bin_buf.invalidate()
+
+        # ---- Prove the transfer, not just the data ----
+        sent = getattr(self._dma_binarize.sendchannel, "transferred", None)
+        recv = getattr(self._dma_binarize.recvchannel, "transferred", None)
+        if sent is None or recv is None:
+            raise RuntimeError(
+                "this PYNQ build exposes no `transferred` count on the "
+                "binarize DMA, so the full-envelope claim cannot be made. "
+                "Failing closed rather than inferring the transfer size from "
+                "the pixels that happen to be correct.")
+        sent, recv = int(sent), int(recv)
+        if sent != n or recv != n:
+            raise RuntimeError(
+                f"binarize DMA moved MM2S={sent:,} B / S2MM={recv:,} B, "
+                f"expected {n:,} B each way. The visible pixels may still "
+                f"compare equal — a short transfer leaves the tail unwritten "
+                f"— so this is the check that catches it.")
+
+        guard = np.frombuffer(self._bin_buf, dtype=np.uint8,
+                              count=_OUTPUT_GUARD_BYTES, offset=n)
+        clobbered = int(np.count_nonzero(guard != _S2MM_SENTINEL))
+        if clobbered:
+            raise RuntimeError(
+                f"the binarize S2MM overwrote {clobbered}/"
+                f"{_OUTPUT_GUARD_BYTES} guard bytes past the {n:,}-byte "
+                f"page — it wrote MORE than the page, so the buffer bound "
+                f"is not being respected")
+
+        unwritten = self._scan_for_sentinel(n)
+        if unwritten:
+            raise RuntimeError(
+                f"{unwritten:,} of {n:,} output bytes still hold the "
+                f"0x{_S2MM_SENTINEL:02X} sentinel — the S2MM never wrote "
+                f"them, even though it reported {recv:,} B transferred")
+
+        self.last_transfer_stats = {
+            "mm2s_bytes": sent,
+            "s2mm_bytes": recv,
+            "expected_bytes": n,
+            "guard_bytes_checked": _OUTPUT_GUARD_BYTES,
+            "guard_bytes_clobbered": clobbered,
+            "sentinel_bytes_remaining": unwritten,
+        }
         self._transfers_outstanding = False
         return self.binary_view()
 
@@ -695,6 +835,7 @@ class PLPipeline:
         by physical address via its bin_image pointer, which bypasses PYNQ's
         DMA driver and so gets no cache maintenance for free.
         """
+        self._require_usable("run suppress_text")
         if self._img_w == 0:
             # Raise rather than no-op: this module's rule is that a stage
             # either ran or failed loudly.  A caller that suppresses before
@@ -736,6 +877,7 @@ class PLPipeline:
         be caught host-side before dispatch: an armed receive for a patch
         that never comes fails as a timeout here, not silently.
         """
+        self._require_usable("run extract_candidates")
         if not candidates:
             return []
 
@@ -952,6 +1094,7 @@ class PLPipeline:
         MM2S before starting, wait on the CORE first and the channels after,
         read each Clear-on-Read ap_vld exactly once.
         """
+        self._require_usable("run a matcher trial")
         if self._staged_patch is None:
             raise RuntimeError("no patch staged")
         pw, ph = self._staged_patch
