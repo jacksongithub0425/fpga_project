@@ -509,6 +509,12 @@ class PLPipeline:
         invocation raised (a timeout, a DMA error) and the caller carried on
         to the next candidate, which is the natural recovery.
         """
+        if not self._transfers_outstanding:
+            raise AssertionError(
+                f"{label}: _start() called without _begin_stage(). The stage "
+                f"must be marked in-flight BEFORE anything is armed, or a "
+                f"failure between the two leaves armed DMAs with the buffers "
+                f"still marked free.")
         ctrl = core.read(_AP_CTRL_OFF)
         if not ctrl & _AP_IDLE:
             raise RuntimeError(
@@ -518,7 +524,6 @@ class PLPipeline:
                 f"it consume this run's data; reload the overlay rather than "
                 f"retrying.")
         core.write(_AP_CTRL_OFF, _AP_START)
-        self._transfers_outstanding = True
 
     def _wait_done(self, core, deadline: float, label: str,
                    channels: Sequence[tuple] = ()) -> None:
@@ -600,6 +605,30 @@ class PLPipeline:
                 f"still be reading or writing this process's CMA pages. "
                 f"There is no in-process retry — reload the overlay "
                 f"(construct a new PLPipeline) before running anything else.")
+
+    def _begin_stage(self, what: str) -> None:
+        """Mark the pipeline in-flight, before the first mutation or arm.
+
+        The window this closes is small and entirely real: arming a DMA and
+        then failing to start the core (a non-idle core, a register write
+        that raises) used to leave `_transfers_outstanding` False with an S2MM
+        already armed against a CMA buffer.  `close()` would then free those
+        pages while the DMA still had a command targeting them, which is the
+        precise corruption the flag exists to prevent.
+
+        So the flag now goes up before ANY buffer is written or any channel
+        armed, and comes down only in `_end_stage` on a clean finish.
+        Everything that can be checked without touching a buffer — dtypes,
+        geometry, descriptor legality, template content — is therefore
+        checked BEFORE this call, so an ordinary ValueError about bad input
+        does not poison a pipeline that never touched the hardware.
+        """
+        self._require_usable(what)
+        self._transfers_outstanding = True
+
+    def _end_stage(self) -> None:
+        """Clear the in-flight mark.  Only ever on a clean completion."""
+        self._transfers_outstanding = False
 
     @staticmethod
     def _read_scalar(core, name: str) -> int:
@@ -732,6 +761,9 @@ class PLPipeline:
         self._img_h, self._img_w = h, w
         self._stride_bytes = w   # compact: exactly img_w*img_h logical beats
 
+        # Everything above is pure validation and allocation.  From here on
+        # buffers are written and channels armed, so the stage is in-flight.
+        self._begin_stage("run binarize_page")
         self._gray_buf[:n] = gray_np.ravel()
         self._gray_buf.flush()
 
@@ -891,8 +923,11 @@ class PLPipeline:
                                "extract_candidates() — the extractor reads "
                                "the binary page buffer")
 
-        # ---- Pack candidate descriptors (§6.1) ----
-        offset = 0
+        # ---- Validate every descriptor BEFORE touching a buffer (§6.1) ----
+        # Two passes on purpose: an illegal descriptor is an ordinary input
+        # error and must not poison the pipeline, so nothing is written and
+        # no channel armed until the whole batch is known to be dispatchable.
+        packed_words: list[bytes] = []
         for i, cand in enumerate(candidates):
             ep_xf, ep_yf = cand["endpoint"]
             ep_x = int(round(ep_xf))
@@ -940,7 +975,15 @@ class PLPipeline:
                       "dispatching it would strand this batch's patch "
                       "receive (§4.1/§4.3).")
 
-            packed = pack_candidate(ep_x, ep_y, side_code, max_tw, max_th)
+            packed_words.append(
+                pack_candidate(ep_x, ep_y, side_code, max_tw, max_th))
+
+        # Validation is complete; from here buffers are written and channels
+        # armed, so the stage is in-flight.
+        self._begin_stage("run extract_candidates")
+
+        offset = 0
+        for packed in packed_words:
             self._cand_buf[offset:offset + _CAND_STRUCT_SIZE] = \
                 np.frombuffer(packed, dtype=np.uint8)
             offset += _CAND_STRUCT_SIZE
@@ -1074,7 +1117,7 @@ class PLPipeline:
                     f"tme_driver.py --selftest-predictor against the "
                     f"extractor's golden manifest before trusting any batch.")
 
-        self._transfers_outstanding = False
+        self._end_stage()
         return out
 
     # -- stage 3: template match ----------------------------------------------
@@ -1094,22 +1137,20 @@ class PLPipeline:
         MM2S before starting, wait on the CORE first and the channels after,
         read each Clear-on-Read ap_vld exactly once.
         """
-        self._require_usable("run a matcher trial")
+        if not self._transfers_outstanding:
+            raise AssertionError(
+                "_run_trial() called outside a begun stage; match_template() "
+                "and match_candidate() own the in-flight mark because "
+                "_stage_patch() writes a DMA buffer before any trial runs")
         if self._staged_patch is None:
             raise RuntimeError("no patch staged")
         pw, ph = self._staged_patch
         th_, tw_ = templ.shape
 
-        errs = validate_geometry(pw, ph, tw_, th_, self._tme_dma_max)
-        if errs:
-            raise ValueError(
-                f"refusing to start the matcher on {pw}x{ph} / {tw_}x{th_}:\n"
-                + "\n".join(f"    - {e}" for e in errs))
-        errs = validate_template_content(templ.tobytes(), tw_, th_)
-        if errs:
-            raise ValueError(
-                f"refusing to start the matcher on this {tw_}x{th_} "
-                f"template:\n" + "\n".join(f"    - {e}" for e in errs))
+        # Geometry and content were validated by `_validate_trial` before the
+        # stage began — repeated here only as the last line of defence for a
+        # direct caller, and cheap enough to keep.
+        self._validate_trial(pw, ph, tw_, th_, templ)
 
         n_t = tw_ * th_
         self._tme_templ_buf[:n_t] = templ.ravel()
@@ -1163,16 +1204,46 @@ class PLPipeline:
                 f"({pw}x{ph} patch, {tw_}x{th_} template):\n"
                 + "\n".join(f"    - {e}" for e in errs))
 
-        self._transfers_outstanding = False
         return score, x, y, elapsed
 
     def match_template(self, patch: np.ndarray,
                        templ: np.ndarray) -> tuple[float, int, int, float]:
         """One (patch, template) trial.  Returns (score, match_x, match_y,
         seconds) — score/x/y read from tme_top_0's scalar result registers.
+
+        The geometry and template content are validated before the stage is
+        marked in-flight, so a bad argument raises without poisoning the
+        pipeline; `_stage_patch` writes a DMA buffer, so it must come after.
         """
+        ph, pw = patch.shape
+        th_, tw_ = templ.shape
+        self._validate_trial(pw, ph, tw_, th_, templ)
+
+        self._begin_stage("run match_template")
         self._stage_patch(patch)
-        return self._run_trial(templ)
+        result = self._run_trial(templ)
+        self._end_stage()
+        return result
+
+    def _validate_trial(self, pw: int, ph: int, tw: int, th: int,
+                        templ: np.ndarray) -> None:
+        """Pure pre-flight for one trial — no buffer touched, no register written.
+
+        `tme_top` has no validation path of its own (§8): it takes the four
+        scalars at face value and indexes its BRAMs with them, so an illegal
+        geometry is silent corruption rather than a reported error.  Hoisted
+        out of `_run_trial` so it can run before `_begin_stage`.
+        """
+        errs = validate_geometry(pw, ph, tw, th, self._tme_dma_max)
+        if errs:
+            raise ValueError(
+                f"refusing to start the matcher on {pw}x{ph} / {tw}x{th}:\n"
+                + "\n".join(f"    - {e}" for e in errs))
+        errs = validate_template_content(templ.tobytes(), tw, th)
+        if errs:
+            raise ValueError(
+                f"refusing to start the matcher on this {tw}x{th} "
+                f"template:\n" + "\n".join(f"    - {e}" for e in errs))
 
     def match_candidate(self, patch: np.ndarray, patch_x0: int, patch_y0: int,
                         trials: Sequence[dict], score_fn=None) -> dict:
@@ -1197,10 +1268,12 @@ class PLPipeline:
         templ_h) in absolute logical-page coordinates (§1/§6.3 decision).
         """
         ph, pw = patch.shape
-        self._stage_patch(patch)
 
-        best: Optional[dict] = None
-        by_kind: dict[str, dict] = {}
+        # Select and validate the whole trial list first.  Nothing here
+        # touches a buffer, so an illegal template raises without leaving the
+        # pipeline in-flight — and once the stage IS begun, every remaining
+        # trial is known to be dispatchable.
+        selected = []
         for trial in trials:
             if not trial["legal"]:
                 continue
@@ -1208,7 +1281,15 @@ class PLPipeline:
             th_, tw_ = t.shape
             if tw_ >= pw or th_ >= ph:
                 continue
+            self._validate_trial(pw, ph, tw_, th_, t)
+            selected.append((trial, t, tw_, th_))
 
+        self._begin_stage("run match_candidate")
+        self._stage_patch(patch)
+
+        best: Optional[dict] = None
+        by_kind: dict[str, dict] = {}
+        for trial, t, tw_, th_ in selected:
             raw, x, y, elapsed = self._run_trial(t)
             score = score_fn(raw, x, y, trial) if score_fn else raw
             hit = {
@@ -1230,6 +1311,7 @@ class PLPipeline:
             if k not in by_kind or hit["score"] > by_kind[k]["score"]:
                 by_kind[k] = hit
 
+        self._end_stage()
         return {"best": best, "by_kind": by_kind}
 
     # -- teardown --------------------------------------------------------------

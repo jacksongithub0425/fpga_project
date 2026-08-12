@@ -26,3 +26,10 @@ hls/integration/pe_tme_seam/
 
 # Deterministic integration manifests
 hls/integration/tb_*_tme_cases.txt
+
+# Confidential-derived detector output. The per-page detection dumps carry
+# pin labels read off the drawings; only the aggregate manifest and its
+# provenance file may be committed (see sw/cpu_baseline_snapshot.py, which
+# also refuses to write dumps inside the repo).
+*_detections.json
+baseline_cpu_*/

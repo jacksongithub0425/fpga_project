@@ -44,29 +44,49 @@ claim with nothing behind it.
 
 ```
 cd sw
-python3 cpu_baseline_snapshot.py capture ../../sample/*.PDF \
+python3 cpu_baseline_snapshot.py capture "../../sample/*" \
     --out ../../baseline_cpu_<date>
 ```
 
+**Quote the pattern.** The script expands globs itself and matches suffixes
+case-insensitively, because the shell cannot be relied on to: PowerShell does
+not expand wildcards for native programs at all, and a bare `*.PDF` misses
+the three lowercase `.pdf` files in this corpus on a case-sensitive
+filesystem. A pattern matching nothing is an error, not an empty run.
+
 Retained in the repo as `sw/cpu_baseline_20260811.csv` (36 pages over 35
-sample drawings, captured 2026-08-11 with the defaults above: zoom 4.0,
-score-thresh 0.33, ferrule-score-thresh 0.24, score-margin 0.03). Each row
+sample drawings) with `sw/cpu_baseline_20260811_provenance.json` beside it,
+recording the capture time, git revision (marked `-dirty` when the tree had
+uncommitted edits), the detector's SHA-256, every threshold, and the
+numpy/OpenCV versions — so a future mismatch can be attributed to the
+detector or to the parameters rather than guessed at. Each manifest row
 carries an anonymized id, the input PDF's SHA-256, the per-kind counts, and
-a SHA-256 over the canonical detection list. The full per-page dumps stay
-**local and uncommitted** — they contain labels read off confidential
-drawings; the digests do not.
+a SHA-256 over the canonical detection list.
+
+The per-page dumps stay **local and uncommitted** — they contain labels read
+off confidential drawings; the digests do not. `capture` refuses a `--out`
+inside the repository, and `.gitignore` covers `*_detections.json` and
+`baseline_cpu_*/` as a backstop.
 
 To check a PL-integrated detector against it:
 
 ```
-python3 cpu_baseline_snapshot.py compare ../../sample/*.PDF \
+python3 cpu_baseline_snapshot.py compare "../../sample/*" \
     --manifest cpu_baseline_20260811.csv
 ```
 
-Exit 0 means byte-identical detections; exit 1 lists the diverging pages with
-both count sets. Counts alone would not be enough — a box that moved or two
-detections that swapped kinds leave the totals untouched, which is exactly
-the kind of drift a PL stage introduces.
+**Full coverage is required and is part of the check.** All 36 manifest
+pages must be produced exactly once; missing, extra and duplicated pages
+each fail alongside any digest divergence. Exit 0 therefore means "all 36
+checked and byte-identical", never "the pages I happened to see matched".
+`--allow-subset` relaxes coverage for spot checks and labels its own output
+`SUBSET OK (NOT A GATE)` — do not record it as parity.
+
+Counts alone would not be enough either: a box that moved or two detections
+that swapped kinds leave the totals untouched, which is exactly the kind of
+drift a PL stage introduces. Verified 2026-08-11 — 36/36 byte-identical, a
+perturbed `--score-thresh` diverges 23 of 36 pages, and a single-page run
+now fails on coverage.
 
 ## Gate 1 — CMA budget (contract §2.2, §10 item 3)
 
