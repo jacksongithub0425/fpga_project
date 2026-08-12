@@ -133,7 +133,10 @@ This public repository excludes:
 - Confidential source drawings and sample PDFs
 - Rendered/debug drawing images
 - Raw `.bin` image buffers and template-match test vectors
-- Vitis/Vivado generated project outputs
+- Vitis/Vivado generated project outputs — with one deliberate exception:
+  `vivado/three_stage_combined/board_bundle/` carries the deployable
+  `.bit`/`.hwh` pair (SHA-256 recorded in its `BUILD_INFO.txt`) so the
+  board results stay reproducible from the repository alone
 - Local virtual environments and Python caches
 
 The ignore rules are kept in `.gitignore` so future commits do not accidentally
