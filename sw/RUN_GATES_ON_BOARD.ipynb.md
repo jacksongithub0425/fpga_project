@@ -46,10 +46,12 @@ from pathlib import Path
 
 WORK = Path("/home/xilinx/gates")
 REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
-# Pinned. This commit carries the gate-3 truncation fix and the corrected
-# MM2S/S2MM reporting; earlier commits (01f6cad and before) have a gate that
+# Pinned. This commit carries gate 4 (board_gate_extract.py) and the fixed
+# PLPipeline.close(); earlier commits (6c19cbb and before) have a close() that
+# retains every buffer and returns False after a perfectly clean run, and no
+# gate for the extractor at all. Earlier still (01f6cad and before) gate 3
 # cannot distinguish a truncating core from a rounding one.
-PIN = "5baf875a9514948cd9931c398aef6ece2f1a2a2a"
+PIN = "c7a39e07d3c4946fe1c836f0b37f830f4e9d0f1e"
 
 WORK.mkdir(parents=True, exist_ok=True)
 os.chdir(WORK)
