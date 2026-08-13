@@ -103,8 +103,14 @@ class FakeCore:
 def make_pipeline(core_idle=True):
     p = object.__new__(d.PLPipeline)
     p.timeout_s = 1.0
+    p.halt_timeout_s = 0.02
     p._transfers_outstanding = False
+    p._channels_armed = set()
+    p._closed = False
+    p._close_result = None
     p.last_transfer_stats = None
+    p.last_extract_stats = None
+    p.last_suppress_stats = None
     p._staged_patch = None
     p._img_w = p._img_h = 0
     p._stride_bytes = 0
@@ -270,6 +276,107 @@ def test_reallocation_refused_while_outstanding():
     else:
         raise AssertionError("reallocated while a transfer was outstanding")
     assert not p._gray_buf.freed and not p._bin_buf.freed, "buffers were freed"
+
+
+def _page(p, h=16, w=16, fill=255):
+    """Give the pipeline a binarized page, without running the PL."""
+    p._img_h, p._img_w, p._stride_bytes = h, w, w
+    p._bin_buf = FakeBuf(h * w + d._OUTPUT_GUARD_BYTES)
+    p._bin_buf[:h * w] = fill
+    return p
+
+
+def test_suppress_text_validates_before_writing_anything():
+    """A malformed word must leave the page exactly as it was.
+
+    The rectangles are applied in a second pass for this reason: a list whose
+    fifth entry is bad used to zero the first four and then raise, leaving a
+    partly-suppressed page that no caller can detect or undo.
+    """
+    p = _page(make_pipeline())
+    before = bytes(p.binary_view().ravel())
+    bad_lists = [
+        [{"x0": 1, "y0": 1, "x1": 5, "y1": 5}, {"x0": 2, "y0": 2, "x1": 6}],
+        [{"x0": 1, "y0": 1, "x1": 5, "y1": 5},
+         {"x0": 2, "y0": 2, "x1": float("nan"), "y1": 6}],
+        [{"x0": 1, "y0": 1, "x1": 5, "y1": 5},
+         {"x0": 2, "y0": 2, "x1": "six", "y1": 6}],
+        [{"x0": 1, "y0": 1, "x1": 5, "y1": 5},
+         {"x0": 9, "y0": 2, "x1": 4, "y1": 6}],        # inverted
+    ]
+    for words in bad_lists:
+        try:
+            p.suppress_text(words)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"{words[1]} should have been rejected")
+        assert bytes(p.binary_view().ravel()) == before, (
+            "suppress_text wrote part of the page before rejecting the list")
+
+
+def test_suppress_text_applies_the_baseline_arithmetic():
+    """Valid rectangles are applied with the CPU baseline's clipping."""
+    p = _page(make_pipeline())
+    p.suppress_text([{"x0": 5.0, "y0": 5.0, "x1": 8.0, "y1": 8.0}])
+    view = p.binary_view()
+    # expand=3, int() truncation, clamped: rows/cols 2..10 inclusive-exclusive
+    assert view[2:11, 2:11].max() == 0, "the rectangle was not suppressed"
+    assert view[0, 0] == 255 and view[15, 15] == 255, "it suppressed too much"
+    assert p.last_suppress_stats == {"words": 1, "applied": 1,
+                                     "clipped_empty": 0}
+
+
+def test_patch_is_validated_before_it_is_staged():
+    """dtype, shape and capacity, each before the buffer is written."""
+    p = make_pipeline()
+    templ = np.zeros((4, 4), dtype=np.uint8)
+    templ[0, 0] = 255
+    bad = [
+        np.zeros((8, 8), dtype=np.float64),          # unsafe-casts silently
+        np.zeros((8, 8), dtype=bool),                # 0/1, not 0/255
+        np.zeros((4, 4, 3), dtype=np.uint8),         # not an image
+        np.zeros(64, dtype=np.uint8),                # 1-D
+        np.zeros((400, 900), dtype=np.uint8),        # past the §3 envelope
+    ]
+    for patch in bad:
+        before = bytes(p._tme_patch_buf[:64])
+        try:
+            p.match_template(patch, templ)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"{patch.shape}/{patch.dtype} was accepted")
+        assert not p._transfers_outstanding, (
+            "a bad patch poisoned the pipeline; nothing was armed")
+        assert bytes(p._tme_patch_buf[:64]) == before, (
+            "the patch buffer was written before validation rejected it")
+        assert p._staged_patch is None
+
+
+def test_empty_selection_touches_no_hardware():
+    """match_candidate with nothing runnable must return, not run.
+
+    Both ways of being empty: no trials at all, and trials whose templates
+    are all larger than the patch (the CPU baseline's skip rule).
+    """
+    p = make_pipeline()
+    patch = np.full((8, 8), 30, dtype=np.uint8)
+    big = np.zeros((16, 16), dtype=np.uint8)
+    big[0, 0] = 255
+    too_big = [{"kind": "k", "templ_id": 0, "base_index": 0, "scale": 1.0,
+                "pixels": big, "legal": True, "illegal_reasons": []}]
+
+    for label, trials in (("no trials", []), ("all too big", too_big)):
+        before = bytes(p._tme_patch_buf[:64])
+        out = p.match_candidate(patch, 3, 4, trials)
+        assert out == {"best": None, "by_kind": {}}, f"{label}: {out}"
+        assert p._dma_patch.sendchannel.armed == 0, f"{label}: armed a DMA"
+        assert p._tme.started == 0, f"{label}: started the core"
+        assert p._staged_patch is None, f"{label}: staged the patch"
+        assert bytes(p._tme_patch_buf[:64]) == before, (
+            f"{label}: wrote the matcher buffer")
+        assert not p._transfers_outstanding, f"{label}: left a stage in flight"
 
 
 def main() -> int:

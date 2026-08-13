@@ -32,6 +32,17 @@ Stage methods, validated separately and in this order on the board:
     pl.extract_candidates(cands, tmpls, s)    -> §6.2 records + patch arrays
     pl.match_template(patch, templ)           -> one trial: (score, x, y, s)
     pl.match_candidate(patch, x0, y0, trials) -> strict-> argmax + boxes
+    pl.close()                                -> True only if every buffer
+                                                 came back
+
+`close()` is part of the contract, not a formality: it frees ~120 MiB of CMA,
+and it does so only after proving that every channel this pipeline ARMED has
+stopped (`DMACR.Reset == 0` and `DMASR.Halted == 1`, bounded, with a soft
+reset as the fallback).  Channels it never armed are skipped, because the
+hardware cannot distinguish "never transferred" from "mid-transfer" — both
+read `idle == False` — and treating the two alike is how a clean run ends up
+retaining every buffer.  It is idempotent and returns False if anything at
+all was retained.
 
 Classification is PS-side by decision (2026-08-11, contract §10 items 4–5):
 `class_score_core` is out of the MVP, there is no result record and no result
@@ -59,9 +70,16 @@ import numpy as np
 
 # Pure validation helpers, proven on silicon by the standalone bring-up.
 # Importable without PYNQ (their module only imports pynq lazily).
-from tme_standalone_bringup import (DMA_MAX_BYTES_DEFAULT, MAX_PATCH_H,
-                                    MAX_PATCH_W, MAX_TEMPL_H, MAX_TEMPL_W,
-                                    check_result, validate_geometry,
+#
+# The DMA register constants come from there too rather than being
+# re-transcribed: close() below verifies quiescence with the same
+# DMACR.Reset==0 / DMASR.Halted==1 read-back that TmeStandalone._halt_channel
+# uses, and two copies of those offsets is how the two teardowns drift apart.
+from tme_standalone_bringup import (DMA_DMACR, DMA_DMASR, DMA_MAX_BYTES_DEFAULT,
+                                    DMACR_RESET, DMACR_RS, DMASR_HALTED,
+                                    MAX_PATCH_H, MAX_PATCH_W, MAX_TEMPL_H,
+                                    MAX_TEMPL_W, check_result,
+                                    validate_geometry,
                                     validate_template_content)
 
 # ap_ctrl_hs bits at CTRL offset 0x00 — fixed by the protocol, not by any
@@ -426,6 +444,12 @@ class PLPipeline:
                              f"positive")
         self.timeout_s = float(timeout_s)
 
+        # Per-channel bound on the teardown halt read-back (close()).  Short
+        # on purpose and separate from timeout_s: this one is spent proving a
+        # DMA has *stopped*, on a path reached when something has already
+        # failed, and a stuck engine must be reported rather than waited on.
+        self.halt_timeout_s = 0.5
+
         self._ol = Overlay(bitfile)
         self._allocate = allocate
 
@@ -483,9 +507,30 @@ class PLPipeline:
         # the CMA pages must not go back to the pool — see close().
         self._transfers_outstanding = False
 
+        # Labels of the channels this pipeline has ever armed (see _arm).  A
+        # channel absent from this set has never had a descriptor programmed
+        # against any of these buffers by this driver, which is what lets
+        # close() free them without a halt read-back it cannot get — see
+        # close() for why a virgin channel cannot be told from a busy one by
+        # asking the hardware.
+        self._channels_armed: set[str] = set()
+
+        # close() is idempotent: the first call decides, later calls report.
+        self._closed = False
+        self._close_result: Optional[bool] = None
+
         # Populated by binarize_page() with the measured DMA byte counts and
         # output-integrity results, so a caller can assert them itself.
         self.last_transfer_stats: Optional[dict] = None
+
+        # Populated by extract_candidates() with the latched §7.1.1 status
+        # registers and the measured per-candidate patch byte counts, for the
+        # same reason: a gate must be able to assert sts_flags/rejected/
+        # processed itself rather than trust that this method checked them.
+        self.last_extract_stats: Optional[dict] = None
+
+        # Populated by suppress_text() with the rectangle counts it applied.
+        self.last_suppress_stats: Optional[dict] = None
 
     # -- generic helpers ----------------------------------------------------
 
@@ -496,6 +541,35 @@ class PLPipeline:
             if isinstance(val, int) and val > 0:
                 return val
         return DMA_MAX_BYTES_DEFAULT
+
+    def _dma_channels(self) -> list:
+        """Every channel this driver can arm, with the label close() reports.
+
+        One table, used both to arm (`_arm`) and to tear down (`close`), so a
+        channel cannot be armed under a label teardown does not know about —
+        which would make it look virgin at close() and get its buffers freed
+        without a halt check.
+        """
+        return [(self._dma_binarize.sendchannel, "gray MM2S"),
+                (self._dma_binarize.recvchannel, "bin S2MM"),
+                (self._dma_pe_data.sendchannel,  "cand MM2S"),
+                (self._dma_pe_data.recvchannel,  "patch S2MM"),
+                (self._dma_pe_meta.recvchannel,  "meta S2MM"),
+                (self._dma_patch.sendchannel,    "tme patch MM2S"),
+                (self._dma_templ.sendchannel,    "tme templ MM2S")]
+
+    def _arm(self, channel, label: str, buf) -> None:
+        """Start a transfer, recording that this channel has been armed.
+
+        The record goes in BEFORE `transfer()`, and that order is the whole
+        point: `transfer()` writes the descriptor address and then the length
+        register, so a call that raises part-way through has still programmed
+        a command the engine may act on.  A channel marked armed only on
+        success would look virgin to close(), which would then free its
+        buffer without proving the engine had stopped.
+        """
+        self._channels_armed.add(label)
+        channel.transfer(buf)
 
     def _start(self, core, label: str) -> None:
         """Write ap_start, after proving the core is idle.
@@ -584,6 +658,11 @@ class PLPipeline:
     def _require_usable(self, what: str) -> None:
         """Refuse to proceed if a previous stage left a transfer outstanding.
 
+        Also refuses after `close()`, because close() clears all seven buffer
+        references: without this the next stage would fail somewhere inside
+        numpy with a `NoneType` error, or — worse, if a reference were ever
+        missed — write into pages that have gone back to the CMA pool.
+
         `_transfers_outstanding` is set by `_start` and cleared only when a
         stage completes cleanly, so it is still set exactly when a stage
         raised — a timeout, a DMA error, a contract-violating readback.  In
@@ -598,6 +677,12 @@ class PLPipeline:
         means building a new PLPipeline. So every entry point refuses, and
         says so.
         """
+        if self._closed:
+            raise RuntimeError(
+                f"refusing to {what}: close() has already run and released "
+                f"(or retained) every DMA buffer this pipeline owns. Build a "
+                f"new PLPipeline — which reloads the overlay — rather than "
+                f"reusing a closed one.")
         if self._transfers_outstanding:
             raise RuntimeError(
                 f"refusing to {what}: a previous stage left a transfer "
@@ -696,7 +781,8 @@ class PLPipeline:
         count is exact rather than heuristic.
 
         Scanned in chunks so a full page does not allocate a 60 MB bool
-        temporary on a board that has ~350 MB of userspace.
+        temporary on a board that has ~290 MB of userspace (512 MB DDR, no swap,
+        less the required 192 MiB CMA pool).
         """
         remaining = 0
         step = 4 << 20
@@ -789,9 +875,10 @@ class PLPipeline:
         deadline = time.monotonic() + self.timeout_s
         # Arm the receive first: the core produces output beats as input
         # arrives, and an unarmed S2MM backpressures into the core mid-page.
-        self._dma_binarize.recvchannel.transfer(self._bin_buf[:n])
+        self._arm(self._dma_binarize.recvchannel, "bin S2MM", self._bin_buf[:n])
         self._start(self._binarize, "binarize_core")
-        self._dma_binarize.sendchannel.transfer(self._gray_buf[:n])
+        self._arm(self._dma_binarize.sendchannel, "gray MM2S",
+                  self._gray_buf[:n])
 
         self._wait_done(self._binarize, deadline, "binarize_core",
                         channels=((self._dma_binarize.sendchannel, "gray MM2S"),
@@ -876,6 +963,24 @@ class PLPipeline:
         flushes after the CPU writes it.  patch_extract_core reads the buffer
         by physical address via its bin_image pointer, which bypasses PYNQ's
         DMA driver and so gets no cache maintenance for free.
+
+        **Every rectangle is validated before the first pixel is written.**
+        The clipping arithmetic is byte-identical to the CPU baseline's — the
+        `int()` truncation included, because parity is checked bit-exactly —
+        but the loop that applies it now runs only after the whole list has
+        been converted, for two reasons.  A malformed word (a missing key, a
+        NaN from a bad zoom, a string that used to raise inside `int()`) would
+        otherwise fail somewhere in the middle, leaving a page that is
+        *partly* suppressed: the caller sees an exception, the DDR buffer
+        keeps the writes made before it, and there is no way back short of
+        re-binarizing.  And an inverted rectangle (x1 < x0) is silently a
+        no-op in numpy, so a caller with a transposed or unscaled coordinate
+        frame gets a page with its text still on it and no error anywhere —
+        the exact spurious-match mode the method exists to prevent.
+
+        `last_suppress_stats` records how many rectangles were applied and how
+        many clipped to nothing (a word wholly off the page — legal, since the
+        clip is what it is for, but worth being able to assert on).
         """
         self._require_usable("run suppress_text")
         if self._img_w == 0:
@@ -889,14 +994,52 @@ class PLPipeline:
                                "suppress into")
         expand = 3
         h, w = self._img_h, self._img_w
+
+        boxes: list[tuple] = []
+        empty = 0
+        for i, word in enumerate(words):
+            try:
+                raw = tuple(float(word[k]) for k in ("x0", "y0", "x1", "y1"))
+            except KeyError as exc:
+                raise ValueError(
+                    f"word {i}: no {exc} key — suppress_text takes the "
+                    f"detector's word dicts (x0, y0, x1, y1 in page "
+                    f"pixels)") from exc
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"word {i}: {word!r} has a non-numeric bound "
+                    f"({exc})") from exc
+            if not all(v == v and abs(v) != float("inf") for v in raw):
+                raise ValueError(
+                    f"word {i}: bound {raw} is NaN or infinite; int() would "
+                    f"raise part-way through the page")
+            wx0, wy0, wx1, wy1 = raw
+            if wx1 < wx0 or wy1 < wy0:
+                raise ValueError(
+                    f"word {i}: rectangle ({wx0}, {wy0})-({wx1}, {wy1}) is "
+                    f"inverted. numpy would suppress nothing for it and say "
+                    f"nothing — check the coordinate frame (x0,y0 top-left, "
+                    f"x1,y1 bottom-right, in page pixels after zoom)")
+
+            # Identical to build_text_suppressed_binary in the CPU detector.
+            x0 = max(0, int(wx0 - expand))
+            y0 = max(0, int(wy0 - expand))
+            x1 = min(w, int(wx1 + expand))
+            y1 = min(h, int(wy1 + expand))
+            if x1 <= x0 or y1 <= y0:
+                empty += 1          # entirely off the page after clipping
+                continue
+            boxes.append((y0, y1, x0, x1))
+
         bin_view = self.binary_view()
-        for word in words:
-            x0 = max(0, int(word["x0"] - expand))
-            y0 = max(0, int(word["y0"] - expand))
-            x1 = min(w, int(word["x1"] + expand))
-            y1 = min(h, int(word["y1"] + expand))
+        for y0, y1, x0, x1 in boxes:
             bin_view[y0:y1, x0:x1] = 0
         self._bin_buf.flush()
+        self.last_suppress_stats = {
+            "words": len(words),
+            "applied": len(boxes),
+            "clipped_empty": empty,
+        }
 
     # -- stage 2: patch extraction -------------------------------------------
 
@@ -1018,11 +1161,12 @@ class PLPipeline:
 
         # Metadata S2MM: one arm for the whole batch (TLAST at batch end).
         meta_bytes = n * _META_STRUCT_SIZE
-        self._dma_pe_meta.recvchannel.transfer(self._meta_buf[:meta_bytes])
+        self._arm(self._dma_pe_meta.recvchannel, "meta S2MM",
+                  self._meta_buf[:meta_bytes])
 
         self._start(self._extract, "patch_extract_core")
-        self._dma_pe_data.sendchannel.transfer(
-            self._cand_buf[:n * _CAND_STRUCT_SIZE])
+        self._arm(self._dma_pe_data.sendchannel, "cand MM2S",
+                  self._cand_buf[:n * _CAND_STRUCT_SIZE])
 
         # Patch pixels: one S2MM transfer per candidate, ended by the per-patch
         # TLAST.  Armed at the envelope bound; the actual length is
@@ -1030,8 +1174,8 @@ class PLPipeline:
         raw_patches: list[np.ndarray] = []
         transferred: list[Optional[int]] = []
         for i in range(n):
-            self._dma_pe_data.recvchannel.transfer(
-                self._patch_rx_buf[:_MAX_PATCH_BYTES])
+            self._arm(self._dma_pe_data.recvchannel, "patch S2MM",
+                      self._patch_rx_buf[:_MAX_PATCH_BYTES])
             self._wait_channel(self._dma_pe_data.recvchannel, deadline,
                                f"patch S2MM (candidate {i})")
             self._patch_rx_buf.invalidate()
@@ -1065,6 +1209,16 @@ class PLPipeline:
                 raise RuntimeError(
                     f"patch_extract_core: {name} ap_vld is clear — the value "
                     f"read is left over from a previous run, not this one")
+        # Published before the checks below raise, so a gate reporting a
+        # failure can print the status registers that caused it.
+        self.last_extract_stats = {
+            "num_cands": n,
+            "sts_flags": sts["sts_flags"],
+            "sts_rejected": sts["sts_rejected"],
+            "sts_processed": sts["sts_processed"],
+            "meta_bytes": meta_bytes,
+            "patch_bytes": list(transferred),
+        }
         if sts["sts_flags"] & 0x1:
             raise RuntimeError(
                 f"patch_extract_core: global image configuration invalid "
@@ -1132,8 +1286,62 @@ class PLPipeline:
 
     # -- stage 3: template match ----------------------------------------------
 
-    def _stage_patch(self, patch: np.ndarray) -> None:
+    @staticmethod
+    def _validate_patch(patch: np.ndarray) -> tuple:
+        """Pure pre-flight for the patch itself.  Returns (pw, ph).
+
+        No buffer touched, so this runs BEFORE `_begin_stage` and a bad
+        argument does not poison the pipeline.  Three separate silent-wrong-
+        answer modes, none of which the matcher can report (§8: `tme_top`
+        takes patch_w/patch_h at face value and has no rejection path):
+
+        - **dtype.** `self._tme_patch_buf[:n] = patch.ravel()` casts under
+          numpy's `unsafe` assignment rule, so a float patch in [0,1] — what
+          any normalising preprocessing step produces — lands in the DMA
+          buffer as all-zero pixels and the matcher returns a confident score
+          against a blank image.  A bool patch is the same story at 0/1
+          instead of 0/255.
+        - **shape.** `ph, pw = patch.shape` unpacks a 3-D array with a
+          ValueError that names neither the argument nor the reason; worse, a
+          1-D patch of length n unpacks nothing and raises from `.shape`
+          instead of saying the patch is not an image.  Non-contiguous input
+          is fine (`ravel()` copies) but must still be 2-D.
+        - **capacity.** `_tme_patch_buf` holds `_MAX_PATCH_BYTES` = 251,740 B
+          (the §3 820x307 envelope).  A patch larger than that would slice the
+          destination short and raise a broadcast error from numpy with the
+          buffer already half-written — after `_begin_stage`, so the pipeline
+          would need an overlay reload to recover from what is an ordinary
+          input error.  Checked here, before anything is written.
+        """
+        patch = np.asarray(patch)
+        if patch.ndim != 2:
+            raise ValueError(
+                f"patch must be a 2-D image, got shape {patch.shape} "
+                f"({patch.ndim}-D)")
+        if patch.dtype != np.uint8:
+            raise ValueError(
+                f"patch must be uint8, got {patch.dtype} — assigning it into "
+                f"the matcher's DMA buffer would unsafe-cast every pixel "
+                f"silently (a float patch normalised to [0,1] stages as all "
+                f"zeros and scores against a blank image)")
         ph, pw = patch.shape
+        if pw < 1 or ph < 1:
+            raise ValueError(f"patch {pw}x{ph} is empty")
+        if pw * ph > _MAX_PATCH_BYTES:
+            raise ValueError(
+                f"patch {pw}x{ph} = {pw * ph:,} B exceeds the matcher patch "
+                f"buffer of {_MAX_PATCH_BYTES:,} B (the §3 "
+                f"{_MAX_PATCH_W}x{_MAX_PATCH_H} envelope)")
+        return pw, ph
+
+    def _stage_patch(self, patch: np.ndarray) -> None:
+        """Copy the patch into the matcher's DMA buffer.
+
+        Re-validates as the last line of defence for a direct caller, the same
+        way `_run_trial` re-runs `_validate_trial`; the callers that matter
+        have already validated before `_begin_stage`.
+        """
+        pw, ph = self._validate_patch(patch)
         self._tme_patch_buf[:pw * ph] = patch.ravel()
         self._tme_patch_buf.flush()
         self._staged_patch = (pw, ph)
@@ -1176,8 +1384,10 @@ class PLPipeline:
         deadline = t0 + self.timeout_s
         # tme_top drains the patch fully and only then reads the template, so
         # the template DMA sits backpressured for most of the run — normal.
-        self._dma_patch.sendchannel.transfer(self._tme_patch_buf[:pw * ph])
-        self._dma_templ.sendchannel.transfer(self._tme_templ_buf[:n_t])
+        self._arm(self._dma_patch.sendchannel, "tme patch MM2S",
+                  self._tme_patch_buf[:pw * ph])
+        self._arm(self._dma_templ.sendchannel, "tme templ MM2S",
+                  self._tme_templ_buf[:n_t])
         self._start(self._tme, "tme_top")
 
         self._wait_done(self._tme, deadline, "tme_top",
@@ -1221,11 +1431,16 @@ class PLPipeline:
         """One (patch, template) trial.  Returns (score, match_x, match_y,
         seconds) — score/x/y read from tme_top_0's scalar result registers.
 
-        The geometry and template content are validated before the stage is
-        marked in-flight, so a bad argument raises without poisoning the
-        pipeline; `_stage_patch` writes a DMA buffer, so it must come after.
+        The patch, the geometry and the template content are all validated
+        before the stage is marked in-flight, so a bad argument raises without
+        poisoning the pipeline; `_stage_patch` writes a DMA buffer, so it must
+        come after.
         """
-        ph, pw = patch.shape
+        self._require_usable("run match_template")
+        pw, ph = self._validate_patch(patch)
+        if templ.ndim != 2:
+            raise ValueError(f"template must be a 2-D image, got shape "
+                             f"{templ.shape}")
         th_, tw_ = templ.shape
         self._validate_trial(pw, ph, tw_, th_, templ)
 
@@ -1277,7 +1492,13 @@ class PLPipeline:
         scale, and box = (patch_x0 + match_x, patch_y0 + match_y, templ_w,
         templ_h) in absolute logical-page coordinates (§1/§6.3 decision).
         """
-        ph, pw = patch.shape
+        # Explicit, and before the selection loop: the empty-selection early
+        # return below skips `_begin_stage`, which is where a poisoned or
+        # closed pipeline would otherwise be caught.  Without this, an empty
+        # trial list would be the one entry point that quietly "succeeded"
+        # after a failed stage.
+        self._require_usable("run match_candidate")
+        pw, ph = self._validate_patch(patch)
 
         # Select and validate the whole trial list first.  Nothing here
         # touches a buffer, so an illegal template raises without leaving the
@@ -1293,6 +1514,17 @@ class PLPipeline:
                 continue
             self._validate_trial(pw, ph, tw_, th_, t)
             selected.append((trial, t, tw_, th_))
+
+        # No runnable trial: return before touching the hardware.  There is
+        # nothing to match, so marking the stage in-flight and staging the
+        # patch would write and flush a DMA buffer for a run that then arms
+        # nothing — and a caller that ignores the empty result (an all-illegal
+        # bank, or a patch smaller than every template) would be paying for a
+        # buffer write and, more to the point, would be exposed to the
+        # `_begin_stage`/`_end_stage` window for no reason.  Same shape of
+        # answer as a run where nothing scored: best=None, empty by_kind.
+        if not selected:
+            return {"best": None, "by_kind": {}}
 
         self._begin_stage("run match_candidate")
         self._stage_patch(patch)
@@ -1326,10 +1558,76 @@ class PLPipeline:
 
     # -- teardown --------------------------------------------------------------
 
+    _BUFFER_ATTRS = ("_gray_buf", "_bin_buf", "_cand_buf", "_meta_buf",
+                     "_patch_rx_buf", "_tme_patch_buf", "_tme_templ_buf")
+
+    @staticmethod
+    def _verify_quiescent(channel, label: str,
+                          timeout_s: float = 0.5) -> tuple:
+        """Bounded halt, then a POSITIVE read-back.  (ok, detail).
+
+        Same rule and the same registers as
+        `TmeStandalone._halt_channel`, which is the silicon-proven teardown:
+        clearing RS is a *request*, so this waits for the acknowledgement,
+        issues `DMACR.Reset` if it does not come, and waits again — and on
+        neither path is `DMASR.Halted` alone accepted.  Per PG021 a soft reset
+        does not abort an AXI transaction already in flight; it lets that
+        transaction finish and holds `DMACR.Reset` asserted until it does. So
+        `Halted == 1` with `Reset` still set can mean "still draining a read
+        that targets the very buffer we are about to free", and quiescence
+        requires **both** `DMACR.Reset == 0` and `DMASR.Halted == 1`.
+
+        Deliberately not `channel.stop()`: PYNQ clears RS and then spins on
+        `while self.running: pass` with no deadline, so a DMA that will not
+        halt hangs teardown — and teardown is reached exactly when something
+        has already gone wrong.  Everything here is bounded by `timeout_s`.
+
+        Returns False whenever quiescence cannot be *established*, including
+        when the registers are unreachable: "cannot verify" must never read as
+        "verified".
+        """
+        mmio = getattr(channel, "_mmio", None)
+        base = getattr(channel, "_offset", None)
+        if mmio is None or base is None:
+            return False, f"{label}: channel registers unreachable"
+
+        def quiescent() -> bool:
+            if not mmio.read(base + DMA_DMASR) & DMASR_HALTED:
+                return False
+            return not mmio.read(base + DMA_DMACR) & DMACR_RESET
+
+        def wait_quiescent() -> bool:
+            end = time.monotonic() + timeout_s
+            while time.monotonic() < end:
+                if quiescent():
+                    return True
+                time.sleep(0.001)
+            return quiescent()
+
+        try:
+            cr = mmio.read(base + DMA_DMACR)
+            mmio.write(base + DMA_DMACR, cr & ~DMACR_RS)
+            if wait_quiescent():
+                return True, ""
+            mmio.write(base + DMA_DMACR, DMACR_RESET)
+            if wait_quiescent():
+                return True, ""
+            return False, (
+                f"{label}: not quiescent {timeout_s:g} s after RS=0 and a "
+                f"soft reset (DMACR=0x{mmio.read(base + DMA_DMACR):08X} "
+                f"DMASR=0x{mmio.read(base + DMA_DMASR):08X}; need Reset=0 "
+                f"and Halted=1)")
+        except Exception as exc:                           # noqa: BLE001
+            return False, (f"{label}: halt could not be driven: "
+                           f"{type(exc).__name__}: {exc}")
+
     def close(self) -> bool:
         """Release DMA buffers — but only ones no DMA can still be writing.
 
-        Returns True if everything was freed, False if buffers were retained.
+        Returns True only if every buffer was freed; False if any was
+        retained, for any reason.  Idempotent: the first call decides and
+        later calls repeat that verdict without touching a register or
+        freeing anything twice.
 
         close() is most often called from an exception handler, which is
         exactly when a transfer may still be outstanding: every failure path
@@ -1337,56 +1635,98 @@ class PLPipeline:
         the PL mid-transaction.  Handing those CMA pages back then is not a
         leak-vs-tidy trade — an S2MM with an open command writes the beats
         that do eventually arrive into whatever the pool has since handed to
-        someone else, and an MM2S keeps reading them.  Both silicon-proven
-        scripts refuse to free in that state (tme_standalone_bringup.close()
-        requires DMACR.Reset==0 and DMASR.Halted==1; binarize_dma_checks
-        parks buffers in _RETAINED_DMA_BUFFERS), and this now matches them.
+        someone else, and an MM2S keeps reading them.
+
+        **A never-armed channel is not a busy one, and the hardware cannot
+        tell you which it is.** The previous version tested `channel.idle` on
+        all seven channels, and `idle` reads DMASR bit 1, which a channel that
+        has never completed a transfer reports as 0 — the same 0 a genuinely
+        mid-transfer channel reports.  So a clean binarize-only run, which
+        arms two of the seven, looked like five busy channels and retained
+        every buffer: close() returned False on the happy path and the CMA
+        pool never came back.  This driver knows which channels it armed
+        (`_arm` records every one, before the descriptor is programmed), and a
+        channel it never armed has no command against these buffers to wait
+        for — nothing else in this process can have programmed one, because
+        every arm in this file goes through `_arm`.  Those are skipped.
+
+        Channels that WERE armed get the silicon-proven treatment instead of
+        an `idle` poll: `_verify_quiescent` clears RS, falls back to
+        `DMACR.Reset`, and demands a positive `Reset==0 && Halted==1`
+        read-back, all bounded.  Only then do the pages go back.
 
         Retention is a DELAY, not a quarantine: the module-level list holds
         strong references so PynqBuffer.__del__ cannot run, but process exit
         still releases the pages.  Reload the overlay (which resets the PL)
         before starting another run in the same session.
         """
-        bufs = [b for b in (self._gray_buf, self._bin_buf, self._cand_buf,
-                            self._meta_buf, self._patch_rx_buf,
-                            self._tme_patch_buf, self._tme_templ_buf)
+        if self._closed:
+            return bool(self._close_result)
+        self._closed = True
+
+        bufs = [b for b in (getattr(self, a, None) for a in self._BUFFER_ATTRS)
                 if b is not None]
 
-        channels = [(self._dma_binarize.sendchannel, "gray MM2S"),
-                    (self._dma_binarize.recvchannel, "bin S2MM"),
-                    (self._dma_pe_data.sendchannel, "cand MM2S"),
-                    (self._dma_pe_data.recvchannel, "patch S2MM"),
-                    (self._dma_pe_meta.recvchannel, "meta S2MM"),
-                    (self._dma_patch.sendchannel, "tme patch MM2S"),
-                    (self._dma_templ.sendchannel, "tme templ MM2S")]
-        busy = []
-        for ch, name in channels:
-            try:
-                if not ch.idle:
-                    busy.append(name)
-            except Exception:                              # noqa: BLE001
-                busy.append(f"{name} (state unreadable)")
+        why: list[str] = []
+        if self._transfers_outstanding:
+            why.append("a transfer was left outstanding by a failed run")
 
-        if busy or self._transfers_outstanding:
+        for ch, label in self._dma_channels():
+            if label not in self._channels_armed:
+                continue        # never armed: no command exists against these
+            ok, detail = self._verify_quiescent(ch, label,
+                                                self.halt_timeout_s)
+            if not ok:
+                why.append(detail)
+
+        if why:
             _RETAINED_BUFFERS.extend(bufs)
-            why = []
-            if busy:
-                why.append("channels still busy: " + ", ".join(busy))
-            if self._transfers_outstanding:
-                why.append("a transfer was left outstanding by a failed run")
             print("[tme_driver] NOT freeing %d DMA buffers (%s). They are "
                   "retained for the life of this process; reload the overlay "
-                  "before running again." % (len(bufs), "; ".join(why)))
-            self._gray_buf = self._bin_buf = None
+                  "(construct a new PLPipeline) before running again."
+                  % (len(bufs), "; ".join(why)))
+            self._forget_buffers()
+            self._close_result = False
             return False
 
-        for buf in bufs:
+        # Every armed channel is provably halted.  Free — and a freebuffer()
+        # that raises is a FAILED close, not a detail: the pages are in an
+        # unknown state, so the buffer is retained and the verdict is False.
+        failed = []
+        for attr in self._BUFFER_ATTRS:
+            buf = getattr(self, attr, None)
+            if buf is None:
+                continue
             try:
                 buf.freebuffer()
-            except Exception:                              # noqa: BLE001
+            except Exception as exc:                       # noqa: BLE001
                 _RETAINED_BUFFERS.append(buf)
-        self._gray_buf = self._bin_buf = None
+                failed.append(f"{attr}: {type(exc).__name__}: {exc}")
+
+        self._forget_buffers()
+        if failed:
+            print("[tme_driver] %d of %d DMA buffers could not be freed (%s). "
+                  "They are retained for the life of this process."
+                  % (len(failed), len(bufs), "; ".join(failed)))
+            self._close_result = False
+            return False
+        self._close_result = True
         return True
+
+    def _forget_buffers(self) -> None:
+        """Drop all seven buffer references and the page geometry with them.
+
+        All seven, not just the image pair: the five small buffers are freed
+        (or retained) by close() exactly like the big two, and an attribute
+        left pointing at a returned PynqBuffer is a use-after-free waiting for
+        the next caller.  `_img_w`/`_img_h` go too, so `binary_view()` cannot
+        hand out a view backed by pages that have gone back to the pool — it
+        raises "no page has been binarized yet" instead.
+        """
+        for attr in self._BUFFER_ATTRS:
+            setattr(self, attr, None)
+        self._img_w = self._img_h = self._stride_bytes = 0
+        self._staged_patch = None
 
 
 # -----------------------------------------------------------------------
