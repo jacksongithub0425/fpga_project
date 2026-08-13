@@ -44,8 +44,10 @@ envelope moved". Quote them that way round: the S2MM count, the sentinel
 scan and the guard are the direct evidence; the MM2S count is corroboration.
 
 EVERYTHING HERE WORKS IN ROW STRIPS, AND THAT IS NOT AN OPTIMISATION.  The
-board has 512 MB of DDR with no swap, of which the CMA pool (~128 MB by
-default) is already carved out and two 60.2 MiB CMA buffers are spoken for.
+board has 512 MB of DDR with no swap, of which the CMA pool is already carved
+out and two 60.2 MiB CMA buffers are spoken for.  The pool is a required
+`cma=192M` (the 128 MiB default was tried twice and failed both times — see
+BOARD_RUNBOOK.md), so the userspace left over is smaller still, ~290 MB.
 Whole-page numpy would not fit and would not fail gracefully:
 `gray.astype(int32)` alone is 240.6 MiB, and cpu_golden's nine-term blur
 holds several such temporaries at once — measured 1022 MiB peak, roughly 3x
@@ -58,8 +60,9 @@ exists for).  Keep every array in this file bounded by STRIP_ROWS.
 
 Measured peak for the strip version, tracemalloc at the full 9856 x 6400:
 89.1 MiB to build the page, 98.7 MiB with a comparison strip in flight and
-the 60.2 MiB page resident.  Against ~350 MiB of userspace that is roughly
-3.5x headroom, where the whole-page version needed 3x more than exists.
+the 60.2 MiB page resident.  Against the ~290 MiB of userspace a 192 MiB
+CMA pool leaves, that is roughly 3x headroom, where the whole-page version
+needed 3x more than exists.
 
 Needs on the board, same directory: tme_driver.py, tme_standalone_bringup.py,
 binarize_dma_checks.py, and the overlay .bit + .hwh pair.

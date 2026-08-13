@@ -11,6 +11,13 @@ downstream of it assumes the answer is yes:
 They must be *separately* contiguous.  They do not need to be contiguous with
 each other, and this probe does not require that.
 
+**REQUIRED PLATFORM SETTING: `cma=192M`.**  The PYNQ default pool is 128 MiB
+against a ~120.8 MiB driver-order requirement, and that 7 MiB margin has been
+tried twice and failed twice.  This probe refuses to run below 192 MiB and
+exits 2 (misconfigured platform — *not* a §2.2 capacity failure, and not a
+reason to trigger the tiling branch).  See REQUIRED_CMA_BYTES below for how
+to set it.
+
 **It allocates in the driver's real order**, not just the two big buffers:
 `PLPipeline.__init__` takes five smaller regions (candidate, metadata, patch
 receive, matcher patch and matcher template) out of the pool BEFORE
@@ -64,6 +71,30 @@ PAGE = 4096
 # rejects a footprint above 0xFFFFFFFF.  A buffer whose physical range crosses
 # 2^32 cannot be addressed by the current contract even if CMA hands it over.
 ADDR_LIMIT = 1 << 32
+
+# REQUIRED PLATFORM SETTING: cma=192M on the kernel command line.
+#
+# This is not a recommendation.  The driver-order allocation needs ~120.8 MiB
+# of *separately contiguous* CMA, and the PYNQ default pool is 128 MiB — a
+# 7 MiB margin, out of which any fragmentation at all has to come.  **It was
+# tried twice at 128 MiB and failed both times**, which is what turned this
+# from "tight" into a platform requirement: the pool is not merely close to
+# the requirement, it does not reliably satisfy it, and the failure arrives as
+# a refused 60.2 MiB allocation partway through construction rather than as
+# anything that names the pool size.
+#
+# 192 MiB leaves ~71 MiB of headroom over the allocation and still leaves the
+# board ~290 MiB of userspace, which the row-strip verification in
+# board_gate_full_dma.py (measured 98.7 MiB peak) fits inside comfortably.
+#
+# Set it in /boot/uEnv.txt (or the platform's equivalent) and REBOOT — CMA is
+# reserved at boot and cannot be resized afterwards:
+#
+#     bootargs=... cma=192M
+#
+# then confirm with `grep Cma /proc/meminfo` before running anything here.
+REQUIRED_CMA_BYTES = 192 * 1024 * 1024
+DEFAULT_CMA_BYTES = 128 * 1024 * 1024
 
 
 def _fmt(n: int) -> str:
@@ -169,21 +200,54 @@ def main() -> int:
                     help="load this overlay before probing, so the pool is in "
                          "the state the real application sees (strongly "
                          "recommended — see the module docstring)")
+    ap.add_argument("--allow-small-pool", action="store_true",
+                    help="probe anyway on a pool below the required "
+                         "cma=192M. The result is NOT the §2.2 gate and "
+                         "labels itself so.")
     args = ap.parse_args()
 
     print("contract §2.2 CMA probe")
     print(f"  target: 2 x {_fmt(BUF_BYTES)}  (image {IMG_W} x {IMG_H})")
+    print(f"  required pool: cma=192M ({_fmt(REQUIRED_CMA_BYTES)})")
 
     info = _read_cma_meminfo()
     if info:
-        print(f"  CmaTotal: {_fmt(info.get('CmaTotal', 0))}")
+        total = info.get("CmaTotal", 0)
+        print(f"  CmaTotal: {_fmt(total)}")
         print(f"  CmaFree : {_fmt(info.get('CmaFree', 0))}")
-        if info.get("CmaTotal", 0) < 2 * BUF_BYTES:
-            print("  NOTE: CmaTotal is below the requirement outright — the "
-                  "allocation below cannot succeed without raising the "
-                  "cma= kernel parameter.")
+        if total < REQUIRED_CMA_BYTES:
+            near_default = abs(total - DEFAULT_CMA_BYTES) < 8 * MIB
+            print("\n" + "!" * 72)
+            print(f"PLATFORM NOT CONFIGURED: CmaTotal is {_fmt(total)}, "
+                  f"below the required {_fmt(REQUIRED_CMA_BYTES)}.")
+            if near_default:
+                print("That is the PYNQ default 128 MiB pool. The "
+                      "driver-order allocation needs ~120.8 MiB of separately")
+                print("contiguous CMA and HAS BEEN TRIED TWICE AT 128 MiB, "
+                      "failing both times — the 7 MiB margin does not")
+                print("survive fragmentation. This is a misconfigured "
+                      "platform, NOT a §2.2 capacity failure, and it must")
+                print("not be recorded as one or used to trigger the tiling "
+                      "branch.")
+            print("REMEDY: add `cma=192M` to the kernel command line "
+                  "(/boot/uEnv.txt bootargs) and REBOOT — CMA is")
+            print("reserved at boot and cannot be resized afterwards. Then "
+                  "`grep Cma /proc/meminfo` to confirm.")
+            print("!" * 72)
+            if not args.allow_small_pool:
+                print("\nNot probing. Re-run after the reboot, or pass "
+                      "--allow-small-pool to probe anyway (whose result is "
+                      "not the gate).")
+                return 2
+            print("\n--allow-small-pool: probing anyway. WHATEVER THIS "
+                  "PRINTS IS NOT THE §2.2 GATE.")
+        if total < 2 * BUF_BYTES:
+            print("  NOTE: CmaTotal is below the two image buffers outright — "
+                  "the allocation below cannot succeed at all.")
     else:
         print("  CmaTotal/CmaFree: unavailable (not Linux, or no CMA)")
+        print("  NOTE: the required cma=192M setting could not be verified "
+              "from /proc/meminfo.")
 
     try:
         from pynq import allocate
@@ -336,6 +400,14 @@ def main() -> int:
             print(f"\n  CmaFree with both held: "
                   f"{_fmt(after.get('CmaFree', 0))}")
 
+        small_pool = bool(info) and info.get("CmaTotal", 0) < REQUIRED_CMA_BYTES
+        if small_pool:
+            print("\nNOT THE §2.2 GATE — this ran under --allow-small-pool on "
+                  "a pool below the required cma=192M. A pass here says the "
+                  "allocation happened to succeed once; it says nothing "
+                  "about a platform that has already failed this twice at "
+                  "128 MiB. Fix the kernel argument and re-run.")
+            return 2
         if faithful:
             print("\n§2.2 GATE PASSES — for this boot, this pool state, and "
                   "the driver's own allocation order.")

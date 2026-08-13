@@ -6,11 +6,19 @@ stop — you cannot walk past a bad payload or a failed gate by scrolling.
 
 ## Before you start
 
+- **`cma=192M` must be on the kernel command line.** This is a platform
+  requirement, not a tuning note: the driver-order allocation needs about
+  **120.8 MiB of separately contiguous CMA**, and the default **128 MiB**
+  pool was tried twice and failed both times. Add `cma=192M` to `bootargs`
+  in `/boot/uEnv.txt`, reboot, and confirm with `grep Cma /proc/meminfo`
+  (`CmaTotal` ≈ 196608 kB). Gate 1 refuses to run below that and exits 2.
 - **Boot the board fresh.**
-- **Close any other notebook holding an overlay or CMA buffers.** The
-  driver-order allocation needs about **120.8 MiB of CMA** against a typical
-  **128 MiB** pool. There is almost no margin: one stale kernel still
-  holding a 60 MiB buffer fails gate 1 for a reason unrelated to the design.
+- **Close any other notebook holding an overlay or CMA buffers.** Even at
+  192 MiB, one stale kernel still holding a 60 MiB buffer fails gate 1 for a
+  reason unrelated to the design.
+- **Gate 4 needs generated vectors that are not in the repository.** Build
+  them on the build machine and upload the eight files (cell 1 checks for
+  them and says exactly which are missing).
 
 ## Acceptance criteria
 
@@ -18,14 +26,15 @@ Exit 0 is necessary, not sufficient. Proceed only if:
 
 | Gate | Proceed only if |
 |---|---|
-| 1 — CMA | exit 0; output says **driver order**, not the weaker two-buffer preflight; real `CmaTotal`/`CmaFree` values were read |
+| 1 — CMA | exit 0; `CmaTotal` **≥ 192 MiB**; output says **driver order**, not the weaker two-buffer preflight; real `CmaTotal`/`CmaFree` values were read |
 | 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; transfer bound **≥ 63,078,400 B**; measured clock **≤ 50 MHz** |
 | 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes; **zero** oracle mismatches |
+| 4 — extractor + matcher | exit 0; **480/480** binary bytes; record `valid=1` at **(3,4)** **14×12**; **168 B** patch DMA; `sts_flags=0`/`rejected=0`/`processed=1`; **9/9** matcher cases incl. the **251,740 B** envelope |
 
-Passing all three validates CMA, overlay/driver compatibility and the
-full-size binarizer happy path. It does **not** validate
-`extract_candidates()`, template matching, failure recovery, or end-to-end
-PDF detection.
+Passing all four validates CMA, overlay/driver compatibility, the full-size
+binarizer, and — on one small pinned page — the extractor, the matcher and
+the PS reduction between them. It does **not** validate failure recovery or
+end-to-end PDF detection.
 
 ---
 
@@ -62,11 +71,28 @@ print("checked out", head)
 src = repo / "sw"
 bundle = repo / "vivado" / "three_stage_combined" / "board_bundle"
 for f in ["probe_cma_budget.py", "inspect_overlay.py", "board_gate_full_dma.py",
+          "board_gate_extract.py",
           "tme_driver.py", "tme_standalone_bringup.py", "binarize_dma_checks.py"]:
     shutil.copy(src / f, WORK / f)
 for f in ["three_stage_combined.bit", "three_stage_combined.hwh",
           "BUILD_INFO.txt"]:
     shutil.copy(bundle / f, WORK / f)
+
+# Gate 4's vectors are GENERATED and deliberately not committed, so they
+# cannot come from the checkout. Name the missing ones rather than letting
+# gate 4 discover them later: on the build machine run
+#   cd hls/integration    && python3 pe_tme_generate_golden.py
+#   cd hls/template_match && python3 tme_generate_golden.py
+# and upload the eight files into /home/xilinx/gates.
+VECTORS = ["tb_bpe_tme_cases.txt", "tb_bpe_tme_gray.bin", "tb_bpe_tme_bin.bin",
+           "tb_bpe_tme_patch.bin", "tb_bpe_tme_templs.bin",
+           "tb_tme_cases_hw.txt", "tb_tme_patches_hw.bin",
+           "tb_tme_templs_hw.bin"]
+absent = [f for f in VECTORS if not (WORK / f).is_file()]
+if absent:
+    print("GATE 4 VECTORS MISSING (gates 1-3 can still run):")
+    for f in absent:
+        print("   ", f)
 
 # The .bit/.hwh are the only things tying a board result to a build. Check
 # them before loading anything into the fabric.
@@ -206,9 +232,35 @@ oddly afterwards, **reboot**; power-cycle if the board stops responding.
 
 ---
 
+## Cell 6 — Gate 4: the extractor and the matcher
+
+Only after gate 3 has passed, and only with the eight vector files present
+(cell 1 lists any that are missing).
+
+```python
+run_gate("GATE4", "board_gate_extract.py")
+```
+
+Five phases on one pinned 24×20 page whose every intermediate byte is known
+in advance — 480 gray → 480 binary → a 168-byte 14×12 patch at (3,4) →
+matcher `+1.000000` at page (7,5) — followed by the matcher's own 9-case
+silicon manifest through **this** overlay, including the 251,740-byte
+maximum-envelope transfer.
+
+Expect seconds, not minutes: everything here is small except the two 820×307
+stress cases.
+
+A phase that fails names itself and stops; the phases after it did not run,
+so do not report them as passing. Exit 2 means missing vectors or an overlay
+that would not load — an environment problem, not a gate failure.
+
+---
+
 ## Report back
 
-The three `GATE*_EXIT` lines, gate 1's `CmaTotal`/`CmaFree`, gate 2's
-`ip_dict` and `register_map` dump, and gate 3's `DMA envelope:` line. Those
-close contract §2.2 and §10 item 3, and are the precondition for the
-per-stage driver validation.
+The four `GATE*_EXIT` lines, gate 1's `CmaTotal`/`CmaFree`, gate 2's
+`ip_dict` and `register_map` dump, gate 3's `DMA envelope:` line, and gate
+4's final `EXTRACTOR GATE PASSED` summary. Those close contract §2.2 and §10
+item 3 and validate all three driver stages; the remaining step is wiring
+`detect_page()` behind explicit backends and running the strict 36-page
+comparison.

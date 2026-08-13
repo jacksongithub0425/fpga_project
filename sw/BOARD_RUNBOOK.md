@@ -3,13 +3,39 @@
 Ordered gates for the combined three-core overlay. Run them **in this order**;
 each one's PASS is a precondition of the next.
 
+## Required platform setting: `cma=192M`
+
+**This is a prerequisite, not a tuning note.** The driver-order allocation
+needs about **120.8 MiB of separately contiguous CMA**. The PYNQ default pool
+is **128 MiB**, a 7 MiB margin that has to absorb all fragmentation — and it
+**was tried twice at 128 MiB and failed both times**. Treat 128 MiB as a
+known-bad configuration.
+
+```
+# /boot/uEnv.txt — append to bootargs, then REBOOT
+bootargs=... cma=192M
+
+# confirm before running anything else
+grep Cma /proc/meminfo        # CmaTotal should read ~196608 kB
+```
+
+CMA is reserved at boot and cannot be resized afterwards, so this costs a
+reboot. `probe_cma_budget.py` refuses to run below 192 MiB and exits **2** —
+misconfigured platform, **not** a §2.2 capacity failure. Do not record a
+small-pool failure as the gate, and do not let it trigger the tiling branch:
+the pool being too small says nothing about whether a correctly sized pool
+can satisfy the request.
+
+192 MiB leaves ~71 MiB of headroom over the allocation and still leaves about
+290 MiB of userspace — comfortably above the 98.7 MiB measured peak of the
+row-strip verification in gate 3.
+
 ## Before you start
 
 **Boot the board fresh, and close any other notebook holding an overlay or
-CMA buffers.** The driver-order allocation this validates needs about
-**120.8 MiB of CMA**, against a typical **128 MiB** pool — there is almost no
-margin, and a stale kernel still holding a 60 MiB buffer is enough to fail
-gate 1 for a reason that has nothing to do with the design.
+CMA buffers.** Even at `cma=192M`, a stale kernel still holding a 60 MiB
+buffer is enough to fail gate 1 for a reason that has nothing to do with the
+design.
 
 ## Acceptance criteria
 
@@ -17,16 +43,18 @@ Exit 0 is necessary but not sufficient. Proceed to the next gate only if:
 
 | Gate | Proceed only if |
 |---|---|
-| 1 — CMA | exit 0; the output says **driver order** (not the weaker two-buffer preflight); real `CmaTotal`/`CmaFree` figures were read, not "unavailable" |
+| 1 — CMA | exit 0; `CmaTotal` **≥ 192 MiB**; the output says **driver order** (not the weaker two-buffer preflight); real `CmaTotal`/`CmaFree` figures were read, not "unavailable" |
 | 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; binarize DMA transfer bound **≥ 63,078,400 B**; measured PL clock **≤ 50 MHz** (the image is constrained at 20 ns) |
 | 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes remaining; **zero** oracle mismatches |
+| 4 — extractor + matcher | exit 0; **480/480** binary bytes; record `valid=1` at **(3,4)**, **14×12**; **168 B** patch DMA; `sts_flags=0`, `rejected=0`, `processed=1`; **168/168** patch bytes; **9/9** matcher cases incl. the **251,740 B** envelope; teardown freed the buffers |
 
-**What passing all three does and does not establish.** It validates the CMA
-budget, overlay/driver compatibility, and the full-size binarizer happy
-path. It does **not** validate `extract_candidates()`, template matching,
-any failure-recovery path, or end-to-end PDF detection — those are the
-per-stage validations below, and they are still owed. All run on the PYNQ board as
-root (`sudo`), from one directory containing:
+**What passing all four does and does not establish.** It validates the CMA
+budget, overlay/driver compatibility, the full-size binarizer, and — on one
+small pinned page — the extractor, the matcher and the PS reduction between
+them. It does **not** validate any failure-recovery path or end-to-end PDF
+detection; the 36-page comparison against the CPU baseline is still owed and
+is the last step. All run on the PYNQ board as root (`sudo`), from one
+directory containing:
 
 ```
 three_stage_combined.bit      # from vivado/three_stage_combined/board_bundle/
@@ -35,9 +63,20 @@ BUILD_INFO.txt                # same bundle — the SHA-256 record; copy it too
 probe_cma_budget.py
 inspect_overlay.py
 board_gate_full_dma.py
+board_gate_extract.py
 tme_driver.py
 tme_standalone_bringup.py
 binarize_dma_checks.py
+
+# generated vectors for gate 4 — none of these are committed
+tb_bpe_tme_cases.txt          # hls/integration/pe_tme_generate_golden.py
+tb_bpe_tme_gray.bin
+tb_bpe_tme_bin.bin
+tb_bpe_tme_patch.bin
+tb_bpe_tme_templs.bin
+tb_tme_cases_hw.txt           # hls/template_match/tme_generate_golden.py
+tb_tme_patches_hw.bin
+tb_tme_templs_hw.bin
 ```
 
 `BUILD_INFO.txt` is part of the payload, not documentation left behind: it is
@@ -211,7 +250,7 @@ validations.
 
 Both the page generation and the verification run in row strips, and that is
 a hard requirement rather than tuning: whole-page numpy needs about 1 GiB
-against roughly 350 MiB of userspace, so it would be OOM-killed (exit 137,
+against roughly 290 MiB of userspace, so it would be OOM-killed (exit 137,
 no verdict) before touching the PL. Measured peak for the strip version is
 98.7 MiB. `python3 board_gate_full_dma.py --selftest` checks the strip
 decomposition against the whole-page oracle offline, with no board — run it
@@ -243,48 +282,93 @@ So after any gate that dies mid-transfer, in increasing order of severity:
 
 Only then allocate CMA again.
 
-## After the gates — per-stage driver validation
+## Gate 4 — the extractor and the matcher, on a pinned golden
 
-In order, each with explicit CPU parity checks, no silent fallback:
+```
+sudo python3 board_gate_extract.py --overlay three_stage_combined.bit
+```
 
-1. `binarize_page()` — already covered by gate 3.
-2. `extract_candidates()` — feed descriptors from
-   `hls/patch_extract/tb_patch_extract_cases_csim.txt` against its golden
-   patches; the §6.2 record is authoritative for patch geometry, the §4.5
-   formula only a cross-check. Regenerate the manifest and its `.bin`
-   goldens first — they are generated files and are not committed:
+The first execution of `patch_extract_core` on silicon in any form, and the
+first execution of `tme_top_0` in **this** overlay — the 9/9 matcher result
+of 2026-08-07 was a different image with one core in it.
 
-   ```
-   cd hls/patch_extract && python3 patch_extract_generate_golden.py
-   ```
+**A pinned 24×20 golden, deliberately not a real PDF.** A corpus page yields
+a detection count, and a count can be right for the wrong reasons: a patch
+clipped one pixel short, or a location reported in patch instead of page
+coordinates, would very likely leave the totals intact. What is needed first
+is a case whose every intermediate byte is known in advance, and one already
+exists — the three-stage C/golden in `hls/integration/`, which passed Vitis
+HLS CSim on 2026-08-09 and is composed from the binarizer, extractor and
+matcher oracles that were each already proved separately. This gate feeds
+the same vectors to real hardware and demands the same bytes:
 
-   Before this runs on the board at all, check the host-side reject
-   predictor against that manifest (no board needed):
+```
+480 gray bytes -> 480 binary bytes -> one 168-byte 14x12 patch at (3,4)
+-> matcher +1.000000 at local (4,1), page (7,5)
+```
 
-   ```
-   python3 tme_driver.py --selftest-predictor
-   ```
+Five phases, each PASS gating the next:
 
-   `extract_candidates()` refuses to dispatch a descriptor the PL would
-   reject, because a rejected candidate emits no pixels and would strand the
-   patch receive armed for it. That refusal is only as good as the
-   predictor, and this is what proves it against the core's own golden.
-3. `match_template()` / `match_candidate()` — re-run the 9-case `hw` manifest
-   through the combined overlay's `tme_top_0`
-   (`axi_dma_patch`/`axi_dma_templ`), then per-kind argmax parity against
-   `classify_endpoint` on real candidates. The argmax is strictly greater
-   over the frozen trial order — ties keep the first trial, same as the CPU
-   baseline.
+| phase | asserts |
+|---|---|
+| A binarize | all **480** binary bytes byte-exact; 480 B each way; guard intact; no sentinel survives |
+| B extract | record `valid=1`, origin **(3,4)**, patch **14×12**; `sts_flags=0`, `sts_rejected=0`, `sts_processed=1`; the patch S2MM moved **exactly 168 B** (TLAST framing); all **168** pixels byte-exact |
+| C matcher | the 9-case `hw` manifest through `tme_top_0`, score **and** exact location on every case, including the **251,740 B** maximum-envelope case (§3.1's only test), plus a re-invocation afterwards to catch stale `static` BRAM |
+| D reduce | `match_candidate()`: absolute page boxes, the strict-`>` tie going to the **first** trial, the per-kind argmax — each with a control that fails if the rule were reversed |
+| E chain | phases A→B→D again on the patch the **PL** produced, required to give bit-identical results to the golden-fed run |
 
-   The `hw` manifest is three generated files —`tb_tme_cases_hw.txt`,
-   `tb_tme_patches_hw.bin`, `tb_tme_templs_hw.bin` — none of them committed.
-   Regenerate and copy all three to the board next to the scripts:
+Two templates are used in phases D and E, both exact crops of the patch, so
+both score exactly 1.0 at different locations. That is what makes the tie
+testable: the winner is decided purely by trial order, with no float
+coincidence involved, and reversing the bank must move it.
 
-   ```
-   cd hls/template_match && python3 tme_generate_golden.py
-   ```
+This gate is CMA-light — the page is 480 bytes — so a failure here is about
+the cores, not the pool.
 
-Only after all three: connect `detect_page()` one stage at a time behind
-explicit backends (CPU / PL-binarize / PL-extract / PL-all), then benchmark
-PS classification before reconsidering `class_score_core` (contract §10
-items 4–5).
+Before booking board time, run the two off-board checks. Neither needs PYNQ:
+
+```
+python3 board_gate_extract.py --selftest    # constants vs the golden vectors
+python3 test_board_gate_extract.py          # the gate itself, on fake silicon
+python3 tme_driver.py --selftest-predictor  # the reject predictor vs the core's golden
+```
+
+`--selftest` catches vectors that were regenerated from a changed oracle (the
+gate refuses to run rather than move its own goalposts).
+`test_board_gate_extract.py` runs all five phases against simulated hardware
+and then breaks each assertion in turn, requiring the gate to fail — so a
+board run is not the first time any of this code executes. The predictor
+self-test is what makes `extract_candidates()`'s pre-dispatch rejection safe
+to rely on: a rejected candidate emits no pixels, so a descriptor the PL
+would reject would strand the patch receive armed for it.
+
+Regenerate the vectors first — they are generated files and none are
+committed:
+
+```
+cd hls/integration    && python3 pe_tme_generate_golden.py
+cd hls/template_match && python3 tme_generate_golden.py
+```
+
+- FAIL (exit 1) → the hardware or the driver is wrong. The phase that failed
+  is named; the phases after it did not run and did not pass.
+- exit 2 → missing vectors, missing module, or an overlay that would not
+  load. An environment problem, not a gate failure.
+
+## After the gates — integration
+
+Only after gate 4: connect `detect_page()` one stage at a time behind
+**explicit** backends (`cpu` / `pl-binarize` / `pl-extract` / `pl-all`), with
+no silent fallback — a PL failure must fail the run, not quietly hand the
+work to the CPU. Then the strict 36-page comparison against the retained
+baseline:
+
+```
+python3 cpu_baseline_snapshot.py compare "../../sample/*" \
+    --manifest cpu_baseline_20260811.csv
+```
+
+All 36 manifest pages, exactly once each, byte-identical digests. Benchmark
+PS classification after that, and only then reconsider `class_score_core` —
+it is out of the MVP by decision (contract §10 items 4–5) and its source is
+not integration-ready.
