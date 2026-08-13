@@ -1,7 +1,31 @@
 # Board runbook — three_stage_combined bring-up gates
 
 Ordered gates for the combined three-core overlay. Run them **in this order**;
-each one's PASS is a precondition of the next. All run on the PYNQ board as
+each one's PASS is a precondition of the next.
+
+## Before you start
+
+**Boot the board fresh, and close any other notebook holding an overlay or
+CMA buffers.** The driver-order allocation this validates needs about
+**120.8 MiB of CMA**, against a typical **128 MiB** pool — there is almost no
+margin, and a stale kernel still holding a 60 MiB buffer is enough to fail
+gate 1 for a reason that has nothing to do with the design.
+
+## Acceptance criteria
+
+Exit 0 is necessary but not sufficient. Proceed to the next gate only if:
+
+| Gate | Proceed only if |
+|---|---|
+| 1 — CMA | exit 0; the output says **driver order** (not the weaker two-buffer preflight); real `CmaTotal`/`CmaFree` figures were read, not "unavailable" |
+| 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; binarize DMA transfer bound **≥ 63,078,400 B**; measured PL clock **≤ 50 MHz** (the image is constrained at 20 ns) |
+| 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes remaining; **zero** oracle mismatches |
+
+**What passing all three does and does not establish.** It validates the CMA
+budget, overlay/driver compatibility, and the full-size binarizer happy
+path. It does **not** validate `extract_candidates()`, template matching,
+any failure-recovery path, or end-to-end PDF detection — those are the
+per-stage validations below, and they are still owed. All run on the PYNQ board as
 root (`sudo`), from one directory containing:
 
 ```
@@ -152,18 +176,32 @@ that legal; this is its first full-size exercise) — and compares the output
 A bit-exact page is **not** by itself proof that the full envelope moved: a
 short S2MM leaves the tail of the destination holding whatever was there
 before, and the compare can walk straight over bytes the PL never wrote. So
-the gate also asserts, and prints, four things:
+the gate also asserts, and prints:
 
-- MM2S `transferred` == 63,078,400 B;
-- S2MM `transferred` == 63,078,400 B (both fail closed if PYNQ does not
-  expose the counts);
+- S2MM `transferred` == 63,078,400 B — a real measurement, since
+  `S2MM_LENGTH` is written by the engine with the bytes actually received;
+- MM2S `transferred` == 63,078,400 B — **corroboration, not measurement**:
+  `MM2S_LENGTH` is principally the length the driver programmed, so it
+  confirms the request rather than the movement. The outbound direction is
+  supported instead by the channel going idle with no error, `ap_done` from
+  the core, and `binarize_core` consuming exactly `img_w * img_h` beats by
+  construction — a short feed leaves it blocked in a stream read, so the
+  gate times out rather than passing;
 - no `0xAA` pre-fill sentinel survives anywhere in the page — that value
   cannot be a legitimate output, since the core emits only 0 or 255;
 - a 64-byte guard tail past the page is untouched, catching the opposite
   error of an S2MM that wrote too far.
 
-Only with all of those plus the bit-exact compare does "the full
-63,078,400-byte envelope moved" follow.
+Quote them in that order: the S2MM count, the sentinel scan and the guard
+are the direct evidence; the MM2S count corroborates.
+
+The page also carries a low-bit parity term, and that is load-bearing rather
+than decorative. Without it every 3×3 Gaussian weighted sum over this page
+is divisible by 16, the `>> 4` is exact, and a core that **rounded** would
+emit a byte-identical page — the gate would have "verified" truncation it
+could not distinguish from rounding. `--selftest` asserts a rounding oracle
+really does differ on this page (it differs at 4,233 of 534,006 sampled
+pixels).
 
 This is deliberately a different gate from gate 1: allocation success says
 nothing about a transfer completing, and a transfer completing says nothing
@@ -185,12 +223,25 @@ Expect the CPU-side verification to take a while on the Zynq PS (numpy over
 Exit 2 here means the overlay or a module could not be loaded — a file-copy
 problem, not a DMA fault.
 
-**If any gate fails mid-transfer, reload the overlay before retrying.** The
-driver refuses every further operation once a stage has left a transfer
-outstanding (it cannot know whether a DMA still holds a command against its
-CMA pages), and `close()` will retain rather than free those buffers. That
-is deliberate: there is no in-process recovery, and a new `PLPipeline`
-— which reloads the bitstream — is the reset.
+**If a gate fails after starting a DMA, reprogram the PL before any further
+CMA use — and do not settle for restarting the Jupyter kernel.** The driver
+refuses further work once a stage leaves a transfer outstanding, and
+`close()` retains rather than frees those buffers — but that protection is
+*in-process state*, and each gate runs as its own `sudo` process. When that
+process exits, its guard goes with it while the hardware keeps whatever
+state it had: an S2MM with an open command can still write into pages the
+kernel has since handed to someone else. Restarting the notebook kernel does
+not touch the PL at all.
+
+So after any gate that dies mid-transfer, in increasing order of severity:
+
+1. reprogram the PL — loading the overlay again (`Overlay(bitfile)`) resets
+   the DMA engines and the cores;
+2. if a transfer cannot be shown to have stopped, or the allocation
+   behaviour looks wrong afterwards, reboot;
+3. power-cycle if the board stops responding.
+
+Only then allocate CMA again.
 
 ## After the gates — per-stage driver validation
 

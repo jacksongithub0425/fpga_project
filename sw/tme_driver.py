@@ -723,12 +723,21 @@ class PLPipeline:
         extractor later rejects as global_invalid, and a threshold outside
         0..255 does not fit the core's register.
 
-        Three things are asserted about the transfer itself, because
+        Several things are asserted about the transfer itself, because
         "the visible bytes are correct" does not prove "the DMA moved what it
         was told to":
 
         - both channels' `transferred` counts must equal `img_w * img_h`
-          exactly (fail closed if PYNQ does not expose them);
+          exactly (fail closed if PYNQ does not expose them).  **These two
+          are not equally probative, and the difference matters when
+          quoting a result.** S2MM_LENGTH is written by the engine with the
+          number of bytes actually received, so that one is a measurement.
+          MM2S_LENGTH is principally the length the driver programmed, so
+          reading it back mostly confirms this code asked for the right
+          size — useful, but not evidence the bytes moved.  What supports
+          MM2S completion is the combination below: the channel reporting
+          idle with no error, `ap_done` from the core, and the core
+          consuming a fixed `img_w * img_h` input count by construction;
         - no `_S2MM_SENTINEL` byte may survive in the visible page — that
           would be a byte the S2MM never wrote, which a bit-exact compare
           cannot see if the sentinel happens to agree with the golden;
@@ -809,10 +818,11 @@ class PLPipeline:
         sent, recv = int(sent), int(recv)
         if sent != n or recv != n:
             raise RuntimeError(
-                f"binarize DMA moved MM2S={sent:,} B / S2MM={recv:,} B, "
-                f"expected {n:,} B each way. The visible pixels may still "
-                f"compare equal — a short transfer leaves the tail unwritten "
-                f"— so this is the check that catches it.")
+                f"binarize DMA length registers read MM2S={sent:,} B / "
+                f"S2MM={recv:,} B, expected {n:,} B each way. S2MM is the "
+                f"received-byte count and a short read there is conclusive; "
+                f"MM2S is essentially the programmed length, so a mismatch "
+                f"there means this driver asked for the wrong size.")
 
         guard = np.frombuffer(self._bin_buf, dtype=np.uint8,
                               count=_OUTPUT_GUARD_BYTES, offset=n)

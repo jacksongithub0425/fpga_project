@@ -24,14 +24,24 @@ envelope: a short S2MM leaves the tail of the destination holding whatever
 was there before, and a compare can pass over bytes the PL never wrote.  So
 the gate asserts, explicitly and in its own output:
 
-  - MM2S transferred == 63,078,400 B and S2MM transferred == 63,078,400 B
-    (fail closed if PYNQ does not expose the counts);
+  - S2MM transferred == 63,078,400 B.  S2MM_LENGTH is written by the engine
+    with the bytes actually received, so this one is a measurement of the
+    return path;
+  - MM2S transferred == 63,078,400 B.  Weaker by nature: MM2S_LENGTH is
+    principally the length the driver programmed, so this confirms the
+    request, not the movement.  What supports the outbound direction is the
+    combination of the channel going idle with no error, the core raising
+    ap_done, and binarize_core consuming exactly img_w*img_h beats by
+    construction — a short feed leaves it blocked in a stream read and the
+    gate times out instead of passing;
   - no pre-fill sentinel byte survives anywhere in the visible page — 0xAA
     cannot be a legitimate output, since binarize_core emits only 0 or 255;
   - a 64-byte guard tail past the page is untouched, catching the opposite
     error of an S2MM that wrote too much.
 
-Only with all four does "the full 63,078,400-byte envelope moved" follow.
+Together with the bit-exact compare those support "the full 63,078,400-byte
+envelope moved". Quote them that way round: the S2MM count, the sentinel
+scan and the guard are the direct evidence; the MM2S count is corroboration.
 
 EVERYTHING HERE WORKS IN ROW STRIPS, AND THAT IS NOT AN OPTIMISATION.  The
 board has 512 MB of DDR with no swap, of which the CMA pool (~128 MB by
@@ -63,9 +73,12 @@ a small image, with no PYNQ and no board.  Run it after touching anything in
 here: a strip boundary that silently drops or duplicates a row would make
 the gate pass on a broken transfer.
 
-The gray page is procedural (a coprime-stride ramp plus a 64-pixel
-checkerboard) so the binary result has structure in every region — an
-all-flat page would let a stuck data lane pass the compare.
+The gray page is procedural: a coprime-stride ramp, a 64-pixel checkerboard,
+and a low-bit parity term.  The first two give the binary result structure in
+every region, so a stuck data lane cannot hide the way it could behind an
+all-flat page.  The parity term is what makes the result sensitive to
+TRUNCATION specifically — see `fill_page_strip`, and `--selftest`, which
+fails if a rounding oracle would produce the same page.
 """
 
 from __future__ import annotations
@@ -97,10 +110,28 @@ def fill_page_strip(out: np.ndarray, y0: int) -> None:
     changes the value by -5 (mod 256) and a vertical step by -57, and the
     64-pixel checkerboard offsets its cells by +128 (mod 256), so a step that
     also crosses a cell boundary changes the value by -5+-128 = 123 or
-    -57+-128 = 71.  None of those is 0.  (The first draft halved the
-    checkerboard cells instead; `--selftest` caught that floor(v/2) can
-    collide with an unhalved neighbour, leaving flat pixel pairs on the one
-    page the gate uses to catch a stuck data lane.)
+    -57+-128 = 71.  The parity term below shifts each of those by +-1, and
+    none of the results is 0.  (The first draft halved the checkerboard cells
+    instead; `--selftest` caught that floor(v/2) can collide with an
+    unhalved neighbour, leaving flat pixel pairs on the one page the gate
+    uses to catch a stuck data lane.)
+
+    THE PARITY TERM IS WHAT MAKES THIS A TEST OF *TRUNCATION*.  Without it
+    every 3x3 Gaussian weighted sum over this page is divisible by 16, so
+    `sum >> 4` is exact and a core that ROUNDED (`(sum + 8) >> 4`) would
+    produce byte-identical output — the gate would have verified arithmetic
+    it cannot distinguish from the arithmetic it claims to check.  That is
+    not an accident of the constants: for a linear ramp the symmetric kernel
+    gives `16 * centre`, the mod-256 wrap subtracts multiples of 256, and
+    the checkerboard adds multiples of 128 — all divisible by 16.
+
+    Adding `(x + y) & 1` fixes it exactly.  Over the 3x3 window the parity
+    term contributes weight 8 whichever way the centre parity falls (the
+    four even-offset taps sum to 8 and the four odd-offset taps sum to 8),
+    so every weighted sum becomes `16k + 8`: the truncating and rounding
+    forms now differ by one grey level at EVERY pixel, and differ in the
+    binarised output wherever that level straddles the threshold.
+    `--selftest` asserts the two oracles really do disagree on this page.
     """
     h = out.shape[0]
     x = np.arange(IMG_W, dtype=np.uint32)
@@ -109,6 +140,7 @@ def fill_page_strip(out: np.ndarray, y0: int) -> None:
     strip = x[None, :] * np.uint32(251) + y[:, None] * np.uint32(199)
     mask = ((y[:, None] // 64) + (x[None, :] // 64)) % 2 == 0
     strip[mask] += np.uint32(128)
+    strip += (x[None, :] + y[:, None]) & np.uint32(1)     # breaks 16 | sum
     out[:] = (strip % 256).astype(np.uint8)
 
 
@@ -228,6 +260,32 @@ def selftest() -> int:
         failures += 1
         print("  FAIL: procedural page has vertically-equal neighbours")
 
+    # The page must actually be able to TELL TRUNCATION FROM ROUNDING.
+    # Without the parity term every weighted sum is a multiple of 16, the
+    # shift is exact, and a rounding core produces byte-identical output —
+    # so the gate would verify arithmetic it cannot distinguish. Assert the
+    # distinguisher exists rather than assuming the constants provide it.
+    gi = page[:, :2048].astype(np.int32)
+    wsum = (gi[:-2, :-2] + 2 * gi[:-2, 1:-1] + gi[:-2, 2:]
+            + 2 * gi[1:-1, :-2] + 4 * gi[1:-1, 1:-1] + 2 * gi[1:-1, 2:]
+            + gi[2:, :-2] + 2 * gi[2:, 1:-1] + gi[2:, 2:])
+    nondivisible = int(np.count_nonzero(wsum % 16))
+    if nondivisible != wsum.size:
+        failures += 1
+        print(f"  FAIL: {wsum.size - nondivisible}/{wsum.size} Gaussian "
+              f"weighted sums are divisible by 16 — truncation is exact "
+              f"there, so rounding is indistinguishable")
+    trunc = np.where((wsum >> 4) <= THRESHOLD, 255, 0)
+    rounded = np.where(((wsum + 8) >> 4) <= THRESHOLD, 255, 0)
+    differing = int(np.count_nonzero(trunc != rounded))
+    if differing == 0:
+        failures += 1
+        print("  FAIL: truncating and rounding oracles agree everywhere on "
+              "this page — the gate cannot detect a rounding core")
+    else:
+        print(f"  truncation is testable: the rounding oracle differs at "
+              f"{differing:,} of {wsum.size:,} sampled pixels")
+
     print(f"selftest: {'FAILED' if failures else 'PASSED'} "
           f"({failures} failure(s))")
     return 1 if failures else 0
@@ -309,17 +367,18 @@ def main() -> int:
             print("FAIL: the driver reported no transfer statistics, so the "
                   "full-envelope claim cannot be made")
             return 1
-        print(f"  DMA envelope: MM2S {stats['mm2s_bytes']:,} B, "
-              f"S2MM {stats['s2mm_bytes']:,} B, "
+        print(f"  DMA envelope: S2MM {stats['s2mm_bytes']:,} B received "
+              f"(measured), MM2S {stats['mm2s_bytes']:,} B programmed, "
               f"guard {stats['guard_bytes_checked']} B intact, "
               f"{stats['sentinel_bytes_remaining']} sentinel bytes left")
         envelope_errs = []
         if stats["mm2s_bytes"] != n:
             envelope_errs.append(
-                f"MM2S moved {stats['mm2s_bytes']:,} B, expected {n:,}")
+                f"MM2S length register reads {stats['mm2s_bytes']:,} B, "
+                f"expected {n:,} (the programmed length is wrong)")
         if stats["s2mm_bytes"] != n:
             envelope_errs.append(
-                f"S2MM moved {stats['s2mm_bytes']:,} B, expected {n:,}")
+                f"S2MM received {stats['s2mm_bytes']:,} B, expected {n:,}")
         if stats["guard_bytes_clobbered"]:
             envelope_errs.append(
                 f"{stats['guard_bytes_clobbered']} guard bytes past the page "
@@ -346,10 +405,11 @@ def main() -> int:
                   f"CPU={cpu_val}")
             return 1
 
-        print(f"PASS: {n:,} B moved each way (both counts asserted, guard "
-              f"intact, no unwritten bytes), output bit-exact against the "
-              f"truncating-Gaussian oracle ({elapsed:.2f} s wall for the PL "
-              f"round trip).")
+        print(f"PASS: {n:,} B received on S2MM, MM2S programmed to the "
+              f"same, core reported done with both channels idle and no "
+              f"error, guard intact, no unwritten bytes, and the output is "
+              f"bit-exact against the TRUNCATING Gaussian oracle "
+              f"({elapsed:.2f} s wall for the PL round trip).")
         return 0
     except Exception as exc:                           # noqa: BLE001
         print(f"FAIL: {type(exc).__name__}: {exc}")
