@@ -34,8 +34,10 @@ and it is invisible in any case whose patch starts at the origin.
 
 from __future__ import annotations
 
+import shutil
 import struct
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -371,6 +373,158 @@ def test_close_after_a_full_run_frees_everything():
     bufs = [getattr(pl, a) for a in d.PLPipeline._BUFFER_ATTRS]
     assert pl.close() is True, "a clean gate run must free every buffer"
     assert all(b.freed for b in bufs)
+
+
+# -- fixture verification -------------------------------------------------
+
+def _staged_fixtures(tmp: Path) -> Path:
+    """A flat copy of all eight vectors plus the hash record, as on the board."""
+    here = Path(__file__).resolve().parent
+    tmp.mkdir(parents=True, exist_ok=True)
+    shutil.copy(here / G._HASH_RECORD, tmp / G._HASH_RECORD)
+    for names, sub in ((G._BPE_FILES, "hls/integration"),
+                       (G._HW_FILES, "hls/template_match")):
+        src = G.resolve_dir(here, names, sub, "staging")
+        for n in names:
+            shutil.copy(src / n, tmp / n)
+    return tmp
+
+
+def test_fixtures_match_the_committed_record():
+    """The vectors in the repo are the ones GATE4_VECTORS.sha256 names."""
+    G.verify_fixtures(Path(__file__).resolve().parent, quiet=True)
+
+
+def test_a_mismatched_fixture_is_fatal():
+    """One flipped byte must stop the gate — in every vector, not just some.
+
+    Checked per file rather than once: a verification loop that skipped the
+    524 KB blob, or stopped at the first `.txt`, would still pass a single
+    tampering test aimed at whichever file it did read.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        base = _staged_fixtures(Path(td) / "vec")
+        for name in G._BPE_FILES + G._HW_FILES:
+            target = base / name
+            original = target.read_bytes()
+            target.write_bytes(bytes([original[0] ^ 0x01]) + original[1:])
+            try:
+                G.verify_fixtures(base, quiet=True)
+            except G.SetupError as exc:
+                assert name in str(exc), f"{name}: wrong file blamed: {exc}"
+            else:
+                raise AssertionError(f"a corrupted {name} was accepted")
+            finally:
+                target.write_bytes(original)
+        G.verify_fixtures(base, quiet=True)      # restored: passes again
+
+
+def test_a_missing_fixture_is_fatal():
+    """A vector that is not there must stop the gate, naming it."""
+    with tempfile.TemporaryDirectory() as td:
+        base = _staged_fixtures(Path(td) / "vec")
+        (base / "tb_tme_patches_hw.bin").unlink()
+        try:
+            G.verify_fixtures(base, quiet=True)
+        except G.SetupError as exc:
+            assert "tb_tme_patches_hw.bin" in str(exc), exc
+        else:
+            raise AssertionError("a missing vector was accepted")
+
+
+def test_a_missing_hash_record_is_fatal():
+    """Without the record there is no payload identity, so no run.
+
+    In a checkout `read_hash_record` legitimately falls back to the copy
+    beside the script, so this drives the board case directly: a directory
+    with no record, and a script directory that has been made to look like it
+    has none either.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        empty = Path(td) / "nothing"
+        empty.mkdir()
+        saved = G.__file__
+        try:
+            G.__file__ = str(empty / "board_gate_extract.py")
+            try:
+                G.read_hash_record(empty)
+            except G.SetupError as exc:
+                assert G._HASH_RECORD in str(exc), exc
+            else:
+                raise AssertionError("ran without a hash record")
+        finally:
+            G.__file__ = saved
+    # And the real record is still found from the checkout.
+    assert G.read_hash_record(Path(__file__).resolve().parent)
+
+
+def test_partially_staged_directory_is_fatal():
+    """Seven of eight staged must not silently read the eighth from the repo.
+
+    That would run the gate against a mixture of two payloads — exactly the
+    ambiguity the hash record exists to remove — and on a board where the
+    repo happens to be checked out it would look like a clean pass.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        base = _staged_fixtures(Path(td) / "vec")
+        (base / "tb_bpe_tme_patch.bin").unlink()
+        try:
+            G.verify_fixtures(base, quiet=True)
+        except G.SetupError as exc:
+            assert "mixture of two payloads" in str(exc), exc
+            assert "tb_bpe_tme_patch.bin" in str(exc), exc
+        else:
+            raise AssertionError("a partially staged directory was accepted")
+
+
+# -- unsafe teardown resets the PL ---------------------------------------
+
+def test_unsafe_teardown_resets_the_pl_before_the_process_exits():
+    """close() returning False must reprogram the PL from inside this process.
+
+    The window: retained buffers are strong references in
+    `tme_driver._RETAINED_BUFFERS`, which live only as long as the gate's own
+    `sudo` process. When it exits they are collected and the CMA pages go
+    back — possibly while an S2MM still has a command against them. The
+    notebook cannot help: by the time it reads the exit code the pages are
+    already released. So the reset happens here, while the buffers are still
+    held.
+    """
+    calls = []
+
+    class FakeOverlayModule:
+        def Overlay(self, bitfile):                       # noqa: N802
+            calls.append(bitfile)
+            return object()
+
+    fake = FakeOverlayModule()
+    saved = sys.modules.get("pynq")
+    sys.modules["pynq"] = fake
+    try:
+        assert G.reset_pl("three_stage_combined.bit") is True
+        assert calls == ["three_stage_combined.bit"], calls
+    finally:
+        if saved is None:
+            del sys.modules["pynq"]
+        else:
+            sys.modules["pynq"] = saved
+
+
+def test_a_failed_pl_reset_is_reported_not_swallowed():
+    """If the PL cannot be reprogrammed, that is the reboot case."""
+    class FailingOverlayModule:
+        def Overlay(self, bitfile):                       # noqa: N802
+            raise RuntimeError("no bitstream")
+
+    saved = sys.modules.get("pynq")
+    sys.modules["pynq"] = FailingOverlayModule()
+    try:
+        assert G.reset_pl("three_stage_combined.bit") is False
+    finally:
+        if saved is None:
+            del sys.modules["pynq"]
+        else:
+            sys.modules["pynq"] = saved
 
 
 def main() -> int:

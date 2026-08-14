@@ -1,0 +1,42 @@
+# SHA-256 of gate 4's fixtures — the eight deterministic vectors
+# sw/board_gate_extract.py runs against.  557,136 bytes total.
+#
+# WHY THESE ARE COMMITTED AND HASHED.  A board result means nothing unless it
+# can be tied to the exact bytes that produced it, and these vectors are
+# GENERATED — regenerating them on the board would let the gate agree with
+# whatever it had just made.  Same discipline as BUILD_INFO.txt for the
+# .bit/.hwh pair: the payload is pinned, and the gate refuses to run if the
+# copies it finds do not match this record.
+#
+# The generators are deterministic and self-checking (pe_tme_generate_golden
+# pins BPE_HASHES and BPE_CASES_SHA256; a regeneration that differs from this
+# file means an oracle changed, not that the files drifted).  Regenerate with:
+#     cd hls/integration    && python3 pe_tme_generate_golden.py
+#     cd hls/template_match && python3 tme_generate_golden.py
+#
+# The three tb_tme_*_hw.* files are byte-identical to the vectors that passed
+# 9/9 on silicon on 2026-08-07 (contract §8) — verified, not assumed.
+#
+# .gitattributes marks all eight `-text` so a Windows checkout cannot
+# EOL-normalise a manifest and invalidate its hash.
+#
+# Verify by hand with:  sha256sum -c GATE4_VECTORS.sha256   (from the dir
+# holding the copies; the paths below are repo-relative for provenance and
+# the basenames are what the gate looks for).
+#
+# tb_bpe_tme_cases.txt  (141 B) — three-stage manifest: 1 descriptor, 24x20 page, threshold 140
+ed90565eec56a4aa816d7ba12f64a146cabb95b58548254f304d65ba111a740b  hls/integration/tb_bpe_tme_cases.txt
+# tb_bpe_tme_gray.bin  (480 B) — 24x20 grayscale input to binarize_core
+ede44a0efa7757102f18bd583983d4b262a6e5f7141bd5a13302d8be555573b3  hls/integration/tb_bpe_tme_gray.bin
+# tb_bpe_tme_bin.bin  (480 B) — 480-byte compact binarizer golden
+118ac39fb5cfed72a7e024cddee9045ae43157710600e0772f91fe50bd829a57  hls/integration/tb_bpe_tme_bin.bin
+# tb_bpe_tme_patch.bin  (168 B) — 168-byte 14x12 extractor patch golden at (3,4)
+3a97be1698cea0fc1805683ccba6f2e62b4ed1742196023b561e7b9e5ba47c0d  hls/integration/tb_bpe_tme_patch.bin
+# tb_bpe_tme_templs.bin  (16 B) — literal 4x4 matcher template (the exact crop at local (4,1))
+f00dc88ec2407e1e83e7a0c43949506f46f526b586c2bcc7c2990c35b5d24f8f  hls/integration/tb_bpe_tme_templs.bin
+# tb_tme_cases_hw.txt  (683 B) — matcher hw manifest: the 9 cases that passed on silicon 2026-08-07
+378d4d6e3559b4afb1d1f22f7e618d3eb011c49f0b523226588a6ed7b6f6ad6e  hls/template_match/tb_tme_cases_hw.txt
+# tb_tme_patches_hw.bin  (524,520 B) — hw patch blob, 524,520 B (both 820x307 stress cases)
+5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53  hls/template_match/tb_tme_patches_hw.bin
+# tb_tme_templs_hw.bin  (30,648 B) — hw template blob, 30,648 B
+026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350  hls/template_match/tb_tme_templs_hw.bin

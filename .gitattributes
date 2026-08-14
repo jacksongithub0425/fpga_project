@@ -4,3 +4,10 @@
 *.hwh -text
 *.dcp -text
 vivado/three_stage_combined/board_bundle/** -text
+
+# Gate 4's fixtures, for the same reason: sw/GATE4_VECTORS.sha256 records
+# their SHA-256 and board_gate_extract.py refuses to run on a mismatch, so an
+# EOL-normalised manifest would fail the gate on Windows checkouts. The .txt
+# files are covered too — they are vectors, not prose.
+hls/integration/tb_bpe_tme_* -text
+hls/template_match/tb_tme_*_hw.* -text

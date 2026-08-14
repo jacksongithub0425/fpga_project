@@ -16,9 +16,9 @@ stop — you cannot walk past a bad payload or a failed gate by scrolling.
 - **Close any other notebook holding an overlay or CMA buffers.** Even at
   192 MiB, one stale kernel still holding a 60 MiB buffer fails gate 1 for a
   reason unrelated to the design.
-- **Gate 4 needs generated vectors that are not in the repository.** Build
-  them on the build machine and upload the eight files (cell 1 checks for
-  them and says exactly which are missing).
+- **Gate 4's eight fixtures are committed and hashed** (~0.56 MB), so cell 1
+  copies them straight out of the pinned checkout and verifies their SHA-256
+  before anything loads the overlay. Do not regenerate them on the board.
 
 ## Acceptance criteria
 
@@ -29,7 +29,7 @@ Exit 0 is necessary, not sufficient. Proceed only if:
 | 1 — CMA | exit 0; `CmaTotal` **≥ 192 MiB**; output says **driver order**, not the weaker two-buffer preflight; real `CmaTotal`/`CmaFree` values were read |
 | 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; transfer bound **≥ 63,078,400 B**; measured clock **≤ 50 MHz** |
 | 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes; **zero** oracle mismatches |
-| 4 — extractor + matcher | exit 0; **480/480** binary bytes; record `valid=1` at **(3,4)** **14×12**; **168 B** patch DMA; `sts_flags=0`/`rejected=0`/`processed=1`; **9/9** matcher cases incl. the **251,740 B** envelope |
+| 4 — extractor + matcher | exit 0; all **8 fixture hashes OK**; **480/480** binary bytes; record `valid=1` at **(3,4)** **14×12**; patch S2MM **received 168 B**; `sts_flags=0`/`rejected=0`/`processed=1`; **9/9** matcher cases, the **251,740 B** case programmed and completed |
 
 Passing all four validates CMA, overlay/driver compatibility, the full-size
 binarizer, and — on one small pinned page — the extractor, the matcher and
@@ -80,42 +80,66 @@ for f in ["three_stage_combined.bit", "three_stage_combined.hwh",
           "BUILD_INFO.txt"]:
     shutil.copy(bundle / f, WORK / f)
 
-# Gate 4's vectors are GENERATED and deliberately not committed, so they
-# cannot come from the checkout. Name the missing ones rather than letting
-# gate 4 discover them later: on the build machine run
-#   cd hls/integration    && python3 pe_tme_generate_golden.py
-#   cd hls/template_match && python3 tme_generate_golden.py
-# and upload the eight files into /home/xilinx/gates.
-VECTORS = ["tb_bpe_tme_cases.txt", "tb_bpe_tme_gray.bin", "tb_bpe_tme_bin.bin",
-           "tb_bpe_tme_patch.bin", "tb_bpe_tme_templs.bin",
-           "tb_tme_cases_hw.txt", "tb_tme_patches_hw.bin",
-           "tb_tme_templs_hw.bin"]
-absent = [f for f in VECTORS if not (WORK / f).is_file()]
-if absent:
-    print("GATE 4 VECTORS MISSING (gates 1-3 can still run):")
-    for f in absent:
-        print("   ", f)
+# Gate 4's eight fixtures come from the PINNED CHECKOUT, never regenerated
+# here: a vector regenerated on the board would make the gate agree with
+# whatever it had just produced. shutil.copy raises if one is absent, which
+# is what we want - a partial payload must not reach the fabric.
+shutil.copy(src / "GATE4_VECTORS.sha256", WORK / "GATE4_VECTORS.sha256")
+for f in ["tb_bpe_tme_cases.txt", "tb_bpe_tme_gray.bin", "tb_bpe_tme_bin.bin",
+          "tb_bpe_tme_patch.bin", "tb_bpe_tme_templs.bin"]:
+    shutil.copy(repo / "hls" / "integration" / f, WORK / f)
+for f in ["tb_tme_cases_hw.txt", "tb_tme_patches_hw.bin",
+          "tb_tme_templs_hw.bin"]:
+    shutil.copy(repo / "hls" / "template_match" / f, WORK / f)
 
-# The .bit/.hwh are the only things tying a board result to a build. Check
-# them before loading anything into the fabric.
-info = (WORK / "BUILD_INFO.txt").read_text()
+# The .bit/.hwh are the only things tying a board result to a build, and
+# gate 4's fixtures are the only things tying its verdict to exact bytes.
+# BOTH are checked here, before anything is loaded into the fabric.
 ok = True
+
+info = (WORK / "BUILD_INFO.txt").read_text()
 for key, fname in (("bit_sha256", "three_stage_combined.bit"),
                    ("hwh_sha256", "three_stage_combined.hwh")):
     want = re.search(rf"{key}=([0-9A-Fa-f]+)", info).group(1).lower()
     got = hashlib.sha256((WORK / fname).read_bytes()).hexdigest()
-    print(f"{fname}: {'OK' if got == want else 'MISMATCH'}")
+    print(f"{got}  {fname}  {'OK' if got == want else 'MISMATCH'}")
     ok &= got == want
+
+# Gate 4's fixtures, against the committed record. Printed in full: these
+# eight hashes are what a gate-4 result is quoted against.
+print()
+record = {}
+for line in (WORK / "GATE4_VECTORS.sha256").read_text().splitlines():
+    line = line.strip()
+    if line and not line.startswith("#"):
+        digest, _, path = line.partition("  ")
+        record[Path(path.strip()).name] = digest.lower()
+if len(record) != 8:
+    raise RuntimeError(f"the hash record lists {len(record)} files, expected 8")
+total = 0
+for fname, want in record.items():
+    blob = (WORK / fname).read_bytes()
+    got = hashlib.sha256(blob).hexdigest()
+    total += len(blob)
+    print(f"{got}  {fname}  ({len(blob):,} B)  "
+          f"{'OK' if got == want else 'MISMATCH'}")
+    ok &= got == want
+print(f"{len(record)} fixtures, {total:,} B")
+
 if not ok:
-    raise RuntimeError("artifact hash mismatch; STOP")
+    raise RuntimeError(
+        "payload hash mismatch; STOP. Do not load the overlay and do not "
+        "regenerate the vectors here - re-fetch them from the pinned commit.")
 
 print("\nPAYLOAD VERIFIED")
 print(subprocess.run(["ls", "-la", str(WORK)], capture_output=True,
                      text=True).stdout)
 ```
 
-If the repository is private and the clone fails, upload the nine files into
-`/home/xilinx/gates` by hand and re-run from the `info = ...` line.
+If the repository is private and the clone fails, upload the seven scripts,
+the three bundle artifacts and the nine gate-4 files (the record plus its
+eight vectors) into `/home/xilinx/gates` by hand and re-run from the
+`ok = True` line.
 
 ---
 
@@ -246,15 +270,37 @@ run_gate("GATE4", "board_gate_extract.py")
 Five phases on one pinned 24×20 page whose every intermediate byte is known
 in advance — 480 gray → 480 binary → a 168-byte 14×12 patch at (3,4) →
 matcher `+1.000000` at page (7,5) — followed by the matcher's own 9-case
-silicon manifest through **this** overlay, including the 251,740-byte
-maximum-envelope transfer.
+silicon manifest through **this** overlay.
 
 Expect seconds, not minutes: everything here is small except the two 820×307
 stress cases.
 
+**Two things to get right when writing up a PASS.**
+
+- It is the **first extractor run through `PLPipeline` in the combined
+  overlay**, not the first extractor run on silicon. Both cores already have
+  standalone silicon results; what is new is the two of them in one overlay
+  behind one driver.
+- The envelope case is **251,740 B programmed; the core completed and the
+  DMA became idle without error**. Both matcher channels are MM2S, so no
+  engine anywhere on that path counts received bytes — `MM2S_LENGTH` is
+  essentially the length the driver asked for. The gate prints it in exactly
+  those words; keep them.
+
 A phase that fails names itself and stops; the phases after it did not run,
-so do not report them as passing. Exit 2 means missing vectors or an overlay
-that would not load — an environment problem, not a gate failure.
+so do not report them as passing. Exit 2 means a missing or mismatched
+fixture, or an overlay that would not load — a payload or environment
+problem, and never evidence about the hardware.
+
+**Unsafe teardown is handled inside the gate.** If `close()` cannot prove a
+DMA halted, `board_gate_extract.py` reloads the overlay itself before
+returning, while the retained buffers are still referenced. It has to: those
+references live only as long as the gate's own `sudo` process, so by the time
+this notebook sees the exit code the CMA pages would already be back in the
+pool. You will see an `UNSAFE TEARDOWN` block followed by either a `PL reset`
+line — board recoverable, gate still failed — or `PL RESET FAILED`, which
+means **reboot before allocating CMA again**. The manual `Overlay(...)` step
+under gate 3 is still the right response to a gate that dies some other way.
 
 ---
 

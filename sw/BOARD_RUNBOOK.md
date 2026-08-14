@@ -46,7 +46,7 @@ Exit 0 is necessary but not sufficient. Proceed to the next gate only if:
 | 1 — CMA | exit 0; `CmaTotal` **≥ 192 MiB**; the output says **driver order** (not the weaker two-buffer preflight); real `CmaTotal`/`CmaFree` figures were read, not "unavailable" |
 | 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; binarize DMA transfer bound **≥ 63,078,400 B**; measured PL clock **≤ 50 MHz** (the image is constrained at 20 ns) |
 | 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes remaining; **zero** oracle mismatches |
-| 4 — extractor + matcher | exit 0; **480/480** binary bytes; record `valid=1` at **(3,4)**, **14×12**; **168 B** patch DMA; `sts_flags=0`, `rejected=0`, `processed=1`; **168/168** patch bytes; **9/9** matcher cases incl. the **251,740 B** envelope; teardown freed the buffers |
+| 4 — extractor + matcher | exit 0; all **8 fixture hashes OK**; **480/480** binary bytes; record `valid=1` at **(3,4)**, **14×12**; patch S2MM **received 168 B**; `sts_flags=0`, `rejected=0`, `processed=1`; **168/168** patch bytes; **9/9** matcher cases, the **251,740 B** case programmed and completed; teardown freed the buffers |
 
 **What passing all four does and does not establish.** It validates the CMA
 budget, overlay/driver compatibility, the full-size binarizer, and — on one
@@ -68,16 +68,30 @@ tme_driver.py
 tme_standalone_bringup.py
 binarize_dma_checks.py
 
-# generated vectors for gate 4 — none of these are committed
-tb_bpe_tme_cases.txt          # hls/integration/pe_tme_generate_golden.py
+# gate 4's fixtures — COMMITTED, ~0.56 MB; copy, do not regenerate
+GATE4_VECTORS.sha256          # the hash record; gate 4 refuses to run without it
+tb_bpe_tme_cases.txt          # from hls/integration/
 tb_bpe_tme_gray.bin
 tb_bpe_tme_bin.bin
 tb_bpe_tme_patch.bin
 tb_bpe_tme_templs.bin
-tb_tme_cases_hw.txt           # hls/template_match/tme_generate_golden.py
+tb_tme_cases_hw.txt           # from hls/template_match/
 tb_tme_patches_hw.bin
 tb_tme_templs_hw.bin
 ```
+
+**Copy gate 4's eight fixtures from the pinned checkout; do not regenerate
+them on the board.** They are committed precisely so that a board result can
+be tied to exact bytes — a vector regenerated on the board would make the
+gate agree with whatever it had just produced. `board_gate_extract.py`
+SHA-256s all eight against `GATE4_VECTORS.sha256` **before it loads the
+overlay**, prints each hash, and a missing or mismatched file is fatal
+(exit 2). A directory holding some but not all of a group is fatal too,
+rather than falling back to the repository for the rest: that would run the
+gate against a mixture of two payloads.
+
+The three `tb_tme_*_hw.*` files are byte-identical to the vectors that
+passed 9/9 on silicon on 2026-08-07 — verified, not assumed.
 
 `BUILD_INFO.txt` is part of the payload, not documentation left behind: it is
 the only thing on the board that ties a result to a specific build, and the
@@ -288,9 +302,13 @@ Only then allocate CMA again.
 sudo python3 board_gate_extract.py --overlay three_stage_combined.bit
 ```
 
-The first execution of `patch_extract_core` on silicon in any form, and the
-first execution of `tme_top_0` in **this** overlay — the 9/9 matcher result
-of 2026-08-07 was a different image with one core in it.
+**Quote this one precisely.** Both cores already have silicon results in
+their own standalone images — `patch_extract_core` from its bring-up, and
+`template_match_core` at 9/9 on 2026-08-07. What has never run is either of
+them **in `three_stage_combined`, driven by `PLPipeline`**: three cores
+sharing HP0/HP1/HP2, five DMAs, one Python driver sequencing all of it. So a
+PASS here is the **first extractor run through `PLPipeline` in the combined
+overlay**, not the first extractor run on silicon.
 
 **A pinned 24×20 golden, deliberately not a real PDF.** A corpus page yields
 a detection count, and a count can be right for the wrong reasons: a patch
@@ -313,9 +331,19 @@ Five phases, each PASS gating the next:
 |---|---|
 | A binarize | all **480** binary bytes byte-exact; 480 B each way; guard intact; no sentinel survives |
 | B extract | record `valid=1`, origin **(3,4)**, patch **14×12**; `sts_flags=0`, `sts_rejected=0`, `sts_processed=1`; the patch S2MM moved **exactly 168 B** (TLAST framing); all **168** pixels byte-exact |
-| C matcher | the 9-case `hw` manifest through `tme_top_0`, score **and** exact location on every case, including the **251,740 B** maximum-envelope case (§3.1's only test), plus a re-invocation afterwards to catch stale `static` BRAM |
+| C matcher | the 9-case `hw` manifest through `tme_top_0`, score **and** exact location on every case, including the **251,740 B** maximum-envelope case (§3.1's only exercise), plus a re-invocation afterwards to catch stale `static` BRAM |
 | D reduce | `match_candidate()`: absolute page boxes, the strict-`>` tie going to the **first** trial, the per-kind argmax — each with a control that fails if the rule were reversed |
 | E chain | phases A→B→D again on the patch the **PL** produced, required to give bit-identical results to the golden-fed run |
+
+**How to state the envelope case.** Both matcher channels are MM2S, so
+nothing on that path counts *received* bytes — `MM2S_LENGTH` is essentially
+the length the driver programmed. The supportable claim is "**251,740 B
+programmed; the core completed and the DMA became idle without error**", and
+that is what the gate prints. It is not nothing: `tme_top` reads exactly
+`patch_w * patch_h` beats by construction, so a short feed leaves it blocked
+in a stream read and the gate times out instead of passing, and the score and
+exact location come back correct, which a truncated patch would not produce.
+But it is not a measured byte count, and must not be written up as one.
 
 Two templates are used in phases D and E, both exact crops of the patch, so
 both score exactly 1.0 at different locations. That is what makes the tie
@@ -342,18 +370,31 @@ self-test is what makes `extract_candidates()`'s pre-dispatch rejection safe
 to rely on: a rejected candidate emits no pixels, so a descriptor the PL
 would reject would strand the patch receive armed for it.
 
-Regenerate the vectors first — they are generated files and none are
-committed:
-
-```
-cd hls/integration    && python3 pe_tme_generate_golden.py
-cd hls/template_match && python3 tme_generate_golden.py
-```
+The vectors are committed, so there is nothing to regenerate. If you ever
+do regenerate them (an oracle changed), `GATE4_VECTORS.sha256` must be
+regenerated with them and the change explained — a silent hash update is how
+a gate stops testing what it says it tests.
 
 - FAIL (exit 1) → the hardware or the driver is wrong. The phase that failed
   is named; the phases after it did not run and did not pass.
-- exit 2 → missing vectors, missing module, or an overlay that would not
-  load. An environment problem, not a gate failure.
+- exit 2 → a missing or mismatched fixture, a missing module, or an overlay
+  that would not load. An environment or payload problem, not a gate failure
+  — and never evidence about the hardware.
+
+### If gate 4 tears down unsafely
+
+`board_gate_extract.py` **reprograms the PL itself** when `close()` cannot
+prove a DMA halted, and it does so before returning. That is not tidiness:
+the retained buffers are strong references inside the gate's own `sudo`
+process, so the moment it exits they are collected and the CMA pages go back
+to the pool — possibly while an S2MM still has a command against them. By
+the time you read the exit code, the pages you were going to protect are
+already released. The reset happens while they are still held.
+
+The gate still fails (an unsafe teardown is a failure), but the board is
+recoverable and the next gate can run after re-checking gate 1. If the reset
+itself fails, the gate says so and the answer is a **reboot** — that is the
+one state where the pages are released with the fabric in an unknown state.
 
 ## After the gates — integration
 

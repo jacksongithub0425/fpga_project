@@ -6,11 +6,16 @@ RUN THIS ON THE BOARD, after board_gate_full_dma.py PASSES:
     sudo python3 board_gate_extract.py --overlay three_stage_combined.bit
 
 Gate 3 validated `binarize_page()` at full size.  This is the gate for
-everything after it: `extract_candidates()` has never run on silicon in any
-form, and `tme_top_0` has only ever run in a DIFFERENT image — the standalone
-template_match bring-up (9/9, 2026-08-07, contract §8).  Neither result says
-anything about the two of them in `three_stage_combined`, sharing HP ports and
-sequenced by one driver.
+everything after it.
+
+BE PRECISE ABOUT WHAT IS NEW HERE.  Both cores have run on silicon before, in
+their own standalone images: `patch_extract_core` in its own bring-up, and
+`template_match_core` at 9/9 on 2026-08-07 (contract §8).  What has never run
+is EITHER of them **in `three_stage_combined`, driven by `PLPipeline`** —
+three cores sharing HP0/HP1/HP2, five DMAs, and one Python driver sequencing
+all of it.  So this is the first extractor run through `PLPipeline` in the
+combined overlay, not the first extractor run on silicon, and the results
+should be quoted that way.
 
 WHY A PINNED 24x20 GOLDEN AND NOT A REAL PDF.  A page from the corpus gives a
 detection count, and a detection count is a number that can be right for the
@@ -35,14 +40,27 @@ WHAT EACH PHASE ADDS, and why it is a separate phase:
   A  binarize the 24x20 page.  Small, but not redundant with gate 3: the
      compact-stride path at a size where every one of the 480 bytes is
      compared individually, and the input the rest of the gate depends on.
-  B  extract one candidate.  The first execution of `patch_extract_core` on
-     silicon.  Metadata geometry, the §7.1.1 status registers, the patch
-     length as MEASURED BY THE DMA, and all 168 pixels.
+  B  extract one candidate — the first run of `patch_extract_core` through
+     `PLPipeline` in this overlay.  Metadata geometry, the §7.1.1 status
+     registers, the patch length as MEASURED BY THE S2MM (this one really is
+     a measurement: S2MM_LENGTH is written by the engine with the bytes it
+     received), and all 168 pixels.
   C  the matcher's own 9-case `hw` manifest, through THIS overlay's
      `axi_dma_patch`/`axi_dma_templ` and through `PLPipeline.match_template`
      rather than the standalone script — including the 251,740-byte
-     maximum-envelope case, which is the only test of §3.1's single-transfer
+     maximum-envelope case, the only exercise of §3.1's single-transfer
      bound, and a re-invocation after it to catch stale `static` BRAM.
+
+     QUOTE THE ENVELOPE CASE CAREFULLY.  Both matcher channels are MM2S, so
+     there is no received-byte count anywhere on this path: MM2S_LENGTH is
+     principally the length the driver PROGRAMMED, not a measurement of what
+     moved.  What the gate can say is "251,740 B programmed; the core
+     completed and the DMA became idle without error" — and that is the
+     phrasing it prints.  The supporting evidence is indirect but real:
+     `tme_top` reads exactly patch_w*patch_h beats by construction, so a
+     short feed leaves it blocked in a stream read and the gate TIMES OUT
+     instead of passing; and the score and exact location come back correct,
+     which a truncated patch would not produce.
   D  `match_candidate()`: the PS-side reduction that has no hardware at all
      since class_score_core left the MVP (§10 items 4-5).  Absolute box
      construction, the strict-`>` tie rule over the frozen trial order, and
@@ -62,16 +80,23 @@ Needs on the board, same directory:
 
     three_stage_combined.bit / .hwh / BUILD_INFO.txt
     tme_driver.py, tme_standalone_bringup.py
+    GATE4_VECTORS.sha256          -- the fixture hash record
     tb_bpe_tme_{gray,bin,patch,templs}.bin, tb_bpe_tme_cases.txt
-        -- from hls/integration/, run pe_tme_generate_golden.py
+        -- committed at hls/integration/
     tb_tme_cases_hw.txt, tb_tme_patches_hw.bin, tb_tme_templs_hw.bin
-        -- from hls/template_match/, run tme_generate_golden.py
+        -- committed at hls/template_match/
 
-None of those vectors are committed (they are generated files); regenerate
-and copy them.  `--selftest` checks every one of this gate's pinned
-expectations against the golden files with no PYNQ and no board, including
-that the descriptor it will dispatch is one `patch_extract_core` accepts.
-Run it after touching this file.
+ALL EIGHT VECTORS ARE COMMITTED AND HASHED (~0.56 MB).  Copy them from the
+pinned checkout; do NOT regenerate them on the board, because a regenerated
+vector would make this gate agree with whatever it had just produced.  Every
+one is SHA-256 checked against `GATE4_VECTORS.sha256` BEFORE the overlay is
+loaded, and a missing or mismatched file is fatal (exit 2) — a wrong vector
+says nothing about the hardware, so running on would be worse than stopping.
+
+`--selftest` checks every one of this gate's pinned expectations against the
+golden files with no PYNQ and no board, including that the descriptor it will
+dispatch is one `patch_extract_core` accepts.  Run it after touching this
+file.
 
 Exit status: 0 = every phase passed, 1 = a phase FAILED (the hardware or the
 driver is wrong), 2 = could not run (missing vectors, missing module, no
@@ -81,6 +106,7 @@ PYNQ, unloadable overlay).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
 import time
 from pathlib import Path
@@ -134,6 +160,11 @@ _BPE_FILES = ("tb_bpe_tme_cases.txt", "tb_bpe_tme_gray.bin",
               "tb_bpe_tme_bin.bin", "tb_bpe_tme_patch.bin",
               "tb_bpe_tme_templs.bin")
 
+_HW_FILES = ("tb_tme_cases_hw.txt", "tb_tme_patches_hw.bin",
+             "tb_tme_templs_hw.bin")
+
+_HASH_RECORD = "GATE4_VECTORS.sha256"
+
 
 class GateError(Exception):
     """A phase failed.  Distinct from an environment problem (exit 2)."""
@@ -164,19 +195,114 @@ def resolve_dir(data_dir: Path, files, fallback: str, what: str) -> Path:
     On the board everything is copied flat into one directory, which is what
     `--data-dir` names.  In a checkout the vectors stay where their generators
     put them, and making `--selftest` runnable there without copying anything
-    is worth the six lines: a self-test that needs a manual staging step is a
+    is worth the few lines: a self-test that needs a manual staging step is a
     self-test that gets skipped.
+
+    **The fallback is all-or-nothing, and a PARTIALLY staged directory is
+    fatal rather than fallback-eligible.**  A directory holding some of a
+    group but not all of it is someone who meant to stage there and did not
+    finish — copied seven of the eight, or lost one to a failed transfer.
+    Quietly reading the rest from the repository would run the gate against a
+    mixture of two payloads, which is precisely the "which bytes actually
+    ran" ambiguity the SHA-256 record exists to remove.
     """
-    if all((data_dir / f).is_file() for f in files):
+    present = [f for f in files if (data_dir / f).is_file()]
+    if len(present) == len(files):
         return data_dir
+    if present:
+        missing = [f for f in files if f not in present]
+        raise SetupError(
+            f"{what}: {data_dir} holds {len(present)} of {len(files)} files "
+            f"but is missing {', '.join(missing)}. Refusing to fall back to "
+            f"the repository copies for the rest — that would run this gate "
+            f"against a mixture of two payloads. Copy the missing files in, "
+            f"or empty the directory to use the in-repo vectors.")
     alt = Path(__file__).resolve().parent.parent / fallback
     if all((alt / f).is_file() for f in files):
         return alt
-    missing = [f for f in files if not (data_dir / f).is_file()]
     raise SetupError(
-        f"{what}: missing {', '.join(missing)} in {data_dir} (and not in "
-        f"{alt} either). These are generated files and are not committed — "
-        f"regenerate them and copy them to the board.")
+        f"{what}: none of {', '.join(files)} are in {data_dir}, and {alt} "
+        f"does not hold a complete set either. All eight gate-4 vectors are "
+        f"committed — copy them from the pinned checkout.")
+
+
+def read_hash_record(data_dir: Path) -> dict:
+    """Parse GATE4_VECTORS.sha256 into {basename: sha256}.
+
+    Keyed by basename because the record carries repo-relative paths (which
+    say where each vector came from) while the board holds every file flat in
+    one directory.
+    """
+    for cand in (data_dir / _HASH_RECORD,
+                 Path(__file__).resolve().parent / _HASH_RECORD):
+        if cand.is_file():
+            want = {}
+            for line in cand.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                digest, _, path = line.partition("  ")
+                if len(digest) != 64 or not path:
+                    raise SetupError(f"{cand}: malformed line {line!r}")
+                want[Path(path.strip()).name] = digest.lower()
+            if not want:
+                raise SetupError(f"{cand} lists no hashes")
+            return want
+    raise SetupError(
+        f"{_HASH_RECORD} not found in {data_dir} or beside this script. It is "
+        f"committed at sw/{_HASH_RECORD}; copy it to the board with the "
+        f"vectors. Without it the vectors cannot be tied to a known payload "
+        f"and this gate will not run.")
+
+
+def verify_fixtures(data_dir: Path, quiet: bool = False) -> None:
+    """Hash every vector this gate will read, against the committed record.
+
+    FATAL on a missing file and FATAL on a mismatch, and called before the
+    overlay is loaded — the whole point is that nothing touches the fabric
+    until the payload is known to be the one the gate was written against.
+
+    A mismatch raises SetupError (exit 2, "could not run") rather than a gate
+    failure: a wrong vector tells you nothing about the hardware, and
+    recording it as a hardware result would be worse than not running.
+    """
+    want = read_hash_record(data_dir)
+    bpe = resolve_dir(data_dir, _BPE_FILES, "hls/integration",
+                      "three-stage golden (pe_tme_generate_golden.py)")
+    hw = resolve_dir(data_dir, _HW_FILES, "hls/template_match",
+                     "matcher hw manifest (tme_generate_golden.py)")
+
+    found = [(n, bpe / n) for n in _BPE_FILES] + [(n, hw / n) for n in _HW_FILES]
+    unknown = [n for n, _ in found if n not in want]
+    if unknown:
+        raise SetupError(
+            f"{_HASH_RECORD} has no entry for {', '.join(unknown)} — the "
+            f"record and this gate's file list disagree, so the payload "
+            f"cannot be verified.")
+
+    if not quiet:
+        print(f"--- fixtures ({_HASH_RECORD}) ---")
+    bad, total = [], 0
+    for name, path in found:
+        raw = path.read_bytes()
+        got = hashlib.sha256(raw).hexdigest()
+        total += len(raw)
+        ok = got == want[name]
+        if not quiet:
+            print(f"  [{'OK  ' if ok else 'BAD '}] {name:<24} "
+                  f"{len(raw):>9,} B  {got}")
+        if not ok:
+            bad.append(f"{name}: got {got}, record says {want[name]}")
+    if bad:
+        raise SetupError(
+            "fixture SHA-256 mismatch — the vectors on this machine are NOT "
+            "the ones this gate was written against:\n    "
+            + "\n    ".join(bad)
+            + f"\n  Re-copy them from the pinned checkout. Do not regenerate "
+              f"them here: a regenerated vector would make the gate agree "
+              f"with whatever it had just produced.")
+    if not quiet:
+        print(f"  {len(found)} fixtures verified, {total:,} B total")
 
 
 def load_bpe_golden(data_dir: Path) -> dict:
@@ -384,10 +510,6 @@ def first_mismatch(got: np.ndarray, want: np.ndarray) -> str:
 # Phases
 # ---------------------------------------------------------------------------
 
-_HW_FILES = ("tb_tme_cases_hw.txt", "tb_tme_patches_hw.bin",
-             "tb_tme_templs_hw.bin")
-
-
 def load_hw_manifest(data_dir: Path):
     """The matcher's 9-case silicon manifest, with the same directory rule."""
     import tme_standalone_bringup as B
@@ -483,7 +605,7 @@ def phase_c_matcher_suite(pl, data_dir: Path, rep: Report) -> None:
                 str(len(cases)))
     biggest = max(c.patch_bytes for c in cases)
     rep.require(biggest == 251_740,
-                "the maximum-envelope case moves 251,740 B",
+                "the maximum-envelope case programs a 251,740 B transfer",
                 f"{biggest:,} B")
 
     def run(c):
@@ -509,8 +631,21 @@ def phase_c_matcher_suite(pl, data_dir: Path, rep: Report) -> None:
     c = cases[0]
     score, x, y, _ = run(c)
     rep.require(abs(score - c.score) <= SCORE_TOL and (x, y) == (c.x, c.y),
-                f"re-invocation of {c.tag} after {biggest:,} B",
+                f"re-invocation of {c.tag} after the {biggest:,} B case",
                 f"dut {score:+.6f} @({x},{y}) — stale BRAM would show here")
+
+    # State the envelope result in the only terms the evidence supports.
+    # Both matcher channels are MM2S, so nothing on this path counts RECEIVED
+    # bytes: MM2S_LENGTH is essentially the length the driver programmed.
+    # `match_template` did wait for ap_done and for both channels to go idle
+    # with no error, and `tme_top` consumes exactly patch_w*patch_h beats by
+    # construction — a short feed blocks it in a stream read and this gate
+    # times out rather than passing — so the claim below is supported without
+    # overstating what was measured.
+    print(f"\n  §3.1: {biggest:,} B programmed as a single MM2S transfer; "
+          f"the core completed (ap_done) and both DMA channels became idle "
+          f"without error. NOT a received-byte measurement — both matcher "
+          f"channels are MM2S, so no engine wrote a received count.")
 
 
 def phase_d_match_candidate(pl, g: dict, rep: Report,
@@ -626,6 +761,7 @@ def selftest(data_dir: Path) -> int:
     print("board_gate_extract self-test (no PYNQ, no board)")
     rep = Report()
     try:
+        verify_fixtures(data_dir)
         g = load_bpe_golden(data_dir)
     except SetupError as exc:
         print(f"CANNOT RUN: {exc}")
@@ -697,6 +833,62 @@ def selftest(data_dir: Path) -> int:
 
 # ---------------------------------------------------------------------------
 
+def reset_pl(bitfile: str) -> bool:
+    """Reprogram the PL from inside THIS process, after an unsafe teardown.
+
+    This has to happen here and not in the operator's notebook, and the reason
+    is a lifetime mismatch that the runbook's advice cannot cover.
+
+    When `close()` cannot prove a DMA halted it retains the buffers — but
+    retention is only a strong reference in `tme_driver._RETAINED_BUFFERS`,
+    and this gate runs as its own `sudo` process.  The moment that process
+    exits, the references go with it, `PynqBuffer.__del__` runs, and the CMA
+    pages go back to the pool while an S2MM may still have an open command
+    against them.  The notebook never gets a chance to intervene: by the time
+    it sees a non-zero exit code, the pages it was going to protect have
+    already been handed back.
+
+    So the window is closed from the inside, in this order:
+
+      1. `close()` has retained the buffers — they are still referenced, and
+         still allocated, at this point;
+      2. reload the overlay, which resets the DMA engines and the cores, so
+         no engine has a command against those pages any more;
+      3. only then let the process exit and the pages go back.
+
+    Returns True if the PL was reprogrammed.  A failure here is the one state
+    that genuinely needs a reboot, and it says so — loudly, because after it
+    the pages WILL be released on exit with the fabric in an unknown state.
+    """
+    print("\n" + "!" * 72)
+    print("UNSAFE TEARDOWN: a DMA could not be proved halted, or a buffer "
+          "would not free.")
+    print("The retained references live only as long as THIS process, so "
+          "resetting the PL is done")
+    print("here rather than left to the caller — by the time the caller sees "
+          "the exit code, the")
+    print("pages are already back in the pool.")
+    try:
+        from pynq import Overlay
+        Overlay(bitfile)
+    except Exception as exc:                               # noqa: BLE001
+        print(f"\nPL RESET FAILED: {type(exc).__name__}: {exc}")
+        print("The fabric is in an UNKNOWN state and this process is about "
+              "to release its CMA pages.")
+        print("REBOOT THE BOARD before allocating CMA again. Do not run the "
+              "next gate.")
+        print("!" * 72)
+        return False
+    print(f"\nPL reset: reloaded {bitfile}. The DMA engines and cores are "
+          f"back in their power-on state,")
+    print("so the retained pages are no longer targeted by any command and "
+          "are safe to release.")
+    print("The gate still FAILS — an unsafe teardown is a failure — but the "
+          "board is recoverable.")
+    print("!" * 72)
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--overlay", default="three_stage_combined.bit",
@@ -713,10 +905,16 @@ def main() -> int:
     if args.selftest:
         return selftest(data_dir)
 
+    # Payload first, and before anything touches the fabric: every vector is
+    # hashed against the committed record, and a missing or mismatched file
+    # stops the run. Deliberately ahead of the overlay load — a gate that
+    # programmed the PL and only then discovered it had the wrong vectors
+    # would have to be re-run from a clean board anyway.
     try:
+        verify_fixtures(data_dir)
         g = load_bpe_golden(data_dir)
     except SetupError as exc:
-        print(f"CANNOT RUN: {exc}")
+        print(f"\nCANNOT RUN: {exc}")
         return 2
 
     drift = check_manifest(g)
@@ -786,10 +984,9 @@ def main() -> int:
         # left the board in a state the next gate can trust.
         freed = pl.close()
         if not freed:
-            print("\nTEARDOWN: buffers were RETAINED — a DMA could not be "
-                  "proved halted, or a free failed. Reload the overlay "
-                  "before running anything else that allocates CMA.")
             status = status or 1
+            if not reset_pl(args.overlay):
+                status = 2 if status == 2 else 1
 
     print("\n" + "=" * 72)
     if status == 0 and not rep.failures:
@@ -797,7 +994,11 @@ def main() -> int:
               f"{PAGE_BYTES} gray -> {PAGE_BYTES} binary -> "
               f"{PATCH_BYTES} patch bytes at ({PATCH_X0},{PATCH_Y0}) -> "
               f"matcher +1.000000 at page {ALPHA_PAGE}; 9/9 hw cases through "
-              f"the combined overlay including the 251,740 B envelope")
+              f"PLPipeline in the combined overlay, the 251,740 B envelope "
+              f"case programmed and completed without error")
+        print("Quote it as the first extractor run through PLPipeline in the "
+              "combined overlay — both cores have silicon results of their "
+              "own in standalone images.")
         return 0
     print(f"EXTRACTOR GATE FAILED ({len(rep.failures)} of {rep.checks} "
           f"checks): " + "; ".join(rep.failures[:6])

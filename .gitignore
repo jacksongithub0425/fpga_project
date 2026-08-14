@@ -27,6 +27,24 @@ hls/integration/pe_tme_seam/
 # Deterministic integration manifests
 hls/integration/tb_*_tme_cases.txt
 
+# EXCEPTION: gate 4's eight fixtures ARE committed (~0.56 MB total).
+# board_gate_extract.py is the extractor's board gate and it is worthless
+# without the exact bytes it was written against: regenerating them on the
+# board would make the gate agree with whatever it had just produced, and a
+# result that cannot be tied to specific bytes is not a result. They are
+# deterministic (the generators self-check against pinned SHA-256) and
+# derived from nothing confidential. Their hashes live in
+# sw/GATE4_VECTORS.sha256 and the gate refuses to run on a mismatch.
+# Everything else generated stays ignored.
+!hls/integration/tb_bpe_tme_cases.txt
+!hls/integration/tb_bpe_tme_gray.bin
+!hls/integration/tb_bpe_tme_bin.bin
+!hls/integration/tb_bpe_tme_patch.bin
+!hls/integration/tb_bpe_tme_templs.bin
+!hls/template_match/tb_tme_cases_hw.txt
+!hls/template_match/tb_tme_patches_hw.bin
+!hls/template_match/tb_tme_templs_hw.bin
+
 # Confidential-derived detector output. The per-page detection dumps carry
 # pin labels read off the drawings; only the aggregate manifest and its
 # provenance file may be committed (see sw/cpu_baseline_snapshot.py, which
