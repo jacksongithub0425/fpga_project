@@ -310,6 +310,16 @@ sharing HP0/HP1/HP2, five DMAs, one Python driver sequencing all of it. So a
 PASS here is the **first extractor run through `PLPipeline` in the combined
 overlay**, not the first extractor run on silicon.
 
+**And it is a smoke gate, not a qualification.** One extractor candidate plus
+the nine matcher cases. Three things a real page needs are NOT covered here:
+multi-candidate rearming, TLAST across a batch rather than on a single
+transfer, and a per-kind argmax that has to choose between kinds with
+*different* scores — phase D splits two kinds, but both score exactly 1.0, so
+only the tie rule is under test. Those are the next protocol tests, and they
+come before the strict 36-page PL-backend comparison, not after it. A gate 4
+PASS says the combined overlay works once end to end; it does not say the PL
+backend is ready to be compared against the CPU baseline.
+
 **A pinned 24×20 golden, deliberately not a real PDF.** A corpus page yields
 a detection count, and a count can be right for the wrong reasons: a patch
 clipped one pixel short, or a location reported in patch instead of page
@@ -415,11 +425,23 @@ banner and reboot.
 
 ## After the gates — integration
 
-Only after gate 4: connect `detect_page()` one stage at a time behind
-**explicit** backends (`cpu` / `pl-binarize` / `pl-extract` / `pl-all`), with
-no silent fallback — a PL failure must fail the run, not quietly hand the
-work to the CPU. Then the strict 36-page comparison against the retained
-baseline:
+Gate 4 is not the last step before the 36-page comparison. Two protocol
+tests come first, because both are things gate 4's single candidate cannot
+reach and both would show up in a 36-page run as an unexplained digest
+mismatch rather than as the protocol bug they are:
+
+1. **Multi-candidate rearming and TLAST across a batch** — several
+   descriptors dispatched together, each patch framed correctly, the receive
+   rearmed between them, and a rejected candidate in the middle emitting no
+   pixels without stranding the next one.
+2. **A per-kind argmax with kinds that score differently** — gate 4's two
+   kinds both score exactly 1.0, so the reduction is only ever asked to apply
+   the tie rule, never to actually pick a winner on score.
+
+Then connect `detect_page()` one stage at a time behind **explicit** backends
+(`cpu` / `pl-binarize` / `pl-extract` / `pl-all`), with no silent fallback — a
+PL failure must fail the run, not quietly hand the work to the CPU. Only then
+the strict 36-page comparison against the retained baseline:
 
 ```
 python3 cpu_baseline_snapshot.py compare "../../sample/*" \

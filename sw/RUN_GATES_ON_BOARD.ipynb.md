@@ -46,15 +46,21 @@ from pathlib import Path
 
 WORK = Path("/home/xilinx/gates")
 REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
-# Pinned. This commit is the first that carries gate 4's fixtures IN THE
-# REPOSITORY (hls/integration/ and hls/template_match/) with their SHA-256
-# record, so the copies below come from the checkout rather than by hand.
-# It also resets the PL from inside the gate process on an unsafe teardown.
-# Earlier: c7a39e0 has gate 4 but no committed vectors; 6c19cbb and before
-# have a close() that retains every buffer after a clean run and no extractor
-# gate at all; 01f6cad and before have a gate 3 that cannot distinguish a
-# truncating core from a rounding one.
-PIN = "36298b9eab230fb4e9e84eb4fb1da174ea482a8f"
+# Pinned, and this is the ONLY authenticated way to get the scripts onto the
+# board: the .bit/.hwh and the eight fixtures are hash-checked below, but
+# nothing checks the gate scripts themselves except this commit.
+#
+# This commit holds gate 4's fixtures IN THE REPOSITORY (hls/integration/ and
+# hls/template_match/) with their SHA-256 record, and a gate that closes the
+# unsafe-release window on BOTH failure paths: it resets the PL from inside
+# its own process, and if that reset fails it fail-stops holding the buffers
+# instead of exiting and handing the CMA pages back (see cell 6).
+# Earlier: 36298b9 resets the PL but exits on a FAILED reset, releasing the
+# pages it was protecting; c7a39e0 has gate 4 but no committed vectors;
+# 6c19cbb and before have a close() that retains every buffer after a clean
+# run and no extractor gate at all; 01f6cad and before have a gate 3 that
+# cannot distinguish a truncating core from a rounding one.
+PIN = "dfd54a994a70d4bae5e8989515c05563152ce138"
 
 WORK.mkdir(parents=True, exist_ok=True)
 os.chdir(WORK)
@@ -143,6 +149,14 @@ If the repository is private and the clone fails, upload the seven scripts,
 the three bundle artifacts and the nine gate-4 files (the record plus its
 eight vectors) into `/home/xilinx/gates` by hand and re-run from the
 `ok = True` line.
+
+**Not for signoff.** That fallback is a debugging convenience, not an
+authenticated payload: the hash check below compares the vectors against
+`GATE4_VECTORS.sha256`, and a hand upload can replace the record and the
+vectors together, so the two agree and prove nothing. The gate scripts are
+not hashed at all — only `PIN` vouches for them. A result quoted as a gate
+signoff must come from the clone path, from `PIN`, with cell 1's output
+showing the checkout hash it printed.
 
 ---
 
@@ -278,12 +292,19 @@ silicon manifest through **this** overlay.
 Expect seconds, not minutes: everything here is small except the two 820×307
 stress cases.
 
-**Two things to get right when writing up a PASS.**
+**Three things to get right when writing up a PASS.**
 
 - It is the **first extractor run through `PLPipeline` in the combined
   overlay**, not the first extractor run on silicon. Both cores already have
   standalone silicon results; what is new is the two of them in one overlay
   behind one driver.
+- It is a **combined-overlay smoke gate**: ONE extractor candidate plus the
+  nine matcher cases. It does not exercise multi-candidate rearming or TLAST
+  across a batch, and although phase D splits two kinds, both score exactly
+  1.0 — so the per-kind argmax is never asked to pick between *different*
+  scores, which is the only thing a real page does. Those are the next
+  protocol tests, and they come before the strict 36-page PL-backend
+  comparison, not after it.
 - The envelope case is **251,740 B programmed; the core completed and the
   DMA became idle without error**. Both matcher channels are MM2S, so no
   engine anywhere on that path counts received bytes — `MM2S_LENGTH` is
@@ -320,9 +341,14 @@ gate that dies some other way.
 
 ## Report back
 
-The four `GATE*_EXIT` lines, gate 1's `CmaTotal`/`CmaFree`, gate 2's
-`ip_dict` and `register_map` dump, gate 3's `DMA envelope:` line, and gate
-4's final `EXTRACTOR GATE PASSED` summary. Those close contract §2.2 and §10
-item 3 and validate all three driver stages; the remaining step is wiring
-`detect_page()` behind explicit backends and running the strict 36-page
-comparison.
+The checkout hash cell 1 printed (a result without it is not a signoff), the
+four `GATE*_EXIT` lines, gate 1's `CmaTotal`/`CmaFree`, gate 2's `ip_dict`
+and `register_map` dump, gate 3's `DMA envelope:` line, and gate 4's final
+`EXTRACTOR GATE PASSED` summary.
+
+Those close contract §2.2 and §10 item 3 and put all three driver stages
+through the combined overlay once. What they do NOT do is qualify the PL
+backend for real pages — gate 4 is a smoke gate on one candidate. Next, in
+order: multi-candidate extractor rearming and TLAST across a batch, and a
+per-kind argmax case whose kinds score differently. Then `detect_page()`
+behind explicit backends, and only then the strict 36-page comparison.
