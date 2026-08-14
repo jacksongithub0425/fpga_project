@@ -55,14 +55,17 @@ REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
 # safe_teardown: signals blocked, a complete-or-refused buffer snapshot,
 # recovery output that cannot raise, an in-process PL reset, and a fail-stop
 # that holds the pages rather than exiting if that reset fails (see cells 5-6).
-# Earlier: dfd54a9 has all of that in gate 4 only — gate 3 still exits on a
-# raising close(), releasing ~120 MiB with the DMAs unproved; 36298b9 resets
-# the PL but exits on a FAILED reset, releasing the pages it was protecting;
-# c7a39e0 has gate 4 but no committed vectors; 6c19cbb and before have a
-# close() that retains every buffer after a clean run and no extractor gate at
-# all; 01f6cad and before have a gate 3 that cannot distinguish a truncating
-# core from a rounding one.
-PIN = "775f5bbae916fdd40625f04fc71076b1dcad4f30"
+# Earlier: 775f5bb arms the signals only inside teardown(), which is too late —
+# a SIGTERM/SIGHUP/SIGQUIT during the transfer kills the process before the
+# finally runs at all (measured: exit -15/-1/-3 with close() never called);
+# dfd54a9 has the teardown in gate 4 only — gate 3 still exits on a raising
+# close(), releasing ~120 MiB with the DMAs unproved; 36298b9 resets the PL but
+# exits on a FAILED reset, releasing the pages it was protecting; c7a39e0 has
+# gate 4 but no committed vectors; 6c19cbb and before have a close() that
+# retains every buffer after a clean run and no extractor gate at all; 01f6cad
+# and before have a gate 3 that cannot distinguish a truncating core from a
+# rounding one.
+PIN = "86479ebaae78e641309552829d765516682a364d"
 
 WORK.mkdir(parents=True, exist_ok=True)
 os.chdir(WORK)
