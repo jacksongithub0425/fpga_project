@@ -46,12 +46,15 @@ from pathlib import Path
 
 WORK = Path("/home/xilinx/gates")
 REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
-# Pinned. This commit carries gate 4 (board_gate_extract.py) and the fixed
-# PLPipeline.close(); earlier commits (6c19cbb and before) have a close() that
-# retains every buffer and returns False after a perfectly clean run, and no
-# gate for the extractor at all. Earlier still (01f6cad and before) gate 3
-# cannot distinguish a truncating core from a rounding one.
-PIN = "c7a39e07d3c4946fe1c836f0b37f830f4e9d0f1e"
+# Pinned. This commit is the first that carries gate 4's fixtures IN THE
+# REPOSITORY (hls/integration/ and hls/template_match/) with their SHA-256
+# record, so the copies below come from the checkout rather than by hand.
+# It also resets the PL from inside the gate process on an unsafe teardown.
+# Earlier: c7a39e0 has gate 4 but no committed vectors; 6c19cbb and before
+# have a close() that retains every buffer after a clean run and no extractor
+# gate at all; 01f6cad and before have a gate 3 that cannot distinguish a
+# truncating core from a rounding one.
+PIN = "36298b9eab230fb4e9e84eb4fb1da174ea482a8f"
 
 WORK.mkdir(parents=True, exist_ok=True)
 os.chdir(WORK)
