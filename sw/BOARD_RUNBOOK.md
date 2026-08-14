@@ -45,7 +45,7 @@ Exit 0 is necessary but not sufficient. Proceed to the next gate only if:
 |---|---|
 | 1 — CMA | exit 0; `CmaTotal` **≥ 192 MiB**; the output says **driver order** (not the weaker two-buffer preflight); real `CmaTotal`/`CmaFree` figures were read, not "unavailable" |
 | 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; binarize DMA transfer bound **≥ 63,078,400 B**; measured PL clock **≤ 50 MHz** (the image is constrained at 20 ns) |
-| 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes remaining; **zero** oracle mismatches |
+| 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes remaining; **zero** oracle mismatches; teardown freed the buffers (no `UNSAFE TEARDOWN` block) |
 | 4 — extractor + matcher | exit 0; all **8 fixture hashes OK**; **480/480** binary bytes; record `valid=1` at **(3,4)**, **14×12**; patch S2MM **received 168 B**; `sts_flags=0`, `rejected=0`, `processed=1`; **168/168** patch bytes; **9/9** matcher cases, the **251,740 B** case programmed and completed; teardown freed the buffers |
 
 **What passing all four does and does not establish.** It validates the CMA
@@ -67,6 +67,7 @@ board_gate_extract.py
 tme_driver.py
 tme_standalone_bringup.py
 binarize_dma_checks.py
+safe_teardown.py              # the shared teardown; gates 3 and 4 both import it
 
 # gate 4's fixtures — COMMITTED, ~0.56 MB; copy, do not regenerate
 GATE4_VECTORS.sha256          # the hash record; gate 4 refuses to run without it
@@ -411,17 +412,29 @@ That is the double failure: the fabric may still have a command against those
 pages and nothing in the process can retire it, so handing them back is not an
 option, and *exiting is handing them back* (the buffers are strong references
 in this process and go with it). There is no exit code that means "do not reap
-me", so the gate prints a `FAIL-STOP` banner, holds all seven buffers, and
-waits. It ignores Ctrl-C, and it heartbeats every five minutes so you can see
-it is holding rather than hung.
+me", so the gate prints a `FAIL-STOP` banner, holds the pipeline and all seven
+buffers, and waits. SIGINT, SIGTERM, SIGHUP and SIGQUIT are all ignored from
+the start of teardown, so Ctrl-C, a closed notebook and a shutdown's SIGTERM
+cannot end it; it heartbeats every five minutes so you can see it is holding
+rather than hung.
 
-    Right response:  reboot or power-cycle the board.
-    Wrong response:  kill -9 the gate. That frees the pages with the fabric
-                     unknown — the exact failure the fail-stop prevents.
+    Right response:  POWER-CYCLE the board.
+    Wrong response:  `reboot`. Shutdown terminates userspace and only then
+                     resets the hardware, so it kills the holder while the
+                     fabric is still live — the same window under a friendlier
+                     name. (SIGTERM is ignored, so it also escalates to
+                     SIGKILL, which nothing can catch.)
+    Wrong response:  kill -9. The same release, by hand.
 
 So gate 4 has one more outcome than the exit codes describe: no exit at all.
 A gate 4 cell that never returns and shows `FAIL-STOP` has not hung; read the
-banner and reboot.
+banner and cut the power.
+
+**Gate 3 does exactly the same thing**, and it matters more there: gate 3 holds
+the two biggest CMA buffers of the whole session (~120 MiB). Its teardown used
+to be a bare `close()` in a `finally` with `freed` initialised to True, so a
+close() that raised was reported as a clean free and the process exited with
+the pages going back. Both gates now share `safe_teardown.py`.
 
 ## After the gates — integration
 

@@ -28,7 +28,7 @@ Exit 0 is necessary, not sufficient. Proceed only if:
 |---|---|
 | 1 — CMA | exit 0; `CmaTotal` **≥ 192 MiB**; output says **driver order**, not the weaker two-buffer preflight; real `CmaTotal`/`CmaFree` values were read |
 | 2 — overlay | exit 0; all **3 cores** and **5 DMAs** present; transfer bound **≥ 63,078,400 B**; measured clock **≤ 50 MHz** |
-| 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes; **zero** oracle mismatches |
+| 3 — full DMA | exit 0; **63,078,400 B** each direction; guard **64 B intact**; **zero** sentinel bytes; **zero** oracle mismatches; no `UNSAFE TEARDOWN` block |
 | 4 — extractor + matcher | exit 0; all **8 fixture hashes OK**; **480/480** binary bytes; record `valid=1` at **(3,4)** **14×12**; patch S2MM **received 168 B**; `sts_flags=0`/`rejected=0`/`processed=1`; **9/9** matcher cases, the **251,740 B** case programmed and completed |
 
 Passing all four validates CMA, overlay/driver compatibility, the full-size
@@ -83,7 +83,9 @@ src = repo / "sw"
 bundle = repo / "vivado" / "three_stage_combined" / "board_bundle"
 for f in ["probe_cma_budget.py", "inspect_overlay.py", "board_gate_full_dma.py",
           "board_gate_extract.py",
-          "tme_driver.py", "tme_standalone_bringup.py", "binarize_dma_checks.py"]:
+          "tme_driver.py", "tme_standalone_bringup.py", "binarize_dma_checks.py",
+          # gates 3 and 4 both import this; without it neither starts
+          "safe_teardown.py"]:
     shutil.copy(src / f, WORK / f)
 for f in ["three_stage_combined.bit", "three_stage_combined.hwh",
           "BUILD_INFO.txt"]:
@@ -145,7 +147,7 @@ print(subprocess.run(["ls", "-la", str(WORK)], capture_output=True,
                      text=True).stdout)
 ```
 
-If the repository is private and the clone fails, upload the seven scripts,
+If the repository is private and the clone fails, upload the eight scripts,
 the three bundle artifacts and the nine gate-4 files (the record plus its
 eight vectors) into `/home/xilinx/gates` by hand and re-run from the
 `ok = True` line.
@@ -327,12 +329,20 @@ will see an `UNSAFE TEARDOWN` block followed by one of two things:
 - `PL reset` — the overlay reloaded, board recoverable, gate still failed.
   Re-check gate 1 before running anything else.
 - `PL RESET FAILED`, then a `FAIL-STOP` banner — **and the cell will not
-  finish.** That is deliberate, not a hang: the process is holding all seven
-  CMA buffers because exiting would release them with the fabric in an unknown
-  state, and it heartbeats every five minutes to show it is still holding.
-  **Reboot or power-cycle the board.** Do not `kill -9` it and do not restart
-  the kernel to "clear" it — either one frees the pages, which is the thing
-  being prevented. Interrupting the kernel will not stop it.
+  finish.** That is deliberate, not a hang: the process is holding the
+  pipeline and all seven CMA buffers because exiting would release them with
+  the fabric in an unknown state, and it heartbeats every five minutes to show
+  it is still holding.
+
+  **POWER-CYCLE the board.** Not `reboot`: shutdown terminates userspace
+  first and resets the hardware after, so it would kill the holder while the
+  fabric is still live — the same window with a friendlier name. Do not
+  `kill -9` it, and do not restart the kernel to "clear" it. Interrupting the
+  kernel will not work anyway: SIGINT, SIGTERM, SIGHUP and SIGQUIT are all
+  ignored from the moment teardown starts.
+
+**Gate 3 (cell 5) behaves identically** and holds far more — the two ~60 MiB
+image buffers. Same banner, same answer.
 
 The manual `Overlay(...)` step under gate 3 is still the right response to a
 gate that dies some other way.

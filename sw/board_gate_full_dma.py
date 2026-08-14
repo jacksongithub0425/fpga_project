@@ -65,11 +65,17 @@ CMA pool leaves, that is roughly 3x headroom, where the whole-page version
 needed 3x more than exists.
 
 Needs on the board, same directory: tme_driver.py, tme_standalone_bringup.py,
-binarize_dma_checks.py, and the overlay .bit + .hwh pair.
+binarize_dma_checks.py, safe_teardown.py, and the overlay .bit + .hwh pair.
 
 Exit status: 0 = full-size transfer moved and verified bit-exact,
 1 = the gate FAILS (the transfer or the data is wrong),
 2 = could not run (missing module, missing or unloadable overlay, no PYNQ).
+
+And one outcome that is NOT an exit status: if a DMA cannot be proved halted
+AND the PL cannot then be reprogrammed, this gate does not exit at all.  It
+holds its ~120 MiB of CMA buffers and blocks, because exiting would hand them
+back while an engine may still be writing them.  See `safe_teardown`; the
+answer is a POWER CYCLE, not `reboot` and not `kill -9`.
 
 `--selftest` proves the strip decomposition against whole-page cpu_golden on
 a small image, with no PYNQ and no board.  Run it after touching anything in
@@ -91,6 +97,8 @@ import sys
 import time
 
 import numpy as np
+
+import safe_teardown
 
 IMG_W = 9856      # contract §2 maxima; keep in sync with PE_MAX_IMG_W/H
 IMG_H = 6400
@@ -347,7 +355,31 @@ def main() -> int:
               f"{type(exc).__name__}: {exc}")
         return 1
 
-    freed = True
+    # NOT a bare `pl.close()` in a finally.  This gate allocates the two
+    # biggest CMA buffers of the whole run (~120 MiB), and every hazard
+    # board_gate_extract documents applies here first: the retained references
+    # live only as long as this process, so an exit releases them.  One shared
+    # implementation, in safe_teardown, for both gates.
+    #
+    # `status` starts at 1 and is only ever lowered by a completed run: an
+    # exception before `_run` returns must not read as a pass.
+    status = 1
+    try:
+        status = _run(pl, gray, n)
+    except Exception as exc:                               # noqa: BLE001
+        print(f"FAIL: {type(exc).__name__}: {exc}")
+        status = 1
+    finally:
+        # May not return at all — see safe_teardown.fail_stop_holding.  The
+        # reassignment is picked up by the `return status` BELOW the finally;
+        # a `return` inside the try would have been evaluated first and would
+        # discard it.
+        status = safe_teardown.teardown(pl, args.overlay, status)
+    return status
+
+
+def _run(pl, gray, n: int) -> int:
+    """The gate proper.  Teardown is the caller's job, not this function's."""
     try:
         t0 = time.monotonic()
         binary = pl.binarize_page(gray, THRESHOLD)
@@ -417,17 +449,6 @@ def main() -> int:
     except Exception as exc:                           # noqa: BLE001
         print(f"FAIL: {type(exc).__name__}: {exc}")
         return 1
-    finally:
-        # close() returns False when it retained buffers because a DMA could
-        # not be proved quiescent — say so, because the next run in this
-        # session then needs an overlay reload.
-        try:
-            freed = pl.close()
-        except Exception as exc:                       # noqa: BLE001
-            print(f"  note: close() raised {type(exc).__name__}: {exc}")
-        if not freed:
-            print("  note: DMA buffers were retained (a transfer could not "
-                  "be proved finished). Reload the overlay before re-running.")
 
 
 if __name__ == "__main__":
