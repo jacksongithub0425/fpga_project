@@ -51,16 +51,18 @@ REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
 # nothing checks the gate scripts themselves except this commit.
 #
 # This commit holds gate 4's fixtures IN THE REPOSITORY (hls/integration/ and
-# hls/template_match/) with their SHA-256 record, and a gate that closes the
-# unsafe-release window on BOTH failure paths: it resets the PL from inside
-# its own process, and if that reset fails it fail-stops holding the buffers
-# instead of exiting and handing the CMA pages back (see cell 6).
-# Earlier: 36298b9 resets the PL but exits on a FAILED reset, releasing the
-# pages it was protecting; c7a39e0 has gate 4 but no committed vectors;
-# 6c19cbb and before have a close() that retains every buffer after a clean
-# run and no extractor gate at all; 01f6cad and before have a gate 3 that
-# cannot distinguish a truncating core from a rounding one.
-PIN = "dfd54a994a70d4bae5e8989515c05563152ce138"
+# hls/template_match/) with their SHA-256 record, and BOTH gates on the shared
+# safe_teardown: signals blocked, a complete-or-refused buffer snapshot,
+# recovery output that cannot raise, an in-process PL reset, and a fail-stop
+# that holds the pages rather than exiting if that reset fails (see cells 5-6).
+# Earlier: dfd54a9 has all of that in gate 4 only — gate 3 still exits on a
+# raising close(), releasing ~120 MiB with the DMAs unproved; 36298b9 resets
+# the PL but exits on a FAILED reset, releasing the pages it was protecting;
+# c7a39e0 has gate 4 but no committed vectors; 6c19cbb and before have a
+# close() that retains every buffer after a clean run and no extractor gate at
+# all; 01f6cad and before have a gate 3 that cannot distinguish a truncating
+# core from a rounding one.
+PIN = "775f5bbae916fdd40625f04fc71076b1dcad4f30"
 
 WORK.mkdir(parents=True, exist_ok=True)
 os.chdir(WORK)
