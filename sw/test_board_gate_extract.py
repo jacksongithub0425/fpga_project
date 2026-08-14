@@ -527,6 +527,267 @@ def test_a_failed_pl_reset_is_reported_not_swallowed():
             sys.modules["pynq"] = saved
 
 
+def test_an_interrupted_pl_reset_is_a_failed_reset_not_an_escape():
+    """A BaseException out of `Overlay()` must not unwind past the decision.
+
+    Programming a bitstream takes seconds, which is plenty of time for a
+    Ctrl-C to land in it.  If that propagated it would leave `main()`'s finally
+    block, end the process, and release the very pages the reset was called to
+    protect — so it is caught and reported as a failed reset, which fail-stops.
+    """
+    class InterruptedOverlayModule:
+        def Overlay(self, bitfile):                       # noqa: N802
+            raise KeyboardInterrupt
+
+    saved = sys.modules.get("pynq")
+    sys.modules["pynq"] = InterruptedOverlayModule()
+    try:
+        assert G.reset_pl("three_stage_combined.bit") is False
+    finally:
+        if saved is None:
+            del sys.modules["pynq"]
+        else:
+            sys.modules["pynq"] = saved
+
+
+def test_close_safely_reports_a_raising_close_as_not_freed():
+    """close() raising is close() not freeing, including on BaseException.
+
+    `_close_safely` is what makes the recovery decision reachable at all: a
+    close() that dies halfway has driven registers, may have retained nothing,
+    and has certainly not proved a halt.
+    """
+    class RaisingPipe:
+        _BUFFER_ATTRS = ()
+
+        def __init__(self, exc):
+            self._exc = exc
+
+        def close(self):
+            raise self._exc
+
+    for exc in (RuntimeError("DMASR readback timed out"), KeyboardInterrupt()):
+        freed, got = G._close_safely(RaisingPipe(exc))
+        assert freed is False, f"{type(exc).__name__} was read as a clean close"
+        assert got is exc, f"{type(exc).__name__} was swallowed, not reported"
+
+
+def test_strong_refs_outlive_close_forgetting_the_buffers():
+    """The references taken before close() must survive `_forget_buffers()`.
+
+    close() nulls all seven attributes; from that moment the only thing
+    standing between the CMA pages and `PynqBuffer.__del__` is whatever the
+    caller took beforehand.  This is that guarantee, stated directly.
+    """
+    v = load_vectors()
+    g, cases, patches, templs = v
+    pl = make_fake_pipeline(g, cases, patches, templs)
+    rep = G.Report()
+    G.phase_a_binarize(pl, g, rep)
+    G.phase_b_extract(pl, g, rep)
+    assert not rep.failures
+
+    held = G._strong_refs(pl)
+    assert len(held) == 7, (
+        f"{len(held)} of 7 DMA buffers were referenced before close(); the "
+        f"rest could be collected while the fabric is still unknown")
+
+    pl.close()
+    assert all(getattr(pl, a) is None for a in d.PLPipeline._BUFFER_ATTRS), (
+        "close() no longer forgets the buffers — this test's premise is stale")
+    assert len(held) == 7 and all(b is not None for b in held)
+
+
+def test_fail_stop_does_not_return_and_ignores_interrupts():
+    """The no-return property, and that Ctrl-C does not break it.
+
+    `_fail_stop_holding` is reached only when the PL could not be reset, and
+    returning from it would end `main()` and hand the pages back with the
+    fabric unknown.  So it blocks — and an interrupt, which is the operator
+    asking for exactly that release, has to be refused too.  The only way out
+    here is an exception this test injects from outside the loop's guards,
+    standing in for the operator doing what the banner asks and rebooting.
+    """
+    class _Rebooted(BaseException):
+        pass
+
+    sleeps = []
+
+    def fake_sleep(_secs):
+        sleeps.append(1)
+        if len(sleeps) < 3:
+            raise KeyboardInterrupt            # refused, twice
+        raise _Rebooted
+
+    bufs = [FakeBuf(16)]
+    saved = G.time.sleep
+    G.time.sleep = fake_sleep
+    try:
+        G._fail_stop_holding(bufs, "three_stage_combined.bit")
+    except _Rebooted:
+        pass
+    else:
+        raise AssertionError(
+            "_fail_stop_holding RETURNED — main() would fall through to "
+            "`return status` and free the CMA pages it is holding")
+    finally:
+        G.time.sleep = saved
+
+    assert len(sleeps) == 3, (
+        f"the hold loop ran {len(sleeps)} time(s): an interrupt ended it "
+        f"instead of being ignored")
+    assert not bufs[0].freed
+
+
+# -- main(): the teardown paths end to end --------------------------------
+
+class _FailStopReached(BaseException):
+    """Raised by the stub standing in for `_fail_stop_holding`.
+
+    Derived from BaseException, not Exception, for two reasons: the real
+    function never returns, so a stub that returned would let `main()` carry on
+    to `return status` and the test would assert the opposite of the property
+    it exists to check; and it must not be absorbed by any `except Exception`
+    on the way out.
+    """
+
+
+def run_main(vectors, close=None, reset_ok=True, overlay="fake.bit"):
+    """Run `G.main()` end to end against fake silicon, recording teardown.
+
+    Returns `(rc, rec, pipe)`.  `rc` is None when main() never returned, which
+    is itself one of the required outcomes.  `rec` records what teardown saw:
+    the overlay each `reset_pl`/`_fail_stop_holding` call was given, the seven
+    buffers and the armed-channel set as of the moment close() was entered, and
+    the buffers still held at the fail-stop.
+
+    `close` replaces `PLPipeline.close` (to return False, or to raise) without
+    disturbing the phases above it, which run for real either way.
+    """
+    g, cases, patches, templs = vectors
+    pipe = make_fake_pipeline(g, cases, patches, templs)
+    rec = {"reset": [], "fail_stop": [], "held": None,
+           "bufs_at_close": None, "armed_at_close": None}
+
+    real_close = pipe.close
+    # Read off the real class now: `d.PLPipeline` is a factory below, and
+    # wrapped_close runs while that substitution is in place.
+    attrs = d.PLPipeline._BUFFER_ATTRS
+
+    def wrapped_close():
+        rec["bufs_at_close"] = [getattr(pipe, a) for a in attrs]
+        rec["armed_at_close"] = set(pipe._channels_armed)
+        return real_close() if close is None else close(pipe)
+    pipe.close = wrapped_close
+
+    def fake_reset(bitfile):
+        rec["reset"].append(bitfile)
+        return reset_ok
+
+    def fake_fail_stop(bufs, bitfile):
+        rec["fail_stop"].append(bitfile)
+        rec["held"] = list(bufs)
+        raise _FailStopReached(bitfile)
+
+    here = str(Path(__file__).resolve().parent)
+    saved = (d.PLPipeline, G.reset_pl, G._fail_stop_holding, sys.argv)
+    d.PLPipeline = lambda bitfile, timeout_s=None: pipe
+    G.reset_pl = fake_reset
+    G._fail_stop_holding = fake_fail_stop
+    sys.argv = ["board_gate_extract.py", "--overlay", overlay,
+                "--data-dir", here]
+    try:
+        rc = G.main()
+    except _FailStopReached:
+        rc = None
+    finally:
+        d.PLPipeline, G.reset_pl, G._fail_stop_holding, sys.argv = saved
+    return rc, rec, pipe
+
+
+def test_main_clean_run_exits_zero_and_leaves_the_pl_alone():
+    """The happy path must not reset the PL — that is a failure signal."""
+    rc, rec, _ = run_main(load_vectors())
+    assert rc == 0, f"a clean gate run exited {rc}"
+    assert rec["reset"] == [], (
+        "the PL was reprogrammed after a clean close(); a reset is the "
+        "recovery for an unsafe teardown, not part of a passing run")
+    assert rec["fail_stop"] == []
+
+
+def test_main_arms_and_closes_all_seven_channels():
+    """Five phases touch every channel, and close() must free every buffer.
+
+    Both halves matter.  Seven armed proves the gate exercises the whole
+    overlay rather than the binarize corner; seven freed proves close()'s
+    never-armed skip has not quietly become a never-free rule — the regression
+    that emptied the CMA pool once already.
+    """
+    rc, rec, _ = run_main(load_vectors())
+    assert rc == 0
+    assert rec["armed_at_close"] == {
+        "gray MM2S", "bin S2MM", "cand MM2S", "patch S2MM", "meta S2MM",
+        "tme patch MM2S", "tme templ MM2S"}, rec["armed_at_close"]
+    bufs = rec["bufs_at_close"]
+    assert len(bufs) == 7 and all(b is not None for b in bufs)
+    assert all(b.freed for b in bufs), (
+        "a passing run left CMA buffers unfreed: "
+        + ", ".join(a for a, b in zip(d.PLPipeline._BUFFER_ATTRS, bufs)
+                    if not b.freed))
+
+
+def test_main_resets_the_pl_once_when_close_cannot_free():
+    """close() False -> exactly one reset, and the gate still FAILS.
+
+    The reset makes the board recoverable; it does not make the run a pass.
+    An unprovable halt is a failure whatever the phases said.
+    """
+    rc, rec, _ = run_main(load_vectors(), close=lambda p: False)
+    assert rec["reset"] == ["fake.bit"], (
+        f"expected exactly one PL reset, got {rec['reset']}")
+    assert rec["fail_stop"] == [], "a successful reset must not fail-stop"
+    assert rc == 1, f"an unsafe teardown exited {rc}, not 1"
+
+
+def test_main_resets_the_pl_when_close_itself_raises():
+    """A close() that dies is an unsafe teardown, not an unhandled error.
+
+    The old code called `pl.close()` bare in the finally block: an exception
+    there propagated out of main() with the buffers referenced by nothing, so
+    the pages went back while the fabric was mid-transfer and no reset was
+    even attempted.
+    """
+    def raising_close(pipe):
+        raise RuntimeError("DMACR readback timed out")
+
+    rc, rec, _ = run_main(load_vectors(), close=raising_close)
+    assert rec["reset"] == ["fake.bit"], (
+        "close() raised and the PL was never reset: "
+        f"{rec['reset']}")
+    assert rc == 1, f"a close() that raised exited {rc}, not 1"
+
+
+def test_main_does_not_return_when_the_pl_reset_fails():
+    """The double failure: close() False AND the reset failed.
+
+    Nothing in-process can retire an outstanding DMA command now, so the pages
+    must not go back at all — and `main()` returning is exactly how they would.
+    The gate has to stop inside the fail-stop, still holding all seven.
+    """
+    rc, rec, _ = run_main(load_vectors(), close=lambda p: False,
+                          reset_ok=False)
+    assert rc is None, (
+        f"main() returned {rc} after a failed PL reset — the process would "
+        f"exit and release its CMA pages with the fabric unknown")
+    assert rec["fail_stop"] == ["fake.bit"], rec["fail_stop"]
+    held, at_close = rec["held"], rec["bufs_at_close"]
+    assert len(held) == 7, f"only {len(held)} of 7 buffers were still held"
+    assert all(h is b for h, b in zip(held, at_close)), (
+        "the held references are not the buffers close() was handed")
+    assert not any(b.freed for b in held), (
+        "a buffer was freed on the path that must free nothing")
+
+
 def main() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

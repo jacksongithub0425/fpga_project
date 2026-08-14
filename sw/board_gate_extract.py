@@ -530,7 +530,7 @@ def phase_a_binarize(pl, g: dict, rep: Report) -> None:
     st = pl.last_transfer_stats
     rep.require(st is not None, "binarize_page published transfer stats")
     rep.require(st["mm2s_bytes"] == PAGE_BYTES,
-                f"MM2S moved {PAGE_BYTES} B", f"{st['mm2s_bytes']} B")
+                f"MM2S programmed {PAGE_BYTES} B", f"{st['mm2s_bytes']} B")
     rep.require(st["s2mm_bytes"] == PAGE_BYTES,
                 f"S2MM received {PAGE_BYTES} B", f"{st['s2mm_bytes']} B")
     rep.require(st["sentinel_bytes_remaining"] == 0,
@@ -832,6 +832,110 @@ def selftest(data_dir: Path) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Teardown: closing the unsafe-release window
+# ---------------------------------------------------------------------------
+
+def _strong_refs(pl) -> list:
+    """Strong references to every DMA buffer, taken BEFORE close() runs.
+
+    Once close() starts, it is the only thing holding these: it appends the
+    retained ones to `tme_driver._RETAINED_BUFFERS` and then calls
+    `_forget_buffers()`, which nulls all seven attributes.  Between those two
+    steps — and on every path where close() raises before reaching either —
+    NOTHING references the buffers, `PynqBuffer.__del__` runs at the next
+    collection, and the CMA pages go back to the pool with the fabric's state
+    still unknown.  That is the same window this file resets the PL to close,
+    so the references are taken here, in a frame that outlives close(), and
+    released only once the pages are provably safe to hand back.
+    """
+    bufs = []
+    for attr in getattr(pl, "_BUFFER_ATTRS", ()):
+        try:
+            buf = getattr(pl, attr, None)
+        except BaseException:                              # noqa: BLE001
+            continue      # one unreadable attribute must not lose the other six
+        if buf is not None:
+            bufs.append(buf)
+    return bufs
+
+
+def _close_safely(pl) -> tuple:
+    """`(freed, exc)`.  A close() that RAISES is a close() that did not free.
+
+    `BaseException`, and deliberately so.  close() drives DMA registers and
+    waits on them, which is exactly where a KeyboardInterrupt lands; letting
+    one through would skip the recovery decision below, unwind `main()`, and
+    release the pages — the precise outcome the recovery exists to prevent.
+    Whatever came out is reported and returned, never re-raised.
+    """
+    try:
+        return bool(pl.close()), None
+    except BaseException as exc:                           # noqa: BLE001
+        print(f"\n[gate] close() itself raised: {type(exc).__name__}: {exc}")
+        print("[gate] The halt checks did not complete, so no buffer is "
+              "provably free: treating this as an unsafe teardown.")
+        sys.stdout.flush()
+        return False, exc
+
+
+def _fail_stop_holding(bufs: list, bitfile: str) -> None:
+    """NEVER RETURNS.  Holds the CMA pages until the operator power-cycles.
+
+    Reached only when the PL could not be reprogrammed, which is the one state
+    with no in-process recovery left: the fabric may still have an open S2MM
+    command against these pages, and nothing this process can do will retire
+    it.  Returning from here would end `main()`, end the process, drop `bufs`
+    and hand those pages straight back to the pool — the release this gate
+    exists to refuse.  There is no exit code that means "do not reap me", so
+    the only way to keep the pages out of the pool is to not exit.
+
+    A reboot is NOT initiated from here.  A gate does not know what else the
+    board is doing, and rebooting out from under an operator is a larger
+    action than the fault warrants — it blocks, says exactly why, and leaves
+    the reboot to the person reading it.
+
+    Output is flushed: a `sudo python3` child piped to a notebook is
+    block-buffered, and an unexplained hang is the one way this could be
+    mistaken for a lockup and killed.
+    """
+    print("\n" + "!" * 72)
+    print(f"FAIL-STOP: the PL could not be reset and {len(bufs)} CMA buffer(s) "
+          f"are still held.")
+    print("This process is NOT exiting, on purpose. Exiting would free those "
+          "pages while the")
+    print("fabric may still have a DMA command against them; the next "
+          "allocation would then be")
+    print("written into by an engine that nobody stopped. Holding them is the "
+          "only protection")
+    print("left, and it lasts exactly as long as this process does.")
+    print("")
+    print("  DO THIS:   reboot or power-cycle the board.")
+    print("  NOT THIS:  kill -9 this process. That frees the pages with the "
+          "fabric unknown,")
+    print("             which is the failure being prevented.")
+    print(f"  Then:      reprogram with {bitfile} and re-run the gate from a "
+          f"fresh boot.")
+    print("!" * 72)
+    sys.stdout.flush()
+
+    waited = 0.0
+    while True:
+        try:
+            time.sleep(60.0)
+            waited += 60.0
+            if waited % 300.0 == 0:
+                print(f"[gate] still holding {len(bufs)} CMA buffer(s) after "
+                      f"{waited / 60:.0f} min — reboot the board.")
+                sys.stdout.flush()
+        except KeyboardInterrupt:
+            # An interrupt is the operator asking for the one thing that must
+            # not happen here.  Refused, with the reason, every time.
+            print("\n[gate] Interrupt ignored: releasing these pages is the "
+                  "thing this state exists to prevent. Reboot the board.")
+            sys.stdout.flush()
+        except Exception:                                  # noqa: BLE001
+            pass        # a closed stdout is not a reason to release CMA pages
+
 
 def reset_pl(bitfile: str) -> bool:
     """Reprogram the PL from inside THIS process, after an unsafe teardown.
@@ -856,9 +960,9 @@ def reset_pl(bitfile: str) -> bool:
          no engine has a command against those pages any more;
       3. only then let the process exit and the pages go back.
 
-    Returns True if the PL was reprogrammed.  A failure here is the one state
-    that genuinely needs a reboot, and it says so — loudly, because after it
-    the pages WILL be released on exit with the fabric in an unknown state.
+    Returns True if the PL was reprogrammed.  False is the one state with no
+    in-process recovery left, and the caller must NOT return on it — see
+    `_fail_stop_holding`, which is where that path ends.
     """
     print("\n" + "!" * 72)
     print("UNSAFE TEARDOWN: a DMA could not be proved halted, or a buffer "
@@ -868,16 +972,23 @@ def reset_pl(bitfile: str) -> bool:
     print("here rather than left to the caller — by the time the caller sees "
           "the exit code, the")
     print("pages are already back in the pool.")
+    sys.stdout.flush()
     try:
         from pynq import Overlay
         Overlay(bitfile)
-    except Exception as exc:                               # noqa: BLE001
+    except BaseException as exc:                           # noqa: BLE001
+        # BaseException for the same reason as _close_safely: programming a
+        # bitstream takes seconds, an interrupt lands in it easily, and an
+        # exception escaping HERE would leave the recovery decision unmade and
+        # unwind straight out of main() — releasing the pages it was called to
+        # protect.  Reported as a failed reset, which fail-stops.
         print(f"\nPL RESET FAILED: {type(exc).__name__}: {exc}")
-        print("The fabric is in an UNKNOWN state and this process is about "
-              "to release its CMA pages.")
+        print("The fabric is in an UNKNOWN state, so these CMA pages cannot "
+              "be handed back at all.")
         print("REBOOT THE BOARD before allocating CMA again. Do not run the "
               "next gate.")
         print("!" * 72)
+        sys.stdout.flush()
         return False
     print(f"\nPL reset: reloaded {bitfile}. The DMA engines and cores are "
           f"back in their power-on state,")
@@ -977,16 +1088,26 @@ def main() -> int:
         print(f"\nERROR {type(exc).__name__}: {exc}")
         status = 1
     finally:
+        # Strong references FIRST, before close() can drop the pipeline's own.
+        # Everything below is a decision about whether these pages may go back
+        # to the pool, and that decision is worthless if they can be collected
+        # while it is being made.
+        held = _strong_refs(pl)
+
         # close() is the teardown decision, not a formality: it verifies each
         # ARMED channel is halted (DMACR.Reset==0 and DMASR.Halted==1) before
         # any CMA page goes back, and returns False if it could not.  A gate
         # that passed its cases but could not prove the DMAs stopped has not
         # left the board in a state the next gate can trust.
-        freed = pl.close()
+        freed, close_exc = _close_safely(pl)
+        if close_exc is not None:
+            status = status or 1
         if not freed:
             status = status or 1
             if not reset_pl(args.overlay):
-                status = 2 if status == 2 else 1
+                # Does not return.  Falling through to `return status` would
+                # drop `held` and release the pages with the fabric unknown.
+                _fail_stop_holding(held, args.overlay)
 
     print("\n" + "=" * 72)
     if status == 0 and not rep.failures:

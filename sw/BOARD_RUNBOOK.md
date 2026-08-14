@@ -392,9 +392,26 @@ the time you read the exit code, the pages you were going to protect are
 already released. The reset happens while they are still held.
 
 The gate still fails (an unsafe teardown is a failure), but the board is
-recoverable and the next gate can run after re-checking gate 1. If the reset
-itself fails, the gate says so and the answer is a **reboot** — that is the
-one state where the pages are released with the fabric in an unknown state.
+recoverable and the next gate can run after re-checking gate 1. The same
+recovery runs if `close()` *raises* rather than returning False — a teardown
+that died halfway has proved nothing about the DMAs either.
+
+**If the reset itself fails, the gate does not exit — it blocks, on purpose.**
+That is the double failure: the fabric may still have a command against those
+pages and nothing in the process can retire it, so handing them back is not an
+option, and *exiting is handing them back* (the buffers are strong references
+in this process and go with it). There is no exit code that means "do not reap
+me", so the gate prints a `FAIL-STOP` banner, holds all seven buffers, and
+waits. It ignores Ctrl-C, and it heartbeats every five minutes so you can see
+it is holding rather than hung.
+
+    Right response:  reboot or power-cycle the board.
+    Wrong response:  kill -9 the gate. That frees the pages with the fabric
+                     unknown — the exact failure the fail-stop prevents.
+
+So gate 4 has one more outcome than the exit codes describe: no exit at all.
+A gate 4 cell that never returns and shows `FAIL-STOP` has not hung; read the
+banner and reboot.
 
 ## After the gates — integration
 

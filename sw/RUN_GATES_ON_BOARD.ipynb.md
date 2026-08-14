@@ -300,10 +300,21 @@ DMA halted, `board_gate_extract.py` reloads the overlay itself before
 returning, while the retained buffers are still referenced. It has to: those
 references live only as long as the gate's own `sudo` process, so by the time
 this notebook sees the exit code the CMA pages would already be back in the
-pool. You will see an `UNSAFE TEARDOWN` block followed by either a `PL reset`
-line — board recoverable, gate still failed — or `PL RESET FAILED`, which
-means **reboot before allocating CMA again**. The manual `Overlay(...)` step
-under gate 3 is still the right response to a gate that dies some other way.
+pool. The same applies if `close()` raises instead of returning False. You
+will see an `UNSAFE TEARDOWN` block followed by one of two things:
+
+- `PL reset` — the overlay reloaded, board recoverable, gate still failed.
+  Re-check gate 1 before running anything else.
+- `PL RESET FAILED`, then a `FAIL-STOP` banner — **and the cell will not
+  finish.** That is deliberate, not a hang: the process is holding all seven
+  CMA buffers because exiting would release them with the fabric in an unknown
+  state, and it heartbeats every five minutes to show it is still holding.
+  **Reboot or power-cycle the board.** Do not `kill -9` it and do not restart
+  the kernel to "clear" it — either one frees the pages, which is the thing
+  being prevented. Interrupting the kernel will not stop it.
+
+The manual `Overlay(...)` step under gate 3 is still the right response to a
+gate that dies some other way.
 
 ---
 
