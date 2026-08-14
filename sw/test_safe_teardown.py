@@ -268,6 +268,23 @@ def test_an_unknown_layout_is_not_claimed_complete():
     assert (bufs, complete) == ([], False)
 
 
+def test_an_interrupt_on_the_attribute_list_is_incomplete_not_an_escape():
+    """The `_BUFFER_ATTRS` lookup is inside the try, like the seven after it.
+
+    An interrupt can land on the first getattr as easily as on the fifth, and
+    if it escaped from there teardown would be abandoned entirely — no close,
+    no reset, no fail-stop, just an unwind to process exit with every buffer
+    released. It has to come back as an incomplete snapshot like any other.
+    """
+    class HostilePipe:
+        @property
+        def _BUFFER_ATTRS(self):
+            raise KeyboardInterrupt
+
+    bufs, complete = ST.snapshot_buffers(HostilePipe())
+    assert (bufs, complete) == ([], False)
+
+
 def test_an_incomplete_snapshot_never_calls_close():
     """The rule that makes a partial snapshot safe.
 
@@ -379,6 +396,38 @@ def test_blocking_signals_off_the_main_thread_does_not_raise():
     assert not t.is_alive()
     assert out.get("r") == [], (
         f"expected no signals installed off the main thread, got {out.get('r')}")
+
+
+def test_arming_installs_every_signal_this_platform_has():
+    """The pre-transfer arm returns exactly what it installed."""
+    present = [n for n in ST._TERMINATION_SIGNALS
+               if getattr(signal, n, None) is not None]
+    saved = {n: signal.getsignal(getattr(signal, n)) for n in present}
+    try:
+        assert set(ST.arm_teardown_protection()) == set(present)
+    finally:
+        for n, h in saved.items():
+            signal.signal(getattr(signal, n), h)
+
+
+def test_arming_refuses_when_a_signal_could_not_be_installed():
+    """A partial arm must stop the gate, not warn and carry on.
+
+    Starting a transfer that cannot be protected gambles the CMA pool on the
+    next gate's behalf. The cost of refusing is one re-run; the cost of
+    proceeding is a corrupted pool nobody can attribute.
+    """
+    saved = ST.block_termination_signals
+    ST.block_termination_signals = lambda: ["SIGINT"]     # SIGTERM missing
+    try:
+        ST.arm_teardown_protection()
+    except ST.TeardownUnprotected as exc:
+        assert "SIGTERM" in str(exc), exc
+    else:
+        raise AssertionError(
+            "arming reported success while SIGTERM was still deliverable")
+    finally:
+        ST.block_termination_signals = saved
 
 
 def test_teardown_blocks_signals_before_touching_the_pipeline():

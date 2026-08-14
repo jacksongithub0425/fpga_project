@@ -277,25 +277,24 @@ Expect the CPU-side verification to take a while on the Zynq PS (numpy over
 Exit 2 here means the overlay or a module could not be loaded — a file-copy
 problem, not a DMA fault.
 
-**If a gate fails after starting a DMA, reprogram the PL before any further
-CMA use — and do not settle for restarting the Jupyter kernel.** The driver
-refuses further work once a stage leaves a transfer outstanding, and
-`close()` retains rather than frees those buffers — but that protection is
-*in-process state*, and each gate runs as its own `sudo` process. When that
-process exits, its guard goes with it while the hardware keeps whatever
-state it had: an S2MM with an open command can still write into pages the
-kernel has since handed to someone else. Restarting the notebook kernel does
-not touch the PL at all.
+### What to do after a gate 3 failure
 
-So after any gate that dies mid-transfer, in increasing order of severity:
+Both gates now handle their own recovery in-process, so the manual
+`Overlay(...)` reprogram is no longer the first response — read what the gate
+printed and match it to one of these four. Restarting the Jupyter kernel is
+never one of them: the kernel does not touch the PL, and each gate is its own
+`sudo` process whose in-process guard died with it.
 
-1. reprogram the PL — loading the overlay again (`Overlay(bitfile)`) resets
-   the DMA engines and the cores;
-2. if a transfer cannot be shown to have stopped, or the allocation
-   behaviour looks wrong afterwards, reboot;
-3. power-cycle if the board stops responding.
+| What you saw | State of the fabric | Do this |
+|---|---|---|
+| **FAIL or exit 2, teardown clean** (no `UNSAFE TEARDOWN` block) | Every armed DMA was proved halted before any page went back | **Nothing.** No reset is required; fix the reported problem and re-run. |
+| **`UNSAFE TEARDOWN` then `PL reset:`** | A DMA could not be proved halted, so the gate reloaded the overlay itself — engines and cores are back at power-on and the pages were safe to release | Gate failed; the board is usable. Re-run gate 1 before continuing. |
+| **`PL RESET FAILED` then `FAIL-STOP`** (the process is still running) | Unknown, and the gate is holding its CMA pages open because it cannot prove they are safe | **POWER-CYCLE.** Not `reboot`, not `kill -9` — both free the pages with the fabric live. |
+| **The process died anyway** — SIGKILL, OOM-killer, a crash, a power blip | Unknown, and its pages went back to the pool while whatever was running kept running | **POWER-CYCLE before any further CMA use.** This is the one case no software can clean up. |
 
-Only then allocate CMA again.
+The third and fourth rows are the reason the gates ignore SIGINT, SIGTERM,
+SIGHUP and SIGQUIT from the moment the pipeline exists: those are the signals
+that would otherwise turn row two into row four.
 
 ## Gate 4 — the extractor and the matcher, on a pinned golden
 
@@ -314,9 +313,11 @@ overlay**, not the first extractor run on silicon.
 **And it is a smoke gate, not a qualification.** One extractor candidate plus
 the nine matcher cases. Three things a real page needs are NOT covered here:
 multi-candidate rearming, TLAST across a batch rather than on a single
-transfer, and a per-kind argmax that has to choose between kinds with
-*different* scores — phase D splits two kinds, but both score exactly 1.0, so
-only the tie rule is under test. Those are the next protocol tests, and they
+transfer, and the per-kind argmax. Phase D gives each kind exactly ONE trial,
+so `by_kind[kind]` is a reduction over a single element — it cannot pick
+anything. Its two kinds also both score exactly 1.0, so what phase D really
+tests there is the GLOBAL best and its tie rule, which is a different
+reduction. Those are the next protocol tests, and they
 come before the strict 36-page PL-backend comparison, not after it. A gate 4
 PASS says the combined overlay works once end to end; it does not say the PL
 backend is ready to be compared against the CPU baseline.
@@ -343,7 +344,7 @@ Five phases, each PASS gating the next:
 | A binarize | all **480** binary bytes byte-exact; 480 B each way; guard intact; no sentinel survives |
 | B extract | record `valid=1`, origin **(3,4)**, patch **14×12**; `sts_flags=0`, `sts_rejected=0`, `sts_processed=1`; the patch S2MM moved **exactly 168 B** (TLAST framing); all **168** pixels byte-exact |
 | C matcher | the 9-case `hw` manifest through `tme_top_0`, score **and** exact location on every case, including the **251,740 B** maximum-envelope case (§3.1's only exercise), plus a re-invocation afterwards to catch stale `static` BRAM |
-| D reduce | `match_candidate()`: absolute page boxes, the strict-`>` tie going to the **first** trial, the per-kind argmax — each with a control that fails if the rule were reversed |
+| D reduce | `match_candidate()`: absolute page boxes, the strict-`>` tie going to the **first** trial, and the per-kind split keeping both kinds apart — each with a control that fails if the rule were reversed. One trial per kind, so the per-kind *argmax* is not exercised; see §"smoke gate" above |
 | E chain | phases A→B→D again on the patch the **PL** produced, required to give bit-identical results to the golden-fed run |
 
 **How to state the envelope case.** Both matcher channels are MM2S, so
@@ -447,9 +448,12 @@ mismatch rather than as the protocol bug they are:
    descriptors dispatched together, each patch framed correctly, the receive
    rearmed between them, and a rejected candidate in the middle emitting no
    pixels without stranding the next one.
-2. **A per-kind argmax with kinds that score differently** — gate 4's two
-   kinds both score exactly 1.0, so the reduction is only ever asked to apply
-   the tie rule, never to actually pick a winner on score.
+2. **A real per-kind argmax** — at least two trials of the SAME kind with
+   DIFFERENT scores, so `by_kind[kind]` has to choose. Gate 4 gives each kind
+   one trial, so that reduction is over a single element and cannot be wrong;
+   comparing its two kinds against each other exercises the global best, not
+   the per-kind one. A page carries several templates per kind, so this is the
+   ordinary case, not an edge case.
 
 Then connect `detect_page()` one stage at a time behind **explicit** backends
 (`cpu` / `pl-binarize` / `pl-extract` / `pl-all`), with no silent fallback — a

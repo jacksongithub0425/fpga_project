@@ -355,6 +355,17 @@ def main() -> int:
               f"{type(exc).__name__}: {exc}")
         return 1
 
+    # BEFORE the transfer, not at teardown: SIGTERM/SIGHUP/SIGQUIT kill the
+    # process outright, without running a `finally`, and this gate spends
+    # minutes with 63 MB in flight each way.  No channel is armed yet, so
+    # refusing here costs nothing but a re-run.
+    try:
+        armed = safe_teardown.arm_teardown_protection()
+    except safe_teardown.TeardownUnprotected as exc:
+        print(f"CANNOT RUN: {exc}")
+        return safe_teardown.teardown(pl, args.overlay, 2)
+    print(f"  teardown protection: ignoring {', '.join(armed)}")
+
     # NOT a bare `pl.close()` in a finally.  This gate allocates the two
     # biggest CMA buffers of the whole run (~120 MiB), and every hazard
     # board_gate_extract documents applies here first: the retained references

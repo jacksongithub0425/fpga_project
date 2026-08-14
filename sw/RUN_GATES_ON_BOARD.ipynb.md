@@ -260,22 +260,22 @@ core consuming a fixed beat count by construction.
 
 ### If gate 3 fails after the DMA has started
 
-**Restarting the kernel is not enough.** Each gate runs as its own `sudo`
-process; when it dies, the driver's in-process guard dies with it while the
-hardware keeps its state, and an S2MM with an open command can still write
-into pages the kernel later hands to someone else. The notebook kernel does
-not touch the PL.
+The gate handles its own recovery now — read what it printed and match it to
+one of these four. **Restarting the kernel is never the answer:** it does not
+touch the PL, and the gate is its own `sudo` process whose in-process guard
+died with it.
 
-Before any further CMA use:
+| What you saw | Do this |
+|---|---|
+| FAIL or exit 2, no `UNSAFE TEARDOWN` block | **Nothing.** Every armed DMA was proved halted; fix the reported problem and re-run. |
+| `UNSAFE TEARDOWN` then `PL reset:` | Gate failed, board is usable — the gate reloaded the overlay itself. Re-run cell 2 (gate 1) before continuing. |
+| `PL RESET FAILED` then `FAIL-STOP`, cell still running | **POWER-CYCLE.** Not `reboot`, not `kill -9`: both free the pages while the fabric is live. |
+| The process died anyway (SIGKILL, OOM-killer, crash, power blip) | **POWER-CYCLE before any further CMA use.** Its pages went back with the fabric in an unknown state, and no software can clean that up. |
 
-```python
-# 1. reprogram the PL — this resets the DMA engines and the cores
-from pynq import Overlay
-Overlay("/home/xilinx/gates/three_stage_combined.bit")
-```
-
-If a transfer still cannot be shown to have stopped, or allocation behaves
-oddly afterwards, **reboot**; power-cycle if the board stops responding.
+The gates ignore SIGINT/SIGTERM/SIGHUP/SIGQUIT from the moment the pipeline
+exists, which is what stops row two from becoming row four. You will see a
+`teardown protection: ignoring ...` line right after the overlay loads; if it
+is missing, the run is not protected — stop and report it.
 
 ---
 
@@ -304,11 +304,12 @@ stress cases.
   behind one driver.
 - It is a **combined-overlay smoke gate**: ONE extractor candidate plus the
   nine matcher cases. It does not exercise multi-candidate rearming or TLAST
-  across a batch, and although phase D splits two kinds, both score exactly
-  1.0 — so the per-kind argmax is never asked to pick between *different*
-  scores, which is the only thing a real page does. Those are the next
-  protocol tests, and they come before the strict 36-page PL-backend
-  comparison, not after it.
+  across a batch, and it does not exercise the per-kind argmax: phase D gives
+  each kind exactly ONE trial, so `by_kind[kind]` reduces over a single
+  element and cannot choose. Its two kinds scoring 1.0 apiece tests the
+  GLOBAL best and the tie rule instead — a different reduction. A real page
+  carries several templates per kind. Those are the next protocol tests, and
+  they come before the strict 36-page PL-backend comparison, not after it.
 - The envelope case is **251,740 B programmed; the core completed and the
   DMA became idle without error**. Both matcher channels are MM2S, so no
   engine anywhere on that path counts received bytes — `MM2S_LENGTH` is
@@ -344,10 +345,8 @@ will see an `UNSAFE TEARDOWN` block followed by one of two things:
   ignored from the moment teardown starts.
 
 **Gate 3 (cell 5) behaves identically** and holds far more — the two ~60 MiB
-image buffers. Same banner, same answer.
-
-The manual `Overlay(...)` step under gate 3 is still the right response to a
-gate that dies some other way.
+image buffers. Same banner, same answer; the four-row table under gate 3
+applies to gate 4 unchanged.
 
 ---
 
@@ -362,5 +361,5 @@ Those close contract §2.2 and §10 item 3 and put all three driver stages
 through the combined overlay once. What they do NOT do is qualify the PL
 backend for real pages — gate 4 is a smoke gate on one candidate. Next, in
 order: multi-candidate extractor rearming and TLAST across a batch, and a
-per-kind argmax case whose kinds score differently. Then `detect_page()`
+per-kind argmax case with two differently-scoring trials of the SAME kind. Then `detect_page()`
 behind explicit backends, and only then the strict 36-page comparison.

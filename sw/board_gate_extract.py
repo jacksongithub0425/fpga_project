@@ -64,8 +64,12 @@ WHAT EACH PHASE ADDS, and why it is a separate phase:
   D  `match_candidate()`: the PS-side reduction that has no hardware at all
      since class_score_core left the MVP (§10 items 4-5).  Absolute box
      construction, the strict-`>` tie rule over the frozen trial order, and
-     the per-kind argmax — each with a control that would fail if the rule
-     were the other way round.
+     the per-kind SPLIT — each with a control that would fail if the rule were
+     the other way round.  Note what this does NOT cover: each kind gets one
+     trial, so `by_kind[kind]` reduces over a single element and its argmax
+     cannot be wrong here.  Two kinds scoring 1.0 apiece tests the GLOBAL best
+     and its tie rule, which is a different reduction; a real per-kind argmax
+     needs two differently-scoring trials of the SAME kind.
   E  the chain.  binarize -> extract -> match with the patch that came out of
      the PL in phase B, not the one read from the golden file, required to
      give bit-identical results to phase D.  Phases A-D each check one core
@@ -652,7 +656,7 @@ def phase_c_matcher_suite(pl, data_dir: Path, rep: Report) -> None:
 
 def phase_d_match_candidate(pl, g: dict, rep: Report,
                             patch: np.ndarray, label: str) -> dict:
-    """The PS-side reduction: boxes, tie order, per-kind argmax.
+    """The PS-side reduction: boxes, tie order, the per-kind split.
 
     Both templates are exact crops of the patch, so BOTH score exactly 1.0 at
     their own location.  That is deliberate: it makes `best` a genuine tie
@@ -908,6 +912,19 @@ def main() -> int:
               f"installed. This is an environment problem, not a gate "
               f"failure.")
         return 2
+
+    # BEFORE phase A, not at teardown.  The pipeline exists and has allocated
+    # its five small CMA buffers, but no channel has been armed yet — this is
+    # the last moment at which a SIGTERM is merely inconvenient.  From the
+    # first transfer on it would be process death with a DMA in flight, and
+    # the default handlers do not run `finally` blocks.
+    try:
+        armed = safe_teardown.arm_teardown_protection()
+    except safe_teardown.TeardownUnprotected as exc:
+        print(f"CANNOT RUN: {exc}")
+        # Nothing was armed, so this tears down cleanly and frees everything.
+        return safe_teardown.teardown(pl, args.overlay, 2)
+    print(f"  teardown protection: ignoring {', '.join(armed)}")
 
     rep = Report()
     status = 0

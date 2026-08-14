@@ -120,6 +120,49 @@ def block_termination_signals() -> list:
     return installed
 
 
+class TeardownUnprotected(RuntimeError):
+    """The termination signals could not be blocked, so no DMA may start."""
+
+
+def arm_teardown_protection() -> list:
+    """Block the termination signals BEFORE any DMA is armed.  Raises if not.
+
+    **This must happen before the first transfer, not at teardown.**  Blocking
+    them inside `teardown()` protects only the teardown itself; a SIGTERM
+    arriving during the hardware work lands while the handlers are still at
+    their defaults, and the process dies *before* the `finally` runs at all —
+    measured, not theorised:
+
+        SIGTERM -> exit -15, close() never called
+        SIGHUP  -> exit  -1, close() never called
+        SIGQUIT -> exit  -3, close() never called
+        SIGINT  -> KeyboardInterrupt, so the finally DOES run
+
+    Only SIGINT is a Python-level exception; the other three are process
+    death, and process death with a DMA in flight is exactly the release this
+    module exists to prevent.  So the gates arm this as soon as they have a
+    pipeline and before they touch the fabric.
+
+    It RAISES rather than warning when a signal it asked for could not be
+    installed.  A gate that started a transfer it could not protect would be
+    gambling with the CMA pool on behalf of the next gate, and the cost of
+    refusing is one re-run.  Signals absent from the platform (SIGHUP and
+    SIGQUIT on Windows) are not "not installed" — they cannot arrive either.
+    """
+    wanted = [n for n in _TERMINATION_SIGNALS
+              if getattr(signal, n, None) is not None]
+    installed = block_termination_signals()
+    missing = [n for n in wanted if n not in installed]
+    if missing:
+        raise TeardownUnprotected(
+            f"could not ignore {', '.join(missing)} (of {', '.join(wanted)}); "
+            f"one of those signals would kill this process mid-transfer and "
+            f"release its CMA pages with a DMA still running. Refusing to "
+            f"start a transfer that cannot be protected — run the gate from "
+            f"the main thread of a plain `sudo python3` process")
+    return installed
+
+
 def snapshot_buffers(pl) -> tuple:
     """`(buffers, complete)` — every DMA buffer, or an honest partial.
 
@@ -133,20 +176,24 @@ def snapshot_buffers(pl) -> tuple:
     every buffer, including the six that were read successfully.  Nothing is
     skipped silently: a partial snapshot changes what the caller does.
     """
-    attrs = getattr(pl, "_BUFFER_ATTRS", None)
-    if not attrs:
-        # An unknown layout cannot be claimed complete.  Treated as the
-        # incomplete case, which is the conservative one.
-        return [], False
     bufs = []
     try:
+        # Inside the try, including this lookup: an interrupt can land on it
+        # as easily as on any of the seven that follow, and an exception
+        # escaping from here would leave teardown unmade rather than produce
+        # the incomplete snapshot the caller knows how to handle.
+        attrs = getattr(pl, "_BUFFER_ATTRS", None)
+        if not attrs:
+            # An unknown layout cannot be claimed complete.  Treated as the
+            # incomplete case, which is the conservative one.
+            return [], False
         for attr in attrs:
             buf = getattr(pl, attr, None)
             if buf is not None:
                 bufs.append(buf)
     except BaseException as exc:                           # noqa: BLE001
         say(f"\n[gate] the buffer snapshot was interrupted after "
-            f"{len(bufs)} of {len(attrs)}: {type(exc).__name__}: {exc}")
+            f"{len(bufs)} buffer(s): {type(exc).__name__}: {exc}")
         return bufs, False
     return bufs, True
 
