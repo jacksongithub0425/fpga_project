@@ -136,7 +136,9 @@ def _child(gate: str, work: Path, mutate: str = "none") -> int:
         import board_gate_full_dma as G3
         G3.build_page = lambda: np.zeros((4, 4), dtype=np.uint8)
 
-        def fake_run(pl, gray, n):
+        def fake_run(pl, gray, n, cpu_golden):
+            # Mirrors the real `_run` arity — see the note in
+            # test_board_gate_full_dma.run_main.
             block()
             return 0
         G3._run = fake_run

@@ -376,7 +376,15 @@ def main() -> int:
     # exception before `_run` returns must not read as a pass.
     status = 1
     try:
-        status = _run(pl, gray, n)
+        # cpu_golden is passed EXPLICITLY, not read as a global.  It is
+        # imported into main()'s local scope above, so when `_run` was split
+        # out of main it kept referencing a name that only ever existed here —
+        # and the tests stub `_run` wholesale, so nothing caught it until the
+        # board did: the transfer completed, the envelope was asserted, and
+        # then the comparison died with `NameError: name 'cpu_golden' is not
+        # defined`.  Threading it through the signature is what makes that
+        # unrepresentable rather than merely fixed.
+        status = _run(pl, gray, n, cpu_golden)
     except Exception as exc:                               # noqa: BLE001
         print(f"FAIL: {type(exc).__name__}: {exc}")
         status = 1
@@ -389,8 +397,15 @@ def main() -> int:
     return status
 
 
-def _run(pl, gray, n: int) -> int:
-    """The gate proper.  Teardown is the caller's job, not this function's."""
+def _run(pl, gray, n: int, cpu_golden) -> int:
+    """The gate proper.  Teardown is the caller's job, not this function's.
+
+    `cpu_golden` is a parameter rather than a module global on purpose: it is
+    imported inside `main()` (so that a missing binarize_dma_checks.py is
+    "could not run", exit 2, rather than an import error at load time), which
+    means it is NOT in scope here.  Reading it as a global cost a board run —
+    see the note at the call site.
+    """
     try:
         t0 = time.monotonic()
         binary = pl.binarize_page(gray, THRESHOLD)

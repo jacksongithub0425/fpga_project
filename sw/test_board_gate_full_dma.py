@@ -87,7 +87,8 @@ def run_main(pipe, run_status=0, run_exc=None, reset_ok=True,
     `rc` is None when main() never returned — which is one of the required
     outcomes, not an error.
     """
-    rec = {"reset": [], "fail_stop": [], "held": None, "bufs_at_close": None}
+    rec = {"reset": [], "fail_stop": [], "held": None, "bufs_at_close": None,
+           "run_args": None}
     attrs = FakePipe._BUFFER_ATTRS
 
     real_close = pipe.close
@@ -97,7 +98,12 @@ def run_main(pipe, run_status=0, run_exc=None, reset_ok=True,
         return real_close()
     pipe.close = wrapped_close
 
-    def fake_run(pl, gray, n):
+    def fake_run(pl, gray, n, cpu_golden):
+        # Same arity as the real `_run`, deliberately. A stub that took fewer
+        # arguments would keep passing while main() called the real thing
+        # wrongly — which is exactly how the missing `cpu_golden` argument
+        # survived every test here and failed on the board instead.
+        rec["run_args"] = (n, cpu_golden)
         if run_exc is not None:
             raise run_exc
         return run_status
@@ -218,6 +224,169 @@ def test_the_status_is_taken_from_the_teardown_not_the_run():
     assert rc == 1, (
         "the teardown's verdict did not reach the exit code; check that "
         "main() returns after the finally, not from inside the try")
+
+
+# =========================================================================
+# The real _run(), not a stub.
+#
+# Everything above stubs `_run` so that main()'s teardown can be driven
+# through every outcome.  That is the right shape for those tests and it is
+# also how a NameError inside `_run` reached the board: `cpu_golden` is
+# imported into main()'s LOCAL scope, `_run` read it as a global, and no test
+# ever executed the line.  The gate ran, moved 63,078,400 B each way, asserted
+# the envelope — and then died in the comparison it exists to perform.
+#
+# So these execute the real function end to end on a small page, with fake
+# silicon that returns the true oracle output.
+# =========================================================================
+
+class OraclePipe:
+    """A pipeline whose binarize_page returns the CPU oracle's own answer.
+
+    `corrupt` flips one output byte, so the comparison the gate performs has
+    something to find — a test where the DUT is the oracle proves the plumbing
+    but not that a mismatch is detected.
+    """
+
+    def __init__(self, gray, threshold, cpu_golden, corrupt=False,
+                 stats=None):
+        self._out = cpu_golden(gray, threshold)
+        if corrupt:
+            r, c = 5, 7
+            self._out[r, c] = 255 - self._out[r, c]
+            self.corrupted_at = (r, c)
+        self.last_transfer_stats = stats
+
+    def binarize_page(self, gray, threshold):
+        return self._out
+
+
+def _small_page(h=40, w=64):
+    """A page with structure in it, built with the gate's own generator."""
+    page = np.empty((h, w), dtype=np.uint8)
+    saved_w, saved_h = G3.IMG_W, G3.IMG_H
+    G3.IMG_W, G3.IMG_H = w, h
+    try:
+        G3.fill_page_strip(page, 0)
+    finally:
+        G3.IMG_W, G3.IMG_H = saved_w, saved_h
+    return page
+
+
+def _stats(n, **over):
+    s = {"mm2s_bytes": n, "s2mm_bytes": n, "expected_bytes": n,
+         "guard_bytes_checked": 64, "guard_bytes_clobbered": 0,
+         "sentinel_bytes_remaining": 0}
+    s.update(over)
+    return s
+
+
+def test_the_real_run_completes_the_comparison():
+    """THE REGRESSION. Executes `_run` for real, comparison included.
+
+    Before the fix this returned 1 with `FAIL: NameError: name 'cpu_golden'
+    is not defined` — the gate's own `except Exception` caught it, so it
+    failed closed rather than passing wrongly, but the comparison never ran.
+    """
+    from binarize_dma_checks import cpu_golden
+    gray = _small_page()
+    n = gray.size
+    pipe = OraclePipe(gray, G3.THRESHOLD, cpu_golden, stats=_stats(n))
+    assert G3._run(pipe, gray, n, cpu_golden) == 0, (
+        "the real _run() did not reach a clean verdict")
+
+
+def test_the_real_run_detects_a_mismatched_byte():
+    """And the comparison it now reaches actually compares.
+
+    The verdict alone is not enough to assert here: `_run` returns 1 for any
+    exception too, so under the `cpu_golden` NameError this would have
+    "passed" while the comparison never ran. So the OUTPUT is checked — it
+    must name the mismatch and its location, not an exception.
+    """
+    import contextlib
+    import io
+    from binarize_dma_checks import cpu_golden
+    gray = _small_page()
+    n = gray.size
+    pipe = OraclePipe(gray, G3.THRESHOLD, cpu_golden, corrupt=True,
+                      stats=_stats(n))
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = G3._run(pipe, gray, n, cpu_golden)
+    text = out.getvalue()
+    assert rc == 1, "one flipped output byte did not fail the gate"
+    assert "mismatch the exact CPU oracle" in text, (
+        f"the gate failed for some other reason than the comparison:\n{text}")
+    r, c = pipe.corrupted_at
+    assert f"({c},{r})" in text, (
+        f"the first mismatch was not located at the corrupted byte "
+        f"({c},{r}):\n{text}")
+
+
+def test_the_real_run_fails_on_a_short_envelope():
+    """The envelope assertions run before the comparison and stand alone."""
+    from binarize_dma_checks import cpu_golden
+    gray = _small_page()
+    n = gray.size
+    for label, over in (("short S2MM", {"s2mm_bytes": n - 1}),
+                        ("short MM2S", {"mm2s_bytes": n - 1}),
+                        ("clobbered guard", {"guard_bytes_clobbered": 3}),
+                        ("unwritten bytes", {"sentinel_bytes_remaining": 9})):
+        pipe = OraclePipe(gray, G3.THRESHOLD, cpu_golden,
+                          stats=_stats(n, **over))
+        assert G3._run(pipe, gray, n, cpu_golden) == 1, (
+            f"{label} did not fail the gate")
+
+
+def test_the_real_run_fails_without_transfer_stats():
+    """No measurements means the full-envelope claim cannot be made."""
+    from binarize_dma_checks import cpu_golden
+    gray = _small_page()
+    pipe = OraclePipe(gray, G3.THRESHOLD, cpu_golden, stats=None)
+    assert G3._run(pipe, gray, gray.size, cpu_golden) == 1
+
+
+def test_run_reads_no_name_that_does_not_exist():
+    """No function in this gate may read a global that is not there.
+
+    The general form of the bug, checked statically so it cannot come back by
+    another route: `_run` referenced `cpu_golden`, which exists only as a
+    local of `main()`, and every caller in the tests was a stub.  Any name a
+    function loads as a global must resolve in the module or in builtins.
+    """
+    import builtins
+    import dis
+    import types
+
+    bad = {}
+
+    def walk(code, where):
+        unresolved = sorted({
+            ins.argval for ins in dis.get_instructions(code)
+            if ins.opname in ("LOAD_GLOBAL", "LOAD_NAME")
+            and ins.argval not in vars(G3)
+            and not hasattr(builtins, ins.argval)})
+        if unresolved:
+            bad[where] = unresolved
+        for const in code.co_consts:
+            if isinstance(const, types.CodeType):
+                walk(const, f"{where}.{const.co_name}")
+
+    for name, obj in vars(G3).items():
+        if isinstance(obj, types.FunctionType) and obj.__module__ == G3.__name__:
+            walk(obj.__code__, name)
+    assert not bad, f"names that would raise NameError if reached: {bad}"
+
+
+def test_main_passes_the_oracle_through_to_run():
+    """main() must hand `_run` the oracle rather than leave it to find one."""
+    rc, rec = run_main(FakePipe(close_result=True), run_status=0)
+    assert rc == 0
+    n, oracle = rec["run_args"]
+    assert n == G3.IMG_W * G3.IMG_H, n
+    assert callable(oracle), "main() passed no usable oracle to _run"
+    assert oracle.__name__ == "cpu_golden", oracle
 
 
 def main() -> int:
