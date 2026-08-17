@@ -1,5 +1,23 @@
 #include "tme_top.h"
 
+// ============================================================================
+// RETIRED — NOT BUILT, NOT SYNTHESISED, NOT ON SILICON.  Phase A leftover.
+//
+// `run_hls.tcl` adds exactly tme_top.cpp, tme_top.h and correlation_core.cpp.
+// This file is in none of them, and nothing calls norm_rsqrt().  The matcher
+// that passed 9/9 on the board normalises in tme_top.cpp with
+//
+//     score = (float)num / hls::sqrtf(dt_f * (float)di);
+//
+// — IEEE-754 float32, not fixed_t, and no Newton iteration anywhere.
+//
+// Kept only as a record of the Phase A approach.  Read it as history: it has
+// already produced one wrong diagnosis of the live numerics (a score-error
+// budget attributed to Newton convergence, when the real error sources are
+// the float32 cast of `num`, the float32 product `dt_f * di`, the sqrtf and
+// the divide).  Characterise tme_top.cpp:247 — never this file.
+// ============================================================================
+
 // Fixed-point reciprocal square root via 3-iteration Newton-Raphson.
 // For input x, computes y ≈ 1/sqrt(x).
 //
