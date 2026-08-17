@@ -50,12 +50,19 @@ REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
 # board: the .bit/.hwh and the eight fixtures are hash-checked below, but
 # nothing checks the gate scripts themselves except this commit.
 #
-# This commit holds gate 4's fixtures IN THE REPOSITORY (hls/integration/ and
-# hls/template_match/) with their SHA-256 record, and BOTH gates on the shared
-# safe_teardown: signals blocked, a complete-or-refused buffer snapshot,
-# recovery output that cannot raise, an in-process PL reset, and a fail-stop
-# that holds the pages rather than exiting if that reset fails (see cells 5-6).
-# Earlier: 775f5bb arms the signals only inside teardown(), which is too late —
+# This commit fixes the NameError that stopped gate 3 on 2026-08-14 AFTER its
+# transfer had succeeded: `cpu_golden` is imported into main()'s local scope
+# and `_run` read it as a global, so the full 63,078,400 B moved each way, the
+# envelope was asserted, and then the bit-exact comparison — the point of the
+# gate — never ran. It also holds gate 4's fixtures IN THE REPOSITORY
+# (hls/integration/ and hls/template_match/) with their SHA-256 record, and
+# BOTH gates on the shared safe_teardown: signals blocked, a complete-or-
+# refused buffer snapshot, recovery output that cannot raise, an in-process PL
+# reset, and a fail-stop that holds the pages rather than exiting if that reset
+# fails (see cells 5-6).
+# Earlier: 86479eb and 4bc8250 have that gate-3 NameError — gate 3 CANNOT PASS
+# on them, it always exits 1 after a successful transfer;
+# 775f5bb arms the signals only inside teardown(), which is too late —
 # a SIGTERM/SIGHUP/SIGQUIT during the transfer kills the process before the
 # finally runs at all (measured: exit -15/-1/-3 with close() never called);
 # dfd54a9 has the teardown in gate 4 only — gate 3 still exits on a raising
@@ -65,7 +72,7 @@ REPO = "https://github.com/jacksongithub0425/FPGA_Accelerator.git"
 # retains every buffer after a clean run and no extractor gate at all; 01f6cad
 # and before have a gate 3 that cannot distinguish a truncating core from a
 # rounding one.
-PIN = "86479ebaae78e641309552829d765516682a364d"
+PIN = "d23de5c8880a5cd7792bfe860880fc2f5a4eb381"
 
 WORK.mkdir(parents=True, exist_ok=True)
 os.chdir(WORK)
