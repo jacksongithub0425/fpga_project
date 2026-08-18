@@ -267,7 +267,130 @@ def sha256_source(path):
     return hashlib.sha256(b).hexdigest()
 
 
-def write_provenance(outdir, args, pdfs, t_start, pages_done, totals):
+def summary_rows_unique(summary_rows):
+    """One row per source document, in the order `inputs` was built."""
+    seen, out = set(), []
+    for r in summary_rows:
+        if r["anon_id"] not in seen:
+            seen.add(r["anon_id"])
+            out.append(r)
+    return out
+
+
+def redact(prov, anon_by_filename):
+    """A committable copy: no absolute paths, no source document filenames.
+
+    The capture-side manifest names real drawings and local directories, so it
+    stays local beside the confidential JSONL.  This copy keeps every hash --
+    which is what makes the record checkable -- and replaces the identifying
+    parts.  Digests are NOT redacted: a sha256 of a document is not a filename,
+    and dropping it would defeat the point of the manifest.
+    """
+    pub = json.loads(json.dumps(prov))
+    pub["redacted"] = ("source document filenames replaced with anon_ids and "
+                       "absolute paths removed; all digests retained verbatim")
+    pub["inputs"] = [
+        {"anon_id": anon_by_filename.get(Path(r["path"]).name, "unknown"),
+         "sha256": r["sha256"]}
+        for r in prov["inputs"]
+    ]
+
+    # Per-page JSONL files are named after the source drawing, so the OUTPUT
+    # keys leak the same identifiers the inputs do.  Rewrite the stems.
+    stem_map = {Path(k).stem: Path(v).stem for k, v in anon_by_filename.items()}
+    renamed = {}
+    for name, meta in prov["outputs_sha256"].items():
+        for real, anon in stem_map.items():
+            if real in name:
+                name = name.replace(real, anon)
+        renamed[name] = meta
+    pub["outputs_sha256"] = renamed
+    # argv carries the input patterns, and a source DRAWING FILENAME is itself
+    # identifying -- reducing a path to its basename does not redact it.  Any
+    # argument that names a PDF or contains a path separator becomes a
+    # placeholder; the flags and their non-path values survive so the command
+    # shape stays readable.
+    cmd = pub["command"]
+    redacted_argv = []
+    for i, a in enumerate(cmd["argv"]):
+        low = a.lower()
+        if i == 0:
+            redacted_argv.append(Path(a).name)
+        elif low.endswith(".pdf") or "*" in a:
+            redacted_argv.append("<input-pattern>")
+        elif "/" in a or "\\" in a:
+            redacted_argv.append("<path>")
+        else:
+            redacted_argv.append(a)
+    cmd["argv"] = redacted_argv
+    cmd["cwd"] = "<repo>/sw"
+    cmd["interpreter"] = Path(cmd["interpreter"]).name
+    return pub
+
+
+def trace_derived(pages_done, cyc_totals, cp_iters):
+    """s/page aggregates summed from THIS run's records, plus the comparison."""
+    hz, out = model.TARGET_CLOCK_HZ, {}
+    for key, frozen_key in (("S", "per_trial_roi"), ("S_B1", "B1"),
+                            ("S_B2", "B2"), ("S_B0b_base", "B0b_base")):
+        got = cyc_totals[key] / pages_done / hz
+        want = model.FROZEN["s_per_page_at_125mhz"][frozen_key]
+        out[frozen_key] = {"trace": got, "frozen": want,
+                           "matches_frozen": abs(got - want) <= 5e-3}
+    base = cyc_totals["S_B0b_base"] / pages_done / hz
+    out["count_pass_iterations_initial"] = {
+        "trace": cp_iters["initial"],
+        "frozen": model.FROZEN["b0b_count_pass"]["corpus_iterations"],
+        "matches_frozen": (cp_iters["initial"]
+                           == model.FROZEN["b0b_count_pass"]["corpus_iterations"]),
+    }
+    out["count_pass_iterations_refinement"] = {"trace": cp_iters["refine"]}
+    for n in (1, 3):
+        got = base + n * cp_iters["initial"] / pages_done / hz
+        want = model.FROZEN["s_per_page_at_125mhz"]["B0b_at_{}_cyc".format(n)]
+        out["B0b_at_{}_cyc".format(n)] = {
+            "trace": got, "frozen": want, "matches_frozen": abs(got - want) < 1e-9}
+    return out
+
+
+def git_revision(path):
+    """Commit, branch and dirty state of the checkout the code came from.
+
+    A trace pins the code by hash, but a hash alone does not say WHICH commit
+    the reader should check out to get it.  `dirty` matters more than the sha:
+    a capture taken with uncommitted edits is tied to bytes that exist only on
+    one machine.
+    """
+    import subprocess
+
+    def run(*a):
+        try:
+            r = subprocess.run(["git", "-C", str(path)] + list(a),
+                               capture_output=True, text=True, timeout=30)
+            return r.stdout.strip() if r.returncode == 0 else None
+        except Exception:                                      # noqa: BLE001
+            return None
+
+    rev = run("rev-parse", "HEAD")
+    if rev is None:
+        return {"available": False}
+    status = run("status", "--porcelain") or ""
+    tracked = ("sw/tme_cycle_model.py", "sw/tme_trace_capture.py")
+    return {
+        "available": True,
+        "commit": rev,
+        "branch": run("rev-parse", "--abbrev-ref", "HEAD"),
+        "describe": run("describe", "--always", "--dirty"),
+        "worktree_dirty": bool(status),
+        "capture_tools_dirty": [
+            f for f in tracked
+            if any(line[3:].strip() == f for line in status.splitlines())
+        ],
+    }
+
+
+def write_provenance(outdir, args, pdfs, t_start, pages_done, totals,
+                     summary_rows, cyc_totals, cp_iters):
     """Record everything needed to re-run this capture and detect drift.
 
     A correct number in a directory nobody can regenerate is not a freeze.  This
@@ -316,11 +439,16 @@ def write_provenance(outdir, args, pdfs, t_start, pages_done, totals):
             "candidates_left": totals["left"],
             "candidates_right": totals["right"],
         },
-        "reproduced_frozen_figures": {
-            k: model.FROZEN["s_per_page_at_125mhz"][k]
-            for k in ("per_trial_roi", "B1", "B2", "B0b_base",
-                      "B0b_at_1_cyc", "B0b_at_3_cyc")
-        },
+        "git": git_revision(here),
+        "templates_sha256": [
+            {"name": "/".join(Path(t).parts[-2:]), "sha256": sha256_file(t)}
+            for t in model.template_files()
+        ],
+        # RECOMPUTED FROM THIS TRACE, not copied out of model.FROZEN.  Copying
+        # the frozen dict would make the manifest agree with the model by
+        # construction and prove nothing; these are summed from the rows this
+        # run actually produced, and `matches_frozen` is the comparison.
+        "trace_derived": trace_derived(pages_done, cyc_totals, cp_iters),
         "note": ("trials JSONL is LOCAL AND CONFIDENTIAL (endpoint coordinates); "
                  "trace_summary.csv and this file are committable.  Verify with "
                  "sha256sum against outputs_sha256."),
@@ -328,6 +456,13 @@ def write_provenance(outdir, args, pdfs, t_start, pages_done, totals):
     (outdir / "provenance.json").write_text(
         json.dumps(prov, indent=2), encoding="utf-8")
     print("wrote {}".format(outdir / "provenance.json"))
+
+    anon = {Path(r["path"]).name: a for r, a in zip(
+        prov["inputs"], [row["anon_id"] for row in summary_rows_unique(summary_rows)])}
+    pub = redact(prov, anon)
+    (outdir / "provenance_public.json").write_text(
+        json.dumps(pub, indent=2), encoding="utf-8")
+    print("wrote {}  (committable)".format(outdir / "provenance_public.json"))
 
 
 def main():
@@ -449,7 +584,8 @@ def main():
         w.writeheader()
         w.writerows(summary_rows)
 
-    write_provenance(outdir, args, pdfs, t_start, pages_done, totals)
+    write_provenance(outdir, args, pdfs, t_start, pages_done, totals,
+                     summary_rows, cyc_totals, cp_iters)
 
     print()
     print("pages            {}".format(pages_done))

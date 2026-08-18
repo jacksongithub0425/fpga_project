@@ -126,15 +126,18 @@ from pathlib import Path
 #   rh*(5*rw + 99)      per output row: reset_acc (II=1) + norm_cols (II=4)
 #   rh*th*T*(tw+257)    correlation_core: T tiles, each a 232-deep load_seg
 #                       plus a tw-deep MAC pipeline plus flush
-#   rh*th*(3*tw+3*rw)   t_row staging + isq_init + isq_slide, recomputed for
-#                       every template row of every output row.  Fully split:
+#   rh*th*(3*tw+3*rw+33)
+#                       t_row staging + isq_init + isq_slide, recomputed for
+#                       every template row of every output row.  Fully split --
+#                       note the four constants are 3 + 21 + 8 + 1 = 33, so the
+#                       +33 is ACCOUNTED FOR INSIDE this split and is not a
+#                       separate loop-overhead term:
 #                         template-row staging          2*tw + 3   <- crit path
 #                         window statistics             tw + rw + 21  <- B0b
 #                         correlation writeback/control 2*rw + 8
 #                         accum_rows FSM transition     1
 #                       B0b removes ONLY the window statistics; the remaining
 #                       2*tw + 2*rw + 12 survives and needs its own fix.
-#   rh*th*33            per-template-row loop overhead
 #
 # T = ceil(rw/16) is the tile count at PAR_COLS=16.
 
@@ -189,8 +192,12 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
 
 
 # The per-(output row, template row) term, split into the four parts it is
-# actually made of.  These sum to 3*tw + 3*rw + 33 by construction and check()
-# proves it, so the docstring's attribution cannot drift from the model.
+# actually made of.  check() proves that THESE FOUR EXPRESSIONS sum to
+# 3*tw + 3*rw + 33 and that dropping the window statistics leaves
+# 2*tw + 2*rw + 12.  That is all it proves.  It does NOT verify that the prose
+# in the module docstring, or the comment above, still describes these
+# expressions -- no assertion can check English against code.  If you change a
+# term here, re-read both by hand.
 PER_ROW_TERMS = {
     "template_row_staging": lambda tw, rw: 2 * tw + 3,       # measured crit path
     "window_statistics": lambda tw, rw: tw + rw + 21,        # what B0b removes
@@ -345,6 +352,36 @@ def png_size(path: Path):
     return int(w), int(h)
 
 
+def template_files():
+    """Absolute paths of the template PNGs the workload is built from.
+
+    Same discovery the workload uses, exposed separately so a capture can hash
+    the actual template bitmaps.  The template SET is what fixes the trial
+    count, so a trace that does not pin it cannot prove which workload it
+    measured.  Returns [] if the detector cannot be imported.
+    """
+    here = Path(__file__).resolve().parent
+    sys.path.insert(0, str(here))
+    try:
+        import terminal_counter_endpoint_first as det
+    except Exception:                                          # noqa: BLE001
+        return []
+    out = []
+    for side in ("left", "right"):
+        for kind in ("male", "female", "ferrule"):
+            key = kind + "_" + side
+            base = here / det.STANDARD_TEMPLATE_DIRS[key] / (key + ".png")
+            out.extend(det.discover_template_paths(str(base)))
+    # de-duplicate, preserving order: left and right can share a bitmap
+    seen, uniq = set(), []
+    for p in out:
+        rp = str(Path(p).resolve())
+        if rp not in seen:
+            seen.add(rp)
+            uniq.append(rp)
+    return uniq
+
+
 def discover_workload():
     """Template set and scale list, taken from the detector itself.
 
@@ -419,12 +456,19 @@ def trials(templates, scales, side, roi):
                       deployed behaviour rather than a proposal.
     roi="per_trial"   one 96x64-search ROI per TRIAL (needs the driver change).
 
-    NONE OF THESE IS TODAY'S PL DRIVER.  roi="current" is the CPU's per-base
-    policy; today's PL driver sends a SIDE-COMMON FULL-CONTEXT patch, which is
-    neither roi="current" (per-base context) nor roi="side_common" (side-common
-    96x64-search ROI).  333.413 s/page is therefore the cost of the CPU policy
-    under the silicon-anchored formula, NOT a measurement of what the PL does
-    today, and it must not be labelled "today's PL".
+    EXACTLY ONE OF THESE IS TODAY'S PL DRIVER: roi="pl_full_context".  Every
+    other row is a proposal or a CPU-side policy.
+
+    In particular roi="current" is the CPU's PER-BASE context policy, and its
+    333.413 s/page is the cost of that policy under the silicon-anchored
+    formula -- NOT a measurement of what the PL does today, and it must not be
+    labelled "today's PL".  roi="side_common" is a 96x64-search ROI shared
+    across a side, which is a different thing again from the full-context patch
+    the driver actually sends.
+
+    And note what even the pl_full_context row is: MODELLED MATCHER TIME for
+    deployed driver geometry.  It is not measured, and it is not page time --
+    it excludes refinement, DMA, extraction and all PS work.
     """
     side_tw = max(round(w * max(scales)) for w, _ in templates[side])
     side_th = max(round(h * max(scales)) for _, h in templates[side])
