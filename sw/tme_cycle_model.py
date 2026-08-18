@@ -736,6 +736,14 @@ def check(results):
     rpt_fail, rpt_n = routed_report_crosscheck()
     fail.extend(rpt_fail)
     results["crosschecks_run"] = log_n + rpt_n
+    # Name the sources that were NOT available.  A smaller count is easy to
+    # miss; "board transcripts: absent" is not.  Neither is a failure -- the
+    # frozen literals still stand alone -- but a clone that checked two values
+    # must not read as one that checked six.
+    results["crosscheck_sources"] = {
+        "board transcripts (logs/board_125mhz_gate/)": "read" if log_n else "absent",
+        "routed report (post_route_wns.txt)": "read" if rpt_n else "absent",
+    }
 
     scales, templates, _ = discover_workload()
     n = (CANDIDATES_LEFT * sum(1 for _ in trials(templates, scales, "left", "per_trial"))
@@ -912,11 +920,13 @@ def main():
               "B0b decomposition + both endpoints".format(
                   len(COSIM_TRANSACTIONS), len(BOARD_MEASUREMENTS),
                   len({hz for _, _, hz, _, _ in BOARD_MEASUREMENTS})))
-        print("source corroboration: {}".format(
-            "{} values re-read from the retained transcripts and routed report".format(n)
-            if n else "SKIPPED -- logs/board_125mhz_gate and the routed report are "
-                      "not present; the frozen literals were checked against "
-                      "themselves only"))
+        srcs = r.get("crosscheck_sources", {})
+        print("source corroboration: {} value(s) re-read from source".format(n))
+        for name, state in sorted(srcs.items()):
+            print("  {:<46} {}".format(name, state.upper()))
+        if any(v == "absent" for v in srcs.values()):
+            print("  Absent sources were NOT checked.  The frozen literals still")
+            print("  stand on their own, but this run did not re-derive them.")
     return 0
 
 
