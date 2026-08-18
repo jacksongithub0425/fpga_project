@@ -244,11 +244,27 @@ def expand(patterns):
 
 
 def sha256_file(path):
+    """SHA-256 of the bytes on disk, for data files we write ourselves."""
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def sha256_source(path):
+    """SHA-256 of a source file with line endings normalised to LF.
+
+    Source is hashed EOL-INDEPENDENTLY on purpose.  git's core.autocrlf=true is
+    set on the capture machine, so a file stored as LF is checked out as CRLF
+    here and as LF on Linux -- hashing raw bytes would make "was this the same
+    code?" answerable only on the platform that captured it.  Normalising means
+    the answer is the same everywhere, which is the question provenance is
+    actually asking.  Data files keep their raw-byte digest, because for those
+    the bytes ARE the artifact.
+    """
+    b = Path(path).read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(b).hexdigest()
 
 
 def write_provenance(outdir, args, pdfs, t_start, pages_done, totals):
@@ -267,9 +283,9 @@ def write_provenance(outdir, args, pdfs, t_start, pages_done, totals):
     for name in ("tme_trace_capture.py", "tme_cycle_model.py"):
         f = here / name
         if f.exists():
-            code[name] = sha256_file(f)
+            code[name] = sha256_source(f)
     det_file = Path(det.__file__).resolve()
-    code[det_file.name] = sha256_file(det_file)
+    code[det_file.name] = sha256_source(det_file)
 
     versions = {"python": sys.version.split()[0], "platform": platform.platform()}
     for mod, label in ((cv2, "opencv"), (np, "numpy"), (fitz, "pymupdf")):
