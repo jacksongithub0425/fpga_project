@@ -11,3 +11,15 @@ vivado/three_stage_combined/board_bundle/** -text
 # files are covered too — they are vectors, not prose.
 hls/integration/tb_bpe_tme_* -text
 hls/template_match/tb_tme_*_hw.* -text
+
+# Gate 5's fixtures, same reason: sw/GATE5_VECTORS.sha256 records their
+# SHA-256 and board_gate_protocol.py refuses to run on a mismatch.
+hls/integration/tb_proto_* -text
+
+# The Priority 0 evidence tools, for the same reason again: every trace
+# directory's provenance.json records their SHA-256 under `code_sha256`, so a
+# result can be tied to the code that produced it. core.autocrlf=true is set on
+# this machine, which would hand a fresh checkout CRLF copies and break that
+# binding on the first clone. Pin them byte-for-byte.
+sw/tme_cycle_model.py -text
+sw/tme_trace_capture.py -text
