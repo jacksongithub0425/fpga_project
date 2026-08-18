@@ -23,3 +23,8 @@ hls/integration/tb_proto_* -text
 # binding on the first clone. Pin them byte-for-byte.
 sw/tme_cycle_model.py -text
 sw/tme_trace_capture.py -text
+
+# Trace evidence, same reason: the run's provenance records the summary's
+# SHA-256, so an EOL-normalised checkout would break the binding.
+sw/trace_*_summary.csv -text
+sw/trace_*_provenance.json -text
