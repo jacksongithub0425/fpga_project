@@ -403,6 +403,16 @@ BOARD_SECONDS = 13.362          # measured, full envelope, 31.25 MHz
 # unchanged core.  It says nothing about a modified core or the combined image.
 TARGET_CLOCK_HZ = 125e6
 
+# The tree root, resolved rather than assumed.  On the development machine this
+# file lives at FPGA/.github-upload/sw/ and the evidence at FPGA/logs/; in a
+# checkout sw/ and logs/ are siblings.  Hard-coding either made the corroboration
+# passes below silently report ABSENT in the other, which reads exactly like
+# "the transcripts are gone" and is how a portable tool stops corroborating
+# anything without ever failing.
+_SW_DIR = Path(__file__).resolve().parent
+TREE_ROOT = (_SW_DIR.parents[1] if _SW_DIR.parent.name == ".github-upload"
+             else _SW_DIR.parent)
+
 PHASE_S_GEOMETRY = (311, 159, 216, 96)
 
 
@@ -751,12 +761,15 @@ def board_log_crosscheck():
     """Corroborate the frozen probe metadata against the retained transcripts.
 
     The literals in FROZEN are the freeze; this re-reads them from
-    logs/board_125mhz_gate/ when that directory is present (it is not part of
-    the committed tree) so a transcription error shows up as a mismatch rather
-    than as agreement with itself.  Returns (failures, checked_count); an
-    absent log directory yields ([], 0), never a pass.
+    logs/board_125mhz_gate/ so a transcription error shows up as a mismatch
+    rather than as agreement with itself.  Returns (failures, checked_count);
+    an absent log directory yields ([], 0), never a pass.
+
+    That directory IS committed as of 2026-08-19 -- it was not before, and this
+    pass reported ABSENT from every clean checkout, re-deriving two of six
+    values while looking like it had run.
     """
-    root = Path(__file__).resolve().parents[2] / "logs" / "board_125mhz_gate"
+    root = TREE_ROOT / "logs" / "board_125mhz_gate"
     clock_log, vec_log = root / "01_load_and_clock.txt", root / "02_vectors_raw.txt"
     if not (clock_log.exists() and vec_log.exists()):
         return [], 0
@@ -796,8 +809,14 @@ def board_log_crosscheck():
 
 def routed_report_crosscheck():
     """Corroborate the frozen routed timing against post_route_wns.txt."""
-    rpt = Path("C:/Users/lychee/tc25/vivado_project/tme_standalone_125"
-               "/overlay_output/post_route_wns.txt")
+    # The committed copy first: it is the one a clone has, and it is the one
+    # MANIFEST-style evidence can bind.  The Vivado build root is the fallback
+    # because it lives outside the repository and only exists on the machine
+    # that ran the implementation.
+    rpt = TREE_ROOT / "logs" / "tme_125_timing" / "post_route_wns.txt"
+    if not rpt.exists():
+        rpt = Path("C:/Users/lychee/tc25/vivado_project/tme_standalone_125"
+                   "/overlay_output/post_route_wns.txt")
     if not rpt.exists():
         return [], 0
     text = rpt.read_text(encoding="utf-8", errors="replace")

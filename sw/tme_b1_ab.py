@@ -132,6 +132,18 @@ def read_transactions(path: Path) -> list[int]:
 
 def read_manifest(path: Path) -> list[tuple]:
     """(pw, ph, tw, th, tag) per case, in the order the testbench runs them."""
+    if not path.exists():
+        # The b1 suite is deliberately not committed: it is fully determined by
+        # the pinned seeds, so regenerating and checking it against
+        # tb_tme_b1.sha256 proves more than a committed copy would.  That makes
+        # this the ORDINARY state of a fresh clone, not a broken tree, and it
+        # deserves the recipe rather than a traceback.
+        raise SystemExit(
+            f"no case manifest at {path}\n"
+            f"  The B1 vector suite regenerates from pinned seeds:\n"
+            f"    cd {path.parent}\n"
+            f"    <hls venv>/python.exe tme_generate_production.py --suite b1\n"
+            f"  then `sha256sum -c tb_tme_b1.sha256` should report three OKs.")
     lines = path.read_text().splitlines()
     n = int(lines[0].split()[0])
     out = []
