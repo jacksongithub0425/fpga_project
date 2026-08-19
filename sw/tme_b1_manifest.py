@@ -168,8 +168,14 @@ def entries() -> list[tuple[str, str]]:
         ("ab project script", HLS + "/run_hls_b1.tcl"),
         ("packaging script", HLS + "/package_b1.tcl"),
         ("prod csim script", HLS + "/csim_prod_b1.tcl"),
-        # The vector record (the payload is gitignored and regenerates).
-        ("vector record", HLS + "/tb_tme_b1.sha256"),
+        # The vector records.  Both payloads are gitignored and regenerate from
+        # pinned seeds, so these files are what says a regeneration produced the
+        # pixels that were actually verified.  The prod record earns its place
+        # here as of 2026-08-19: csim_prod_b1.tcl now checks all four of its
+        # entries before it will run, so it authenticates the stimulus of the
+        # 15/15 production result and is no longer merely informational.
+        ("vector record b1", HLS + "/tb_tme_b1.sha256"),
+        ("vector record prod", HLS + "/tb_tme_prod.sha256"),
         # The transcripts.
         ("log cur", LOGS + "/run_cur.log"),
         ("log b1", LOGS + "/run_b1.log"),

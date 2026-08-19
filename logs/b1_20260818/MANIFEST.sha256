@@ -9,7 +9,7 @@
 9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  hls/template_match/b1_sources/correlation_core.cur.cpp  # source cur
 e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/b1_sources/correlation_core.b1.cpp  # source b1
 17e3b1ec8169c61d8e91c6ed005cb8e53e5afc7d4bd590ec32dcc254f9519242  hls/template_match/b1_sources/correlation_core.b1b.cpp  # source b1b
-e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/correlation_core.cpp  # source shipped
+ad9355015d472ff88dc91ba7bcb727ea4c3cfe82d86960a1ff644f9a7250da67  hls/template_match/correlation_core.cpp  # source shipped
 50457ed35da2a28fe6c150e90c4c8b4d6f4a0acb39e2520291be01755a3bfd5f  logs/b1_20260818/correlation_core.cpp.b1_break  # source cosimmed b1
 9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  logs/b1_20260818/correlation_core.cpp.pre_b1  # source pre-B1
 79a006c562c69858a5de551cfe16baf9df027d4ac2e3dcb0fdd34f3e9431ebe0  hls/template_match/template_match_b1_cur/cur/sim/report/verilog/result.transaction.rpt  # cosim cur
@@ -33,21 +33,22 @@ ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_202608
 c9cc770ba94369f83c4f93fe53784dda260f78979267963f889498423aaaab7b  logs/b1_rerun_20260818/run_cur.log  # rerun log cur
 f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_20260818/run_b1.log  # rerun log b1
 8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
-9b72c8ce7d3371082d84a2ddda4c887ec881139525c5a4c9914d913dbe0d25ac  sw/tme_cycle_model.py  # model
+6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  sw/tme_cycle_model.py  # model
 e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
-9d525fd4dd7a8c164b7e44e5a17cb5a60cde0b01ee3023d2dbc8face8b0f7074  sw/tme_b1_ab.py  # adjudicator
+f381eab2273210a1360fe7db04819430a6f463e119ea87ed6cd12d77ef130693  sw/tme_b1_ab.py  # adjudicator
 85b3c443c97a58e77fc0e101f400b30b8298ed5cb6a0e156af9e4c5f3f199488  sw/tme_scale_policy.py  # scale policy
-e8724521ad9b7892ed691c69f4079ed721778fde93fbccdb12664f4bb21f7af5  sw/tme_b1_manifest.py  # manifest tool
+36de753a793122e8fe6c9dabde5e79e4300cca8fb0f6d1e77bb981b1f0392688  sw/tme_b1_manifest.py  # manifest tool
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
 5453e3c10ddf85067c5d114f7ca6b5f8276288df3e5cd575a810aabf49967e43  hls/template_match/run_hls_b1.tcl  # ab project script
-9ba1eedad7eb0f80f105d18ff82cce6838a9c3dfd900b8afaed1b64c5e93936a  hls/template_match/package_b1.tcl  # packaging script
-9cf311f93cde15f0ba1b2f67b1f04601f1b54ebf7aa194d32bafeae4f1f77303  hls/template_match/csim_prod_b1.tcl  # prod csim script
-a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record
+a956ac494708eb9819e5541d189de67281baae2d98187eff80b3d6234fb8dc64  hls/template_match/package_b1.tcl  # packaging script
+681af37e3e9702d5e31b50d970abb7a1977e54f2802f9810e2f90bf979f675d5  hls/template_match/csim_prod_b1.tcl  # prod csim script
+a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
+cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
 e73d1d25f8f70c801382e98da32c2fdd8fdf79367e69d4fff8519ebe524dea88  logs/b1_20260818/run_cur.log  # log cur
 d781c6e658ac02f6311bd2eb30061781d0623c4380ffa1d4185b9c7f3c0722db  logs/b1_20260818/run_b1.log  # log b1
 964776c811e0cc54fa0818377aebc748149dbd9b8f7176920726dc0de2985b92  logs/b1_20260818/run_b1b.log  # log b1b
-669b38519a287536c960ae8a6d629dd6b0d9aa20cbc20a59b1cecae8c45017ec  logs/b1_20260818/csim_prod.log  # log prod csim
+e459d5a94e52b9d73c07113be083d0c958c87eee0af3da91f1f602ea8dd92d0d  logs/b1_20260818/csim_prod.log  # log prod csim
 a35e7597e9fdf9e1f46e1cc58d97dd2624c205898d2235da8d2f7d17b641b30c  logs/b1_20260818/package_b1.log  # log packaging
 c9567b5d69e27a0f2ccad458c0b1c45ecd30376cbc2234f24b19be1acd179248  logs/b1_20260818/vivado_b1_125.log  # log vivado
 fb359241e82d5c5e0717e1f37b7fe7f534e2fc8f82d7e91c0ff9c725ee56b8d0  logs/b1_board_20260818/00_prestate.txt  # board prestate
@@ -64,6 +65,6 @@ fab0c8a5b098e8eea6bd09728fb956ac502682e1c4a8c7ae1909163503b918da  sw/tme_standal
 3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  hls/template_match/tb_tme_patches_phase_s.bin  # board vectors patches
 9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  hls/template_match/tb_tme_templs_phase_s.bin  # board vectors templates
 b338e54b5f91c1441085a4ec930b8b69ec9ef149a142c48ad8a70c16386ff6d0  hls/template_match/tb_tme_phase_s.sha256  # board vector record
-0c7a09e89a523bd287e4f3b328123785e31ee981d58d8591fbaf94a8c25c8635  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
-7338e03ea52f46a42e197fe1f750c95fc4399818a6f37d95843d5149375448fc  hls/template_match/b1_sources/README.md  # pinned-source README
+7631f0cc7344b9673326a1b29266f39ca04638d004a7f265d14f8f60e66f19c6  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
+0dc5d1fa431e1dabfcc195ae07e912e93308e98c698b0435ed27fd826904765b  hls/template_match/b1_sources/README.md  # pinned-source README
 276f995594b7a9c7dfe97a05f232e76a5dc58fb08a1e4eb0f3cb15c6851e58f0  trace_20260818b/B1_COLUMN_STALE.md  # stale-column marker

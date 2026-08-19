@@ -50,3 +50,13 @@ hls/template_match/template_match_b1/b1/impl/ip/*.zip -text
 # is pinned too: it is what the next session will hash before loading.
 logs/b1_board_20260818/tme_standalone_bringup.py.as_run -text
 sw/tme_standalone_bringup.py -text
+
+# Priority 4's retained transcripts.  These are RAW TOOL OUTPUT -- Vitis emits
+# trailing whitespace and Vivado emits its own line endings, and `git diff
+# --check` complains about both.  Do not clean them: MANIFEST.sha256 binds them,
+# and a transcript edited for tidiness is no longer the thing that was produced.
+# Pinned -text so a checkout reproduces the bytes rather than the tool's
+# platform conventions being re-imposed by git.
+logs/b1_20260818/** -text
+logs/b1_board_20260818/** -text
+logs/b1_rerun_20260818/** -text

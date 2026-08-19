@@ -1,7 +1,13 @@
 # Priority 4 — B1, runtime segment width: evidence
 
-Captured 2026-08-18. Everything here regenerates from the tools; nothing is
-transcribed by hand.
+Captured 2026-08-18/19. Every OFF-BOARD figure here regenerates from the tools
+(`tme_b1_ab.py --assert`, `tme_cycle_model.py --assert`,
+`tme_b1_manifest.py --verify`), and nothing is transcribed by hand.
+
+**The board numbers do not regenerate.** A session is a one-time event: the
+wall times in the silicon section below exist only in the retained transcripts,
+and re-running would produce a *new* measurement, not reproduce this one. They
+are bound by digest instead — that is what `MANIFEST.sha256` is for.
 
     cd hls/template_match
     <venv>/python.exe tme_generate_production.py --suite b1
@@ -91,8 +97,23 @@ B1 still takes the initial-trial matcher projection from 36.476 to 26.334, a
 
 The residual is not noise. It is exactly `rh*th*(T + 1)` on every transaction —
 **one term proportional to the tile count, one constant per call.** Two
-constants against fourteen independent measurements spanning `T ∈ {1,2,3,5,6}`
-and `tw ∈ {4,16,20,24,100,216}`: over-determined by twelve.
+constants — but **count the constraints honestly**. Under the fitted form the
+residual per (output row, template row) depends *only* on `T`, so transactions
+sharing a `T` restate the same equation. `T` spans `{1,2,3,5,6}`: **five**
+independent equations, two free parameters, **three surplus constraints**.
+
+The other nine observations are **not** nine repeats. Eight of them sit at an
+already-constrained `T` but at a *different geometry*, so what they test is
+**geometry invariance** — that the residual really is a function of `T` alone
+and not of `pw`, `ph`, `tw` or `th`. That is a genuine test of the form, just a
+different one from the three surplus constraints. Exactly **one** observation is
+a true repeat: transactions 11 and 12 share `47×21 / 16×12`, and in a
+deterministic simulation that confirms determinism, nothing more.
+
+The **declared-model** check is the stronger one and does not share that
+weakness: it predicts from `(pw, ph, tw, th)` with **zero** free parameters, so
+all **thirteen distinct geometries** are constraints — thirteen, not fourteen,
+because transactions 11 and 12 share `47×21 / 16×12`.
 
 **That shape is measured. The mechanism is not.** The natural reading is a
 per-tile loop-exit test on `i >= seg_len` plus a per-call bound setup, and it
@@ -115,24 +136,38 @@ by construction. They are separated now, and a negative control confirms it:
 perturbing the declared model by +7 cycles fails check 2 on 14/14 while check 3
 still passes on 14/14.
 
-### The overhead is inherent to the runtime bound, not to the redundant test
+### What `b1b` rules out — and what it does not
 
 A second variant (`b1b`) hoisted a clamped bound out of the tile loop so the
-loop asks one question per iteration instead of two:
+body carries no per-iteration predicate:
 
 ```c
     int seg_n = (seg_len < SEG_W) ? seg_len : SEG_W;
     load_seg: for (int i = 0; i < seg_n; i++) { ... }
 ```
 
-Its transaction report is **byte-identical to `b1`'s** — the `T + 1` is what
-HLS charges for a runtime-bounded loop, and removing the extra comparison
-recovers none of it. `b1b` also costs 44 more LUTs. The shipped form is
-therefore the `break` one, which matches the idiom every other variable-bound
-loop in the file already uses (`mac_loop`, `isq_init`, `isq_slide`).
+Its transaction report is **byte-identical to `b1`'s**, at 44 more LUTs. So the
+**source-level form of the test costs nothing**: writing it as `for (i < SEG_W)
+{ if (i >= seg_len) break; … }` or as `for (i < seg_n)` produces the same
+schedule to the cycle.
 
-Recorded as a negative result rather than deleted: the next person to see
-`T + 1` in a B2 or B0b measurement should not spend a cosim re-testing this.
+**That is the whole of the result, and it is narrower than it first looks.**
+`b1b` still has a **runtime** loop bound — `seg_n` is computed at run time, it
+is merely spelled as the induction test instead of a predicate in the body. So
+the experiment cannot separate "runtime-bounded control costs `T + 1`" from any
+other cause the two variants share; **both** have runtime-bounded control.
+Deciding that needs a compile-time-bounded control, and none was run. An earlier
+revision of this document concluded "the `T + 1` is what HLS charges for a
+runtime-bounded loop" — that went further than the evidence.
+
+The mechanism therefore stays **unlocalized**. The shipped form is the `break`
+one, on grounds that do not depend on the mechanism at all: identical cycles,
+fewer LUTs, a write that cannot leave the array however `templ_w` is
+programmed, and the idiom `mac_loop`/`isq_init`/`isq_slide` already use.
+
+Recorded rather than deleted, but recorded for what it is: someone seeing
+`T + 1` in a B2 or B0b measurement need not re-test the *predicate form*. They
+still have to measure their own overhead.
 
 ### B1 is a net LOSS at the compiled maximum template width
 
@@ -213,6 +248,26 @@ i.e. at that stale value a score-tolerance assert sees **nothing**, and only the
 displaced argmax catches it. That is why the case asserts a location, not a
 score.
 
+### The production run was re-done, because the first one proved nothing
+
+The originally retained `csim_prod.log` came from the *old shared project*: it
+opened `template_match_b1` and compiled the **working-tree**
+`correlation_core.cpp`, not the pinned snapshot the co-simulation measured. A
+pass under those conditions is a statement about whatever happened to be in the
+tree, not about the RTL under test — and `add_files` accumulates, so re-running
+it after the A/B script moved to pinned sources would have put two cores in one
+project.
+
+`csim_prod_b1.tcl` now builds a hermetic `template_match_b1_prod` with
+`-reset`, compiles `b1_sources/correlation_core.b1.cpp` by digest, and — new in
+this pass — **verifies all four `tb_tme_prod.sha256` inputs before running**.
+Verifying the source and not the stimulus was half a verification: the suite's
+whole claim is about specific pixels, and the blobs are gitignored, so the
+digest record is the only thing that says they are the right ones. The retained
+log now shows all five digests checked, `open_project -reset
+template_match_b1_prod`, and zero occurrences of `add_files
+correlation_core.cpp`.
+
 ### Results
 
 | stage | result |
@@ -220,7 +275,7 @@ score.
 | **board, B1 bitstream, gated 125.0000 MHz** | **7/7 PASS** — score within the runner's ±0.005 tolerance and the exact (x, y) on every case; six workload-width savings match the model inside the ±1 ms floor |
 | C simulation, unmodified RTL | **12/12 PASS** — establishes the suite as a parity oracle |
 | C simulation, B1 RTL | **12/12 PASS**, identical scores and locations |
-| C simulation, B1 RTL, **production suite** | **15/15 PASS** — `prod-lane15-small` (24x16 in 200x60), `prod-lane15-full` (164x94 in 622x300), the 817-wide max result map, exact and near ties, negative score, flat region |
+| C simulation, B1 RTL, **production suite** | **15/15 PASS** from the hermetic `template_match_b1_prod`, compiling the pinned `b1` snapshot and no working-tree source. Source digest **and all four `tb_tme_prod.sha256` inputs** verified before the run. Covers `prod-lane15-small` (24×16 in 200×60), `prod-lane15-full` (164×94 in 622×300), the 817-wide max result map, exact and near ties, negative score, flat region |
 | RTL co-simulation, `cur` | **PASS**, 14 transactions |
 | RTL co-simulation, `b1` | **PASS**, 14 transactions |
 | control: `cur` vs the published model | **14/14 exact**, fitted per-tile k = 25.0 |
@@ -272,8 +327,14 @@ at **logic levels 0** — the fully-partitioned `t_row` staging array in
 `tme_top.cpp`, which B1 does not touch. Same structure as Priority 2, so the
 slack difference is placement and routing variation on an unchanged path. What
 this build establishes is the verdict, not the margin: the shortened segment
-load **does not cost timing**, and BRAM is unchanged at the 82.1% that was
-already the binding resource.
+load **still meets the 8.000 ns constraint**, and BRAM is unchanged at the
+82.1% that was already the binding resource.
+
+Stated that narrowly on purpose. "Does not cost timing" would be a claim about
+the design's achievable frequency, which a single implementation run at one
+period cannot support: the router stops once the constraint is met, both builds
+met it, and neither was pushed to failure. What is established is a verdict at
+one period, not a margin and not a maximum.
 
 Post-route LUTs went slightly *down* (14,792 vs 14,903) even though the HLS
 estimate went slightly *up* (34,635 vs 34,573). The routed number is the one
@@ -289,8 +350,15 @@ inside the transcript that configured the PL.
 
 ### A packaging trap worth not re-discovering
 
-`export_design -version "0.2b1"` **silently wrote version 1.0** — a VLNV version
-must be numeric, and the flow rewrites a field it dislikes rather than failing.
+`export_design -version "0.2b1"` **produced a `component.xml` carrying version
+1.0**, and reported success. What is **established** is the substitution: the
+requested string is not what was written, and the exit code did not say so.
+
+*Why* is **not** established. "A VLNV version must be numeric" is the obvious
+explanation and it was never tested — no other malformed version was tried, and
+no documentation was consulted. The lesson does not depend on the cause: this
+flow can write a VLNV field you did not ask for and still exit 0.
+
 1.0 is the version this project reserves for a release, so the quiet failure
 mode was publishing a B1 build under the release identity. Two fixes:
 
@@ -367,24 +435,30 @@ sentence was stale.)
 What B1 is still **not** is a measured *page*. The board resolves ±1 ms;
 the page figure sums a cycle term over 20,680 modelled trials.
 
+Closed since this section was first written — listed so the change is visible,
+not because they are open:
+
+* **Routed timing.** All constraints met at 8.000 ns.
+* **125 MHz.** No longer a constrained period: `Clocks.fclk0_mhz` read back
+  125.0000 through a fail-closed gate.
+* **Silicon.** 7/7 (±0.005 on score, exact on location), saving resolved at six
+  workload widths.
+
 Still open, and not claimed here:
 
-* **Routed timing: CLOSED**, and **125 MHz is now a board measurement**, not a
-  constrained period: `Clocks.fclk0_mhz` read back 125.0000 through a
-  fail-closed gate during the session above.
-* **Silicon: 7/7** (±0.005 on score, exact on location), with the saving
-  resolved at six workload widths. What remains unproved for B1 is the *page*,
-  not the core.
-* **26.334 s/page is a projection over the 20,680-trial trace**, matcher-only:
+* **The page.** **26.334292108222 s/page is a projection over the
+  20,680-trial trace**, matcher-only:
   it excludes refinement, DMA, extraction and PS work, and no page has been run
   end to end at any clock.
 * **B2 and B0b are still projections written in the same optimistic style** as
-  B1's was. B1 is now the standing warning: their tile terms have not been
-  measured either. What B1 established is that a runtime-bounded loop is *not*
-  free — it cost `T + 1` here — **not** a rate that transfers. Nothing measured
-  here licenses assuming B2 or B0b pay `T + 1`, or that they pay only `T + 1`;
-  the `b1b` result is direct evidence that the mechanism is not the one the
-  obvious reading suggests. Each must be measured on its own.
+  B1's was, and their tile terms have not been measured. B1 is the standing
+  warning, but be precise about what it warns of: a projected tile term was
+  optimistic by `T + 1` cycles per (output row, template row) **here**, at
+  **this** geometry sweep, for reasons that were never localized. That is a
+  reason to measure, not a rate to carry over. Nothing here licenses assuming
+  B2 or B0b pay `T + 1`, pay only `T + 1`, or pay anything at all — and the
+  `b1b` result shows only that the *source-level form* of a bound is free, not
+  where the cycles come from. Each must be measured on its own.
 
 ---
 

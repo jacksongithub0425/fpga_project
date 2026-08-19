@@ -54,3 +54,23 @@ the other half of the pair. The old tree is kept, marked, and read by nothing
 Adjudicate any of them with:
 
     python tme_b1_ab.py --sol {b1|b1b} --assert
+
+## The comments inside these files are FROZEN, and one of them is now wrong
+
+These snapshots are hash-pinned in `run_hls_b1.tcl` and in
+`logs/b1_20260818/MANIFEST.sha256`, so their bytes cannot be corrected without
+invalidating every digest that binds the measurement to a source. That includes
+their comments.
+
+`correlation_core.b1.cpp` still attributes the measured `T + 1` overhead to
+"the `i >= seg_len` exit test ... and +1 per CALL for the bound setup". **That
+attribution is not supported.** The `b1b` experiment in this very directory
+removed the per-iteration predicate and left the transaction report
+byte-identical — so the source-level form of the test costs nothing. Note what
+that does *not* show: `b1b` still has a runtime loop bound (`i < seg_n`), so
+runtime-bounded control is neither confirmed nor excluded. Only the *shape* of
+the overhead is established; the mechanism stays unlocalized.
+
+The correction lives in the shipped `../correlation_core.cpp`, which is the
+authority on current wording. These files are the authority on what was
+compiled. Do not reconcile them by editing a snapshot.

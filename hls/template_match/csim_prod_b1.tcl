@@ -42,6 +42,43 @@ if {$got ne $snap_sha} {
 }
 puts "csim_prod_b1.tcl: $snap — sha256 $got verified"
 
+# THE STIMULUS, TOO.  Verifying the source and not the vectors is half a
+# verification: this suite's whole claim is "the B1 core reproduces the
+# production goldens", and that is a statement about a specific 1.6 MB of
+# pixels.  The blobs are gitignored and regenerate from pinned seeds, so the
+# thing that says they are the right pixels is tb_tme_prod.sha256 -- which is
+# committed precisely so a regeneration can be checked rather than trusted.
+#
+# All FOUR entries are checked, including tb_tme_counts_prod.txt.  That file is
+# not read by the testbench, but it is the 0.3 acceptance sidecar for these
+# exact cases; if it has drifted from the blobs then the package is internally
+# inconsistent and this run should not be quoted as evidence for either.
+set rec "tb_tme_prod.sha256"
+if {![file exists $rec]} {
+    error "$rec is missing. Regenerate the production package with           `python tme_generate_production.py` -- the blobs are gitignored, so           the digest record is the only thing that says which pixels these are."
+}
+set fh [open $rec r]
+set rec_lines [split [string trim [read $fh]] "\n"]
+close $fh
+if {[llength $rec_lines] != 4} {
+    error "$rec lists [llength $rec_lines] files, expected 4           (cases/patches/templs/counts)."
+}
+set n_ok 0
+foreach line $rec_lines {
+    set want [lindex $line 0]
+    set name [lindex $line end]
+    if {![file exists $name]} {
+        error "$name is listed in $rec but absent. Run               `python tme_generate_production.py` to regenerate the package."
+    }
+    set have [string tolower [lindex [split [exec sha256sum $name]] 0]]
+    if {$have ne $want} {
+        error "$name has SHA-256 $have, pinned $want in $rec.               A production suite built from different pixels is not evidence               about the goldens this core is being held to."
+    }
+    puts "csim_prod_b1.tcl: $name — sha256 verified"
+    incr n_ok
+}
+puts "csim_prod_b1.tcl: all $n_ok production inputs verified against $rec"
+
 open_project -reset $project_name
 set_top tme_top
 

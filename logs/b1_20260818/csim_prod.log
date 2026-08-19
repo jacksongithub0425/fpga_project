@@ -1,23 +1,29 @@
 
 ****** vitis-run v2025.2 (64-bit)
   **** SW Build 6295257 on 2025-11-13-08:29:27
-  **** Start of session at: Tue Aug 18 21:27:46 2026
+  **** Start of session at: Wed Aug 19 08:33:59 2026
     ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
     ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
   **** HLS Build v2025.2 6295257
 Sourcing Tcl script 'C:/Users/lychee/Desktop/FPGA/hls/template_match/csim_prod_b1.tcl'
-INFO: [HLS 200-1510] Running: open_project template_match_b1 
-WARNING: [HLS 200-2182] The 'template_match_b1' project will not automatically appear within Vitis IDE workspaces and is meant only for TCL batch use.  Please use open_component instead of open_project/open_solution to generate Vitis IDE compatible component files and directory structure.
+csim_prod_b1.tcl: b1_sources/correlation_core.b1.cpp â€” sha256 e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51 verified
+csim_prod_b1.tcl: tb_tme_cases_prod.txt â€” sha256 verified
+csim_prod_b1.tcl: tb_tme_patches_prod.bin â€” sha256 verified
+csim_prod_b1.tcl: tb_tme_templs_prod.bin â€” sha256 verified
+csim_prod_b1.tcl: tb_tme_counts_prod.txt â€” sha256 verified
+csim_prod_b1.tcl: all 4 production inputs verified against tb_tme_prod.sha256
+INFO: [HLS 200-1510] Running: open_project -reset template_match_b1_prod 
+WARNING: [HLS 200-2182] The 'template_match_b1_prod' project will not automatically appear within Vitis IDE workspaces and is meant only for TCL batch use.  Please use open_component instead of open_project/open_solution to generate Vitis IDE compatible component files and directory structure.
 Resolution: For help on HLS 200-2182 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-2182.html
-INFO: [HLS 200-10] Opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1'.
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_prod'.
 INFO: [HLS 200-1510] Running: set_top tme_top 
 INFO: [HLS 200-1510] Running: add_files tme_top.cpp 
 INFO: [HLS 200-10] Adding design file 'tme_top.cpp' to the project
 INFO: [HLS 200-1510] Running: add_files tme_top.h 
 INFO: [HLS 200-10] Adding design file 'tme_top.h' to the project
-INFO: [HLS 200-1510] Running: add_files correlation_core.cpp 
-INFO: [HLS 200-10] Adding design file 'correlation_core.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files b1_sources/correlation_core.b1.cpp -cflags -IC:/Users/lychee/Desktop/FPGA/hls/template_match 
+INFO: [HLS 200-10] Adding design file 'b1_sources/correlation_core.b1.cpp' to the project
 INFO: [HLS 200-1510] Running: add_files -tb tme_tb.cpp 
 INFO: [HLS 200-10] Adding test bench file 'tme_tb.cpp' to the project
 INFO: [HLS 200-1510] Running: add_files -tb tb_tme_patches_b1.bin tb_tme_patches_cosim.bin tb_tme_patches_csim.bin tb_tme_patches_hw.bin tb_tme_patches_prod.bin tb_tme_templs_b1.bin tb_tme_templs_cosim.bin tb_tme_templs_csim.bin tb_tme_templs_hw.bin tb_tme_templs_prod.bin tb_tme_cases_b1.txt tb_tme_cases_cosim.txt tb_tme_cases_csim.txt tb_tme_cases_hw.txt tb_tme_cases_prod.txt tb_tme_counts_prod.txt 
@@ -37,19 +43,56 @@ INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_csim.txt' to the project
 INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_hw.txt' to the project
 INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_prod.txt' to the project
 INFO: [HLS 200-10] Adding test bench file 'tb_tme_counts_prod.txt' to the project
-INFO: [HLS 200-1510] Running: open_solution b1 
-INFO: [HLS 200-10] Opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1/b1'.
-INFO: [SYN 201-201] Setting up clock 'default' with a period of 5ns.
-INFO: [HLS 200-1611] Setting target device to 'xc7z020-clg400-1'
-INFO: [HLS 200-1505] Using flow_target 'vivado'
+INFO: [HLS 200-1510] Running: open_solution -reset prod 
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_prod/prod'.
+INFO: [HLS 200-10] Cleaning up the solution database.
+INFO: [HLS 200-1505] Using default flow_target 'vivado'
 Resolution: For help on HLS 200-1505 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: set_part xc7z020clg400-1 
+INFO: [HLS 200-1611] Setting target device to 'xc7z020-clg400-1'
+INFO: [HLS 200-1510] Running: create_clock -period 5ns -name default 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 5ns.
 INFO: [HLS 200-1510] Running: csim_design -argv prod 
 INFO: [SIM 211-2] *************** CSIM start ***************
 INFO: [HLS 200-2191] C-Simulation will use clang-16 as the compiler
 INFO: [HLS 200-2036] Building debug C Simulation binaries
-   Compiling ../../../../correlation_core.cpp in debug mode
+   Compiling ../../../../tme_tb.cpp in debug mode
+   Compiling ../../../../b1_sources/correlation_core.b1.cpp in debug mode
+   Compiling ../../../../tme_top.cpp in debug mode
    Generating csim.exe
-In file included from ../../../../correlation_core.cpp:1:
+In file included from ../../../../tme_tb.cpp:49:
+In file included from ../../../../tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+In file included from ../../../../b1_sources/correlation_core.b1.cpp:1:
+In file included from C:/Users/lychee/Desktop/FPGA/hls/template_match\tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+In file included from ../../../../tme_top.cpp:1:
 In file included from ../../../../tme_top.h:2:
 In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
 In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
@@ -100,8 +143,8 @@ TESTBENCH PASSED
 INFO [HLS SIM]: The maximum depth reached by any hls::stream() instance in the design is 251740
 INFO: [SIM 211-1] CSim done with 0 errors.
 INFO: [SIM 211-3] *************** CSIM finish ***************
-INFO: [HLS 200-2161] Finished Command csim_design Elapsed time: 00:04:17; Allocated memory: 0.664 MB.
+INFO: [HLS 200-2161] Finished Command csim_design Elapsed time: 00:04:13; Allocated memory: 0.723 MB.
 INFO: [HLS 200-1510] Running: close_project 
-INFO: [HLS 200-112] Total CPU user time: 1 seconds. Total CPU system time: 1 seconds. Total elapsed time: 258.327 seconds; peak allocated memory: 146.750 MB.
+INFO: [HLS 200-112] Total CPU user time: 1 seconds. Total CPU system time: 1 seconds. Total elapsed time: 257.932 seconds; peak allocated memory: 146.484 MB.
 INFO: [vitis-run 60-791] Total elapsed time: 0h 4m 19s
 INFO: [vitis-run 60-1662] Stopping dispatch session having empty uuid.

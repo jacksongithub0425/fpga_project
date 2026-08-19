@@ -15,13 +15,29 @@ Run it with the HLS venv python (it imports the detector for the workload):
 
 WHAT IS MEASURED AND WHAT IS MODELLED
 -------------------------------------
-The `cur` variant is the only one backed by silicon.  It reproduces every
-one of the nine RTL-cosim transactions exactly and lands within 2.6 ms of all
-four board measurements, at two PL clocks (31.25 MHz shipping, 125 MHz probe).
-B1 / B2 / B0b are PAGE-LEVEL PROJECTIONS built on that model: each sums a
-per-invocation cycle term over the 20,680 modelled trials.  NO PAGE FIGURE HERE
-IS A MEASURED PAGE TIME, for any variant including `cur` -- no page has been run
-on hardware at any clock.
+TWO variants are backed by silicon: `cur` and `B1`.
+
+`cur` reproduces every one of the nine RTL-cosim transactions exactly and lands
+within 2.6 ms of all four board measurements, at two PL clocks (31.25 MHz
+shipping, 125 MHz probe).
+
+`B1` was implemented, co-simulated against `cur` as a paired A/B, routed at
+8.000 ns (WNS +0.134571 ns) and RUN ON THE BOARD on 2026-08-19 -- 7/7 cases at
+an observed, fail-closed-gated 125.0000 MHz, using a runner and vectors
+byte-identical to the Priority 3 session that measured the unmodified core, so
+only the bitstream differed.  Six workload-width cases moved by the modelled
+amount to within the +/-1 ms print floor.
+
+Board agreement is nevertheless COARSE: +/-1 ms at 125 MHz is +/-125,000
+cycles, three orders of magnitude looser than the co-simulation.  The board
+says the term is right at workload widths; the cosim is what makes it exact.
+
+B2 / B0b remain unimplemented, and their terms are unmeasured.
+
+ALL page-level figures here -- for EVERY variant, `cur` included -- are
+PROJECTIONS: each sums a per-invocation cycle term over the 20,680 modelled
+trials.  NO PAGE FIGURE HERE IS A MEASURED PAGE TIME.  No page has been run on
+hardware at any clock.
 
 They are not, however, all projections of the same kind, and an earlier revision
 of this docstring flattened them by saying "no RTL implementing them exists".
@@ -212,21 +228,29 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         #     tile = T * (2*tw + 41) + 1
         #
         # exactly, on 14/14 transactions spanning T in {1,2,3,5,6} and tw in
-        # {4,16,20,24,100,216}: two corrected constants against fourteen
-        # independent measurements, so the form is over-determined by twelve.
+        # {4,16,20,24,100,216}.  Count the constraints honestly.  Under the
+        # fitted form the residual depends only on T, so same-T transactions
+        # restate one equation: FIVE independent equations, two free
+        # parameters, THREE surplus constraints.  Of the nine remaining
+        # observations, eight sit at an already-constrained T but a DIFFERENT
+        # geometry and so test geometry invariance (that the residual is a
+        # function of T alone); exactly one is a true repeat.  What carries the
+        # most weight is the separate ZERO-parameter check of this closed form
+        # against all thirteen distinct geometries.
         #
         # WHAT IS MEASURED is the SHAPE of the overhead: it scales as
         # T + 1 per (output row, template row), i.e. one term proportional to
         # the tile count and one constant per correlation_core call.  That much
         # the fourteen transactions pin.
         #
-        # WHY it is there is INFERRED, not measured.  The natural reading is a
-        # per-tile loop-exit test on `i >= seg_len` plus a per-call bound setup,
-        # and no experiment here distinguishes that from any other schedule with
-        # the same shape -- replacing the exit test with a hoisted clamped bound
-        # changed nothing at all (solution `b1b`, byte-identical report), which
-        # is evidence AGAINST the exit test being the whole story.  Call it
-        # dynamic-bound overhead; do not quote the mechanism as established.
+        # WHY it is there is NOT established.  Replacing the per-iteration
+        # `i >= seg_len` predicate with a hoisted clamped bound changed nothing
+        # at all (solution `b1b`, byte-identical report), so the SOURCE-LEVEL
+        # FORM of the test is ruled out.  Nothing more: `b1b` still carries a
+        # runtime loop bound (`i < seg_n`), so no experiment here separates
+        # runtime-bounded control from any other cause the two share.  Call it
+        # dynamic-bound overhead and leave it unlocalized; do not quote a
+        # mechanism as established.
         #
         # B2 and B0b must be measured on their own.  Nothing here licenses
         # assuming they pay T + 1, or that they pay only T + 1.
@@ -681,6 +705,14 @@ FROZEN = {
         # The cost at the compiled maximum template width, where B1 LOSES.
         "phase_s_max_cycles": 23482881,
         "phase_s_max_delta_cycles": 6144,
+        # The B1 implementation and silicon results, frozen so
+        # b1_evidence_crosscheck() can re-read them out of the retained
+        # artifacts rather than agreeing with itself.  These are the numbers
+        # the docstring's "cycle-validated workload projection" tier rests on.
+        "routed_period_ns": 8.000,
+        "routed_wns_ns": 0.134571,
+        "board_fclk_mhz": 125.0000,
+        "board_cases": 7,
     },
     "s_per_page_at_125mhz": {
         "pl_full_context": 631.930606,    # today's PL, side-common full context
@@ -755,6 +787,74 @@ def measured_clock_ratios():
             (hz_lo, s_lo), (hz_hi, s_hi) = sorted(per_hz.items())
             out[name] = (s_lo / s_hi, hz_hi / hz_lo)
     return out
+
+
+def b1_evidence_crosscheck():
+    """Re-read the B1 routed report and board transcript, if they are present.
+
+    Priority 2's evidence has been corroborated from source since it was
+    frozen; B1's was not, even after the docstring started calling B1
+    silicon-backed.  An evidence tier that no assertion touches is a claim, not
+    a check.  This closes that for the two numbers that carry the tier: the
+    routed verdict at 8.000 ns and the observed board clock.
+
+    Returns (failures, checked_count).  Absent artifacts yield ([], 0) -- never
+    a pass -- exactly like board_log_crosscheck().
+    """
+    root = Path(__file__).resolve().parents[2]
+    if not (root / "logs").is_dir():          # clean checkout: sw/ is a sibling
+        root = Path(__file__).resolve().parents[1]
+    routed = root / "logs" / "b1_20260818" / "b1_post_route_wns.txt"
+    run = root / "logs" / "b1_board_20260818" / "03_run.txt"
+    if not (routed.exists() and run.exists()):
+        return [], 0
+
+    fail, checked = [], 0
+    b1f = FROZEN["b1"]
+
+    txt = routed.read_text(errors="replace")
+    m = re.search(r"constrained period\s*:\s*([0-9.]+)\s*ns", txt)
+    if not m:
+        fail.append("B1 routed report: no constrained period line")
+    else:
+        checked += 1
+        if abs(float(m.group(1)) - b1f["routed_period_ns"]) > 1e-9:
+            fail.append("B1 routed period: report says {} ns, frozen {}".format(
+                m.group(1), b1f["routed_period_ns"]))
+    m = re.search(r"post-route WNS\s*:\s*([0-9.+-]+)\s*ns", txt)
+    if not m:
+        fail.append("B1 routed report: no post-route WNS line")
+    else:
+        checked += 1
+        if abs(float(m.group(1)) - b1f["routed_wns_ns"]) > 5e-7:
+            fail.append("B1 routed WNS: report says {} ns, frozen {}".format(
+                m.group(1), b1f["routed_wns_ns"]))
+    checked += 1
+    if "all constraints met" not in txt:
+        fail.append("B1 routed report does not say 'all constraints met'")
+
+    txt = run.read_text(errors="replace")
+    m = re.search(r"FCLK0 gate: PASS.*?([0-9]+\.[0-9]+) MHz", txt)
+    if not m:
+        fail.append("B1 board transcript: no passing FCLK0 gate line")
+    else:
+        checked += 1
+        if abs(float(m.group(1)) - b1f["board_fclk_mhz"]) > 1e-4:
+            fail.append("B1 board clock: transcript says {} MHz, frozen {}".format(
+                m.group(1), b1f["board_fclk_mhz"]))
+    m = re.search(r"(\d+)/(\d+) cases passed", txt)
+    if not m:
+        fail.append("B1 board transcript: no case tally")
+    else:
+        checked += 1
+        if (int(m.group(1)), int(m.group(2))) != (b1f["board_cases"],
+                                                  b1f["board_cases"]):
+            fail.append("B1 board cases: transcript says {}/{}, frozen {}/{}".format(
+                m.group(1), m.group(2), b1f["board_cases"], b1f["board_cases"]))
+    checked += 1
+    if "re-invocation check: PASS" not in txt:
+        fail.append("B1 board transcript: no passing re-invocation check")
+    return fail, checked
 
 
 def board_log_crosscheck():
@@ -900,14 +1000,18 @@ def check(results):
     fail.extend(log_fail)
     rpt_fail, rpt_n = routed_report_crosscheck()
     fail.extend(rpt_fail)
-    results["crosschecks_run"] = log_n + rpt_n
+    b1_fail, b1_n = b1_evidence_crosscheck()
+    fail.extend(b1_fail)
+    results["crosschecks_run"] = log_n + rpt_n + b1_n
     # Name the sources that were NOT available.  A smaller count is easy to
     # miss; "board transcripts: absent" is not.  Neither is a failure -- the
     # frozen literals still stand alone -- but a clone that checked two values
     # must not read as one that checked six.
     results["crosscheck_sources"] = {
-        "board transcripts (logs/board_125mhz_gate/)": "read" if log_n else "absent",
-        "routed report (post_route_wns.txt)": "read" if rpt_n else "absent",
+        "P2 board transcripts (logs/board_125mhz_gate/)":
+            "read" if log_n else "absent",
+        "P2 routed report (post_route_wns.txt)": "read" if rpt_n else "absent",
+        "B1 routed + board (logs/b1_*/)": "read" if b1_n else "absent",
     }
 
     scales, templates, _ = discover_workload()
@@ -1062,10 +1166,12 @@ def main():
     print()
     print("PROJECTION - initial trials only, s/page @ {:g} MHz".format(TARGET_CLOCK_HZ / 1e6))
     print("-" * 78)
-    print("  The CLOCK is board-demonstrated (above).  The ARCHITECTURE below is not:")
+    print("  The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.")
+    print("  What is NOT demonstrated is any PAGE, for any variant:")
     print("  Phase S is a driver change with no RTL; B2 and B0b are unimplemented RTL.")
-    print("  B1 IS implemented and its cycle term is cosim-measured -- the seconds")
-    print("  still assume the clock the UNMODIFIED core demonstrated.")
+    print("  B1 IS implemented: cycle term cosim-measured, routed at 8.000 ns, and RUN")
+    print("  ON THE BOARD at its OWN observed 125.0000 MHz -- it does not borrow the")
+    print("  unmodified core's clock.  Every s/page below is still a projection.")
     labels = [
         ("pl_full_context", "TODAY'S PL: side-common full context", "deployed; 622x300 / 622x224"),
         ("current_core", "CPU per-base context patch policy", "silicon-anchored formula"),

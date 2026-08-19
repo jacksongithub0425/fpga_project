@@ -23,7 +23,9 @@
 // costs and why the naive reading of it is wrong.  Before B1 the load was a
 // constant SEG_W of 232 whatever tw was, so a 20-wide template paid for 216
 // columns of template it did not have: at the Phase-S workload that is
-// 26.334 s/page instead of 36.476 (sw/tme_cycle_model.py, variant "B1").
+// a 26.334292108222 s/page workload projection instead of 36.476
+// (sw/tme_cycle_model.py, variant "B1"; the exact aggregate is frozen as
+// FROZEN["b1"]["aggregate_cycles"] = 118,504,314,487).
 
 // The MAC reads seg[p + x] for p < PAR_COLS and x < tw, so the highest index
 // a tile can touch is (PAR_COLS - 1) + (tw - 1) = tw + PAR_COLS - 2, and a
@@ -69,17 +71,31 @@ void correlation_core(
     //
     //     T + 1     cycles per (output row, template row)
     //
-    // +1 per TILE for the `i >= seg_len` exit test -- a compile-time bounded
-    // loop ends without asking, a runtime-bounded one has to check -- and +1
-    // per CALL for the bound setup.  So the measured tile term is
-    // T*(2*tw + 41) + 1, and the Phase-S page figure is 26.334 s/page, not the
-    // 26.240 that was projected before this RTL existed.
+    // WHAT IS ESTABLISHED IS THE SHAPE, NOT THE MECHANISM.  One term scaling
+    // with the tile count and one constant per correlation_core call: that is
+    // what the measurements pin, and it makes the tile term
+    // T*(2*tw + 41) + 1.  The workload PROJECTION built from that term is
+    // 26.334292108222 s/page, against 26.239696410444 projected before this
+    // RTL existed.  (A projection over 20,680 modelled trials -- not a
+    // measured page time.  Nothing has run a page.)
     //
-    // Hoisting a clamped bound so the loop asks ONE question per iteration
-    // instead of two was tried (solution `b1b`) and its transaction report is
-    // BYTE-IDENTICAL to this one's, at 44 more LUTs.  The T + 1 is what HLS
-    // charges for a runtime-bounded loop; it is not the redundant compare.  Do
-    // not re-litigate that with another co-simulation.
+    // WHERE the cycles go is NOT established, and one obvious guess is ruled
+    // out.  Solution `b1b` hoists a clamped bound so the loop carries no
+    // per-iteration `i >= seg_len` predicate at all, and its transaction
+    // report is BYTE-IDENTICAL to this one's (at 44 more LUTs).
+    //
+    // READ THAT PRECISELY.  `b1b` still has a RUNTIME loop bound -- it just
+    // spells it `i < seg_n` with seg_n computed once instead of testing a
+    // predicate inside the body.  So what the experiment rules out is the
+    // SOURCE-LEVEL FORM of the test: writing it one way or the other costs
+    // nothing.  It does NOT rule out runtime-bounded control as the origin of
+    // the cycles, because both variants have it.  A compile-time-bounded
+    // control experiment would be needed to separate those, and none was run.
+    //
+    // So: the shape is measured, the mechanism stays unlocalized.  Do not
+    // re-litigate the predicate form with another co-simulation, do not
+    // promote "runtime bound" from a candidate to a cause, and do not assume
+    // B2 or B0b pay the same shape, or only this shape.
     //
     // Consequence worth knowing before reading a board trace: at tw = 216 the
     // saving is 1 cycle per tile and the overhead is T + 1, so B1 is a NET LOSS

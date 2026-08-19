@@ -32,11 +32,13 @@ file was for.  The measured saving is short of the naive one by exactly
     T + 1   cycles per (output row, template row)
 
 on 14/14 transactions.  THAT SHAPE IS MEASURED; the mechanism behind it is
-not.  The natural reading is a per-tile loop-exit test plus a per-call bound
-setup, and it is only a reading: replacing the exit test with a hoisted clamped
-bound produced a BYTE-IDENTICAL transaction report (solution `b1b`), which is
-evidence against the exit test being the whole of it.  Call it dynamic-bound
-overhead.  So the measured tile term is
+not.  Replacing the per-iteration `i >= seg_len` predicate with a hoisted
+clamped bound produced a BYTE-IDENTICAL transaction report (solution `b1b`) --
+so the SOURCE-LEVEL FORM of the test costs nothing.  That is all it shows:
+`b1b` still has a RUNTIME loop bound, just spelled `i < seg_n`, so the
+experiment cannot separate "runtime-bounded control" from any other cause
+common to both.  Separating them needs a compile-time-bounded control that was
+never run.  The mechanism stays unlocalized.  So the measured tile term is
 
     tile = T * (2*tw + 41) + 1          rather than the projected T*(2*tw + 40)
 
@@ -48,9 +50,22 @@ are PROJECTIONS over 20,680 modelled trials; neither is a measured page time.
 WHAT IS ASSERTED HERE is the measured form, per transaction, plus the residual
 structure that justifies it: `naive - measured == T + 1` is checked separately
 from the closed form, so a future edit that happened to shift both by the same
-amount still fails.  Two corrected constants against fourteen independent
-measurements spanning T in {1,2,3,5,6} and tw in {4,16,20,24,100,216} leaves
-the form over-determined by twelve.
+amount still fails.  COUNT THE CONSTRAINTS HONESTLY.  The residual per
+(output row, template row) depends ONLY on T, so transactions sharing a T
+restate the same equation.  T spans {1,2,3,5,6}: five distinct equations, two
+free parameters, so the fit carries THREE independent surplus constraints --
+not thirteen.
+
+The other nine observations are NOT nine repeats.  Eight sit at an
+already-constrained T but at a DIFFERENT geometry, so they test GEOMETRY
+INVARIANCE -- that the residual really is a function of T alone and not of
+pw/ph/tw/th.  Exactly one is a true repeat (transactions 11 and 12 share
+47x21/16x12), and in a deterministic simulation that confirms determinism.
+
+The DECLARED-model check is the stronger of the two and does not share this
+weakness: it predicts from (pw, ph, tw, th) with ZERO free parameters, so all
+thirteen distinct geometries are constraints (transactions 11 and 12 share
+47x21/16x12, which is why thirteen and not fourteen).
 
     python tme_b1_ab.py                    # print the comparison
     python tme_b1_ab.py --assert           # exit 1 on any drift
