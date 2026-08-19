@@ -1,0 +1,54 @@
+PHASE S PROTOTYPE   crop ON   envelope round() [fixed]   ROI 96x64
+==============================================================================
+
+PER-TRIAL  (oracle = full patch, Phase S = 96x64 crop)
+------------------------------------------------------------------------------
+  initial     trials 20680   crop bit-exact 667     (  3.23%)
+              oracle argmax in ROI 9865   ( 47.70%)   same loc 9327   ( 45.10%)   same score  18.61%
+
+  max |cropped - full| over every trial   1.222e-06   worst at tw=52 th=31 pw=421 ph=217
+  A nonzero value is OpenCV switching between spatial and DFT
+  correlation with the array size, not a crop-placement error; the
+  exact-integer HLS core has no such term.
+
+MODELLED MATCHER TIME  s/page @ 125 MHz  (this run's own geometry;
+  initial trials only - no DMA, no PS work, no refinement)
+------------------------------------------------------------------------------
+  full-patch search                              335.384
+  Phase S                                         36.476     9.19x
+  Phase S + B1                                    26.240    12.78x
+  Phase S + B2                                    20.175    16.62x
+  refinement, at Phase S geometry                  0.000
+
+PAGE PARITY vs baseline_cpu_20260811
+------------------------------------------------------------------------------
+  pages compared             36
+  byte-identical detections  4 (11.1%)
+  differing detections       32
+  of which counts changed    6
+  net count delta            {'male': -1, 'female': 1, 'ferrule': -3}
+    example_01.pdf               p1  {'female': 32, 'unknown': 4} -> {'female': 36, 'unknown': 0}
+    example_02.pdf               p0  {'female': 18} -> {'female': 17}
+    example_06.pdf               p0  {'ferrule': 37, 'unknown': 8} -> {'ferrule': 34, 'unknown': 11}
+    example_09.pdf               p0  {'female': 9} -> {'female': 8}
+    example_21.pdf               p0  {'female': 7} -> {'female': 6}
+    example_29.pdf               p0  {'male': 15, 'unknown': 9} -> {'male': 14, 'unknown': 10}
+
+  GATE: Phase S is selectable only once this accuracy result is accepted.
+
+LABELLED ACCURACY  (workbook truth; counts summed per input file)
+------------------------------------------------------------------------------
+  file             truth m/f/fe       baseline       this run   |err| b   |err| r
+  example_01            36/36/0     36/32/0 u4     36/36/0 u0         4         0   BETTER
+  example_02            20/17/0     20/18/0 u1     20/17/0 u1         1         0   BETTER
+  example_06            29/3/37     28/3/37 u8    28/3/34 u11         1         4   WORSE
+  example_21              6/6/0       6/7/0 u0       6/6/0 u0         1         0   BETTER
+  example_29            14/19/0     15/19/0 u9    14/19/0 u10         1         0   BETTER
+
+  files scored                28  (7 unlabelled, skipped)
+  files improved / unchanged / regressed   4 / 23 / 1
+  TOTAL absolute count error  baseline 26   this run 22   (-4)
+
+  This is the only measurement here that speaks to DETECTION QUALITY.
+  Byte-parity against the CPU baseline does not, and a page that
+  fails parity while moving TOWARD the labels is not a regression.

@@ -81,7 +81,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import tme_cycle_model as M                                    # noqa: E402
 
-HLS = Path("C:/Users/lychee/Desktop/FPGA/hls/template_match")
+# Resolved rather than hard-coded, so the paired measurement can be
+# re-adjudicated from a fresh clone and not only on the machine that built it.
+# On the development tree `sw/` hangs off `.github-upload/` and the HLS
+# projects are two levels up; in a checkout they are siblings.
+_SW = Path(__file__).resolve().parent
+_ROOT = _SW.parents[1] if _SW.parent.name == ".github-upload" else _SW.parent
+HLS = _ROOT / "hls" / "template_match"
 # One HLS project per variant, `template_match_b1_<sol>`, each holding a single
 # solution of the same name.  They used to share one `template_match_b1`, which
 # could not be re-run safely: `open_project` without -reset reopens what is on
@@ -363,7 +369,8 @@ def main() -> int:
     ap.add_argument("--json", type=Path, help="write the comparison as JSON")
     ap.add_argument("--project-root", dest="project_root", type=Path,
                     default=HLS, help="directory holding the per-variant "
-                                      "projects template_match_b1_<sol>")
+                                      "projects template_match_b1_<sol> "
+                                      f"(default {HLS})")
     ap.add_argument("--sol", default="b1",
                     help="which B1-side solution to adjudicate: `b1` is the "
                          "`if (i >= seg_len) break` form, `b1b` the hoisted "

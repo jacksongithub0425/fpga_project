@@ -1,0 +1,7 @@
+restored overlay = /usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/overlays/base/base.bit
+fclk0 = 100.0
+fclk1 = 142.857143
+
+
+__EXIT__ 0
+

@@ -108,6 +108,21 @@ baseline_cpu_*/
 !logs/b1_rerun_20260818/**
 !logs/scale_policy_20260818/
 !logs/scale_policy_20260818/**
+
+# The Priority 2 and Priority 3 transcripts, 145 KB, on a narrower argument:
+# sw/tme_cycle_model.py --assert RE-READS them to corroborate its frozen
+# literals, and in a checkout that lacks them it reports
+# "board transcripts (logs/board_125mhz_gate/) ABSENT" and re-derives 2 of 6
+# values instead of 6.  A Priority 0 evidence tool that cannot re-prove itself
+# from a clone is not doing the job it exists for.
+!logs/board_125mhz_gate/
+!logs/board_125mhz_gate/**
+!logs/tme_125_timing/
+!logs/tme_125_timing/**
+!logs/phase_s_20260818/
+!logs/phase_s_20260818/**
+!logs/phase_s_board_20260818/
+!logs/phase_s_board_20260818/**
 !hls/template_match/template_match_b1*/**/*.rpt
 !hls/template_match/template_match_b1/SUPERSEDED.md
 !hls/template_match/template_match_b1/b1/impl/ip/component.xml

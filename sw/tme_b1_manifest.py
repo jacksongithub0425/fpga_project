@@ -301,7 +301,9 @@ def mirror() -> int:
     root = REPO / ".github-upload"
     copied = same = 0
     missing = []
-    for role, rel in entries():
+    # The manifest itself is not one of its own entries, but a mirrored tree
+    # without it is unverifiable -- so it is copied first and by the same rule.
+    for role, rel in [("manifest", MANIFEST_REL)] + entries():
         src = resolve(rel)
         if not src.exists():
             missing.append((role, rel))

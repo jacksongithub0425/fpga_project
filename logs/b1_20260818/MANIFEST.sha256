@@ -35,9 +35,9 @@ f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_
 8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
 111e92c548ea03994622af3ad472c6193917ae825be28d09503ff76a9deca634  sw/tme_cycle_model.py  # model
 e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
-586e8ed380f074ee3746a726d457ab2a0af620900f81fcecc353b0c692ffca72  sw/tme_b1_ab.py  # adjudicator
+8973bbe94dcc72d6ba786c5d8008b07c63d436f9b89b1da19e8918a56518ca5b  sw/tme_b1_ab.py  # adjudicator
 85b3c443c97a58e77fc0e101f400b30b8298ed5cb6a0e156af9e4c5f3f199488  sw/tme_scale_policy.py  # scale policy
-f9d26d08cd2db92cfd6da8e7f3bf9f84abd6f1c0af23713ebb0435cea9b33414  sw/tme_b1_manifest.py  # manifest tool
+e8724521ad9b7892ed691c69f4079ed721778fde93fbccdb12664f4bb21f7af5  sw/tme_b1_manifest.py  # manifest tool
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
 5453e3c10ddf85067c5d114f7ca6b5f8276288df3e5cd575a810aabf49967e43  hls/template_match/run_hls_b1.tcl  # ab project script
