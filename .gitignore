@@ -5,7 +5,12 @@ __pycache__/
 
 # Generated HLS/Vivado output
 hls/*/*/solution1/
-logs/
+# `logs/*` rather than `logs/`: git will not descend into an excluded
+# DIRECTORY, so a later `!logs/<name>/` negation on a plain `logs/` rule can
+# never take effect.  Excluding the contents instead leaves the directory
+# traversable, which is what makes the Priority 4 exceptions at the bottom of
+# this file work.
+logs/*
 *.rpt
 *.jou
 
@@ -45,9 +50,74 @@ hls/integration/tb_*_tme_cases.txt
 !hls/template_match/tb_tme_patches_hw.bin
 !hls/template_match/tb_tme_templs_hw.bin
 
+# EXCEPTION: gate 5's five fixtures, on the same argument and at 16 KB.
+# board_gate_protocol.py is the multi-candidate stream-protocol gate and it is
+# equally worthless without the exact bytes. Hashes in sw/GATE5_VECTORS.sha256.
+!hls/integration/tb_proto_cases.txt
+!hls/integration/tb_proto_gray.bin
+!hls/integration/tb_proto_bin.bin
+!hls/integration/tb_proto_patches.bin
+!hls/integration/tb_proto_templs.bin
+
+# NOT an exception: the production-geometry vector package is ~1.6 MB and
+# stays out. It is fully determined by the pinned seeds in
+# tme_generate_production.py, so `sha256sum -c tb_tme_prod.sha256` after a
+# regeneration is stronger evidence than a committed copy would be — it proves
+# the generator still produces the vectors that were verified, rather than
+# proving a file was not edited. The RECORD is committed; the payload is not.
+hls/template_match/tb_tme_cases_prod.txt
+hls/template_match/tb_tme_counts_prod.txt
+!hls/template_match/tb_tme_prod.sha256
+
+# Same treatment for the Priority 4 (B1) banking-boundary suite, and for the
+# same reason: it is fully determined by the pinned seeds in
+# tme_generate_production.py, so `sha256sum -c tb_tme_b1.sha256` after
+# `--suite b1` proves the generator still makes the vectors that were verified.
+# Committing 44 KB of payload would only prove a file was not edited.
+hls/template_match/tb_tme_cases_b1.txt
+!hls/template_match/tb_tme_b1.sha256
+
 # Confidential-derived detector output. The per-page detection dumps carry
 # pin labels read off the drawings; only the aggregate manifest and its
 # provenance file may be committed (see sw/cpu_baseline_snapshot.py, which
 # also refuses to write dumps inside the repo).
 *_detections.json
 baseline_cpu_*/
+
+# EXCEPTION: the Priority 4 (B1) evidence set, ~7.1 MB, listed artifact by
+# artifact in logs/b1_20260818/MANIFEST.sha256 and verified by
+# `python sw/tme_b1_manifest.py --verify`.
+#
+# The rules above ignore `logs/`, `*.rpt` and `*.zip`, which is right for build
+# noise and wrong for this: a manifest over files a clean checkout does not
+# contain is a local checksum, not evidence. Commit 0373859 carried none of it.
+# The general policy — commit the RECORD, regenerate the payload — does not
+# apply either, because these artifacts are NOT regenerable. The bitstream is
+# built from a Vivado block design that lives outside this repository
+# (C:/Users/lychee/tc25/vivado_project/), the board transcripts record a session
+# that happened once, and a co-simulation report cannot be re-derived from
+# anything committed here in under half an hour of tool time.
+#
+# `sw/tme_b1_manifest.py --mirror` is what copies these in from the build tree;
+# nothing here is edited in place.
+!logs/b1_20260818/
+!logs/b1_20260818/**
+!logs/b1_board_20260818/
+!logs/b1_board_20260818/**
+!logs/b1_rerun_20260818/
+!logs/b1_rerun_20260818/**
+!logs/scale_policy_20260818/
+!logs/scale_policy_20260818/**
+!hls/template_match/template_match_b1*/**/*.rpt
+!hls/template_match/template_match_b1/SUPERSEDED.md
+!hls/template_match/template_match_b1/b1/impl/ip/component.xml
+!hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip
+
+# The phase_s board vectors, on the same argument as gate 4's and gate 5's: the
+# B1 board session's entire claim to being a CONTROLLED comparison is that the
+# runner and these three files did not change between it and the Priority 3
+# session. That claim is uncheckable from a clone that does not carry them.
+!hls/template_match/tb_tme_cases_phase_s.txt
+!hls/template_match/tb_tme_patches_phase_s.bin
+!hls/template_match/tb_tme_templs_phase_s.bin
+!hls/template_match/tb_tme_phase_s.sha256

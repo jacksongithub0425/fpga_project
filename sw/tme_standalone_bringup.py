@@ -457,7 +457,9 @@ class TmeStandalone:
 
     def __init__(self, overlay_path: str, patch_dma: str | None = None,
                  templ_dma: str | None = None,
-                 timeout_s: float = DEFAULT_TIMEOUT_S):
+                 timeout_s: float = DEFAULT_TIMEOUT_S,
+                 expect_fclk_mhz: float | None = None,
+                 fclk_tol_mhz: float = 0.01):
         from pynq import Overlay, allocate
 
         # A non-finite timeout makes every `time.monotonic() > deadline` test
@@ -479,23 +481,48 @@ class TmeStandalone:
         # The overlay is loaded; the number is one attribute away, and every
         # elapsed-time figure this script prints is only interpretable with
         # it.
+        # FAIL-CLOSED when --expect-fclk-mhz is given.  Warning was the wrong
+        # policy for a timing measurement: every elapsed time this script
+        # prints is only interpretable against the clock, so a wrong OR
+        # UNREADABLE clock must stop the run, not annotate it.  An unreadable
+        # clock is the more dangerous of the two — it produces a run that looks
+        # clean and whose numbers mean nothing.
         try:
             from pynq import Clocks
             self.fclk0_mhz = float(Clocks.fclk0_mhz)
             period_ns = 1000.0 / self.fclk0_mhz
             print(f"\nPL clock (measured): {self.fclk0_mhz:.4f} MHz "
                   f"({period_ns:.3f} ns)")
-            if abs(self.fclk0_mhz - 31.25) > 0.01:
-                print(f"  NOTE: contract §8 records 31.25 MHz. This board "
-                      f"reports {self.fclk0_mhz:.4f}. Update §8 and "
-                      f"vivado/tme_standalone/README.md — the design is "
-                      f"constrained at 20 ns, so anything up to 50 MHz still "
-                      f"has post-route margin, but the elapsed times below "
-                      f"scale with this.")
         except Exception as exc:                       # noqa: BLE001
             self.fclk0_mhz = None
             print(f"\nPL clock: could not read Clocks.fclk0_mhz ({exc}); "
                   f"elapsed times below cannot be converted to cycles.")
+            if expect_fclk_mhz is not None:
+                raise RuntimeError(
+                    f"--expect-fclk-mhz {expect_fclk_mhz:g} was requested but "
+                    f"the PL clock could not be read ({exc}). Refusing to run: "
+                    f"an unverifiable clock makes every elapsed time below "
+                    f"uninterpretable.") from exc
+
+        if expect_fclk_mhz is not None:
+            delta = abs(self.fclk0_mhz - expect_fclk_mhz)
+            if delta > fclk_tol_mhz:
+                raise RuntimeError(
+                    f"PL clock is {self.fclk0_mhz:.4f} MHz, expected "
+                    f"{expect_fclk_mhz:g} +/- {fclk_tol_mhz:g} MHz "
+                    f"(off by {delta:.4f}). Refusing to run: the wrong overlay "
+                    f"is loaded, or the PS7 divisors did not land on the "
+                    f"requested frequency.")
+            print(f"  FCLK0 gate: PASS — {self.fclk0_mhz:.4f} MHz is within "
+                  f"{fclk_tol_mhz:g} MHz of the required {expect_fclk_mhz:g}")
+        elif self.fclk0_mhz is not None:
+            # No gate requested: state the clock and stop there.  This script
+            # used to print 31.25 MHz / 20 ns guidance here; that was written
+            # for the 50 MHz-request shipping image and is stale for any other
+            # build, so it is not reproduced.  Pass --expect-fclk-mhz to make
+            # the clock a gate instead of a note.
+            print("  (no --expect-fclk-mhz given: the clock is reported, not "
+                  "gated. Elapsed times below scale with it.)")
 
         print("\nIPs in overlay:")
         for name in sorted(self.ol.ip_dict):
@@ -1483,9 +1510,18 @@ def main() -> int:
     ap.add_argument("--overlay", help="path to tme_standalone.bit")
     ap.add_argument("--data-dir", default=".", type=Path,
                     help="directory holding tb_tme_*_<suite>.{txt,bin}")
-    ap.add_argument("--suite", default="hw", choices=("hw", "cosim", "csim"),
+    ap.add_argument("--suite", default="hw",
+                    choices=("hw", "cosim", "csim", "phase_s"),
                     help="manifest to run (default hw — the only one that "
-                         "carries the 251,740 B §3.1 case)")
+                         "carries the 251,740 B §3.1 case).  phase_s is the "
+                         "Priority 3 suite: every case has a 96x64 result map, "
+                         "so it measures Phase-S cycles on the UNCHANGED core")
+    ap.add_argument("--expect-fclk-mhz", type=float, default=None,
+                    help="REQUIRE this measured PL clock and abort otherwise. "
+                         "Fail-closed: an unreadable clock also aborts. Use "
+                         "125 for the Phase-S / 8 ns probe image.")
+    ap.add_argument("--fclk-tol-mhz", type=float, default=0.01,
+                    help="tolerance for --expect-fclk-mhz (default 0.01)")
     ap.add_argument("--patch-dma", help="overlay attribute for the patch MM2S")
     ap.add_argument("--templ-dma", help="overlay attribute for the template MM2S")
     ap.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_S,
@@ -1514,9 +1550,30 @@ def main() -> int:
     biggest = max(c.patch_bytes for c in cases)
     print(f"\nSuite '{args.suite}': {len(cases)} cases, largest single patch "
           f"transfer {biggest:,} B")
-    if biggest < 200_000:
+    if biggest < 200_000 and args.suite != "phase_s":
         print("  WARNING: no case here comes near the §3.1 single-transfer "
               "bound. This run will verify arithmetic only. Use --suite hw.")
+    elif args.suite == "phase_s":
+        # Not a shortfall to warn about: Phase S crops the patch on the PS, so
+        # the largest possible trial is 311x159 = 49,449 B.  Leaving §3.1 slack
+        # is the POINT of the suite, not a gap in it.  §3.1 stays covered by
+        # --suite hw, which is unchanged and still carries the 251,740 B case.
+        print(f"  Phase-S geometry: every case has a 96x64 result map, and the "
+              f"largest patch uses {100.0 * biggest / 262143:.1f}% of the §3.1 "
+              f"bound. This run measures CYCLES at Phase-S geometry on the "
+              f"unchanged core; §3.1 is covered by --suite hw.")
+        # STALE BANNER, PRESERVED DELIBERATELY.  "the unchanged core" was true
+        # when this suite was written for Priority 3 and stopped being true on
+        # 2026-08-19, when the byte-identical runner drove the B1 bitstream
+        # (logs/b1_board_20260818/).  The runner cannot know: it talks to
+        # whatever overlay it is pointed at and has no way to read the RTL back
+        # out of it.  The line above is left exactly as it was because it is
+        # quoted verbatim in retained transcripts -- rewording it would make
+        # those transcripts unquotable -- and this notice is printed under it.
+        print("  NOTE: 'the unchanged core' above is STALE. This runner is "
+              "overlay-agnostic; what it measures is whatever --overlay names.")
+        print("        Read the bitstream hash, not this banner, to know which "
+              "RTL produced a number.")
 
     try:
         import pynq                                    # noqa: F401
@@ -1527,7 +1584,8 @@ def main() -> int:
 
     try:
         dut = TmeStandalone(args.overlay, args.patch_dma, args.templ_dma,
-                            args.timeout)
+                            args.timeout, args.expect_fclk_mhz,
+                            args.fclk_tol_mhz)
     except Exception as exc:                           # noqa: BLE001
         print(f"\nCANNOT RUN: {exc}")
         return 2

@@ -421,13 +421,16 @@ int main(int argc, char** argv)
     // for a suite that never ran, so reject it instead.
     const char* suite = "csim";
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "csim")  == 0 ||
-            strcmp(argv[i], "cosim") == 0 ||
-            strcmp(argv[i], "hw")    == 0) {
+        if (strcmp(argv[i], "csim")    == 0 ||
+            strcmp(argv[i], "cosim")   == 0 ||
+            strcmp(argv[i], "hw")      == 0 ||
+            strcmp(argv[i], "phase_s") == 0 ||
+            strcmp(argv[i], "b1")      == 0 ||
+            strcmp(argv[i], "prod")    == 0) {
             suite = argv[i];
         } else {
-            fprintf(stderr, "unknown suite %s (expected csim, cosim or hw)\n",
-                    argv[i]);
+            fprintf(stderr, "unknown suite %s (expected csim, cosim, hw, "
+                            "phase_s, b1 or prod)\n", argv[i]);
             return 1;
         }
     }

@@ -18,12 +18,12 @@
 // per-pixel here.  Per-tile bound: 216 products of ≤ 255² keeps lane_acc
 // under 2^24; acc[] accumulates ≤ 96 tiles of that, under 2^31 (sumsq_t).
 //
-// Throughput: T*(2*tw + 41) + 1 cycles per (output row, template row), a
-// MEASURED term -- see the note on seg_len below for what the runtime bound
-// costs and why the naive reading of it is wrong.  Before B1 the load was a
-// constant SEG_W of 232 whatever tw was, so a 20-wide template paid for 216
-// columns of template it did not have: at the Phase-S workload that is
-// 26.334 s/page instead of 36.476 (sw/tme_cycle_model.py, variant "B1").
+// Throughput: ~(seg_len + tw) * n_tiles cycles per template row, where
+// seg_len = PAR_COLS + tw - 1.  Before B1 the load was a constant SEG_W of
+// 232 whatever tw was, so a 20-wide template paid for 216 columns of template
+// it did not have: at the Phase-S workload that is 26.240 s/page instead of
+// 36.476 (sw/tme_cycle_model.py, variant "B1"), and the paired co-simulation
+// in sw/tme_b1_ab.py is what checks the prediction against the RTL.
 
 // The MAC reads seg[p + x] for p < PAR_COLS and x < tw, so the highest index
 // a tile can touch is (PAR_COLS - 1) + (tw - 1) = tw + PAR_COLS - 2, and a
@@ -57,41 +57,21 @@ void correlation_core(
     // tme_top's rw by one, the last output column is never written but is
     // still read by norm_cols (contract §4.4, option 1).
     int rw = pw - tw + 1;
-    // B1: the segment is loaded to the width THIS INVOCATION needs.  The tile
-    // count, the lane masking, the MAC schedule and the writeback are all
-    // untouched, so the whole latency difference is this one bound.
-    //
-    // IT IS NOT FREE, AND THE NAIVE ARITHMETIC IS WRONG.  The obvious reading
-    // is that shortening the load saves exactly the pixels it skips,
-    // T*(232 - seg_len) per (output row, template row).  Paired RTL
-    // co-simulation of this file against the unmodified one (sw/tme_b1_ab.py,
-    // 14/14 transactions) says the saving is short of that by exactly
-    //
-    //     T + 1     cycles per (output row, template row)
-    //
-    // +1 per TILE for the `i >= seg_len` exit test -- a compile-time bounded
-    // loop ends without asking, a runtime-bounded one has to check -- and +1
-    // per CALL for the bound setup.  So the measured tile term is
-    // T*(2*tw + 41) + 1, and the Phase-S page figure is 26.334 s/page, not the
-    // 26.240 that was projected before this RTL existed.
-    //
-    // Hoisting a clamped bound so the loop asks ONE question per iteration
-    // instead of two was tried (solution `b1b`) and its transaction report is
-    // BYTE-IDENTICAL to this one's, at 44 more LUTs.  The T + 1 is what HLS
-    // charges for a runtime-bounded loop; it is not the redundant compare.  Do
-    // not re-litigate that with another co-simulation.
-    //
-    // Consequence worth knowing before reading a board trace: at tw = 216 the
-    // saving is 1 cycle per tile and the overhead is T + 1, so B1 is a NET LOSS
-    // at the compiled maximum template width -- `phase-s-max` goes 23,476,737
-    // -> 23,482,881 cycles.  Every template in the real workload is narrower,
-    // which is where 36.476 -> 26.334 comes from.
-    //
-    // The `break` form is kept over the hoisted one because it costs fewer
-    // LUTs for identical cycles, because the write cannot leave the array
-    // however templ_w is programmed, and because it is the idiom mac_loop,
-    // isq_init and isq_slide already use.
+    // B1: the segment is loaded to the width THIS INVOCATION needs.  The
+    // tile count, the lane masking, the MAC schedule and the writeback are
+    // all untouched.
+    // The bound is CLAMPED AND HOISTED, and both halves of that are load-
+    // bearing.  Clamped, seg_n <= SEG_W holds however the AXI4-Lite scalars
+    // are programmed, so the write cannot leave the array even for a templ_w
+    // past the 4.1 cap - the property the earlier
+    //     for (i < SEG_W) { if (i >= seg_len) break; ... }
+    // form had for free.  Hoisted, the loop asks ONE question per iteration
+    // instead of two: that form's extra test was MEASURED at one cycle per
+    // tile plus one per call by paired RTL co-simulation (sw/tme_b1_ab.py),
+    // which is 0.094 s/page on the Phase-S workload and actually makes the
+    // tw = 216 corner SLOWER than no B1 at all.
     int seg_len = tw + PAR_COLS - 1;
+    int seg_n   = (seg_len < SEG_W) ? seg_len : SEG_W;
 
     // Segment register file: fully partitioned so 16 reads are free each cycle.
     ap_uint<8> seg[SEG_W];
@@ -108,10 +88,9 @@ void correlation_core(
         if (u0 >= rw) break;
 
         // --- Phase 1: load patch segment into registers (sequential BRAM read) ---
-        load_seg: for (int i = 0; i < SEG_W; i++) {
+        load_seg: for (int i = 0; i < seg_n; i++) {
 #pragma HLS PIPELINE II=1
 #pragma HLS LOOP_TRIPCOUNT min=19 max=231 avg=95
-            if (i >= seg_len) break;
             int idx = u0 + i;
             seg[i] = (idx < pw) ? patch_line[idx] : (ap_uint<8>)0;
         }

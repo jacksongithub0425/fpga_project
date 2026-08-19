@@ -16,6 +16,13 @@ hls/template_match/tb_tme_*_hw.* -text
 # SHA-256 and board_gate_protocol.py refuses to run on a mismatch.
 hls/integration/tb_proto_* -text
 
+# Priority 4's pinned source snapshots, for the same reason again:
+# run_hls_b1.tcl verifies each one with `sha256sum` over RAW bytes before it
+# will compile it, and MANIFEST.sha256 records them too.  A CRLF checkout would
+# change every digest and the A/B build would refuse to run on a fresh clone --
+# which is the opposite of the reproducibility the snapshots exist for.
+hls/template_match/b1_sources/*.cpp -text
+
 # The Priority 0 evidence tools, for the same reason again: every trace
 # directory's provenance.json records their SHA-256 under `code_sha256`, so a
 # result can be tied to the code that produced it. core.autocrlf=true is set on
@@ -28,3 +35,18 @@ sw/tme_trace_capture.py -text
 # SHA-256, so an EOL-normalised checkout would break the binding.
 sw/trace_*_summary.csv -text
 sw/trace_*_provenance.json -text
+
+# Priority 4 (B1) evidence, all for the same reason as the rules above: the
+# artifact IS its bytes, and logs/b1_20260818/MANIFEST.sha256 hashes these raw
+# rather than EOL-normalised. A CRLF checkout would change every digest.
+hls/template_match/tb_tme_*_phase_s.* -text
+hls/template_match/template_match_b1/b1/impl/ip/*.zip -text
+
+# The board runner AS IT RAN. logs/b1_board_20260818/01_hashes_local.txt,
+# 02_hashes_remote.txt and 03_run.txt all pin it at
+# f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153, taken with
+# sha256sum over raw bytes on both the host and the board. The snapshot is only
+# worth keeping if it still hashes to that on a fresh clone. The working copy
+# is pinned too: it is what the next session will hash before loading.
+logs/b1_board_20260818/tme_standalone_bringup.py.as_run -text
+sw/tme_standalone_bringup.py -text

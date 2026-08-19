@@ -1,0 +1,107 @@
+
+****** vitis-run v2025.2 (64-bit)
+  **** SW Build 6295257 on 2025-11-13-08:29:27
+  **** Start of session at: Tue Aug 18 21:27:46 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+  **** HLS Build v2025.2 6295257
+Sourcing Tcl script 'C:/Users/lychee/Desktop/FPGA/hls/template_match/csim_prod_b1.tcl'
+INFO: [HLS 200-1510] Running: open_project template_match_b1 
+WARNING: [HLS 200-2182] The 'template_match_b1' project will not automatically appear within Vitis IDE workspaces and is meant only for TCL batch use.  Please use open_component instead of open_project/open_solution to generate Vitis IDE compatible component files and directory structure.
+Resolution: For help on HLS 200-2182 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-2182.html
+INFO: [HLS 200-10] Opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1'.
+INFO: [HLS 200-1510] Running: set_top tme_top 
+INFO: [HLS 200-1510] Running: add_files tme_top.cpp 
+INFO: [HLS 200-10] Adding design file 'tme_top.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files tme_top.h 
+INFO: [HLS 200-10] Adding design file 'tme_top.h' to the project
+INFO: [HLS 200-1510] Running: add_files correlation_core.cpp 
+INFO: [HLS 200-10] Adding design file 'correlation_core.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files -tb tme_tb.cpp 
+INFO: [HLS 200-10] Adding test bench file 'tme_tb.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files -tb tb_tme_patches_b1.bin tb_tme_patches_cosim.bin tb_tme_patches_csim.bin tb_tme_patches_hw.bin tb_tme_patches_prod.bin tb_tme_templs_b1.bin tb_tme_templs_cosim.bin tb_tme_templs_csim.bin tb_tme_templs_hw.bin tb_tme_templs_prod.bin tb_tme_cases_b1.txt tb_tme_cases_cosim.txt tb_tme_cases_csim.txt tb_tme_cases_hw.txt tb_tme_cases_prod.txt tb_tme_counts_prod.txt 
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_b1.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_cosim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_csim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_hw.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_prod.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_b1.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_cosim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_csim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_hw.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_prod.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_b1.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_cosim.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_csim.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_hw.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_prod.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_counts_prod.txt' to the project
+INFO: [HLS 200-1510] Running: open_solution b1 
+INFO: [HLS 200-10] Opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1/b1'.
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 5ns.
+INFO: [HLS 200-1611] Setting target device to 'xc7z020-clg400-1'
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: csim_design -argv prod 
+INFO: [SIM 211-2] *************** CSIM start ***************
+INFO: [HLS 200-2191] C-Simulation will use clang-16 as the compiler
+INFO: [HLS 200-2036] Building debug C Simulation binaries
+   Compiling ../../../../correlation_core.cpp in debug mode
+   Generating csim.exe
+In file included from ../../../../correlation_core.cpp:1:
+In file included from ../../../../tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+tb_tme_cases_prod.txt: 15 cases, 1631198 patch bytes, 132253 template bytes
+
+--- direct DUT tests (contract §4.6) ---
+  flat-templ-4x4 (illegal input)   patch  12x10  templ  4x4   raw 0x00000000 @(0,0)  want 0x00000000 @(0,0)  PASS
+  min-nonflat dt=15 (must score 1.0) patch   4x4   templ  4x4   raw 0x3F800000 @(0,0)  want 0x3F800000 @(0,0)  PASS
+  bound-half0-half255-216x96       dt = 6989889945600 (want 6989889945600)  PASS
+  preserve-operands-all255         N*ST2 = 27959559782400, (ST)^2 = 27959559782400, dt = 0 (want 27959559782400/27959559782400/0)  PASS
+  num-max-positive-216x96          num = 6989889945600 (want 6989889945600)  PASS
+  num-max-negative-216x96          num = -6989889945600 (want -6989889945600)  PASS
+  num-cancel-all255                num = 0 (want 0)  PASS
+  width-minimum-witness            43/44: dt = 6989889945600 ok, num = -1806203076608 (pinned -1806203076608); 44/44: num = 6989889945600  PASS
+  width-coupling-witness           48/48: 6132117600000, 44/44: 6132117600000, 44/45: -11460068444416 (pinned -11460068444416, want 6132117600000)  PASS
+--- direct tests: 0 failure(s) ---
+
+[ 0] prod-left-bank               production  patch  622x300 templ 164x94  gold +0.7000 @(152, 68)  dut +0.7001 @(152, 68)  PASS
+[ 1] prod-right-bank              production  patch  622x224 templ 164x70  gold +0.5000 @(152, 51)  dut +0.5000 @(152, 51)  PASS
+[ 2] prod-base-421                production  patch  421x214 templ 111x67  gold +0.3298 @(103, 49)  dut +0.3298 @(103, 49)  PASS
+[ 3] prod-base-399                production  patch  399x224 templ 105x70  gold +0.3001 @( 98, 51)  dut +0.3001 @( 98, 51)  PASS
+[ 4] prod-base-456                production  patch  456x300 templ 120x94  gold +0.2400 @(112, 68)  dut +0.2400 @(112, 68)  PASS
+[ 5] prod-ferrule-left            production  patch  619x134 templ 163x42  gold +0.2001 @(152, 30)  dut +0.2001 @(152, 30)  PASS
+[ 6] prod-ferrule-right           production  patch  619x124 templ 163x39  gold +1.0000 @(152, 28)  dut +1.0000 @(152, 28)  PASS
+[ 7] prod-negative-1x1            sign        patch  216x96  templ 216x96  gold -0.7548 @(  0,  0)  dut -0.7548 @(  0,  0)  PASS
+[ 8] prod-tie-exact               tie         patch  399x224 templ 105x70  gold +1.0000 @( 20, 15)  dut +1.0000 @( 20, 15)  PASS
+[ 9] prod-tie-near-first          tie         patch  399x224 templ 105x70  gold +0.4016 @( 20, 15)  dut +0.4016 @( 20, 15)  PASS
+[10] prod-tie-near-second         tie         patch  399x224 templ 105x70  gold +0.4015 @(200,100)  dut +0.4015 @(200,100)  PASS
+[11] prod-flat-region             bounds      patch  421x214 templ 111x67  gold +0.4497 @(155, 73)  dut +0.4497 @(155, 73)  PASS
+[12] prod-lane15-small            lane15      patch  200x60  templ  24x16  gold +0.5532 @( 31, 11)  dut +0.5532 @( 31, 11)  PASS
+[13] prod-lane15-full             lane15      patch  622x300 templ 164x94  gold +0.5502 @( 31, 51)  dut +0.5502 @( 31, 51)  PASS
+[14] prod-max-result              bounds      patch  820x307 templ   4x16  gold +1.0000 @(816,291)  dut +1.0000 @(816,291)  PASS
+
+15/15 cases passed
+TESTBENCH PASSED
+INFO [HLS SIM]: The maximum depth reached by any hls::stream() instance in the design is 251740
+INFO: [SIM 211-1] CSim done with 0 errors.
+INFO: [SIM 211-3] *************** CSIM finish ***************
+INFO: [HLS 200-2161] Finished Command csim_design Elapsed time: 00:04:17; Allocated memory: 0.664 MB.
+INFO: [HLS 200-1510] Running: close_project 
+INFO: [HLS 200-112] Total CPU user time: 1 seconds. Total CPU system time: 1 seconds. Total elapsed time: 258.327 seconds; peak allocated memory: 146.750 MB.
+INFO: [vitis-run 60-791] Total elapsed time: 0h 4m 19s
+INFO: [vitis-run 60-1662] Stopping dispatch session having empty uuid.

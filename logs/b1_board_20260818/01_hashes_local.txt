@@ -1,0 +1,21 @@
+=== HOST-SIDE HASHES, taken immediately before the load ===
+2026-08-19T05:13:49Z
+--- B1 overlay (TermCountB1:hls:tme_top:0.2, routed 8.000 ns, WNS +0.134571 ns) ---
+2cd4a2b0fe696bc67585e6c79ce5d488151522b45f02e9050ea73bc9d98370a7 */c/Users/lychee/tc25/vivado_project/tme_b1_125/overlay_output/tme_standalone.bit
+ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716 */c/Users/lychee/tc25/vivado_project/tme_b1_125/overlay_output/tme_standalone.hwh
+--- runner + vectors (the hash-bound phase_s suite, UNCHANGED from the Priority 3 session) ---
+f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153 */c/Users/lychee/Desktop/FPGA/.github-upload/sw/tme_standalone_bringup.py
+9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_cases_phase_s.txt
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72 */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_patches_phase_s.bin
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_templs_phase_s.bin
+
+--- CONTROLLED COMPARISON: what differs from the Priority 3 session ---
+runner + all three vector files are BYTE-IDENTICAL to logs/phase_s_board_20260818/01_hashes_local.txt:
+  tme_standalone_bringup.py  f7b00b0e...  same
+  tb_tme_cases_phase_s.txt   9970f100...  same
+  tb_tme_patches_phase_s.bin 3c22a422...  same
+  tb_tme_templs_phase_s.bin  9fd283bf...  same
+ONLY the overlay differs:
+  .bit  fdebaf75... (unmodified core)  ->  2cd4a2b0... (B1)
+  .hwh  614a8bb7... (unmodified core)  ->  ffa94282... (B1)
+So any wall-time difference is attributable to the RTL, not to inputs or driver.

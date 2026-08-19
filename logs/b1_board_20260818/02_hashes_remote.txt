@@ -1,0 +1,13 @@
+=== BOARD-SIDE HASHES of the same six files ===
+2026-08-19T05:14:52Z
+2cd4a2b0fe696bc67585e6c79ce5d488151522b45f02e9050ea73bc9d98370a7  tme_standalone.bit
+ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  tme_standalone.hwh
+f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153  tme_standalone_bringup.py
+9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f  tb_tme_cases_phase_s.txt
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  tb_tme_patches_phase_s.bin
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  tb_tme_templs_phase_s.bin
+=== END ===
+
+
+__EXIT__ 0
+

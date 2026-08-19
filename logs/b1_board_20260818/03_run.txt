@@ -1,0 +1,82 @@
+=== B1 RUN: re-hash IN THIS TRANSCRIPT, then configure and run ===
+2026-08-19T05:15:11Z
+2cd4a2b0fe696bc67585e6c79ce5d488151522b45f02e9050ea73bc9d98370a7  tme_standalone.bit
+f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153  tme_standalone_bringup.py
+9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f  tb_tme_cases_phase_s.txt
+--- runner ---
+========================================================================
+template_match_core standalone bring-up
+========================================================================
+
+Suite 'phase_s': 7 cases, largest single patch transfer 49,449 B
+  Phase-S geometry: every case has a 96x64 result map, and the largest patch uses 18.9% of the §3.1 bound. This run measures CYCLES at Phase-S geometry on the unchanged core; §3.1 is covered by --suite hw.
+
+PL clock (measured): 125.0000 MHz (8.000 ns)
+  FCLK0 gate: PASS — 125.0000 MHz is within 0.01 MHz of the required 125
+
+IPs in overlay:
+  axi_dma_patch                xilinx.com:ip:axi_dma:7.1                    base=0x41E00000
+  axi_dma_templ                xilinx.com:ip:axi_dma:7.1                    base=0x41E10000
+  processing_system7_0         xilinx.com:ip:processing_system7:5.5         base=0x00000000
+  tme_top_0                    TermCountB1:hls:tme_top:0.2                  base=0x40000000
+
+Using: matcher=tme_top_0  patch DMA=axi_dma_patch  templ DMA=axi_dma_templ
+DMA single-transfer bound: 262,143 B (contract §3.1 assumes 262,143)
+Buffers: patch 251,740 B @ 0xF880000, template 20,736 B @ 0xF850000
+
+--- preflight ---
+  ap_idle after reset: True  (AP_CTRL=0x00000004)
+  register_map:
+RegisterMap {
+  CTRL = Register(AP_START=0, AP_DONE=0, AP_IDLE=1, AP_READY=0, RESERVED_1=0, AUTO_RESTART=0, RESERVED_2=0, INTERRUPT=0, RESERVED_3=0),
+  GIER = Register(Enable=0, RESERVED=0),
+  IP_IER = Register(CHAN0_INT_EN=0, CHAN1_INT_EN=0, RESERVED_0=0),
+  IP_ISR = Register(CHAN0_INT_ST=0, CHAN1_INT_ST=0, RESERVED_0=0),
+  patch_w = Register(patch_w=write-only, RESERVED=write-only),
+  patch_h = Register(patch_h=write-only, RESERVED=write-only),
+  templ_w = Register(templ_w=write-only, RESERVED=write-only),
+  templ_h = Register(templ_h=write-only, RESERVED=write-only),
+  result_score = Register(result_score=0),
+  result_score_ctrl = Register(result_score_ap_vld=0, RESERVED=0),
+  result_x = Register(result_x=0, RESERVED=0),
+  result_x_ctrl = Register(result_x_ap_vld=0, RESERVED=0),
+  result_y = Register(result_y=0, RESERVED=0),
+  result_y_ctrl = Register(result_y_ap_vld=0, RESERVED=0)
+}
+  PASS: patch_w @0x10 round-trips 16 bits
+  PASS: patch_h @0x18 round-trips 16 bits
+  PASS: templ_w @0x20 round-trips 16 bits
+  PASS: templ_h @0x28 round-trips 16 bits
+  PASS: the four geometry registers are independent
+  PASS: still idle after the register writes
+
+--- validation (§4.1 / §3.1 geometry, §4.6 template content; before any DMA or ap_start) ---
+  [OK    ] phase-s-min-templ        patch 99x67 (6,633 B)  templ 4x4
+  [OK    ] phase-s-origin           patch 147x94 (13,818 B)  templ 52x31
+  [OK    ] phase-s-workload-mode    patch 147x94 (13,818 B)  templ 52x31
+  [OK    ] phase-s-workload-wide    patch 259x105 (27,195 B)  templ 164x42
+  [OK    ] phase-s-final-cell       patch 215x157 (33,755 B)  templ 120x94
+  [OK    ] phase-s-workload-max     patch 215x157 (33,755 B)  templ 120x94
+  [OK    ] phase-s-max              patch 311x159 (49,449 B)  templ 216x96
+
+--- cases ---
+[0] phase-s-min-templ        phase_s     patch   99x67  templ   4x4   gold +1.0000 @( 51, 33)  dut +1.0000 @( 51, 33)   0.004 s (1.79 MB/s in)  PASS
+[1] phase-s-origin           phase_s     patch  147x94  templ  52x31  gold +1.0000 @(  0,  0)  dut +1.0000 @(  0,  0)   0.024 s (0.58 MB/s in)  PASS
+[2] phase-s-workload-mode    phase_s     patch  147x94  templ  52x31  gold +1.0000 @( 44, 17)  dut +1.0000 @( 44, 17)   0.024 s (0.58 MB/s in)  PASS
+[3] phase-s-workload-wide    phase_s     patch  259x105 templ 164x42  gold +1.0000 @( 70, 33)  dut +1.0000 @( 70, 33)   0.068 s (0.40 MB/s in)  PASS
+[4] phase-s-final-cell       phase_s     patch  215x157 templ 120x94  gold +1.0000 @( 95, 63)  dut +1.0000 @( 95, 63)   0.117 s (0.29 MB/s in)  PASS
+[5] phase-s-workload-max     phase_s     patch  215x157 templ 120x94  gold +1.0000 @( 61, 29)  dut +1.0000 @( 61, 29)   0.117 s (0.29 MB/s in)  PASS
+[6] phase-s-max              phase_s     patch  311x159 templ 216x96  gold +1.0000 @( 37, 21)  dut +1.0000 @( 37, 21)   0.190 s (0.26 MB/s in)  PASS
+
+--- re-invocation after the largest case ---
+  phase-s-min-templ re-run after 49,449 B: dut +1.0000 @(51,33) vs gold +1.0000 @(51,33)  PASS
+
+========================================================================
+§3.1 NOT exercised — no case moved a large enough transfer
+7/7 cases passed
+re-invocation check: PASS
+Reminder: this says nothing about timing. Post-route WNS comes from the implementation report — see §8 and vivado/tme_standalone/post_route_wns.txt.
+
+
+__EXIT__ 0
+
