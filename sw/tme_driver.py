@@ -1199,6 +1199,18 @@ class PLPipeline:
                                   (self._dma_pe_meta.recvchannel, "meta S2MM")))
         self._wait_channel(self._dma_pe_data.sendchannel, deadline, "cand MM2S")
         self._wait_channel(self._dma_pe_meta.recvchannel, deadline, "meta S2MM")
+
+        # The metadata engine's OWN received-byte count, before anything is
+        # unpacked.  The per-patch framing has been cross-checked against the
+        # §6.2 record since this driver was written; the metadata framing never
+        # was, and it is the same class of defect one level up: the record
+        # stream carries TLAST at BATCH end (§5), so if that TLAST lands early
+        # the S2MM completes short and `unpack_patch_metadata` happily parses
+        # whatever the tail of the buffer held — zeros on a fresh buffer, the
+        # PREVIOUS batch's records on a reused one.  Neither `sts_flags` bit
+        # covers it: bit 1 compares the INPUT descriptor count against
+        # num_cands, which is the other end of the same batch.
+        meta_got = getattr(self._dma_pe_meta.recvchannel, "transferred", None)
         self._meta_buf.invalidate()
 
         # ---- Status registers: read once, latch (§7.1.1 item 3) ----
@@ -1217,8 +1229,26 @@ class PLPipeline:
             "sts_rejected": sts["sts_rejected"],
             "sts_processed": sts["sts_processed"],
             "meta_bytes": meta_bytes,
+            "meta_bytes_measured": meta_got,
             "patch_bytes": list(transferred),
         }
+        # Fail closed, exactly as the patch framing check does: a build that
+        # cannot report the count is a build on which this check cannot run,
+        # and running on regardless would mean unpacking records whose framing
+        # nothing verified.
+        if meta_got is None:
+            raise RuntimeError(
+                "this PYNQ build's meta S2MM channel exposes no `transferred` "
+                "count, so the §5 batch-TLAST framing cannot be checked. "
+                "Refusing to unpack §6.2 records on unverified framing — a "
+                "short metadata stream parses silently into stale bytes.")
+        if meta_got != meta_bytes:
+            raise RuntimeError(
+                f"meta S2MM received {meta_got} B but {n} descriptors is "
+                f"{meta_bytes} B ({n} x {_META_STRUCT_SIZE}) — the batch TLAST "
+                f"did not land on the last record. Do not trust this batch: "
+                f"the records are misaligned to the candidates, and the "
+                f"per-candidate patch receives were armed on that alignment.")
         if sts["sts_flags"] & 0x1:
             raise RuntimeError(
                 f"patch_extract_core: global image configuration invalid "

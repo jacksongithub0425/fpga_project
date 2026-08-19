@@ -671,6 +671,130 @@ def build_csim():
     return cases
 
 
+def build_phase_s():
+    """Priority 3 suite: every case has a 96x64 RESULT MAP.
+
+    Phase S crops the patch on the PS so each trial searches a 96x64 result
+    area, i.e. pw = tw + 95 and ph = th + 63.  The core is UNCHANGED - pw/ph
+    are already runtime arguments and the compiled 820x307 MAX_PATCH is only a
+    bound - so this suite measures Phase-S cycles on the existing bitstream
+    without any RTL work.
+
+    Two stress axes the other suites carry disappear here, and that is a
+    finding rather than an omission:
+
+      * the RESULT MAP is constant at 96x64, so MAX_RESULT_W/H (817/304) are
+        never approached.  `stress-max-result` has no Phase-S analogue.
+      * the largest patch is 311x159 = 49,449 B against the §3.1 bound of
+        262,143, so the single-DMA-transfer limit stops being tight.  Under
+        Phase S no real trial comes within 5x of it.
+
+    Geometry selection is from the 20,680-trial workload trace, not invented:
+    `workload-mode` is the most common trial (3.6% of all trials),
+    `workload-max` and `workload-wide` are the largest and the widest that
+    actually occur, and `max` is the compiled bound, which sits above every
+    real trial and is the case tme_cycle_model calls PHASE_S_GEOMETRY.
+    """
+    roi_w, roi_h = 96, 64
+    cases = []
+
+    def geom(tw, th):
+        return tw + roi_w - 1, th + roi_h - 1
+
+    # ORDER MATTERS AND IS LOAD-BEARING.  sw/tme_standalone_bringup.py re-runs
+    # `cases[0]` after the whole suite to catch stale `static` BRAM residue, so
+    # the suite must ASCEND: the smallest case first, the largest last.  With
+    # the largest first the re-invocation re-runs the largest, which tests the
+    # grow direction the sequence already covered and never tests the shrink
+    # direction the check exists for -- and it silently adds that case's cycles
+    # to the run a second time (23,476,737 of them here, taking a 77,949,151
+    # suite to 101,425,888 actually executed).
+    #
+    # Smallest first: 99x67 patch, 4x4 template.  This is the case that gets
+    # re-run after 311x159, so it is also the stale-residue probe.
+    pw, ph = geom(MIN_TEMPL_DIM, MIN_TEMPL_DIM)
+    cases.append(solve("phase-s-min-templ", "phase_s",
+                       lambda r: planted(r, pw, ph, MIN_TEMPL_DIM, MIN_TEMPL_DIM,
+                                         51, 33), 306))
+
+    # Peak at the origin - one corner of the 96x64 map.
+    pw, ph = geom(52, 31)
+    cases.append(solve("phase-s-origin", "phase_s",
+                       lambda r: planted(r, pw, ph, 52, 31, 0, 0), 302))
+
+    # The most common real trial: male base 74x45 at scale 0.70.
+    pw, ph = geom(52, 31)
+    cases.append(solve("phase-s-workload-mode", "phase_s",
+                       lambda r: planted(r, pw, ph, 52, 31, 44, 17), 303))
+
+    # Widest: ferrule base 109x28 at 1.50 - tw is ~4x th, the opposite aspect
+    # ratio from everything else, and the shape that drives the tw-linear
+    # template-staging term.
+    pw, ph = geom(164, 42)
+    cases.append(solve("phase-s-workload-wide", "phase_s",
+                       lambda r: planted(r, pw, ph, 164, 42, 70, 33), 305))
+
+    # Peak in the final cell of the 96x64 map - the §4.4 +1 fix, re-asserted at
+    # Phase-S geometry rather than assumed to carry over from the 820 envelope.
+    pw, ph = geom(120, 94)
+    cases.append(solve("phase-s-final-cell", "phase_s",
+                       lambda r: planted(r, pw, ph, 120, 94,
+                                         roi_w - 1, roi_h - 1), 301))
+
+    # Largest geometry that actually occurs: female base 80x63 at 1.50.
+    pw, ph = geom(120, 94)
+    cases.append(solve("phase-s-workload-max", "phase_s",
+                       lambda r: planted(r, pw, ph, 120, 94, 61, 29), 304))
+
+    # LAST, and the largest: the compiled bound, 216x96 template in a 311x159
+    # patch.  This is the case the model prices at 23,476,737 cycles = 0.187814 s
+    # at 125 MHz, and it is what the board session times.
+    pw, ph = geom(MAX_TEMPL_W, MAX_TEMPL_H)
+    require((pw, ph) == (311, 159), f"Phase-S max geometry moved: {pw}x{ph}")
+    cases.append(solve("phase-s-max", "phase_s",
+                       lambda r: planted(r, pw, ph, MAX_TEMPL_W, MAX_TEMPL_H,
+                                         37, 21, density=0.55), 300))
+
+    # Every case must have exactly the 96x64 result map the suite is named for,
+    # and must stay inside the compiled envelope and the DMA bound.
+    for c in cases:
+        ph_, pw_ = c["patch"].shape
+        th_, tw_ = c["templ"].shape
+        require((pw_ - tw_ + 1, ph_ - th_ + 1) == (roi_w, roi_h),
+                f"{c['tag']}: result map {pw_ - tw_ + 1}x{ph_ - th_ + 1}, "
+                f"not the {roi_w}x{roi_h} this suite exists to measure")
+        require(pw_ <= MAX_PATCH_W and ph_ <= MAX_PATCH_H,
+                f"{c['tag']}: patch {pw_}x{ph_} exceeds the compiled envelope")
+        require(tw_ <= MAX_TEMPL_W and th_ <= MAX_TEMPL_H,
+                f"{c['tag']}: template {tw_}x{th_} exceeds templ_buf")
+        require(pw_ * ph_ <= DMA_MAX_BYTES, f"{c['tag']}: patch over §3.1")
+
+    # The ascending order the re-invocation check depends on is an ASSERTION,
+    # not a convention: a later edit that reorders these must fail here rather
+    # than quietly turn the board's shrink-direction test back into a re-run of
+    # the largest case.
+    areas = [c["patch"].shape[0] * c["patch"].shape[1] for c in cases]
+    require(areas[0] == min(areas),
+            f"phase-s case 0 is {cases[0]['tag']} at {areas[0]:,} B but the "
+            f"smallest is {min(areas):,} B — cases[0] is what the board re-runs "
+            f"after the largest case, so it must BE the smallest")
+    require(areas[-1] == max(areas),
+            f"phase-s last case is {cases[-1]['tag']} but the largest is "
+            f"{max(areas):,} B — the largest must run last for the "
+            f"re-invocation to test the shrink direction")
+    require(cases[-1]["tag"] == "phase-s-max",
+            f"the board session times 'phase-s-max' as the final case; it is "
+            f"currently '{cases[-1]['tag']}'")
+
+    biggest = max(areas)
+    print(f"\nphase_s suite: largest patch {biggest:,} B of the {DMA_MAX_BYTES:,} B "
+          f"§3.1 bound ({100.0 * biggest / DMA_MAX_BYTES:.1f}%) — Phase S makes "
+          f"that bound slack, it does not approach it")
+    print(f"  order: {cases[0]['tag']} ({areas[0]:,} B) first — re-run after "
+          f"{cases[-1]['tag']} ({areas[-1]:,} B) last")
+    return cases
+
+
 def pick(cases, tag):
     """Lift an already-solved case out of another suite, by tag.
 
@@ -809,6 +933,16 @@ def write_suite(cases, name, out=Path(".")):
 
 
 def main():
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Generate tme_tb golden suites.")
+    ap.add_argument("--only", choices=("csim", "cosim", "hw", "phase_s"),
+                    help="write just this suite and leave the others on disk "
+                         "untouched.  Use --only phase_s to add the Phase-S "
+                         "suite without rewriting csim/cosim/hw, whose files "
+                         "are hash-bound gate evidence (GATE4/GATE5 .sha256).")
+    args = ap.parse_args()
+
     # The cv2 cross-check oracle runs on the generic path, so it is the same
     # arithmetic on every machine and the §4.6 bound describes what actually
     # executed.  Cannot affect a written golden (those come from oracle 1) —
@@ -821,8 +955,26 @@ def main():
     # below cross-checks against cv2, so confirm the restore actually took
     # before a single case is built.
     require_generic_opencv()
+
+    if args.only == "phase_s":
+        write_suite(build_phase_s(), "phase_s")
+        print("\nOK — phase_s suite written; csim/cosim/hw untouched.  Send it "
+              "with sw/tme_standalone_bringup.py --suite phase_s (validate "
+              "first with run_hls.tcl's csim_design -argv \"phase_s\")")
+        return
+
     csim = build_csim()
+    if args.only == "csim":
+        write_suite(csim, "csim")
+        return
     cosim = build_cosim(csim)
+    if args.only == "cosim":
+        write_suite(cosim, "cosim")
+        return
+    if args.only == "hw":
+        write_suite(build_hw(cosim, csim), "hw")
+        return
+
     write_suite(csim, "csim")
     write_suite(cosim, "cosim")
     write_suite(build_hw(cosim, csim), "hw")

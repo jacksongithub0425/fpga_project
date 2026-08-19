@@ -64,10 +64,11 @@ probe_cma_budget.py
 inspect_overlay.py
 board_gate_full_dma.py
 board_gate_extract.py
+board_gate_protocol.py        # gate 5; imports board_gate_extract for its Report
 tme_driver.py
 tme_standalone_bringup.py
 binarize_dma_checks.py
-safe_teardown.py              # the shared teardown; gates 3 and 4 both import it
+safe_teardown.py              # the shared teardown; gates 3, 4 and 5 import it
 
 # gate 4's fixtures — COMMITTED, ~0.56 MB; copy, do not regenerate
 GATE4_VECTORS.sha256          # the hash record; gate 4 refuses to run without it
@@ -79,6 +80,14 @@ tb_bpe_tme_templs.bin
 tb_tme_cases_hw.txt           # from hls/template_match/
 tb_tme_patches_hw.bin
 tb_tme_templs_hw.bin
+
+# gate 5's fixtures — COMMITTED, ~16 KB; same rule, copy do not regenerate
+GATE5_VECTORS.sha256          # the hash record; gate 5 refuses to run without it
+tb_proto_cases.txt            # from hls/integration/
+tb_proto_gray.bin
+tb_proto_bin.bin
+tb_proto_patches.bin
+tb_proto_templs.bin
 ```
 
 **Copy gate 4's eight fixtures from the pinned checkout; do not regenerate
@@ -93,6 +102,13 @@ gate against a mixture of two payloads.
 
 The three `tb_tme_*_hw.*` files are byte-identical to the vectors that
 passed 9/9 on silicon on 2026-08-07 — verified, not assumed.
+
+Gate 5's five fixtures follow the identical rule and `board_gate_protocol.py`
+enforces it the identical way, against `GATE5_VECTORS.sha256`. It also checks
+the four blobs against SHA256 rows carried inside `tb_proto_cases.txt` itself:
+the record ties the payload to the commit, while those rows tie the blobs to
+THAT manifest, so a manifest and a blob from two different regenerations
+cannot be silently combined.
 
 `BUILD_INFO.txt` is part of the payload, not documentation left behind: it is
 the only thing on the board that ties a result to a specific build, and the
@@ -437,23 +453,86 @@ to be a bare `close()` in a `finally` with `freed` initialised to True, so a
 close() that raised was reported as a clean free and the process exited with
 the pages going back. Both gates now share `safe_teardown.py`.
 
+## Gate 5 — the multi-candidate stream protocol
+
+```
+sudo python3 board_gate_protocol.py --overlay three_stage_combined.bit
+```
+
+Run it after gate 4 passes. It is a separate gate, not more phases in gate 4,
+because gate 4's result is pinned evidence for the 0.2 build and must not
+move: gate 4 keeps its eight fixtures and its meaning, and gate 5 brings its
+own five (`tb_proto_*`, ~16 KB, committed and hashed in
+`GATE5_VECTORS.sha256`; copy them, do not regenerate them on the board).
+
+**What only a batch can reach.** Contract §5 gives the extractor two output
+streams with two different TLAST disciplines — the metadata stream carries
+TLAST at BATCH end and is armed once for `n × 16` bytes, while the patch
+stream carries TLAST per patch and is armed `n` times at `n` different
+lengths. At `n = 1` those are the same thing, so every skew between them is
+invisible in gate 4 by construction. Gate 5 runs five batches — 4, 4, 1, 2
+and 2 descriptors, one permuted and one a repeat of a single descriptor —
+over four patch sizes that go **down, up and down**: 950, 650, 722, 352 B.
+
+The increase at candidate 2 is the load-bearing part. A receive that re-armed
+at the previous candidate's length would merely be over-armed in a batch that
+only shrinks, and would pass.
+
+Five failures that cannot happen at `n = 1`, one check each:
+
+1. records arriving in an order other than the descriptor order;
+2. the batch TLAST landing early — the metadata S2MM completes short and the
+   records are parsed out of stale buffer content. `sts_flags` bit 1 does not
+   cover this (it compares the INPUT descriptor count with `num_cands`, the
+   other end of the same batch), and the driver's framing cross-check covered
+   the patch stream only. `tme_driver.extract_candidates` now reads the
+   metadata engine's own received-byte count, publishes it as
+   `last_extract_stats["meta_bytes_measured"]` and refuses the batch on a
+   mismatch. **This one is a measurement** — the metadata channel is an S2MM,
+   so the engine writes the count — unlike the matcher's 251,740 B envelope
+   figure, which is MM2S and is only a programmed length;
+3. the patch receive not re-arming between candidates;
+4. it re-arming at the previous candidate's length;
+5. `static` extractor state surviving into the next batch.
+
+**And the one gate 4 named but could not test.** Gate 4's phase D says: "each
+kind gets one trial, so `by_kind[kind]` reduces over a single element and its
+argmax cannot be wrong here." Gate 5's bank gives kind `alpha` two trials —
+a partial match first, an exact match second — so `by_kind["alpha"]` must pick
+the SECOND. Two controls follow: reversing the bank moves the global tie to
+`beta`, and putting the winning `alpha` trial FIRST must still return it,
+which is what separates a real argmax from "keep the last thing seen". A page
+carries several templates per kind, so this is the ordinary case, not an edge
+case.
+
+**Not covered, deliberately:** a descriptor the extractor REJECTS mid-batch.
+`extract_candidates` refuses to dispatch one — a rejected candidate emits no
+pixels, so the receive armed for it would strand — and that refusal is correct
+behaviour, not a gap. The record/patch cursor skew a mid-batch reject would
+cause is covered in C simulation by `hls/integration/pe_tme_generate_golden.py`
+(`mid-batch-reject`).
+
+Two off-board checks should pass before booking board time, exactly as for
+gate 4:
+
+```
+python3 board_gate_protocol.py --selftest      # constants vs vectors vs driver
+python3 test_board_gate_protocol.py           # all 5 phases vs fake silicon,
+                                              # then 13 injected defects
+```
+
+The self-test includes a pure-Python dry run of the PS reduction over the
+golden scores, so a wrong expectation is caught there rather than discovered
+on the board as a hardware failure. The fake-silicon test decodes the packed
+descriptors the driver actually wrote rather than replaying a script, so a
+mis-packed or mis-ordered batch fails it.
+
+Exit status is gate 4's: 0 = passed, 1 = a phase failed, 2 = could not run.
+Teardown is the shared `safe_teardown.py`, so the `UNSAFE TEARDOWN` /
+`PL reset:` / `FAIL-STOP` outcomes documented for gates 3 and 4 apply here
+unchanged.
+
 ## After the gates — integration
-
-Gate 4 is not the last step before the 36-page comparison. Two protocol
-tests come first, because both are things gate 4's single candidate cannot
-reach and both would show up in a 36-page run as an unexplained digest
-mismatch rather than as the protocol bug they are:
-
-1. **Multi-candidate rearming and TLAST across a batch** — several
-   descriptors dispatched together, each patch framed correctly, the receive
-   rearmed between them, and a rejected candidate in the middle emitting no
-   pixels without stranding the next one.
-2. **A real per-kind argmax** — at least two trials of the SAME kind with
-   DIFFERENT scores, so `by_kind[kind]` has to choose. Gate 4 gives each kind
-   one trial, so that reduction is over a single element and cannot be wrong;
-   comparing its two kinds against each other exercises the global best, not
-   the per-kind one. A page carries several templates per kind, so this is the
-   ordinary case, not an edge case.
 
 Then connect `detect_page()` one stage at a time behind **explicit** backends
 (`cpu` / `pl-binarize` / `pl-extract` / `pl-all`), with no silent fallback — a
