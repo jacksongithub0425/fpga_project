@@ -69,6 +69,11 @@ def resolve(rel: str) -> Path:
         # started from sw/ and resolves them as siblings there.  Everything
         # else under hls/ is the HLS build tree, where `add_files` resolves.
         return REPO / ".github-upload" / rel
+    if SPLIT and rel.startswith("logs/b2_board_20260819/"):
+        # The not-yet-run B2 board protocol is prepared and committed directly
+        # in the upload worktree.  It is not a build output mirrored from the
+        # outer logs tree, and no result transcript exists yet.
+        return REPO / ".github-upload" / rel
     return REPO / rel
 
 
@@ -84,7 +89,7 @@ SUPERSEDED = HLS + "/template_match_b1"
 # One HLS project per variant.  run_hls_b1.tcl used to build all three
 # solutions inside a single `template_match_b1`, which could not be re-run
 # safely -- `open_project` without -reset reopens what is on disk and
-# `add_files` accumulates.  Each variant now owns a hermetic project.
+# `add_files` accumulates.  Each variant now owns an isolated reset project.
 def project(variant: str) -> str:
     return f"{HLS}/template_match_b1_{variant}"
 
@@ -92,7 +97,7 @@ def project(variant: str) -> str:
 # `SUPERSEDED` above is the old single-project tree.  Nothing is read from it
 # any more EXCEPT the packaged IP: `template_match_b1/b1/impl/ip` is the
 # directory vivado_b1_125.log names as its IP repository, so it is the closest
-# retained thing to the bitstream's actual input.  The hermetic projects' IP
+# retained thing to the bitstream's actual input.  The isolated projects' IP
 # exports have no relationship to that image at all.
 
 MANIFEST_REL = LOGS + "/MANIFEST.sha256"
@@ -151,7 +156,7 @@ def entries() -> list[tuple[str, str]]:
         ("packaged IP archive (re-export)",
          SUPERSEDED + "/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip"),
         ("superseded project marker", SUPERSEDED + "/SUPERSEDED.md"),
-        # The rebuild that proved the hermetic projects reproduce the originals.
+        # The rebuild that proved the isolated projects reproduce the originals.
         ("rerun driver", RERUN + "/rerun_all.sh"),
         ("rerun status", RERUN + "/rerun_status.txt"),
         ("rerun log cur", RERUN + "/run_cur.log"),

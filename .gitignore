@@ -134,10 +134,10 @@ baseline_cpu_*/
 !logs/phase_s_board_20260818/
 !logs/phase_s_board_20260818/**
 
-# The B2 board session. Committed BEFORE the run, plan and predictions first:
-# Priority 5 had to withdraw a "registered before the build" claim because the
-# timestamps contradicted it, and the fix is a commit date rather than a better
-# sentence. The transcripts land here afterwards.
+# The B2 board session. Plan and predictions are retained in commit ancestry
+# before any later result commit. This records repository ordering only: an
+# unsigned, unpushed commit is not an external timestamp. Transcripts land here
+# afterwards.
 !logs/b2_board_20260819/
 !logs/b2_board_20260819/**
 !hls/template_match/template_match_b1*/**/*.rpt

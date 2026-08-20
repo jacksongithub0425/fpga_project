@@ -258,7 +258,7 @@ tree, not about the RTL under test — and `add_files` accumulates, so re-runnin
 it after the A/B script moved to pinned sources would have put two cores in one
 project.
 
-`csim_prod_b1.tcl` now builds a hermetic `template_match_b1_prod` with
+`csim_prod_b1.tcl` now builds an isolated, reset `template_match_b1_prod` with
 `-reset`, compiles `b1_sources/correlation_core.b1.cpp` by digest, and — new in
 this pass — **verifies all four `tb_tme_prod.sha256` inputs before running**.
 Verifying the source and not the stimulus was half a verification: the suite's
@@ -266,7 +266,8 @@ whole claim is about specific pixels, and the blobs are gitignored, so the
 digest record is the only thing that says they are the right ones. The retained
 log now shows all five digests checked, `open_project -reset
 template_match_b1_prod`, and zero occurrences of `add_files
-correlation_core.cpp`.
+correlation_core.cpp`. The shared `tme_top.cpp/.h` and `tme_tb.cpp` were live
+inputs without pre-build digest gates, so this is not a hermetic run.
 
 ### Results
 
@@ -275,7 +276,7 @@ correlation_core.cpp`.
 | **board, B1 bitstream, gated 125.0000 MHz** | **7/7 PASS** — score within the runner's ±0.005 tolerance and the exact (x, y) on every case; six workload-width savings match the model inside the ±1 ms floor |
 | C simulation, unmodified RTL | **12/12 PASS** — establishes the suite as a parity oracle |
 | C simulation, B1 RTL | **12/12 PASS**, identical scores and locations |
-| C simulation, B1 RTL, **production suite** | **15/15 PASS** from the hermetic `template_match_b1_prod`, compiling the pinned `b1` snapshot and no working-tree source. Source digest **and all four `tb_tme_prod.sha256` inputs** verified before the run. Covers `prod-lane15-small` (24×16 in 200×60), `prod-lane15-full` (164×94 in 622×300), the 817-wide max result map, exact and near ties, negative score, flat region |
+| C simulation, B1 RTL, **production suite** | **15/15 PASS** from the isolated `template_match_b1_prod`, compiling the pinned `b1` correlation snapshot plus live shared `tme_top.cpp/.h` and `tme_tb.cpp`. Correlation-source digest **and all four `tb_tme_prod.sha256` inputs** verified before the run; shared sources are manifest-bound after it. Covers `prod-lane15-small` (24×16 in 200×60), `prod-lane15-full` (164×94 in 622×300), the 817-wide max result map, exact and near ties, negative score, flat region |
 | RTL co-simulation, `cur` | **PASS**, 14 transactions |
 | RTL co-simulation, `b1` | **PASS**, 14 transactions |
 | control: `cur` vs the published model | **14/14 exact**, fitted per-tile k = 25.0 |
@@ -469,11 +470,11 @@ Still open, and not claimed here:
 | `hls/template_match/correlation_core.cpp` | the change |
 | `hls/template_match/tme_generate_production.py` | `--suite b1`, `build_b1_*`, `check_b1_suite` |
 | `hls/template_match/tme_tb.cpp` | whitelists `b1` and `prod` |
-| `hls/template_match/run_hls_b1.tcl` | one hermetic project per variant; never opens the frozen `template_match/solution1` |
+| `hls/template_match/run_hls_b1.tcl` | one isolated reset project per variant; never opens the frozen `template_match/solution1` |
 | `hls/template_match/csim_prod_b1.tcl` | production-geometry lane-15 in C |
 | `hls/template_match/package_b1.tcl` | exports vendor `TermCountB1`, version **`0.2`** — see the packaging trap above; `0.2b1` is not a legal VLNV version and was silently rewritten to `1.0` |
 | `hls/template_match/b1_sources/` | the three pinned, hash-verified source snapshots + README |
-| `hls/template_match/template_match_b1_{cur,b1,b1b}/` | the three hermetic HLS projects: cosim transaction reports and `csynth.rpt` |
+| `hls/template_match/template_match_b1_{cur,b1,b1b}/` | the three isolated HLS projects: cosim transaction reports and `csynth.rpt` |
 | `.github-upload/sw/tme_b1_ab.py` | the adjudicator |
 | `.github-upload/sw/tme_cycle_model.py` | measured `B1` variant, exact `FROZEN["b1"]` aggregate |
 | `.github-upload/sw/tme_scale_policy.py` | recomputes every cycle figure from the model; reads no captured `cycles_*` column |
@@ -505,7 +506,8 @@ were built by an earlier version of `run_hls_b1.tcl` that added the
 produced them**, and could not have: the snapshot lives in `b1_sources/`, one
 level below `tme_top.h`, so it needs an explicit include path that the script
 did not carry. Both are fixed, and all three variants were rebuilt from the
-pinned sources into hermetic per-variant projects (`logs/b1_rerun_20260818/`).
+pinned correlation sources into isolated per-variant reset projects
+(`logs/b1_rerun_20260818/`); shared top/testbench inputs were live.
 
 | rebuilt artifact | against the original |
 |---|---|

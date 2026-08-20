@@ -1,47 +1,30 @@
 === HOST-SIDE HASHES, prepared for the B2 session ===
-PREPARED 2026-08-20T03:33:05Z -- NOT YET LOADED. The session
-re-hashes all six files INSIDE 03_run.txt; this file is the host-side record
-taken before transfer, and 02_hashes_remote.txt is the board-side one.
---- B2 overlay (TermCountB2:hls:tme_top:0.2, routed 8.000 ns, WNS +0.011710 ns) ---
-1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf */c/Users/lychee/tc25/vivado_project/tme_b2_125/overlay_output/tme_standalone.bit
-11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744 */c/Users/lychee/tc25/vivado_project/tme_b2_125/overlay_output/tme_standalone.hwh
---- runner + vectors (the hash-bound phase_s suite) ---
-fab0c8a5b098e8eea6bd09728fb956ac502682e1c4a8c7ae1909163503b918da */c/Users/lychee/Desktop/FPGA/.github-upload/sw/tme_standalone_bringup.py
-9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_cases_phase_s.txt
-3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72 */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_patches_phase_s.bin
-9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_templs_phase_s.bin
+PROTOCOL REVISION PREPARED -- NOT YET LOADED.
+03_run.sh first verifies `B2_BOARD_INPUTS.sha256` against its wrapper-embedded
+digest, then verifies these exact nine board-side names with `sha256sum -c`
+before either overlay load.
 
---- CONTROLLED COMPARISON: what differs from the B1 session (logs/b1_board_20260818) ---
-All three VECTOR files are BYTE-IDENTICAL to both the Priority 3 and the B1
-sessions, so the stimulus is a constant across all three:
-  tb_tme_cases_phase_s.txt   9970f100...  same
-  tb_tme_patches_phase_s.bin 3c22a422...  same
-  tb_tme_templs_phase_s.bin  9fd283bf...  same
+--- Original six-file gate: B2 overlay, runner, and phase_s vectors ---
+1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf  tme_standalone.bit
+11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744  tme_standalone.hwh
+ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  tme_standalone_bringup.py
+9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f  tb_tme_cases_phase_s.txt
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  tb_tme_patches_phase_s.bin
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  tb_tme_templs_phase_s.bin
 
-THE RUNNER IS NOT BYTE-IDENTICAL, and that is a change from B1's session,
-which could claim byte-identity with Priority 3's.  State it exactly:
-  B1 as-run  f7b00b0e...   ->  B2 will run  fab0c8a5...
-The entire difference is 12 lines added at the phase_s banner: one comment
-block, and two print() calls that emit the "'the unchanged core' above is
-STALE" notice.  No control flow, no arithmetic, no register access and no DMA
-path is touched, and the diff is reproducible with
-  diff logs/b1_board_20260818/tme_standalone_bringup.py.as_run \
-       sw/tme_standalone_bringup.py
-It changes the TRANSCRIPT TEXT and nothing that is measured.  A reader who
-wants byte-identity with B1 should re-run the .as_run copy; a reader who wants
-the staleness notice in the transcript should use the current file.  This
-session uses the current file, and this paragraph is why.
+--- Three-file extension: existing hash-bound hw vectors ---
+378d4d6e3559b4afb1d1f22f7e618d3eb011c49f0b523226588a6ed7b6f6ad6e  tb_tme_cases_hw.txt
+5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53  tb_tme_patches_hw.bin
+026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350  tb_tme_templs_hw.bin
 
-THE OVERLAY DIFFERS, which is the point:
-  .bit  2cd4a2b0... (B1)  ->  1116891c... (B2)
-  .hwh  ffa94282... (B1)  ->  11abec6a... (B2)
+--- Controlled comparison and scope ---
+The three phase_s vector files remain byte-identical to the Priority 3 and B1
+sessions. The B2 runner is intentionally different: it now rejects non-finite
+FCLK reads and fail-closes on the expected HWH VLNV. The `hw` suite adds the
+approximately T=38 case, the T=52 case, and maximum DMA geometry.
 
-INDEPENDENT CONFIRMATION OF WHICH CORE IS IN THE PL.  A file hash proves which
-BYTES were sent; it does not prove what the fabric ended up holding.  The
-runner prints the overlay's IP dictionary, and the VLNV read back from the
-loaded design must say
-
-    tme_top_0    TermCountB2:hls:tme_top:0.2
-
-where B1's transcript says TermCountB1.  If it says anything else, the run is
-void regardless of the hashes.
+The .bit differs from B1 (2cd4a2b0... -> 1116891c...) and the .hwh differs
+(ffa94282... -> 11abec6a...). Exact bit/HWH hashes plus the retained packaged
+IP -> Vivado -> bitstream provenance bind the fabric image. The required
+`TermCountB2:hls:tme_top:0.2` value in Overlay.ip_dict checks HWH metadata
+consistency only; it is not fabric readback.

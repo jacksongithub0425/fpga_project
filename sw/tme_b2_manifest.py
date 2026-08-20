@@ -38,6 +38,7 @@ import tme_b1_manifest as B1M                                  # noqa: E402
 HLS = B1M.HLS                       # "hls/template_match"
 SWD = "sw"
 LOGS = "logs/b2_20260819"
+B2BOARD = "logs/b2_board_20260819"
 B1LOGS = B1M.LOGS                   # "logs/b1_20260818"
 VIVADO = "vivado/tme_standalone"
 
@@ -84,6 +85,23 @@ def entries() -> list[tuple[str, str]]:
         # than against a rebuild that would have its own WNS.
         ("bitstream (never run on hardware)", LOGS + "/tme_standalone.bit"),
         ("hardware handoff", LOGS + "/tme_standalone.hwh"),
+        # The prepared board gate.  These are protocol inputs, not board
+        # results: no transcript exists yet.  The board-side checksum manifest
+        # binds all nine files consumed by 03_run.sh, while listing the payloads
+        # here also makes a clean checkout independently verifiable.
+        ("board runner", SWD + "/tme_standalone_bringup.py"),
+        ("board phase-s cases", HLS + "/tb_tme_cases_phase_s.txt"),
+        ("board phase-s patches", HLS + "/tb_tme_patches_phase_s.bin"),
+        ("board phase-s templates", HLS + "/tb_tme_templs_phase_s.bin"),
+        ("board hw cases", HLS + "/tb_tme_cases_hw.txt"),
+        ("board hw patches", HLS + "/tb_tme_patches_hw.bin"),
+        ("board hw templates", HLS + "/tb_tme_templs_hw.bin"),
+        ("board plan", B2BOARD + "/B2_BOARD_SESSION_PLAN.md"),
+        ("board prestate script", B2BOARD + "/00_prestate.sh"),
+        ("board input checksum gate", B2BOARD + "/B2_BOARD_INPUTS.sha256"),
+        ("board host hash record", B2BOARD + "/01_hashes_local.txt"),
+        ("board run wrapper", B2BOARD + "/03_run.sh"),
+        ("board restore script", B2BOARD + "/04_restore.sh"),
         # THE PACKAGED IP, AND READ THE ROLE -- IT IS NOT B1'S.  B1's manifest
         # pins its IP as a RE-EXPORT: package_b1.tcl ran after the Vivado build
         # and overwrote the directory the bitstream had been built from, so
@@ -148,9 +166,10 @@ def entries() -> list[tuple[str, str]]:
         # The reconstructed pre-RTL baselines.  READ THE ROLE, IT WAS WRONG
         # ONCE: this file used to be pinned as "prediction (pre-registered)",
         # and it was written at 19:19:23, nine minutes AFTER the b2 transaction
-        # report existed at 19:10:13.  What is genuinely pre-registered is the
-        # PROJECTION it recomputes -- commit e762cbf, 2026-08-17 -- not this
-        # transcript.  Pinning it still matters: it is the artifact anyone can
+        # report existed at 19:10:13.  The PROJECTION it recomputes is retained
+        # in ancestor commit e762cbf before the B2 source/build commit; that is
+        # repository ordering, not an external timestamp.  Pinning still
+        # matters: this is the artifact anyone can
         # re-derive from the snapshot and the control report to check the miss.
         ("pre-RTL baselines (reconstructed)", LOGS + "/PREDICTION.txt"),
         ("mutant gate output", LOGS + "/b2_mutants.txt"),

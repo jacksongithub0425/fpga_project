@@ -20,11 +20,13 @@
 # shows up identically in C.  A timing-dependent defect would not, and this
 # suite says nothing about one.
 #
-# ITS OWN HERMETIC PROJECT, and deliberately NOT csim_prod_b1.tcl with a
+# ITS OWN RESET PROJECT, and deliberately NOT csim_prod_b1.tcl with a
 # variant switch: that file is pinned in logs/b1_20260818/MANIFEST.sha256 as
 # Priority 4 evidence, and editing it would rewrite a record a finished
 # measurement rests on.  This builds `template_match_b2_prod` and touches no
-# other project.
+# other project.  Do not call the run hermetic: correlation_core and the
+# vectors are pre-build digest-gated, but tme_top.cpp/.h and tme_tb.cpp are
+# compiled live and are only manifest-bound after the run.
 #
 # Generate the vectors first if they are absent:
 #   python tme_generate_production.py            (writes the prod package)

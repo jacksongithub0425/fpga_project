@@ -64,7 +64,7 @@ geometries.
     python tme_b2_ab.py                     # print the comparison
     python tme_b2_ab.py --assert            # exit 1 on any drift
     python tme_b2_ab.py --negative-control  # prove checks 2 and 3 are separate
-    python tme_b2_ab.py --predict           # the two pre-registered candidates
+    python tme_b2_ab.py --predict           # reconstruct the two pre-RTL baselines
     python tme_b2_ab.py --json out.json
 
 Run it with the HLS venv python, from anywhere.
@@ -335,15 +335,14 @@ def predict(ctl: list[int], ctl_name: str, ctl_variant: str) -> int:
     copy of tme_cycle_model and the retained `b1` transaction report, so anyone
     can recompute these numbers at any time and get the same ones.
 
-    WHAT IS AND IS NOT PRE-REGISTERED -- read this before quoting the word.
+    WHAT DOES AND DOES NOT PREDATE THE RTL IN REPOSITORY ANCESTRY.
 
-      * The PRE-RTL PROJECTION genuinely is.  tile = T*(tw + 41) + (tw - 1)
-        entered sw/tme_cycle_model.py in commit e762cbf, 2026-08-17 23:11,
-        with the 20.175432 page figure beside it -- two days before any B2 RTL
-        was written (b1_sources/correlation_core.b2.cpp, 2026-08-19 19:04) and
-        nineteen hours before the build.  Git, not a file timestamp, is what
-        establishes that, and git is the only part of this that a later edit
-        could not have manufactured.
+      * The PRE-RTL PROJECTION is retained in ancestor commit e762cbf:
+        tile = T*(tw + 41) + (tw - 1), with the 20.175432 page figure beside
+        it.  The B2 source/build appears later in the retained history.  This
+        establishes repository ordering only.  An unsigned, unpushed commit is
+        not an external timestamp, and its author/commit date does not prove
+        when a third party could first observe the content.
       * THIS TOOL AND ITS SNAPSHOT ARE NOT.  logs/b2_20260819/
         tme_cycle_model.py.pre_b2 was written at 19:19:15 and PREDICTION.txt at
         19:19:23, while the b2 transaction report already existed at 19:10:13.
@@ -351,14 +350,14 @@ def predict(ctl: list[int], ctl_name: str, ctl_variant: str) -> int:
         pre-RTL model, and what makes it usable is not its mtime but that its
         CONTENT is checkable against e762cbf and that --assert refuses to run
         if it ever starts carrying the measured term.
-      * THE CONTROL-NAIVE CANDIDATE IS NOT pre-registered at all.  It is
+      * THE CONTROL-NAIVE CANDIDATE DOES NOT PREDATE THE RESULT.  It is
         computed here, by this file, after the fact.  It is a useful BASELINE
         -- "what B1's measured term plus perfect reuse would have given" -- and
         it is not a prediction anyone made in advance.
 
-    So call the projection pre-registered (git says so) and call this mode a
-    RECONSTRUCTION of the pre-RTL baselines.  The distinction costs nothing and
-    the alternative is a claim the timestamps contradict.
+    Call this mode a RECONSTRUCTION of the pre-RTL baselines.  Say that the
+    projection is present in earlier commit ancestry; do not turn local commit
+    metadata into an external timestamp claim.
 
       pre-RTL projection
                   the snapshot's cycles(..., "B2"), i.e.
@@ -398,11 +397,12 @@ def predict(ctl: list[int], ctl_name: str, ctl_variant: str) -> int:
           f"mode, so these")
     print("numbers are recomputable at any time.")
     print()
-    print("  PROVENANCE, stated exactly.  The pre-RTL projection is genuinely "
-          "pre-registered:")
-    print("  it entered sw/tme_cycle_model.py in commit e762cbf (2026-08-17 "
-          "23:11), two days")
-    print("  before the B2 source existed.  THIS TOOL IS NOT: the snapshot "
+    print("  PROVENANCE, stated exactly.  The pre-RTL projection is retained ")
+    print("  in ancestor commit e762cbf before the B2 source/build commit. "
+          "That is repository")
+    print("  ordering, not an external timestamp: unsigned, unpushed commit "
+          "dates do not prove")
+    print("  third-party observability.  THIS TOOL IS LATER: the snapshot "
           "(19:19:15) and")
     print("  PREDICTION.txt (19:19:23) both postdate the b2 transaction report "
           "(19:10:13).")

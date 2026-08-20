@@ -111,10 +111,10 @@ THE EVIDENCE HIERARCHY (do not collapse these tiers when quoting)
                   as B2 minus the window statistics plus the count pass and so
                   inherits B2's term whole.  B1 and B2 are now two warnings
                   about this tier rather than one: B1's projected term was
-                  optimistic by T+1 per (output row, template row) and B2's by
-                  2*(T-1), which is a DIFFERENT shape -- so "the projection is
-                  optimistic by about B1's amount" is not a correction anyone
-                  may apply to B0b in advance.
+                  optimistic by T+1 per (output row, template row).  Against
+                  B2's pre-RTL projection the miss is 3T-1: B1's T+1 recurs,
+                  plus an additional 2*(T-1).  Neither measured correction is
+                  a correction anyone may apply to B0b in advance.
   unproved        the combined image at 125 MHz, and end-to-end page latency.
                   ("the modified core at 125 MHz" left this line on 2026-08-19:
                   the B1 image routed at 8.000 ns and ran 7/7 on the board with
@@ -304,9 +304,10 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         # WHAT THIS REPLACED, AND WHAT THE MISS WAS.  The projected term was
         # T*(tw + 41) + (tw - 1) -- written in the same style as B1's withdrawn
         # projection, i.e. "the reuse saves exactly the pixels it does not
-        # re-read", counting 25 per tile and nothing per call.  It is genuinely
-        # PRE-REGISTERED: it entered this file in commit e762cbf, 2026-08-17,
-        # before any B2 source existed.  The second candidate, B1's measured
+        # re-read", counting 25 per tile and nothing per call.  It is retained
+        # in ancestor commit e762cbf before the B2 source/build commit.  That is
+        # repository ordering, not an external timestamp.  The second
+        # candidate, B1's measured
         # term minus the naive saving, is a BASELINE computed after the fact by
         # tme_b2_ab.py; the two differ by rh*th*(T + 1).  THE MEASUREMENT
         # MATCHED NEITHER.  The shortfall against the naive reuse arithmetic is
@@ -314,7 +315,7 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         #     rh * th * 2 * (T - 1)      i.e. (a, b) = (+2, -2) in a*T + b
         #
         # BUT THAT IS THE SHORTFALL AGAINST A BASELINE THAT ALREADY CARRIES
-        # B1's CORRECTION.  Measured against the pre-registered projection --
+        # B1's CORRECTION.  Measured against the retained pre-RTL projection --
         # the like-for-like comparison, since that is the one B1 also made --
         # the miss is rh*th*(3T - 1) = rh*th*((T + 1) + 2*(T - 1)).  B1's
         # T + 1 DID recur; at T = 1 it is the whole miss.  What is new is the
@@ -1340,6 +1341,29 @@ def check(results):
     if abs(agg2 / PAGES / TARGET_CLOCK_HZ - b2f["s_per_page"]) > 1e-12:
         fail.append("B2 s/page: {!r} != frozen {!r}".format(
             agg2 / PAGES / TARGET_CLOCK_HZ, b2f["s_per_page"]))
+    # Recompute the withdrawn endpoint with the pinned pre-B2 implementation,
+    # rather than proving only that three literals in this file agree with one
+    # another.  Use the workload already discovered above: the snapshot lives
+    # under logs/, so its own detector-relative discovery cannot find the
+    # sibling templates in a split development tree.  Its page_cycles() still
+    # supplies every cycle expression and aggregation rule under test.
+    pre_b2_path = (Path(__file__).resolve().parents[1] / "logs" /
+                   "b2_20260819" / "tme_cycle_model.py.pre_b2")
+    try:
+        import runpy
+        pre_b2 = runpy.run_path(str(pre_b2_path))
+        pre_b2_agg = pre_b2["page_cycles"](
+            templates_b1, scales_b1, "per_trial", "B2")
+    except Exception as exc:                              # noqa: BLE001
+        fail.append("B2 withdrawn aggregate: could not execute pinned pre-B2 "
+                    "model {} ({})".format(pre_b2_path, exc))
+    else:
+        if pre_b2_agg != b2f["withdrawn_aggregate_cycles"]:
+            fail.append(
+                "B2 withdrawn aggregate: pinned pre-B2 model recomputed "
+                "{:,}, frozen {:,} (delta {:+,})".format(
+                    pre_b2_agg, b2f["withdrawn_aggregate_cycles"],
+                    pre_b2_agg - b2f["withdrawn_aggregate_cycles"]))
     # THE WITHDRAWN PROJECTION, at cycle resolution.  This is the check that
     # was missing when the withdrawn figure was frozen as the rounded 20.175432
     # and the miss was computed from it: the float identity below passed on a

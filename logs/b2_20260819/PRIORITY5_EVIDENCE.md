@@ -101,11 +101,12 @@ against B1's miss of 425,680,640 cycles = 0.094595697778.
 > **1,687 cycles** away from the truth. Six decimal places on a page average is
 > a 2.25-million-cycle tolerance, so a rounded projection cannot pin its own
 > miss. Both endpoints and the difference are now cycle counts, the s/page
-> figures are derived from them, and `tme_cycle_model.py --assert` checks the
-> integer identity `91,823,241,527 − 90,789,445,687 = 1,033,795,840` before it
-> checks any float. B1's block got the same treatment; its withdrawn projection
-> was already cycle-exact (118,078,633,847), so only the last digit of the
-> float moved.
+> figures are derived from them, and `tme_cycle_model.py --assert` executes the
+> pinned `tme_cycle_model.py.pre_b2` implementation to recompute
+> **90,789,445,687** before checking the integer identity
+> `91,823,241,527 − 90,789,445,687 = 1,033,795,840` and then the floats. B1's
+> block got the same integer treatment; its withdrawn projection was already
+> cycle-exact (118,078,633,847), so only the last digit of the float moved.
 >
 > The withdrawn aggregate is **recomputable, not transcribed**: load
 > `logs/b2_20260819/tme_cycle_model.py.pre_b2` and call `page_cycles` on the
@@ -113,7 +114,7 @@ against B1's miss of 425,680,640 cycles = 0.094595697778.
 > (164,143,337,975) and `B1` (118,504,314,487) aggregates **exactly**, which is
 > what says the two differ in the B2 term and in nothing else.
 
-### What was pre-registered, and what only looks it
+### What predates the RTL in repository ancestry, and what only looks prior
 
 This section previously claimed the prediction was "registered before the
 build". **The retained timestamps contradict that**, so here is the actual
@@ -131,12 +132,12 @@ chronology, from the file mtimes in this directory:
 
 So:
 
-* **The pre-RTL projection IS pre-registered — by git, not by a timestamp.**
-  `T*(tw+41) + (tw-1)` and the `20.175432` page figure entered
-  `sw/tme_cycle_model.py` in commit **`e762cbf`, 2026-08-17 23:11**, two days
-  before the B2 source existed and nineteen hours before the build. That is the
-  one part of this no later edit could have manufactured, and it is the part
-  the "the projection was optimistic by X" claim actually rests on.
+* **The pre-RTL projection appears in retained commit ancestry before the B2
+  source/build commit.** `T*(tw+41) + (tw-1)` and the `20.175432` page figure
+  are in `e762cbf`; the B2 source appears later in that history. An unsigned,
+  unpushed commit is not an external timestamp, so the commit date is not proof
+  of when a third party could first observe either state. The defensible claim
+  is repository ordering, and that is what the projection comparison rests on.
 * **`--predict` and its snapshot are a RECONSTRUCTION.** Both postdate the
   measurement. What makes the snapshot usable is not its mtime but that its
   content is checkable against `e762cbf` and that `--assert` refuses to run if
@@ -153,7 +154,7 @@ So:
 
 | candidate | tile term | provenance |
 |---|---|---|
-| pre-RTL projection | `T*(tw+41) + (tw-1)` | pre-registered, commit `e762cbf` |
+| pre-RTL projection | `T*(tw+41) + (tw-1)` | retained in ancestor commit `e762cbf`; no external timestamp claim |
 | control-naive | `T*(tw+42) + tw` | computed after the fact, a baseline |
 | **measured** | **`T*(tw+44) + tw-2`** | **matches neither** |
 
@@ -303,7 +304,7 @@ tiles is not a sample of an axis the RTL is compiled to run to **52**. Until
 this ran, "B2 is functionally correct" was a claim about roughly one ninth of
 the tile-count range.
 
-`hls/template_match/csim_prod_b2.tcl` — a new hermetic project
+`hls/template_match/csim_prod_b2.tcl` — a new isolated reset project
 (`template_match_b2_prod`), the same b2 snapshot verified by digest, the same
 four production vectors `csim_prod_b1.tcl` checks:
 
@@ -331,9 +332,11 @@ A *timing*-dependent defect would not, and this suite says nothing about one.
 The co-simulation above remains the only RTL-level functional evidence, and it
 remains capped at `T = 6`.
 
-It ran hermetically: `template_match_b2_prod` is its own project, and the
-measured `b2` project's transaction report and `csynth.rpt` are byte-unchanged
-across it (the manifest re-verifies both).
+`template_match_b2_prod` is its own reset project, and the measured `b2`
+project's transaction report and `csynth.rpt` are byte-unchanged across it (the
+manifest re-verifies both). It is not hermetic: `tme_top.cpp/.h` and `tme_tb.cpp`
+were compiled live without pre-build digest gates and are manifest-bound only
+after the run.
 
 ### The suite was proved adequate — after the build, not before it
 
@@ -570,7 +573,11 @@ unrecorded:
   change to the EOL or binary-suffix policy would have silently reinterpreted
   the whole manifest.
 
-`tme_b2_manifest.py --verify` now binds **42 artifacts**, up from 33.
+The off-board correction grew the set from 33 to 42 artifacts. The prepared
+fail-closed board protocol now adds the runner, both vector payloads, checksum
+manifest, plan, and three scripts: `tme_b2_manifest.py --verify` binds **55
+artifacts**. These additions are protocol, not a silicon result; B2 remains
+not-run until the transcripts exist.
 
 ---
 
@@ -641,8 +648,8 @@ and each is a claim that was stronger than what the artifacts support.
 |---|---|---|
 | 1 | "B1's overhead did not recur, in size or in shape" | **False.** miss vs the pre-RTL projection is `3T-1 = (T+1) + 2*(T-1)`; B1's `T+1` recurs, and at `T=1` it is the whole miss. `2*(T-1)` is the *additional* miss against a baseline that already carries B1's term. Now enforced by `tme_b2_ab.py` check 4 (14/14, 5/5). |
 | 2 | withdrawn projection `20.175432`, miss `0.22973278377777717` | Rounded, and the miss derived from it was **1,687 cycles wrong**. Frozen as integers: `90,789,445,687` → `1,033,795,840` cycles → `0.229732408889` s/page, asserted as an integer identity. |
-| 3 | "registered BEFORE the build" | Timestamps say otherwise. The **projection** is pre-registered by commit `e762cbf` (2026-08-17); `--predict`, its snapshot and the mutant gate all **postdate** the 19:10:13 cosim report. Relabelled *reconstructed pre-RTL baselines* and *post-build adequacy test*. |
-| 4 | packaged IP unpinned | `component.xml` and the IP ZIP are the **actual input** to the bitstream (exported 19:16:08, read by a synthesis run launched 19:17:10). Both now in git and in the manifest, along with `tme_top.cpp/.h`, the B1 control source and the imported `tme_b1_manifest.py`. 33 → **42** artifacts. |
-| 5 | functional evidence capped at `T = 6` | Hermetic production C-sim added (`csim_prod_b2.tcl`): **15/15 + 9 direct**, tile counts to `T = 52`, the compiled maximum. |
+| 3 | "registered BEFORE the build" | Timestamps say otherwise. The **projection** is retained in commit ancestry before the B2 source/build commit, but an unsigned, unpushed commit is not an external timestamp. `--predict`, its snapshot and the mutant gate all **postdate** the 19:10:13 cosim report. Relabelled *reconstructed pre-RTL baselines* and *post-build adequacy test*. |
+| 4 | packaged IP unpinned | `component.xml` and the IP ZIP are the **actual input** to the bitstream (exported 19:16:08, read by a synthesis run launched 19:17:10). Both now in git and in the manifest, along with `tme_top.cpp/.h`, the B1 control source and the imported `tme_b1_manifest.py`. The off-board set grew 33 → **42** artifacts; the later prepared board protocol brings the current manifest to **55** without claiming a board result. |
+| 5 | functional evidence capped at `T = 6` | Isolated production C-sim added (`csim_prod_b2.tcl`): **15/15 + 9 direct**, tile counts to `T = 52`, the compiled maximum. The correlation snapshot/vectors were pre-build digest-gated; live shared sources were manifest-bound afterwards. |
 | 6a | "B0b starts on a path it will itself be touching" | B0b **inherits** the 12 ps margin; it does not modify the `seg` → DSP path. It may disturb placement around it — still a reason to route early, not a claim about what B0b edits. |
 | 6b | "all 256 possible stale register fills" | **256 uniform fills**, not `256**231` states. And the self-healing result is a *containment* bound: it proves the blind cases must be blind; it does not prove every column below `tw-1` changes. |

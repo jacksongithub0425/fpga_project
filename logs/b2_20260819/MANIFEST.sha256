@@ -21,23 +21,36 @@ b63184fd5df94a589bd40bad0ac13597fbeae365093d40b3d7c49ec8cf893e97  logs/b2_202608
 a5e3f6d89fb9734159e174d51f643fd39908a6a7d63ca40641c95a02812fbd9e  logs/b2_20260819/post_route_worst_paths.rpt  # routed worst paths
 1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf  logs/b2_20260819/tme_standalone.bit  # bitstream (never run on hardware)
 11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744  logs/b2_20260819/tme_standalone.hwh  # hardware handoff
+ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  sw/tme_standalone_bringup.py  # board runner
+8eabf33aec39ea791a98f85ed6d4257deba4d11a86f104409369f08f5bd783a7  hls/template_match/tb_tme_cases_phase_s.txt  # board phase-s cases
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  hls/template_match/tb_tme_patches_phase_s.bin  # board phase-s patches
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  hls/template_match/tb_tme_templs_phase_s.bin  # board phase-s templates
+cf581e4b88bc2dcb079bbfbe1fb3b081276991c2dd16a304bae03f1ef1157fc9  hls/template_match/tb_tme_cases_hw.txt  # board hw cases
+5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53  hls/template_match/tb_tme_patches_hw.bin  # board hw patches
+026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350  hls/template_match/tb_tme_templs_hw.bin  # board hw templates
+3febb631a2b36f9f1d4b8e61be8c75cc2b1f4859662219b0ce24fb1ea4e42bdd  logs/b2_board_20260819/B2_BOARD_SESSION_PLAN.md  # board plan
+ea88a30131a83f84bf34aefbd7844132b01d054a125e6c715b873d7258eb32ba  logs/b2_board_20260819/00_prestate.sh  # board prestate script
+26101c12df931dd5235fec12a99adbf2464ed3b00b9bb74d353a124ca5b93a51  logs/b2_board_20260819/B2_BOARD_INPUTS.sha256  # board input checksum gate
+b41b256d98de255d4853e4cf58508487d51af9624bd19a7f5b98f78a54d730d6  logs/b2_board_20260819/01_hashes_local.txt  # board host hash record
+29a09666428398db42655f6a5173db8a396e4fac1ccb42ea6c75f726f2e87bf7  logs/b2_board_20260819/03_run.sh  # board run wrapper
+99bac0dc2d9582a51abbfb9044633f49498efc5dc93943c283449b3c3ae764b3  logs/b2_board_20260819/04_restore.sh  # board restore script
 ea0d8a051812efef6fce51906ebd89b24a8a9aa185496ff72a18cd8cf9f771f4  hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml  # packaged IP (the image's input)
 5d602b3e839a4c3cc4799c2da496c6ff560ce0bcc837a930f0854c7872a66eab  hls/template_match/template_match_b1_b2/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip  # packaged IP archive (the image's input)
 1f2c9b47b02fefb0114c426146c23308cb63b483c1764885f336c0cdf61d9df4  vivado/tme_standalone/build_tme_standalone.tcl  # build script
 c257b43da86f80909fba3024785b5e9b5f645c1783d1f4edea6ec1885c3903a2  hls/template_match/package_b2.tcl  # packaging script
-3c0502308ef3d1a15a3537311c629f5d5793e870bc46af7eb0f4ce8ebebc36c3  hls/template_match/run_hls_b1.tcl  # ab project script
-ec7e7402c8667e153f9428b302539927956dcb2640d6398cde2910d77face574  hls/template_match/csim_prod_b2.tcl  # prod csim script b2
+b73605cb9de997d0d477e9e57651902e30ce871caf4e7bf1f0db0d22f45e069c  hls/template_match/run_hls_b1.tcl  # ab project script
+025acd990adad2c7dc92c8fb2fe9cb268270033afd02aa216762bc0936bf8300  hls/template_match/csim_prod_b2.tcl  # prod csim script b2
 bd1759368aaf5b05423df1468ddd4f6b590d0fd4e047b83263786af996b75f92  logs/b2_20260819/csim_prod_b2.log  # prod csim log b2
 b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
 cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
-debea679406b33852c1c41ef06e7eda6ff900116c37cb4138a9666a48536b40a  sw/tme_cycle_model.py  # model
+277a5cd8c5a5b148a2875b88e28d315e35715465de22656665b42dcdb7e08f0d  sw/tme_cycle_model.py  # model
 6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  logs/b2_20260819/tme_cycle_model.py.pre_b2  # model pre-B2
-10a3f41aa057b36a1c9f790f3e06c44bb2bf9468a182f36aad2f69971647bdb1  sw/tme_b2_ab.py  # adjudicator
+6a765f2da35af226a972c00cf80f49db087367d4a3b08c9c7f7dc637c8013327  sw/tme_b2_ab.py  # adjudicator
 8c0f48a94c329a4c8bcd893fd5963bc161385a5446f0c00f3707490d31beb338  sw/tme_b2_mutants.py  # mutant gate
-c88d94b9629f294c619823588b877dd8c1ba8c24ad8aedd554ecf961190c275e  sw/tme_b2_manifest.py  # manifest tool
-36de753a793122e8fe6c9dabde5e79e4300cca8fb0f6d1e77bb981b1f0392688  sw/tme_b1_manifest.py  # manifest tool (imported)
+82f1ace326d129dc541614d7ee9ebb7734d96c59aae7f90fb023c6327a9c1a3e  sw/tme_b2_manifest.py  # manifest tool
+718f506f70b8529c9a939c0448db2cf2e3c63096364adce811099b6f0a739e6b  sw/tme_b1_manifest.py  # manifest tool (imported)
 53d92ac02d507bb3d9c34657121815b8d5ddcaf67d541293179dfdc9fe13a63d  logs/b2_20260819/run_b2.log  # log b2
 a5f01c7bb0a7c60506b43f61593d7b88b0cf95443528c1aac04c992cb8c20b5c  logs/b2_20260819/package_b2.log  # log packaging
 792f1b5e313bff61d7d224d2e2406999daf2eb2ce9d63a8cb8dc0cd4fde4c137  logs/b2_20260819/vivado_b2_125.log  # log vivado
@@ -46,5 +59,5 @@ a4b452a253224f849d998d3c8a0befb77572c1663fffd2db6fa4a4397e0e31ea  logs/b2_202608
 4173d756cfd4c08ea16dc764b602d02627931613ee6e987b0c4c0b0e14613ac1  logs/b2_20260819/b2_ab.txt  # adjudicator output
 66992c5177ecb21f7c0888419927a5fd15ec833714d909770937a6ce7b842475  logs/b2_20260819/b2_ab_negative_control.txt  # adjudicator negative control
 21997afb275d40adaa7b09319ebcf57e2cc13b4f0d156455e700e8bd559bc9eb  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
-5f68646fdf39f744b0545bca3c5d9a1eee5846c3cec0209b1e268943894ecc4a  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
-bf842f1a513acee7ec63ed8ff269fed79ceffe52ce34dd242f30bbfb058d3001  hls/template_match/b1_sources/README.md  # pinned-source README
+12fc3ac08f1f0b640ff0e36346714185d65aa9eddc1c6d95b903217179fc9869  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
+4b317f4945b4c3501a9ebb9616e29b90100a366a9a03be4810b0887a4a6e1a14  hls/template_match/b1_sources/README.md  # pinned-source README

@@ -111,10 +111,14 @@ on all 14 in the same comparison. The saving over B1 is `(T-1)*(tw-3)`, which
 is zero at `T = 1` and positive for every legal `tw >= 4` — so unlike B1, which
 **loses** at `tw = 216`, B2 is never a regression.
 
-**Two candidates were registered before the build and it matched neither**
-(`tme_b2_ab.py --predict`, which reads the retained pre-measurement copy of the
-model and no `b2` report at all). B1's `T + 1` overhead did **not** recur: the
-shortfall against the naive reuse arithmetic is `2*(T - 1)`.
+**The measured term matched neither reconstructed baseline.** The pre-RTL
+projection is retained in commit ancestry before the B2 source/build commit;
+`tme_b2_ab.py --predict` and its snapshot were created after the measurement.
+This is repository ordering, not an external timestamp: an unsigned, unpushed
+commit date does not prove when a third party could observe it. Against the
+pre-RTL projection the miss is `3*T - 1 = (T + 1) + 2*(T - 1)`: B1's `T + 1`
+overhead recurs, and `2*(T - 1)` is the additional miss against the
+control-naive baseline that already includes B1's correction.
 
 **No board session exists for B2.** B1 has one; B2 has a routed result and
 nothing more. Do not quote B2's s/page at 125 MHz as though the clock were

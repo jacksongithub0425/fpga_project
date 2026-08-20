@@ -12,14 +12,16 @@
 # runs in C, and C is where a wrong seg_len shows up just as plainly: the
 # mutation is an indexing defect, not a timing one.
 #
-# ITS OWN HERMETIC PROJECT.  This used to open `template_match_b1` and
+# ITS OWN RESET PROJECT.  This used to open `template_match_b1` and
 # `add_files correlation_core.cpp` — the WORKING-TREE core — into the same
 # project run_hls_b1.tcl builds.  Two defects in one line: `add_files`
 # accumulates, so after the A/B script moved to pinned snapshots this would
 # have put two cores in the project; and the source it added was not the one
 # the co-simulation measured, so a pass here said nothing about the RTL under
 # test.  It now builds `template_match_b1_prod` from the SAME pinned b1
-# snapshot, verified by digest, and touches no other project.
+# snapshot, verified by digest, and touches no other project.  It is isolated,
+# not hermetic: tme_top.cpp/.h and tme_tb.cpp are compiled live and are only
+# manifest-bound after the run.
 #
 # Generate the vectors first if they are absent:
 #   python tme_generate_production.py            (writes the prod package)

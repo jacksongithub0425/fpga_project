@@ -49,7 +49,7 @@ open_solution $solution
 # `template_match_b1/b1/impl/ip` -- the OLD single-project tree, kept because
 # vivado_b1_125.log names it as the IP repository and it is therefore the
 # closest retained thing to the image's actual input.  This script now opens the
-# hermetic `template_match_b1_b1`, so running it writes somewhere else entirely
+# isolated `template_match_b1_b1`, so running it writes somewhere else entirely
 # and CANNOT regenerate, update or replace the pinned artifact.
 #
 # Consequence, stated rather than tidied away: the retained component.xml

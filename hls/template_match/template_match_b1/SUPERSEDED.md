@@ -1,6 +1,6 @@
 # `template_match_b1` is SUPERSEDED — 2026-08-18
 
-Replaced by one hermetic project per variant:
+Replaced by one isolated reset project per variant:
 
     template_match_b1_cur/cur
     template_match_b1_b1/b1
@@ -30,8 +30,9 @@ so it also needed an include path the script did not carry.
 
 ## What the rebuild found
 
-All three variants were rebuilt from the pinned snapshots into the hermetic
-projects on 2026-08-18.
+All three variants were rebuilt from the pinned correlation snapshots into
+isolated reset projects on 2026-08-18. The shared `tme_top.cpp/.h` and
+`tme_tb.cpp` inputs were live, so these runs are not described as hermetic.
 
 | | result |
 |---|---|

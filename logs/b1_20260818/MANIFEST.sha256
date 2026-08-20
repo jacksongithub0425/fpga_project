@@ -27,22 +27,22 @@ ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_202608
 1f2c9b47b02fefb0114c426146c23308cb63b483c1764885f336c0cdf61d9df4  vivado/tme_standalone/build_tme_standalone.tcl  # build script
 2bca7fd95fe8d34935a4e15201486098b5816ad3526e6ed1dd6ddb3ec1cc0b5b  hls/template_match/template_match_b1/b1/impl/ip/component.xml  # packaged IP (re-export)
 532e476b1343d24eeec27d9213ef767d10aba379ff4c0f54ce31a38ca2604b6a  hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip  # packaged IP archive (re-export)
-2f97028eeb99edf17ab565291868336d29b8e173b95d12dbc987a1aa3a08b863  hls/template_match/template_match_b1/SUPERSEDED.md  # superseded project marker
-6949b945321c8a4ad7b5de67866ceff25f25aa7276e2d526855a8021a365ff62  logs/b1_rerun_20260818/rerun_all.sh  # rerun driver
+839a93e53dd341aba2354468aadec363708405b370f0ddb10b136ba0c2fa9702  hls/template_match/template_match_b1/SUPERSEDED.md  # superseded project marker
+257c5bc8c258338591acb5d23debb2f9d484200b058be18ec61640575992e8b1  logs/b1_rerun_20260818/rerun_all.sh  # rerun driver
 736f0c76d871beac819d9723c536d36b6dbe04038100b93c3adc4543d916fcc6  logs/b1_rerun_20260818/rerun_status.txt  # rerun status
 c9cc770ba94369f83c4f93fe53784dda260f78979267963f889498423aaaab7b  logs/b1_rerun_20260818/run_cur.log  # rerun log cur
 f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_20260818/run_b1.log  # rerun log b1
 8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
-debea679406b33852c1c41ef06e7eda6ff900116c37cb4138a9666a48536b40a  sw/tme_cycle_model.py  # model
+277a5cd8c5a5b148a2875b88e28d315e35715465de22656665b42dcdb7e08f0d  sw/tme_cycle_model.py  # model
 e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
 f381eab2273210a1360fe7db04819430a6f463e119ea87ed6cd12d77ef130693  sw/tme_b1_ab.py  # adjudicator
 85b3c443c97a58e77fc0e101f400b30b8298ed5cb6a0e156af9e4c5f3f199488  sw/tme_scale_policy.py  # scale policy
-36de753a793122e8fe6c9dabde5e79e4300cca8fb0f6d1e77bb981b1f0392688  sw/tme_b1_manifest.py  # manifest tool
+718f506f70b8529c9a939c0448db2cf2e3c63096364adce811099b6f0a739e6b  sw/tme_b1_manifest.py  # manifest tool
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
-3c0502308ef3d1a15a3537311c629f5d5793e870bc46af7eb0f4ce8ebebc36c3  hls/template_match/run_hls_b1.tcl  # ab project script
-a956ac494708eb9819e5541d189de67281baae2d98187eff80b3d6234fb8dc64  hls/template_match/package_b1.tcl  # packaging script
-681af37e3e9702d5e31b50d970abb7a1977e54f2802f9810e2f90bf979f675d5  hls/template_match/csim_prod_b1.tcl  # prod csim script
+b73605cb9de997d0d477e9e57651902e30ce871caf4e7bf1f0db0d22f45e069c  hls/template_match/run_hls_b1.tcl  # ab project script
+3237e72d649c64586675004c68ada40c715c8db6bcccd1ed07d73c7c9a654e74  hls/template_match/package_b1.tcl  # packaging script
+1c1d14c916fd9a61b80a6df9db3950832c50e8172221d1859b1885510d6e3461  hls/template_match/csim_prod_b1.tcl  # prod csim script
 a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
 cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
 e73d1d25f8f70c801382e98da32c2fdd8fdf79367e69d4fff8519ebe524dea88  logs/b1_20260818/run_cur.log  # log cur
@@ -60,11 +60,11 @@ e736521980d4c25fc1c4f214d6285fe7ff387ea0ffc7b3664107edc3e9e6dfcd  logs/b1_board_
 02da06beb8d9618f738893a44fedc7fcfeb06db13f5a1dd1ca736c9ae0e5627e  logs/b1_board_20260818/00_prestate.sh  # board prestate script
 685434b7a4512227da8ce0543ae537d3837853d5c1d99136b0eac5a31bd10d98  logs/b1_board_20260818/04_restore.sh  # board restore script
 0487970183bcb4b64d1569303f7f2a44015fb0c82c4585f57152c14746d937c9  logs/b1_board_20260818/tme_standalone_bringup.py.as_run  # board runner as-run
-fab0c8a5b098e8eea6bd09728fb956ac502682e1c4a8c7ae1909163503b918da  sw/tme_standalone_bringup.py  # board runner current
+ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  sw/tme_standalone_bringup.py  # board runner current
 8eabf33aec39ea791a98f85ed6d4257deba4d11a86f104409369f08f5bd783a7  hls/template_match/tb_tme_cases_phase_s.txt  # board vectors cases
 3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  hls/template_match/tb_tme_patches_phase_s.bin  # board vectors patches
 9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  hls/template_match/tb_tme_templs_phase_s.bin  # board vectors templates
 b338e54b5f91c1441085a4ec930b8b69ec9ef149a142c48ad8a70c16386ff6d0  hls/template_match/tb_tme_phase_s.sha256  # board vector record
-d3548c2325847e376b76626cc100806f8bbb8f3f3140eed9cef499a00db569b4  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
-bf842f1a513acee7ec63ed8ff269fed79ceffe52ce34dd242f30bbfb058d3001  hls/template_match/b1_sources/README.md  # pinned-source README
+5ee61bdac75bc3a70d23ac183a932d446d88c45a58fa3b0f73aa6381f6b86f64  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
+4b317f4945b4c3501a9ebb9616e29b90100a366a9a03be4810b0887a4a6e1a14  hls/template_match/b1_sources/README.md  # pinned-source README
 276f995594b7a9c7dfe97a05f232e76a5dc58fb08a1e4eb0f3cb15c6851e58f0  trace_20260818b/B1_COLUMN_STALE.md  # stale-column marker

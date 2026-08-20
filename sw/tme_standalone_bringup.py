@@ -67,6 +67,7 @@ WHAT THIS DOES NOT COVER
 from __future__ import annotations
 
 import argparse
+import math
 import struct
 import sys
 import time
@@ -459,7 +460,8 @@ class TmeStandalone:
                  templ_dma: str | None = None,
                  timeout_s: float = DEFAULT_TIMEOUT_S,
                  expect_fclk_mhz: float | None = None,
-                 fclk_tol_mhz: float = 0.01):
+                 fclk_tol_mhz: float = 0.01,
+                 expect_hwh_vlnv: str | None = None):
         from pynq import Overlay, allocate
 
         # A non-finite timeout makes every `time.monotonic() > deadline` test
@@ -490,6 +492,10 @@ class TmeStandalone:
         try:
             from pynq import Clocks
             self.fclk0_mhz = float(Clocks.fclk0_mhz)
+            if not math.isfinite(self.fclk0_mhz) or self.fclk0_mhz <= 0:
+                raise ValueError(
+                    f"Clocks.fclk0_mhz returned {self.fclk0_mhz!r}; expected "
+                    "a finite, positive frequency")
             period_ns = 1000.0 / self.fclk0_mhz
             print(f"\nPL clock (measured): {self.fclk0_mhz:.4f} MHz "
                   f"({period_ns:.3f} ns)")
@@ -505,6 +511,14 @@ class TmeStandalone:
                     f"uninterpretable.") from exc
 
         if expect_fclk_mhz is not None:
+            if not math.isfinite(expect_fclk_mhz) or expect_fclk_mhz <= 0:
+                raise ValueError(
+                    f"--expect-fclk-mhz must be finite and positive, got "
+                    f"{expect_fclk_mhz!r}")
+            if not math.isfinite(fclk_tol_mhz) or fclk_tol_mhz < 0:
+                raise ValueError(
+                    f"--fclk-tol-mhz must be finite and non-negative, got "
+                    f"{fclk_tol_mhz!r}")
             delta = abs(self.fclk0_mhz - expect_fclk_mhz)
             if delta > fclk_tol_mhz:
                 raise RuntimeError(
@@ -533,6 +547,22 @@ class TmeStandalone:
         self.tme, tme_name = _find_ip(self.ol, "tme_top", "template_match")
         if self.tme is None:
             raise RuntimeError("no tme_top / template_match IP in the overlay")
+
+        # `ip_dict` is parsed from the HWH sidecar.  It is useful as a
+        # fail-closed consistency check that PYNQ consumed the expected HWH,
+        # but it is NOT fabric readback.  Exact .bit/.hwh hashes and the
+        # retained IP -> Vivado -> bitstream provenance bind the fabric image;
+        # this gate only checks the metadata PYNQ associated with it.
+        if expect_hwh_vlnv is not None:
+            hwh_vlnv = self.ol.ip_dict[tme_name].get("type")
+            if hwh_vlnv != expect_hwh_vlnv:
+                raise RuntimeError(
+                    f"HWH VLNV for {tme_name} is {hwh_vlnv!r}, expected "
+                    f"{expect_hwh_vlnv!r}. Refusing to run with inconsistent "
+                    "overlay metadata.")
+            print(f"  expected-HWH-VLNV gate: PASS — {tme_name} is "
+                  f"{hwh_vlnv}")
+            print("    (HWH metadata consistency only; not fabric readback)")
 
         if patch_dma:
             dma_p, p_name = getattr(self.ol, patch_dma), patch_dma
@@ -1522,6 +1552,10 @@ def main() -> int:
                          "125 for the Phase-S / 8 ns probe image.")
     ap.add_argument("--fclk-tol-mhz", type=float, default=0.01,
                     help="tolerance for --expect-fclk-mhz (default 0.01)")
+    ap.add_argument("--expect-hwh-vlnv",
+                    help="REQUIRE the matcher VLNV parsed from the HWH "
+                         "sidecar. This is a metadata-consistency gate, not "
+                         "fabric readback; pair it with exact .bit/.hwh hashes")
     ap.add_argument("--patch-dma", help="overlay attribute for the patch MM2S")
     ap.add_argument("--templ-dma", help="overlay attribute for the template MM2S")
     ap.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_S,
@@ -1572,8 +1606,8 @@ def main() -> int:
         # those transcripts unquotable -- and this notice is printed under it.
         print("  NOTE: 'the unchanged core' above is STALE. This runner is "
               "overlay-agnostic; what it measures is whatever --overlay names.")
-        print("        Read the bitstream hash, not this banner, to know which "
-              "RTL produced a number.")
+        print("        Exact bit/HWH hashes plus retained build provenance bind "
+              "the image; an expected-HWH-VLNV check only gates metadata.")
 
     try:
         import pynq                                    # noqa: F401
@@ -1585,7 +1619,7 @@ def main() -> int:
     try:
         dut = TmeStandalone(args.overlay, args.patch_dma, args.templ_dma,
                             args.timeout, args.expect_fclk_mhz,
-                            args.fclk_tol_mhz)
+                            args.fclk_tol_mhz, args.expect_hwh_vlnv)
     except Exception as exc:                           # noqa: BLE001
         print(f"\nCANNOT RUN: {exc}")
         return 2

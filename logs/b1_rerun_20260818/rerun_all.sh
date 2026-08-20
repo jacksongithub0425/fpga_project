@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Re-run the B1 variants through the hermetic per-variant projects.
+# Re-run the B1 variants through the isolated per-variant reset projects.
 # Sequential on purpose: one tool, one license, and a failure part-way through
 # must leave the earlier variants' evidence intact.
 set -u

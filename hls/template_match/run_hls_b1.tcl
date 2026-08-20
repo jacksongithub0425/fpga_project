@@ -124,7 +124,8 @@ foreach line [split [string trim [read [open $vec_digests r]]] "\n"] {
 set project_name "template_match_b1_$solution"
 puts "run_hls_b1.tcl: solution '$solution' from $snap"
 puts "run_hls_b1.tcl: sha256 $got — verified"
-puts "run_hls_b1.tcl: project $project_name (hermetic, -reset)"
+puts "run_hls_b1.tcl: project $project_name (isolated per variant, -reset)"
+puts "run_hls_b1.tcl: correlation snapshot and vectors were pre-build digest-gated; tme_top.cpp/.h and tme_tb.cpp are live inputs, manifest-bound only after the run"
 
 # -reset is safe HERE and only here: this project holds exactly one variant, so
 # the only thing it can delete is the previous run of the same variant.
