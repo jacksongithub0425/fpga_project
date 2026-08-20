@@ -529,3 +529,37 @@ retained. What ties the image to a core is `vivado_b1_125.log`, which names the
 IP repository path and resolves `TermCountB1:hls:tme_top:0.2`, plus the
 bitstream hash re-taken inside the configure transcript. The IP in the manifest
 is labelled a **re-export** for exactly this reason.
+
+---
+
+## 2026-08-19 — four manifest entries moved when Priority 5 (B2) landed
+
+`tme_b1_manifest.py --verify` reported four `CHANGED` artifacts after B2 was
+implemented. They are recorded here rather than quietly re-baselined, because a
+manifest that is refreshed without a note is a manifest that cannot tell
+"the evidence moved" from "someone edited the evidence".
+
+| entry | old sha256 | why it moved |
+|---|---|---|
+| `hls/template_match/correlation_core.cpp` | `ad935501…7250da67` | the SHIPPED file is now B2 |
+| `hls/template_match/run_hls_b1.tcl` | `5453e3c1…f49967e43` | gained the pinned `b2` snapshot entry |
+| `hls/template_match/b1_sources/README.md` | `0dc5d1fa…6904765b` | documents the `b2` snapshot |
+| `sw/tme_cycle_model.py` | `6f9d6ea4…e834882f` | B2's measured term replaced its projection |
+
+**None of B1's immutable evidence changed.** The three pinned sources
+(`correlation_core.{cur,b1,b1b}.cpp`), all three transaction reports, all three
+csynth reports, the routed timing and utilisation reports, the bitstream, the
+`.hwh`, the five board transcripts, the as-run runner and
+`tme_cycle_model.py.pre_b1` all still verify against their original digests.
+Every one of the four above is a file whose *purpose* is to move as later
+priorities land, and each retains a frozen counterpart that does not:
+
+* what B1 actually compiled is `b1_sources/correlation_core.b1.cpp`, not the
+  shipped file;
+* what B1's model said is `logs/b1_20260818/tme_cycle_model.py.pre_b1`, not the
+  live model.
+
+The manifest was refreshed with `--write` after this note was added. B1's
+figures are unaffected: `tme_b1_ab.py --assert` still passes 14/14 against the
+same reports, and `tme_cycle_model.py --assert` still re-proves B1's exact
+aggregate of 118,504,314,487 cycles.

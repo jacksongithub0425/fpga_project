@@ -1,0 +1,4 @@
+NEGATIVE CONTROL: declared B2 model perturbed by +7 cycles
+  check 2 (declared) exact on 0/14  -- must be 0/14
+  check 3 (fitted)   exact on 14/14  -- must be 14/14
+  the two checks are INDEPENDENT

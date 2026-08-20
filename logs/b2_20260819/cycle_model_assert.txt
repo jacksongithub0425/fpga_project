@@ -1,0 +1,55 @@
+TEMPLATE-MATCHING ENGINE - FROZEN EVIDENCE
+==============================================================================
+templates      imported from terminal_counter_endpoint_first
+  left         4 templates: 74x45 70x47 80x63 109x28
+  right        3 templates: 74x45 70x47 109x26
+scales         8: 0.70, 0.80, 0.90, 1.00, 1.10, 1.20, 1.35, 1.50
+workload       371 left + 367 right candidates over 36 pages
+               20680 initial trials, 808 refinement calls
+
+VALIDATION (silicon-backed)
+------------------------------------------------------------------------------
+  cosim              9 transactions reproduced exactly
+  board wall time    unchanged standalone matcher, 4 runs at 2 clocks:
+    stress-max-envelope  820x307/216x96 @  31.25 MHz  model  13.3606s  meas 13.362s  +1.376 ms +0.0103%
+    stress-max-result    820x307/  4x4  @  31.25 MHz  model   0.6740s  meas  0.676s  +2.004 ms +0.2973%
+    stress-max-envelope  820x307/216x96 @ 125.00 MHz  model   3.3402s  meas  3.342s  +1.844 ms +0.0552%
+    stress-max-result    820x307/  4x4  @ 125.00 MHz  model   0.1685s  meas  0.171s  +2.501 ms +1.4842%
+  clock linearity    derived from the rows above; only the compute-dominated case is 4x:
+    stress-max-envelope  ratio 3.998205  vs 4  ->  -0.0449%   tracks the clock
+    stress-max-result    ratio 3.953216  vs 4  ->  -1.1696%   FIXED OVERHEAD visible
+  full envelope      417,519,492 cycles
+  Phase S 311x159    23,476,737 cycles  = 17.784x
+
+PROJECTION - initial trials only, s/page @ 125 MHz
+------------------------------------------------------------------------------
+  The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.
+  What is NOT demonstrated is any PAGE, for any variant:
+  Phase S is a driver change with no RTL; B0b is unimplemented RTL.
+  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact.
+  It has NO BOARD SESSION -- its clock is borrowed, not observed.
+  B1 IS implemented: cycle term cosim-measured, routed at 8.000 ns, and RUN
+  ON THE BOARD at its OWN observed 125.0000 MHz -- it does not borrow the
+  unmodified core's clock.  Every s/page below is still a projection.
+  TODAY'S PL: side-common full context    631.931     2527.7 @31.25MHz   deployed; 622x300 / 622x224
+  CPU per-base context patch policy       333.413     1333.7 @31.25MHz   silicon-anchored formula
+  Phase S, per-base ROI, int() quirk       60.764      243.1 @31.25MHz   historical figure only
+  Phase S, per-base ROI, rounded           61.301      245.2 @31.25MHz   no RTL; corrected
+  Phase S, one ROI per side                94.697      378.8 @31.25MHz   no RTL; side-common reading
+  Phase S, per-trial ROI                   36.476      145.9 @31.25MHz   no RTL; needs driver change
+    + B1 runtime segment width             26.334      105.3 @31.25MHz   cosim-validated TERM; page projected
+    + B2 overlap reuse                     20.405       81.6 @31.25MHz   cosim-validated TERM; NO board run
+    + B0b, stats term deleted              17.598       70.4 @31.25MHz   deletion only, no count pass
+    + B0b count pass @ II=1                17.744       71.0 @31.25MHz   iterations derived; II projected
+    + B0b count pass @ II=3                18.036       72.1 @31.25MHz   iterations derived; II projected
+
+  Excludes refinement, DMA, extraction and PS work.
+  10 s/page is not reached by any modelled matcher change at the current trial count.
+  Neither the combined image nor an end-to-end page has been demonstrated at 125 MHz.
+
+frozen evidence re-proved: cosim x9, 4 board runs at 2 clocks, clock linearity, workload, Phase S, ROI variants, B1 EXACT aggregate + phase-s-max delta, B2 EXACT aggregate + routed WNS, B0b decomposition + both endpoints
+source corroboration: 18 value(s) re-read from source
+  B1 routed + board (logs/b1_*/)                 READ
+  B2 routed only, no board (logs/b2_20260819/)   READ
+  P2 board transcripts (logs/board_125mhz_gate/) READ
+  P2 routed report (post_route_wns.txt)          READ

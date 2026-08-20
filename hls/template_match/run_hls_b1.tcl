@@ -3,6 +3,13 @@
 #   TME_SOLUTION=cur vitis-run.bat --mode hls --tcl run_hls_b1.tcl
 #   TME_SOLUTION=b1  vitis-run.bat --mode hls --tcl run_hls_b1.tcl
 #   TME_SOLUTION=b1b vitis-run.bat --mode hls --tcl run_hls_b1.tcl
+#   TME_SOLUTION=b2  vitis-run.bat --mode hls --tcl run_hls_b1.tcl
+#
+# The name is B1's because that is the measurement it was written for, but the
+# script is the VARIANT A/B BUILD for correlation_core generally -- b1_sources/
+# README.md already told the next variant to add a snapshot here rather than
+# fork the flow, and Priority 5's `b2` did.  Renaming it would break the paths
+# in logs/b1_20260818/MANIFEST.sha256, which bind B1's evidence.
 #
 # ONE PROJECT PER VARIANT.  This script used to put all three solutions in a
 # single `template_match_b1` project, and that was not safe to re-run.
@@ -34,6 +41,12 @@
 #   cur   correlation_core.cur.cpp   the unmodified core, == git eb1c8ac
 #   b1    correlation_core.b1.cpp    runtime seg_len, `if (i >= seg_len) break`
 #   b1b   correlation_core.b1b.cpp   hoisted clamped bound, no exit test
+#   b2    correlation_core.b2.cpp    B1 plus horizontal overlap reuse
+#
+# WHICH CONTROL A VARIANT IS PAIRED AGAINST is not this script's business -- it
+# builds one variant per run and sw/tme_b1_ab.py / sw/tme_b2_ab.py decide what
+# to compare.  B2's control is `b1`, not `cur`, because B2 is B1 plus the reuse:
+# pairing it against `cur` would fold two changes into one difference.
 #
 # The snapshots are the record; `correlation_core.cpp` in the working tree is
 # the SHIPPED file and is deliberately NOT read here.  b1_sources/README.md
@@ -60,6 +73,7 @@ array set snapshot {
     cur {correlation_core.cur.cpp  9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b}
     b1  {correlation_core.b1.cpp   e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51}
     b1b {correlation_core.b1b.cpp  17e3b1ec8169c61d8e91c6ed005cb8e53e5afc7d4bd590ec32dcc254f9519242}
+    b2  {correlation_core.b2.cpp   c8c7b0882af33214da5f7bbedca9ff9b985629517ddada37a9eacaacaec5d8ce}
 }
 if {![info exists snapshot($solution)]} {
     error "TME_SOLUTION='$solution' has no pinned source in b1_sources/.\

@@ -24,7 +24,7 @@
 //
 //     cur   T*(tw + 257)               constant 232-pixel load, every tile
 //     B1    T*(2*tw + 41) + 1          load shortened to the runtime seg_len
-//     B2    T*(tw + 44) + tw - 2       later tiles reuse the overlap
+//     B2    see the term recorded below
 //
 // The workload projections that follow from those terms live in
 // sw/tme_cycle_model.py; none of them is a measured page time.
@@ -102,43 +102,11 @@ void correlation_core(
     // correctly into the final, partially-masked tile instead of being
     // recomputed there.
     //
-    // WHAT IT COSTS, MEASURED.  Paired RTL co-simulation against the `b1`
-    // solution -- the same fourteen invocations, the same pinned vectors, only
-    // this file changed (sw/tme_b2_ab.py, 2026-08-19) -- gives
-    //
-    //     tile = T * (tw + 44) + tw - 2
-    //
-    // exactly, on 14/14 transactions spanning T in {1,2,3,5,6} and tw in
-    // {4,16,20,24,100,216}.  The `b1` control reproduced its own published term
-    // on all 14 in the same comparison, which is what makes the difference
-    // attributable to the reuse rather than to the harness.
-    //
-    // THE PROJECTION WAS OPTIMISTIC AGAIN, AND DIFFERENTLY.  Two candidates
-    // were registered BEFORE the build (`tme_b2_ab.py --predict`, which reads
-    // the retained pre-measurement copy of the model and no b2 report at all):
-    // the pre-RTL projection T*(tw+41)+(tw-1), and B1's measured term minus the
-    // naive reuse saving, T*(tw+42)+tw.  THE RTL MATCHED NEITHER.  The
-    // shortfall against the naive arithmetic is
-    //
-    //     2 * (T - 1)     cycles per (output row, template row)
-    //
-    // where B1's was T + 1.  So B1's overhead did not recur -- not in size and
-    // not in shape -- which is the whole reason it had to be measured instead
-    // of adjusted for.  Do not carry a correction forward to B0b either.
-    //
-    // THE SHAPE IS MEASURED; THE MECHANISM IS NOT.  Two cycles per tile beyond
-    // the pixels, minus two per call, is what the fourteen transactions pin.
-    // Whether that is the shift's own state, the `t == 0` branch, or the extra
-    // loop region is NOT established: no experiment here separates them, just
-    // as none separated B1's T + 1.  Do not quote a cause.
-    //
-    // WORTH KNOWING BEFORE READING A TRACE: the saving over B1 is
-    // (T - 1) * (tw - 3) per (output row, template row).  That is ZERO at
-    // T = 1 -- a single-tile invocation has nothing to reuse, and the
-    // measurement confirms an exact tie on all five such transactions -- and
-    // positive for every legal geometry with more than one tile, since
-    // contract 4.1 puts tw >= 4.  Unlike B1, which LOSES at tw = 216, B2 is
-    // never a regression: `phase-s-max` goes 23,482,881 -> 16,939,521 cycles.
+    // WHAT THE TERM COSTS is recorded in sw/tme_cycle_model.py (variant "B2")
+    // and adjudicated by sw/tme_b2_ab.py against the `b1` report over the same
+    // fourteen invocations.  The projection this replaced was written in the
+    // same style as B1's withdrawn one, so it was NOT assumed to hold: see
+    // that file for the measured term and for what the prediction missed by.
     //
     // NOTHING HERE IS CARRIED ACROSS INVOCATIONS.  seg is a local automatic
     // array and tile 0 always takes the full-load branch, so the registers a

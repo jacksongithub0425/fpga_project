@@ -1,0 +1,1698 @@
+
+****** vitis-run v2025.2 (64-bit)
+  **** SW Build 6295257 on 2025-11-13-08:29:27
+  **** Start of session at: Wed Aug 19 19:05:20 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+  **** HLS Build v2025.2 6295257
+Sourcing Tcl script 'C:/Users/lychee/Desktop/FPGA/hls/template_match/run_hls_b1.tcl'
+run_hls_b1.tcl: vector tb_tme_cases_b1.txt â€” verified
+run_hls_b1.tcl: vector tb_tme_patches_b1.bin â€” verified
+run_hls_b1.tcl: vector tb_tme_templs_b1.bin â€” verified
+run_hls_b1.tcl: solution 'b2' from b1_sources/correlation_core.b2.cpp
+run_hls_b1.tcl: sha256 c8c7b0882af33214da5f7bbedca9ff9b985629517ddada37a9eacaacaec5d8ce â€” verified
+run_hls_b1.tcl: project template_match_b1_b2 (hermetic, -reset)
+INFO: [HLS 200-1510] Running: open_project -reset template_match_b1_b2 
+WARNING: [HLS 200-2182] The 'template_match_b1_b2' project will not automatically appear within Vitis IDE workspaces and is meant only for TCL batch use.  Please use open_component instead of open_project/open_solution to generate Vitis IDE compatible component files and directory structure.
+Resolution: For help on HLS 200-2182 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-2182.html
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2'.
+INFO: [HLS 200-1510] Running: set_top tme_top 
+INFO: [HLS 200-1510] Running: add_files tme_top.cpp 
+INFO: [HLS 200-10] Adding design file 'tme_top.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files tme_top.h 
+INFO: [HLS 200-10] Adding design file 'tme_top.h' to the project
+INFO: [HLS 200-1510] Running: add_files b1_sources/correlation_core.b2.cpp -cflags -IC:/Users/lychee/Desktop/FPGA/hls/template_match 
+INFO: [HLS 200-10] Adding design file 'b1_sources/correlation_core.b2.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files -tb tme_tb.cpp 
+INFO: [HLS 200-10] Adding test bench file 'tme_tb.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files -tb tb_tme_patches_b1.bin tb_tme_patches_cosim.bin tb_tme_patches_csim.bin tb_tme_patches_hw.bin tb_tme_patches_prod.bin tb_tme_templs_b1.bin tb_tme_templs_cosim.bin tb_tme_templs_csim.bin tb_tme_templs_hw.bin tb_tme_templs_prod.bin tb_tme_cases_b1.txt tb_tme_cases_cosim.txt tb_tme_cases_csim.txt tb_tme_cases_hw.txt tb_tme_cases_prod.txt tb_tme_counts_prod.txt 
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_b1.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_cosim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_csim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_hw.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_prod.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_b1.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_cosim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_csim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_hw.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_prod.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_b1.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_cosim.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_csim.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_hw.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_prod.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_counts_prod.txt' to the project
+INFO: [HLS 200-1510] Running: open_solution -reset b2 
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2'.
+INFO: [HLS 200-10] Cleaning up the solution database.
+INFO: [HLS 200-1505] Using default flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: set_part xc7z020clg400-1 
+INFO: [HLS 200-1611] Setting target device to 'xc7z020-clg400-1'
+INFO: [HLS 200-1510] Running: create_clock -period 5ns -name default 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 5ns.
+INFO: [HLS 200-1510] Running: csim_design -argv b1 
+INFO: [SIM 211-2] *************** CSIM start ***************
+INFO: [HLS 200-2191] C-Simulation will use clang-16 as the compiler
+INFO: [HLS 200-2036] Building debug C Simulation binaries
+   Compiling ../../../../tme_tb.cpp in debug mode
+   Compiling ../../../../b1_sources/correlation_core.b2.cpp in debug mode
+   Compiling ../../../../tme_top.cpp in debug mode
+   Generating csim.exe
+In file included from ../../../../tme_tb.cpp:49:
+In file included from ../../../../tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+In file included from ../../../../b1_sources/correlation_core.b2.cpp:1:
+In file included from C:/Users/lychee/Desktop/FPGA/hls/template_match\tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+In file included from ../../../../tme_top.cpp:1:
+In file included from ../../../../tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+tb_tme_cases_b1.txt: 12 cases, 31659 patch bytes, 11760 template bytes
+
+--- direct DUT tests (contract §4.6) ---
+  flat-templ-4x4 (illegal input)   patch  12x10  templ  4x4   raw 0x00000000 @(0,0)  want 0x00000000 @(0,0)  PASS
+  min-nonflat dt=15 (must score 1.0) patch   4x4   templ  4x4   raw 0x3F800000 @(0,0)  want 0x3F800000 @(0,0)  PASS
+  bound-half0-half255-216x96       dt = 6989889945600 (want 6989889945600)  PASS
+  preserve-operands-all255         N*ST2 = 27959559782400, (ST)^2 = 27959559782400, dt = 0 (want 27959559782400/27959559782400/0)  PASS
+  num-max-positive-216x96          num = 6989889945600 (want 6989889945600)  PASS
+  num-max-negative-216x96          num = -6989889945600 (want -6989889945600)  PASS
+  num-cancel-all255                num = 0 (want 0)  PASS
+  width-minimum-witness            43/44: dt = 6989889945600 ok, num = -1806203076608 (pinned -1806203076608); 44/44: num = 6989889945600  PASS
+  width-coupling-witness           48/48: 6132117600000, 44/44: 6132117600000, 44/45: -11460068444416 (pinned -11460068444416, want 6132117600000)  PASS
+--- direct tests: 0 failure(s) ---
+
+[ 0] b1-w001-tw216                b1-width    patch  216x13  templ 216x8   gold +1.0000 @(  0,  3)  dut +1.0000 @(  0,  3)  PASS
+[ 1] b1-w015-tw216                b1-width    patch  230x13  templ 216x8   gold +1.0000 @( 14,  2)  dut +1.0000 @( 14,  2)  PASS
+[ 2] b1-w016-tw216                b1-width    patch  231x13  templ 216x8   gold +1.0000 @( 15,  4)  dut +1.0000 @( 15,  4)  PASS
+[ 3] b1-w017-tw216                b1-width    patch  232x13  templ 216x8   gold +1.0000 @( 16,  1)  dut +1.0000 @( 16,  1)  PASS
+[ 4] b1-w031-tw100                b1-width    patch  130x21  templ 100x12  gold +1.0000 @( 30,  5)  dut +1.0000 @( 30,  5)  PASS
+[ 5] b1-w032-tw100                b1-width    patch  131x21  templ 100x12  gold +1.0000 @( 31,  3)  dut +1.0000 @( 31,  3)  PASS
+[ 6] b1-w033-tw100                b1-width    patch  132x21  templ 100x12  gold +1.0000 @( 32,  8)  dut +1.0000 @( 32,  8)  PASS
+[ 7] b1-w095-tw020                b1-width    patch  114x27  templ  20x12  gold +1.0000 @( 94,  7)  dut +1.0000 @( 94,  7)  PASS
+[ 8] b1-w096-tw020                b1-width    patch  115x27  templ  20x12  gold +1.0000 @( 95, 12)  dut +1.0000 @( 95, 12)  PASS
+[ 9] b1-tie-samerow               b1-width    patch   47x21  templ  16x12  gold +1.0000 @(  5,  4)  dut +1.0000 @(  5,  4)  PASS
+[10] b1-tie-rowmajor              b1-width    patch   47x21  templ  16x12  gold +1.0000 @( 31,  2)  dut +1.0000 @( 31,  2)  PASS
+[11] b1-lane15                    lane15      patch   88x39  templ  24x16  gold +0.5532 @( 31,  6)  dut +0.5532 @( 31,  6)  PASS
+
+12/12 cases passed
+TESTBENCH PASSED
+INFO [HLS SIM]: The maximum depth reached by any hls::stream() instance in the design is 3432
+INFO: [SIM 211-1] CSim done with 0 errors.
+INFO: [SIM 211-3] *************** CSIM finish ***************
+INFO: [HLS 200-2161] Finished Command csim_design Elapsed time: 00:00:09; Allocated memory: 0.781 MB.
+INFO: [HLS 200-1510] Running: csynth_design 
+INFO: [HLS 200-111] Finished File checks and directory preparation: CPU user time: 0 seconds. CPU system time: 1 seconds. Elapsed time: 3.996 seconds; current allocated memory: 147.273 MB.
+INFO: [HLS 200-2191] C-Synthesis will use clang-16 as the compiler
+INFO: [HLS 200-10] Analyzing design file 'b1_sources/correlation_core.b2.cpp' ... 
+INFO: [HLS 200-10] Analyzing design file 'tme_top.cpp' ... 
+INFO: [HLS 200-111] Finished Source Code Analysis and Preprocessing: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 20.306 seconds; current allocated memory: 155.516 MB.
+INFO: [HLS 200-777] Using interface defaults for 'Vivado' flow target.
+INFO: [HLS 200-1995] There were 3,548 instructions in the design after the 'Compile/Link' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 2,517 instructions in the design after the 'Unroll/Inline (step 1)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 2,364 instructions in the design after the 'Unroll/Inline (step 2)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 2,139 instructions in the design after the 'Unroll/Inline (step 3)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 2,139 instructions in the design after the 'Unroll/Inline (step 4)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 9,132 instructions in the design after the 'Array/Struct (step 1)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 5,119 instructions in the design after the 'Array/Struct (step 2)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 5,119 instructions in the design after the 'Array/Struct (step 3)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 5,119 instructions in the design after the 'Array/Struct (step 4)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 6,512 instructions in the design after the 'Array/Struct (step 5)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 5,430 instructions in the design after the 'Performance' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 4,920 instructions in the design after the 'Performance (step 2)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 4,669 instructions in the design after the 'Performance (step 3)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 4,669 instructions in the design after the 'Performance (step 4)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 4,674 instructions in the design after the 'HW Transforms (step 1)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 200-1995] There were 4,480 instructions in the design after the 'HW Transforms (step 2)' phase of compilation. See the Design Size Report for more details (C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/report/csynth_design_size.rpt:2)
+INFO: [HLS 214-291] Loop 'VITIS_LOOP_197_2' is marked as complete unroll implied by the pipeline pragma (b1_sources/correlation_core.b2.cpp:197:31)
+INFO: [HLS 214-186] Unrolling loop 'shift_seg' (b1_sources/correlation_core.b2.cpp:167:24) in function 'correlation_core' completely with a factor of 215 (b1_sources/correlation_core.b2.cpp:53:0)
+INFO: [HLS 214-186] Unrolling loop 'VITIS_LOOP_184_1' (b1_sources/correlation_core.b2.cpp:184:27) in function 'correlation_core' completely with a factor of 16 (b1_sources/correlation_core.b2.cpp:53:0)
+INFO: [HLS 214-186] Unrolling loop 'VITIS_LOOP_197_2' (b1_sources/correlation_core.b2.cpp:197:31) in function 'correlation_core' completely with a factor of 16 (b1_sources/correlation_core.b2.cpp:53:0)
+INFO: [HLS 214-186] Unrolling loop 'writeback' (b1_sources/correlation_core.b2.cpp:204:20) in function 'correlation_core' completely with a factor of 16 (b1_sources/correlation_core.b2.cpp:53:0)
+INFO: [HLS 214-178] Inlining function 'hls::axis<ap_uint<8>, 1ul, 1ul, 1ul, (unsigned char)56, false>::axis()' into 'tme_top(hls::stream<hls::axis<ap_uint<8>, 1ul, 1ul, 1ul, (unsigned char)56, false>, 0>&, hls::stream<hls::axis<ap_uint<8>, 1ul, 1ul, 1ul, (unsigned char)56, false>, 0>&, ap_uint<16>, ap_uint<16>, ap_uint<16>, ap_uint<16>, float&, ap_uint<16>&, ap_uint<16>&)' (tme_top.cpp:71:0)
+INFO: [HLS 214-178] Inlining function 'hls::sqrtf(float)' into 'tme_top(hls::stream<hls::axis<ap_uint<8>, 1ul, 1ul, 1ul, (unsigned char)56, false>, 0>&, hls::stream<hls::axis<ap_uint<8>, 1ul, 1ul, 1ul, (unsigned char)56, false>, 0>&, ap_uint<16>, ap_uint<16>, ap_uint<16>, ap_uint<16>, float&, ap_uint<16>&, ap_uint<16>&)' (tme_top.cpp:71:0)
+INFO: [HLS 214-248] Applying array_partition to '_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_S2_ILi16EES7_S7_S7_RfRS7_S9_E9patch_buf': Cyclic partitioning with factor 16 on dimension 2. (tme_top.cpp:84:0)
+INFO: [HLS 214-248] Applying array_partition to '_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_S2_ILi16EES7_S7_S7_RfRS7_S9_E7sti_col': Cyclic partitioning with factor 16 on dimension 1. (tme_top.cpp:94:0)
+INFO: [HLS 214-248] Applying array_partition to '_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_S2_ILi16EES7_S7_S7_RfRS7_S9_E7sii_col': Cyclic partitioning with factor 16 on dimension 1. (tme_top.cpp:96:0)
+INFO: [HLS 214-248] Applying array_partition to '_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_S2_ILi16EES7_S7_S7_RfRS7_S9_E6si_col': Cyclic partitioning with factor 16 on dimension 1. (tme_top.cpp:98:0)
+INFO: [HLS 214-248] Applying array_partition to 'seg': Complete partitioning on dimension 1. (b1_sources/correlation_core.b2.cpp:133:16)
+INFO: [HLS 214-248] Applying array_partition to 't_row': Complete partitioning on dimension 1. (tme_top.cpp:179:24)
+INFO: [HLS 214-376] Pipelining loop< VITIS_LOOP_181_3> at tme_top.cpp:181:31 due to pipeline_loops threshold
+WARNING: [HLS 214-187] Cannot unroll loop 'VITIS_LOOP_181_3' (tme_top.cpp:181:31) in function 'tme_top' as it has a variable trip count (tme_top.cpp:181:31)
+INFO: [HLS 200-111] Finished Compiling Optimization and Transform: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 17.865 seconds; current allocated memory: 156.715 MB.
+INFO: [HLS 200-111] Finished Checking Pragmas: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.003 seconds; current allocated memory: 156.715 MB.
+INFO: [HLS 200-10] Starting code transformations ...
+INFO: [HLS 200-111] Finished Standard Transforms: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.565 seconds; current allocated memory: 178.699 MB.
+INFO: [HLS 200-10] Checking synthesizability ...
+INFO: [HLS 200-111] Finished Checking Synthesizability: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 0.468 seconds; current allocated memory: 196.109 MB.
+INFO: [XFORM 203-401] Performing if-conversion on hyperblock from (b1_sources/correlation_core.b2.cpp:150:1) to (b1_sources/correlation_core.b2.cpp:154:24) in function 'correlation_core'... converting 3 basic blocks.
+INFO: [XFORM 203-401] Performing if-conversion on hyperblock from (b1_sources/correlation_core.b2.cpp:176:1) to (b1_sources/correlation_core.b2.cpp:179:24) in function 'correlation_core'... converting 3 basic blocks.
+INFO: [HLS 200-111] Finished Loop, function and other optimizations: CPU user time: 2 seconds. CPU system time: 0 seconds. Elapsed time: 2.524 seconds; current allocated memory: 243.031 MB.
+INFO: [HLS 200-2061] Successfully converted nested loops 'load_patch'(tme_top.cpp:115:17) and 'VITIS_LOOP_116_1'(tme_top.cpp:116:27) in function 'tme_top' into perfectly nested loops.
+INFO: [HLS 200-2061] Successfully converted nested loops 'load_templ'(tme_top.cpp:126:17) and 'VITIS_LOOP_127_2'(tme_top.cpp:127:27) in function 'tme_top' into perfectly nested loops.
+INFO: [XFORM 203-541] Flattening a loop nest 'load_patch' (tme_top.cpp:115:17) in function 'tme_top'.
+INFO: [XFORM 203-541] Flattening a loop nest 'load_templ' (tme_top.cpp:126:17) in function 'tme_top'.
+INFO: [HLS 200-111] Finished Architecture Synthesis: CPU user time: 4 seconds. CPU system time: 0 seconds. Elapsed time: 3.463 seconds; current allocated memory: 461.172 MB.
+INFO: [HLS 200-10] Starting hardware synthesis ...
+INFO: [HLS 200-10] Synthesizing 'tme_top' ...
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_load_patch_VITIS_LOOP_116_1' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln119) to 3 in order to utilize available DSP registers.
+INFO: [SCHED 204-61] Pipelining loop 'load_patch_VITIS_LOOP_116_1'.
+WARNING: [HLS 200-887] Cannot meet target clock period from 'icmp' operation 1 bit ('icmp_ln116', tme_top.cpp:116) to 'add' operation 16 bit ('add_ln116', tme_top.cpp:116) (combination delay: 4.959 ns) to honor II or Latency constraint in region 'load_patch_VITIS_LOOP_116_1'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+WARNING: [HLS 200-887] Cannot meet target clock period from 'icmp' operation 1 bit ('icmp_ln116', tme_top.cpp:116) to 'store' operation ('c_write_ln116', tme_top.cpp:116) of variable 'add_ln116', tme_top.cpp:116 16 bit on local variable 'c', tme_top.cpp:116 (combination delay: 6.547 ns) to honor II or Latency constraint in region 'load_patch_VITIS_LOOP_116_1'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 5, loop 'load_patch_VITIS_LOOP_116_1'
+WARNING: [HLS 200-871] Estimated clock period (6.547 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top_Pipeline_load_patch_VITIS_LOOP_116_1' consists of the following:
+	'load' operation 16 bit ('c_load', tme_top.cpp:116) on local variable 'c', tme_top.cpp:116 [59]  (0.000 ns)
+	'icmp' operation 1 bit ('icmp_ln116', tme_top.cpp:116) [64]  (2.077 ns)
+	'select' operation 16 bit ('select_ln115', tme_top.cpp:115) [65]  (0.805 ns)
+	'add' operation 16 bit ('add_ln116', tme_top.cpp:116) [143]  (2.077 ns)
+	'store' operation ('c_write_ln116', tme_top.cpp:116) of variable 'add_ln116', tme_top.cpp:116 16 bit on local variable 'c', tme_top.cpp:116 [146]  (1.588 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 1.125 seconds; current allocated memory: 469.395 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.028 seconds; current allocated memory: 470.504 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_load_templ_VITIS_LOOP_127_2' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [HLS 200-486] Changing DSP latency (root=t_sq_1) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln131) to 3 in order to utilize available DSP registers.
+INFO: [SCHED 204-61] Pipelining loop 'load_templ_VITIS_LOOP_127_2'.
+WARNING: [HLS 200-887] Cannot meet target clock period from 'icmp' operation 1 bit ('icmp_ln127', tme_top.cpp:127) to 'add' operation 15 bit ('add_ln127', tme_top.cpp:127) (combination delay: 4.775 ns) to honor II or Latency constraint in region 'load_templ_VITIS_LOOP_127_2'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+WARNING: [HLS 200-887] Cannot meet target clock period from 'icmp' operation 1 bit ('icmp_ln127', tme_top.cpp:127) to 'store' operation ('c_write_ln127', tme_top.cpp:127) of variable 'add_ln127', tme_top.cpp:127 15 bit on local variable 'c', tme_top.cpp:127 (combination delay: 6.363 ns) to honor II or Latency constraint in region 'load_templ_VITIS_LOOP_127_2'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 5, loop 'load_templ_VITIS_LOOP_127_2'
+WARNING: [HLS 200-871] Estimated clock period (6.363 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top_Pipeline_load_templ_VITIS_LOOP_127_2' consists of the following:
+	'load' operation 15 bit ('c', tme_top.cpp:127) on local variable 'c', tme_top.cpp:127 [30]  (0.000 ns)
+	'icmp' operation 1 bit ('icmp_ln127', tme_top.cpp:127) [33]  (2.077 ns)
+	'select' operation 15 bit ('select_ln124', tme_top.cpp:124) [44]  (0.754 ns)
+	'add' operation 15 bit ('add_ln127', tme_top.cpp:127) [61]  (1.944 ns)
+	'store' operation ('c_write_ln127', tme_top.cpp:127) of variable 'add_ln127', tme_top.cpp:127 15 bit on local variable 'c', tme_top.cpp:127 [64]  (1.588 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 1.843 seconds; current allocated memory: 470.691 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.016 seconds; current allocated memory: 470.750 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_reset_acc' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [SCHED 204-61] Pipelining loop 'reset_acc'.
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.inc69 to 'icmp' operation 1 bit ('icmp_ln166', tme_top.cpp:166) (combination delay: 3.72438 ns) to honor II or Latency constraint in region 'reset_acc'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.inc69 to 'store' operation ('u_write_ln166', tme_top.cpp:166) of variable 'add_ln166', tme_top.cpp:166 17 bit on local variable 'u', tme_top.cpp:166 (combination delay: 5.31238 ns) to honor II or Latency constraint in region 'reset_acc'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 2, loop 'reset_acc'
+WARNING: [HLS 200-871] Estimated clock period (5.312 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top_Pipeline_reset_acc' consists of the following:
+	'store' operation ('u_write_ln166', tme_top.cpp:166) of constant 0 17 bit on local variable 'u', tme_top.cpp:166 [52]  (1.588 ns)
+	'load' operation 17 bit ('u', tme_top.cpp:166) on local variable 'u', tme_top.cpp:166 [55]  (0.000 ns)
+	'icmp' operation 1 bit ('icmp_ln166', tme_top.cpp:166) [57]  (2.136 ns)
+	'store' operation ('u_write_ln166', tme_top.cpp:166) of variable 'add_ln166', tme_top.cpp:166 17 bit on local variable 'u', tme_top.cpp:166 [197]  (1.588 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 1.98 seconds; current allocated memory: 472.117 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.024 seconds; current allocated memory: 472.250 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_VITIS_LOOP_181_3' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [SCHED 204-61] Pipelining loop 'VITIS_LOOP_181_3'.
+INFO: [HLS 200-1470] Pipelining result : Target II = NA, Final II = 2, Depth = 4, loop 'VITIS_LOOP_181_3'
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.242 seconds; current allocated memory: 481.273 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.239 seconds; current allocated memory: 481.391 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'correlation_core_Pipeline_refill_seg' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [SCHED 204-61] Pipelining loop 'refill_seg'.
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.body41 to 'store' operation ('k_write_ln175', b1_sources/correlation_core.b2.cpp:175) of variable 'add_ln175', b1_sources/correlation_core.b2.cpp:175 5 bit on local variable 'k', b1_sources/correlation_core.b2.cpp:175 (combination delay: 4.956 ns) to honor II or Latency constraint in region 'refill_seg'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 5, loop 'refill_seg'
+WARNING: [HLS 200-871] Estimated clock period (4.956 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'correlation_core_Pipeline_refill_seg' consists of the following:
+	'store' operation ('k_write_ln175', b1_sources/correlation_core.b2.cpp:175) of constant 0 5 bit on local variable 'k', b1_sources/correlation_core.b2.cpp:175 [1200]  (1.588 ns)
+	'load' operation 5 bit ('k', b1_sources/correlation_core.b2.cpp:175) on local variable 'k', b1_sources/correlation_core.b2.cpp:175 [1203]  (0.000 ns)
+	'icmp' operation 1 bit ('icmp_ln175', b1_sources/correlation_core.b2.cpp:175) [1204]  (1.780 ns)
+	'store' operation ('k_write_ln175', b1_sources/correlation_core.b2.cpp:175) of variable 'add_ln175', b1_sources/correlation_core.b2.cpp:175 5 bit on local variable 'k', b1_sources/correlation_core.b2.cpp:175 [1949]  (1.588 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 0.738 seconds; current allocated memory: 495.309 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.288 seconds; current allocated memory: 495.363 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'correlation_core_Pipeline_load_seg' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [SCHED 204-61] Pipelining loop 'load_seg'.
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.body13 to 'store' operation ('i_write_ln149', b1_sources/correlation_core.b2.cpp:149) of variable 'add_ln149', b1_sources/correlation_core.b2.cpp:149 8 bit on local variable 'i', b1_sources/correlation_core.b2.cpp:149 (combination delay: 5.091 ns) to honor II or Latency constraint in region 'load_seg'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 4, loop 'load_seg'
+WARNING: [HLS 200-871] Estimated clock period (5.091 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'correlation_core_Pipeline_load_seg' consists of the following:
+	'store' operation ('i_write_ln149', b1_sources/correlation_core.b2.cpp:149) of constant 0 8 bit on local variable 'i', b1_sources/correlation_core.b2.cpp:149 [1197]  (1.588 ns)
+	'load' operation 8 bit ('i', b1_sources/correlation_core.b2.cpp:153) on local variable 'i', b1_sources/correlation_core.b2.cpp:149 [1200]  (0.000 ns)
+	'icmp' operation 1 bit ('icmp_ln149', b1_sources/correlation_core.b2.cpp:149) [1201]  (1.915 ns)
+	'store' operation ('i_write_ln149', b1_sources/correlation_core.b2.cpp:149) of variable 'add_ln149', b1_sources/correlation_core.b2.cpp:149 8 bit on local variable 'i', b1_sources/correlation_core.b2.cpp:149 [1945]  (1.588 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 0.758 seconds; current allocated memory: 506.246 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.264 seconds; current allocated memory: 506.266 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'correlation_core_Pipeline_mac_loop' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_16) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_15) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_14) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_13) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_12) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_11) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_10) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_9) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_8) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_7) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_6) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_5) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_4) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_3) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199_2) to 3 in order to utilize available DSP registers.
+INFO: [HLS 200-486] Changing DSP latency (root=add_ln199) to 3 in order to utilize available DSP registers.
+INFO: [SCHED 204-61] Pipelining loop 'mac_loop'.
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.body73 to 'store' operation ('x_write_ln192', b1_sources/correlation_core.b2.cpp:192) of variable 'add_ln199_1', b1_sources/correlation_core.b2.cpp:199 8 bit on local variable 'x', b1_sources/correlation_core.b2.cpp:192 (combination delay: 5.253 ns) to honor II or Latency constraint in region 'mac_loop'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 6, loop 'mac_loop'
+WARNING: [HLS 200-871] Estimated clock period (5.788 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'correlation_core_Pipeline_mac_loop' consists of the following:
+	'add' operation 24 bit of DSP[983] ('add_ln199', b1_sources/correlation_core.b2.cpp:199) [983]  (2.100 ns)
+	'store' operation ('empty_write_ln199', b1_sources/correlation_core.b2.cpp:199) of variable 'add_ln199', b1_sources/correlation_core.b2.cpp:199 24 bit on local variable 'empty' [1075]  (1.588 ns)
+	'load' operation 24 bit ('p_load493', b1_sources/correlation_core.b2.cpp:199) on local variable 'empty' [961]  (0.000 ns)
+	'add' operation 24 bit of DSP[983] ('add_ln199', b1_sources/correlation_core.b2.cpp:199) [983]  (2.100 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.872 seconds; current allocated memory: 515.957 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.16 seconds; current allocated memory: 517.410 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'correlation_core' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+WARNING: [HLS 200-871] Estimated clock period (3.665 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'correlation_core' consists of the following:
+	'phi' operation 8 bit ('seg') with incoming values : ('seg_907_loc_load') ('seg_676_loc_load') [2370]  (0.000 ns)
+	'call' operation ('_ln0') to 'correlation_core_Pipeline_mac_loop' [2601]  (3.665 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 2 seconds. CPU system time: 0 seconds. Elapsed time: 1.699 seconds; current allocated memory: 540.289 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.404 seconds; current allocated memory: 540.383 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_isq_init' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [HLS 200-486] Changing DSP latency (root=rsq_win_2) to 3 in order to utilize available DSP registers.
+INFO: [SCHED 204-61] Pipelining loop 'isq_init'.
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.body98 to 'store' operation ('x_write_ln196', tme_top.cpp:196) of variable 'add_ln196', tme_top.cpp:196 8 bit on local variable 'x', tme_top.cpp:196 (combination delay: 5.253 ns) to honor II or Latency constraint in region 'isq_init'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 7, loop 'isq_init'
+WARNING: [HLS 200-871] Estimated clock period (5.788 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top_Pipeline_isq_init' consists of the following:
+	'add' operation 24 bit of DSP[102] ('rsq_win', tme_top.cpp:201) [102]  (2.100 ns)
+	'store' operation ('rsq_win_write_ln194', tme_top.cpp:194) of variable 'rsq_win', tme_top.cpp:201 24 bit on local variable 'rsq_win', tme_top.cpp:194 [106]  (1.588 ns)
+	'load' operation 24 bit ('rsq_win_load', tme_top.cpp:201) on local variable 'rsq_win', tme_top.cpp:194 [80]  (0.000 ns)
+	'add' operation 24 bit of DSP[102] ('rsq_win', tme_top.cpp:201) [102]  (2.100 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.33 seconds; current allocated memory: 540.422 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.023 seconds; current allocated memory: 540.422 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_isq_slide' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+INFO: [HLS 200-486] Changing DSP latency (root=newFirst19) to 3 in order to utilize available DSP registers.
+WARNING: [HLS 200-1015] Estimated delay Estimated delay (5.415ns)  of 'mul' operation 16 bit ('mul_ln215', tme_top.cpp:215) exceeds the target cycle time (target cycle time: 5.000ns, clock uncertainty: 1.350ns, effective cycle time: 3.650ns).
+
+Resolution: For help on HLS 200-1015 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1015.html
+INFO: [SCHED 204-61] Pipelining loop 'isq_slide'.
+WARNING: [HLS 200-887] Cannot meet target clock period from basic block for.body120 to 'store' operation ('u_write_ln209', tme_top.cpp:209) of variable 'add_ln209', tme_top.cpp:209 10 bit on local variable 'u', tme_top.cpp:209 (combination delay: 5.31238 ns) to honor II or Latency constraint in region 'isq_slide'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 1, Final II = 1, Depth = 14, loop 'isq_slide'
+WARNING: [HLS 200-871] Estimated clock period (5.415 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top_Pipeline_isq_slide' consists of the following:
+	'mul' operation 16 bit ('mul_ln215', tme_top.cpp:215) [182]  (5.415 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 1.272 seconds; current allocated memory: 540.488 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.044 seconds; current allocated memory: 540.488 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top_Pipeline_norm_cols' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+WARNING: [HLS 200-1015] Estimated delay Estimated delay (6.312ns)  of 'sitofp' operation 32 bit ('conv', tme_top.cpp:247) exceeds the target cycle time (target cycle time: 5.000ns, clock uncertainty: 1.350ns, effective cycle time: 3.650ns).
+
+Resolution: For help on HLS 200-1015 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1015.html
+INFO: [SCHED 204-61] Pipelining loop 'norm_cols'.
+WARNING: [HLS 200-887] Cannot meet target clock period from 'fcmp' operation 1 bit ('tmp_9', tme_top.cpp:254) to 'and' operation 1 bit ('and_ln254_1', tme_top.cpp:254) (combination delay: 3.708 ns) to honor II or Latency constraint in region 'norm_cols'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+WARNING: [HLS 200-887] Cannot meet target clock period from 'fcmp' operation 1 bit ('tmp_9', tme_top.cpp:254) to 'select' operation 32 bit ('best_score', tme_top.cpp:254) (combination delay: 4.406 ns) to honor II or Latency constraint in region 'norm_cols'.
+Resolution: For help on HLS 200-887 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-887.html
+INFO: [HLS 200-1470] Pipelining result : Target II = 4, Final II = 4, Depth = 98, loop 'norm_cols'
+WARNING: [HLS 200-871] Estimated clock period (6.312 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top_Pipeline_norm_cols' consists of the following:
+	'uitofp' operation 32 bit ('conv1', tme_top.cpp:247) [197]  (6.312 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 1.919 seconds; current allocated memory: 540.512 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.055 seconds; current allocated memory: 540.570 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-42] -- Implementing module 'tme_top' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [SCHED 204-11] Starting scheduling ...
+WARNING: [HLS 200-1015] Estimated delay Estimated delay (6.312ns)  of 'uitofp' operation 32 bit ('dt_f', tme_top.cpp:154) exceeds the target cycle time (target cycle time: 5.000ns, clock uncertainty: 1.350ns, effective cycle time: 3.650ns).
+
+Resolution: For help on HLS 200-1015 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1015.html
+WARNING: [HLS 200-871] Estimated clock period (6.312 ns) exceeds the target (target clock period: 5.000 ns, clock uncertainty: 1.350 ns, effective delay budget: 3.650 ns).
+Resolution: For help on HLS 200-871 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-871.html
+WARNING: [HLS 200-1016] The critical path in module 'tme_top' consists of the following:
+	'uitofp' operation 32 bit ('dt_f', tme_top.cpp:154) [401]  (6.312 ns)
+
+Resolution: For help on HLS 200-1016 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1016.html
+INFO: [SCHED 204-11] Finished scheduling.
+INFO: [HLS 200-111] Finished Scheduling: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 0.156 seconds; current allocated memory: 542.695 MB.
+INFO: [BIND 205-100] Starting micro-architecture generation ...
+INFO: [BIND 205-101] Performing variable lifetime analysis.
+INFO: [BIND 205-101] Exploring resource sharing.
+INFO: [BIND 205-101] Binding ...
+INFO: [BIND 205-100] Finished micro-architecture generation.
+INFO: [HLS 200-111] Finished Binding: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.091 seconds; current allocated memory: 544.277 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_load_patch_VITIS_LOOP_116_1' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_load_patch_VITIS_LOOP_116_1' pipeline 'load_patch_VITIS_LOOP_116_1' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'mac_muladd_14s_6ns_12ns_14_4_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_load_patch_VITIS_LOOP_116_1'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.181 seconds; current allocated memory: 546.750 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_load_templ_VITIS_LOOP_127_2' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_load_templ_VITIS_LOOP_127_2' pipeline 'load_templ_VITIS_LOOP_127_2' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'mac_muladd_15s_8ns_15s_15_4_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mac_muladd_8ns_8ns_32s_32_4_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_load_templ_VITIS_LOOP_127_2'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.129 seconds; current allocated memory: 549.238 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_reset_acc' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_reset_acc' pipeline 'reset_acc' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_reset_acc'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.11 seconds; current allocated memory: 552.070 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_VITIS_LOOP_181_3' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_VITIS_LOOP_181_3' pipeline 'VITIS_LOOP_181_3' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_VITIS_LOOP_181_3'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.288 seconds; current allocated memory: 560.109 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'correlation_core_Pipeline_refill_seg' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'correlation_core_Pipeline_refill_seg' pipeline 'refill_seg' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_8_1_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'correlation_core_Pipeline_refill_seg'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 1 seconds. CPU system time: 1 seconds. Elapsed time: 0.997 seconds; current allocated memory: 585.488 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'correlation_core_Pipeline_load_seg' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'correlation_core_Pipeline_load_seg' pipeline 'load_seg' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_8_1_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'correlation_core_Pipeline_load_seg'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 1.459 seconds; current allocated memory: 621.016 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'correlation_core_Pipeline_mac_loop' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'correlation_core_Pipeline_mac_loop' pipeline 'mac_loop' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'mac_muladd_8ns_8ns_24s_24_4_1': 16 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_433_8_8_1_1': 17 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'correlation_core_Pipeline_mac_loop'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 1 seconds. CPU system time: 1 seconds. Elapsed time: 2.149 seconds; current allocated memory: 677.852 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'correlation_core' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [RTGEN 206-100] Generating core module 'mul_14s_7ns_14_2_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'correlation_core'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 0.9 seconds; current allocated memory: 715.602 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_isq_init' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_isq_init' pipeline 'isq_init' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'mac_muladd_8ns_8ns_24s_24_4_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_8_1_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_isq_init'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 1 seconds. Elapsed time: 1.508 seconds; current allocated memory: 772.730 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_isq_slide' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_isq_slide' pipeline 'isq_slide' pipeline type 'loop pipeline'
+WARNING: [RTGEN 206-101] RTL name 'sparsemux_33_4_8_1_1' is changed to 'sparsemux_33_4_8_1_1_x' due to conflict.
+INFO: [RTGEN 206-100] Generating core module 'mac_mulsub_8ns_8ns_16ns_25_4_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_8ns_8ns_16_5_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_24_1_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_32_1_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_8_1_1_x': 2 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_isq_slide'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 0.185 seconds; current allocated memory: 772.730 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top_Pipeline_norm_cols' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-1030] Apply Unified Pipeline Control on module 'tme_top_Pipeline_norm_cols' pipeline 'norm_cols' pipeline type 'loop pipeline'
+INFO: [RTGEN 206-100] Generating core module 'fcmp_32ns_32ns_1_4_no_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'fdiv_32ns_32ns_32_30_no_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'fmul_32ns_32ns_32_8_max_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'fsqrt_32ns_32ns_32_28_no_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_24ns_24ns_48_5_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_32ns_16ns_48_5_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sitofp_64s_32_7_no_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_24_1_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'sparsemux_33_4_32_1_1': 2 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'uitofp_64ns_32_7_no_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top_Pipeline_norm_cols'.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 0.533 seconds; current allocated memory: 772.730 MB.
+INFO: [HLS 200-10] ----------------------------------------------------------------
+INFO: [HLS 200-10] -- Generating RTL for module 'tme_top' 
+INFO: [HLS 200-10] ----------------------------------------------------------------
+WARNING: [RTGEN 206-101] Design contains AXI ports. Reset is fixed to synchronous and active low.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_data_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_keep_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_strb_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_user_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_last_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_id_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_stream_V_dest_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_data_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_keep_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_strb_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_user_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_last_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_id_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_stream_V_dest_V' to 'axis' (register, both mode).
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_w' to 's_axilite & ap_none'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/patch_h' to 's_axilite & ap_none'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_w' to 's_axilite & ap_none'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/templ_h' to 's_axilite & ap_none'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/result_score' to 's_axilite & ap_vld'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/result_x' to 's_axilite & ap_vld'.
+INFO: [RTGEN 206-500] Setting interface mode on port 'tme_top/result_y' to 's_axilite & ap_vld'.
+INFO: [RTGEN 206-500] Setting interface mode on function 'tme_top' to 's_axilite & ap_ctrl_hs'.
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_39_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3bkb' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_38_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3cud' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_37_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3dEe' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_36_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3eOg' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_35_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3fYi' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_34_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3g8j' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_33_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3hbi' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_32_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3ibs' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_31_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3jbC' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_30_RAM_2P_BRAM_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3kbM' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_5_RAM_2P_BRAM_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EElbW' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_4_RAM_2P_BRAM_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEmb6' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_3_RAM_2P_BRAM_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEncg' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_2_RAM_2P_BRAM_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEocq' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_1_RAM_2P_BRAM_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEpcA' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_s_RAM_2P_BRAM_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEqcK' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_9_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_9rcU' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_19_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1sc4' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_29_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2tde' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_8_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_8udo' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_18_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1vdy' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_28_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2wdI' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_7_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_7xdS' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_17_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1yd2' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_27_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2zec' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_6_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_6Aem' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_16_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1Bew' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_26_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2CeG' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_5_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_5DeQ' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_15_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1Ee0' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_25_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2Ffa' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_4_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_4Gfk' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_14_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1Hfu' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_24_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2IfE' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3JfO' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_13_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1KfY' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_23_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2Lf8' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2Mgi' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_12_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1Ngs' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_22_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2OgC' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1PgM' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_11_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1QgW' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_21_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2Rg6' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_RShg' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_10_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1Thq' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_20_RAM_AUTO_1R1W' to 'tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2UhA' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_11_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEVhK' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_17_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEWhU' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_23_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEXh4' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_10_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEYie' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_16_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEZio' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_22_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE0iy' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_9_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE1iI' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_15_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE2iS' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_21_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE3i2' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_8_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE4jc' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_14_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE5jm' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_20_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE6jw' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_7_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE7jG' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_13_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE8jQ' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_19_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EE9j0' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_6_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEbak' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_12_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEbbk' due to the length limit 80
+INFO: [SYN 201-210] Renamed object name 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_18_RAM_AUTO_1R1W' to 'p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEbck' due to the length limit 80
+INFO: [RTGEN 206-100] Bundling port 'patch_w', 'patch_h', 'templ_w', 'templ_h', 'result_score', 'result_x', 'result_y' and 'return' to AXI-Lite port CTRL.
+INFO: [RTGEN 206-100] Generating core module 'mul_14s_7ns_14_2_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_16ns_16ns_32_2_1': 2 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_16s_16s_16_2_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_24ns_24ns_48_5_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'mul_32ns_16ns_48_5_1': 1 instance(s).
+INFO: [RTGEN 206-100] Generating core module 'uitofp_64ns_32_7_no_dsp_1': 1 instance(s).
+INFO: [RTGEN 206-100] Finished creating RTL model for 'tme_top'.
+INFO: [RTMG 210-278] Implementing memory 'tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3bkb' using block RAMs.
+INFO: [RTMG 210-278] Implementing memory 'tme_top_templ_buf_RAM_2P_BRAM_1R1W' using block RAMs.
+INFO: [RTMG 210-278] Implementing memory 'tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_9rcU' using auto RAMs.
+INFO: [RTMG 210-278] Implementing memory 'tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1sc4' using auto RAMs.
+INFO: [RTMG 210-278] Implementing memory 'tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2tde' using auto RAMs.
+INFO: [HLS 200-111] Finished Creating RTL model: CPU user time: 0 seconds. CPU system time: 0 seconds. Elapsed time: 6.119 seconds; current allocated memory: 787.086 MB.
+INFO: [HLS 200-111] Finished Generating all RTL models: CPU user time: 1 seconds. CPU system time: 0 seconds. Elapsed time: 1.468 seconds; current allocated memory: 807.539 MB.
+INFO: [HLS 200-2225] Wrote inferred directives to file C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/syn/inferred_directives.ini
+INFO: [HLS 200-111] Finished Updating report files: CPU user time: 0 seconds. CPU system time: 1 seconds. Elapsed time: 1.804 seconds; current allocated memory: 823.758 MB.
+INFO: [VHDL 208-304] Generating VHDL RTL for tme_top.
+INFO: [VLOG 209-307] Generating Verilog RTL for tme_top.
+INFO: [HLS 200-790] **** Loop Constraint Status: All loop constraints were NOT satisfied.
+INFO: [HLS 200-789] **** Estimated Fmax: 152.74 MHz
+INFO: [HLS 200-2161] Finished Command csynth_design Elapsed time: 00:01:23; Allocated memory: 677.027 MB.
+INFO: [HLS 200-1510] Running: cosim_design -rtl verilog -argv b1 
+INFO: [COSIM 212-47] Using XSIM for RTL simulation.
+INFO: [COSIM 212-14] Instrumenting C test bench ...
+   Build using "C:/AMDDesignTools/2025.2/Vitis/win64/tools/clang-16/bin/clang++"
+   Compiling apatb_tme_top.cpp
+   Compiling apatb_tme_top_util.cpp
+   Compiling correlation_core.b2.cpp_pre.cpp.tb.cpp
+   Compiling tme_tb.cpp_pre.cpp.tb.cpp
+   Compiling tme_top.cpp_pre.cpp.tb.cpp
+   Compiling apatb_tme_top_ir.ll
+   Generating cosim.tv.exe
+INFO: [COSIM 212-302] Starting C TB testing ... 
+tb_tme_cases_b1.txt: 12 cases, 31659 patch bytes, 11760 template bytes
+
+--- direct DUT tests (contract §4.6) ---
+  flat-templ-4x4 (illegal input)   patch  12x10  templ  4x4   raw 0x00000000 @(0,0)  want 0x00000000 @(0,0)  PASS
+  min-nonflat dt=15 (must score 1.0) patch   4x4   templ  4x4   raw 0x3F800000 @(0,0)  want 0x3F800000 @(0,0)  PASS
+  bound-half0-half255-216x96       dt = 6989889945600 (want 6989889945600)  PASS
+  preserve-operands-all255         N*ST2 = 27959559782400, (ST)^2 = 27959559782400, dt = 0 (want 27959559782400/27959559782400/0)  PASS
+  num-max-positive-216x96          num = 6989889945600 (want 6989889945600)  PASS
+  num-max-negative-216x96          num = -6989889945600 (want -6989889945600)  PASS
+  num-cancel-all255                num = 0 (want 0)  PASS
+  width-minimum-witness            43/44: dt = 6989889945600 ok, num = -1806203076608 (pinned -1806203076608); 44/44: num = 6989889945600  PASS
+  width-coupling-witness           48/48: 6132117600000, 44/44: 6132117600000, 44/45: -11460068444416 (pinned -11460068444416, want 6132117600000)  PASS
+--- direct tests: 0 failure(s) ---
+
+[ 0] b1-w001-tw216                b1-width    patch  216x13  templ 216x8   gold +1.0000 @(  0,  3)  dut +1.0000 @(  0,  3)  PASS
+[ 1] b1-w015-tw216                b1-width    patch  230x13  templ 216x8   gold +1.0000 @( 14,  2)  dut +1.0000 @( 14,  2)  PASS
+[ 2] b1-w016-tw216                b1-width    patch  231x13  templ 216x8   gold +1.0000 @( 15,  4)  dut +1.0000 @( 15,  4)  PASS
+[ 3] b1-w017-tw216                b1-width    patch  232x13  templ 216x8   gold +1.0000 @( 16,  1)  dut +1.0000 @( 16,  1)  PASS
+[ 4] b1-w031-tw100                b1-width    patch  130x21  templ 100x12  gold +1.0000 @( 30,  5)  dut +1.0000 @( 30,  5)  PASS
+[ 5] b1-w032-tw100                b1-width    patch  131x21  templ 100x12  gold +1.0000 @( 31,  3)  dut +1.0000 @( 31,  3)  PASS
+[ 6] b1-w033-tw100                b1-width    patch  132x21  templ 100x12  gold +1.0000 @( 32,  8)  dut +1.0000 @( 32,  8)  PASS
+[ 7] b1-w095-tw020                b1-width    patch  114x27  templ  20x12  gold +1.0000 @( 94,  7)  dut +1.0000 @( 94,  7)  PASS
+[ 8] b1-w096-tw020                b1-width    patch  115x27  templ  20x12  gold +1.0000 @( 95, 12)  dut +1.0000 @( 95, 12)  PASS
+[ 9] b1-tie-samerow               b1-width    patch   47x21  templ  16x12  gold +1.0000 @(  5,  4)  dut +1.0000 @(  5,  4)  PASS
+[10] b1-tie-rowmajor              b1-width    patch   47x21  templ  16x12  gold +1.0000 @( 31,  2)  dut +1.0000 @( 31,  2)  PASS
+[11] b1-lane15                    lane15      patch   88x39  templ  24x16  gold +0.5532 @( 31,  6)  dut +0.5532 @( 31,  6)  PASS
+
+12/12 cases passed
+TESTBENCH PASSED
+INFO [HLS SIM]: The maximum depth reached by any hls::stream() instance in the design is 3432
+INFO: [COSIM 212-333] Generating C post check test bench ...
+INFO: [COSIM 212-12] Generating RTL test bench ...
+find not read role field
+find not read role field
+find not read role field
+
+****** Vivado v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Wed Aug 19 19:07:20 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source run_vivado_gen_ip.tcl -notrace
+INFO: [ProjectBase 1-489] The host OS only allows 260 characters in a normal path. The project is stored in a path with more than 80 characters. If you experience issues with IP, Block Designs, or files not being found, please consider moving the project to a location with a shorter path. Alternately consider using the OS subst command to map part of the path to a drive letter.
+Current project path is 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/.autopilot/db/ip_tmp'
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'C:/AMDDesignTools/2025.2/Vivado/data/ip'.
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip'...
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip'...
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip'...
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip'...
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_sitofp_64s_32_7_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_sitofp_64s_32_7_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_sitofp_64s_32_7_no_dsp_1_ip'...
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip'...
+INFO: [Common 17-206] Exiting Vivado at Wed Aug 19 19:07:40 2026...
+INFO: [COSIM 212-1] *** C/RTL co-simulation file generation completed. ***
+INFO: [COSIM 212-323] Starting verilog simulation. 
+INFO: [COSIM 212-15] Starting XSIM ...
+
+C:\Users\lychee\Desktop\FPGA\hls\template_match\template_match_b1_b2\b2\sim\verilog>set PATH= 
+
+C:\Users\lychee\Desktop\FPGA\hls\template_match\template_match_b1_b2\b2\sim\verilog>call C:/AMDDesignTools/2025.2/Vivado/bin/xelab xil_defaultlib.apatb_tme_top_top xil_defaultlib.glbl -Oenable_linking_all_libraries -prj tme_top.prj -L smartconnect_v1_0 -L axi_protocol_checker_v1_1_12 -L axi_protocol_checker_v1_1_13 -L axis_protocol_checker_v1_1_11 -L axis_protocol_checker_v1_1_12 -L xil_defaultlib -L unisims_ver -L xpm  -L floating_point_v7_1_21 -L floating_point_v7_0_26 --lib "ieee_proposed=./ieee_proposed" -L uvm -relax -i ./svr -i ./axivip -i ./svtb -i ./file_agent -i ./tme_top_subsystem  -s tme_top  
+Vivado Simulator v2025.2
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: C:/AMDDesignTools/2025.2/Vivado/bin/unwrapped/win64.o/xelab.exe xil_defaultlib.apatb_tme_top_top xil_defaultlib.glbl -Oenable_linking_all_libraries -prj tme_top.prj -L smartconnect_v1_0 -L axi_protocol_checker_v1_1_12 -L axi_protocol_checker_v1_1_13 -L axis_protocol_checker_v1_1_11 -L axis_protocol_checker_v1_1_12 -L xil_defaultlib -L unisims_ver -L xpm -L floating_point_v7_1_21 -L floating_point_v7_0_26 --lib ieee_proposed=./ieee_proposed -L uvm -relax -i ./svr -i ./axivip -i ./svtb -i ./file_agent -i ./tme_top_subsystem -s tme_top 
+Multi-threading is on. Using 22 slave threads.
+Determining compilation order of HDL files.
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/glbl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module glbl
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/AESL_deadlock_idx0_monitor.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module AESL_deadlock_idx0_monitor
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/AESL_deadlock_kernel_monitor_top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module AESL_deadlock_kernel_monitor_top
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top.autotb.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module apatb_tme_top_top
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_correlation_core.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_correlation_core
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_correlation_core_Pipeline_load_seg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_correlation_core_Pipeline_load_seg
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_correlation_core_Pipeline_mac_loop.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_correlation_core_Pipeline_mac_loop
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_correlation_core_Pipeline_refill_seg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_correlation_core_Pipeline_refill_seg
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_CTRL_s_axi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_CTRL_s_axi
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_fcmp_32ns_32ns_1_4_no_dsp_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_fdiv_32ns_32ns_32_30_no_dsp_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_flow_control_loop_pipe_sequential_init.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_flow_control_loop_pipe_sequential_init
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_fmul_32ns_32ns_32_8_max_dsp_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_fmul_32ns_32ns_32_8_max_dsp_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mac_muladd_14s_6ns_12ns_14_4_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_14s_6ns_12ns_14_4_1_DSP48_0
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_14s_6ns_12ns_14_4_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mac_muladd_15s_8ns_15s_15_4_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_15s_8ns_15s_15_4_1_DSP48_0
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_15s_8ns_15s_15_4_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mac_muladd_8ns_8ns_24s_24_4_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_8ns_8ns_24s_24_4_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mac_muladd_8ns_8ns_32s_32_4_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_8ns_8ns_32s_32_4_1_DSP48_0
+INFO: [VRFC 10-311] analyzing module tme_top_mac_muladd_8ns_8ns_32s_32_4_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mac_mulsub_8ns_8ns_16ns_25_4_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mac_mulsub_8ns_8ns_16ns_25_4_1_DSP48_0
+INFO: [VRFC 10-311] analyzing module tme_top_mac_mulsub_8ns_8ns_16ns_25_4_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mul_14s_7ns_14_2_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mul_14s_7ns_14_2_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mul_16ns_16ns_32_2_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mul_16ns_16ns_32_2_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mul_16s_16s_16_2_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mul_16s_16s_16_2_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mul_24ns_24ns_48_5_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mul_24ns_24ns_48_5_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mul_32ns_16ns_48_5_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mul_32ns_16ns_48_5_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_mul_8ns_8ns_16_5_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_mul_8ns_8ns_16_5_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_regslice_both.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_regslice_both
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_sitofp_64s_32_7_no_dsp_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_sitofp_64s_32_7_no_dsp_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_sparsemux_33_4_24_1_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_sparsemux_33_4_24_1_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_sparsemux_33_4_32_1_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_sparsemux_33_4_32_1_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_sparsemux_33_4_8_1_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_sparsemux_33_4_8_1_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_sparsemux_33_4_8_1_1_x.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_sparsemux_33_4_8_1_1_x
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_sparsemux_433_8_8_1_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_sparsemux_433_8_8_1_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_templ_buf_RAM_2P_BRAM_1R1W.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_templ_buf_RAM_2P_BRAM_1R1W
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_isq_init.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_isq_init
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_isq_slide.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_isq_slide
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_load_patch_VITIS_LOOP_116_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_load_patch_VITIS_LOOP_116_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_load_templ_VITIS_LOOP_127_2.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_load_templ_VITIS_LOOP_127_2
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_norm_cols.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_norm_cols
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_reset_acc.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_reset_acc
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_Pipeline_VITIS_LOOP_181_3.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_Pipeline_VITIS_LOOP_181_3
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1sc4.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_1sc4
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2tde.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_2tde
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3bkb.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_3bkb
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_9rcU.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_tme_top_stream_stream_ap_uint_ap_uint_ap_uint_ap_uint_float_ap_uint_ap_uint_9rcU
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_uitofp_64ns_32_7_no_dsp_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tme_top_uitofp_64ns_32_7_no_dsp_1
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/dataflow_monitor.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module dataflow_monitor
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/file_agent/file_agent_pkg.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/svr/svr_pkg.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/svr/svr_if.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/axivip/axi_pkg.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/axivip/axi_if.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/tme_top_subsystem/tme_top_subsystem_pkg.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/svtb/misc_interface.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/svtb/sv_module_top.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module sv_module_top
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/ip/xil_defaultlib/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip'
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/ip/xil_defaultlib/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip'
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/ip/xil_defaultlib/tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip'
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/ip/xil_defaultlib/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip'
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/ip/xil_defaultlib/tme_top_sitofp_64s_32_7_no_dsp_1_ip.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'tme_top_sitofp_64s_32_7_no_dsp_1_ip'
+INFO: [VRFC 10-163] Analyzing VHDL file "C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/sim/verilog/ip/xil_defaultlib/tme_top_uitofp_64ns_32_7_no_dsp_1_ip.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip'
+Starting static elaboration
+Pass Through NonSizing Optimizer
+Completed static elaboration
+Starting simulation data flow analysis
+WARNING: [XSIM 43-4099] "/proj/primebuilds/9999.0_PRIME_0428_0031/installs/data/system_verilog/uvm_1.2/xlnx_uvm_package.sv" Line 4356. Module uvm_pkg doesn't have a timescale but at least one module in design has a timescale.
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling package std.standard
+Compiling package std.textio
+Compiling package ieee.std_logic_1164
+Compiling package ieee.numeric_std
+Compiling package floating_point_v7_1_21.floating_point_v7_1_21_viv_comp
+Compiling package xbip_utils_v3_0_15.xbip_utils_v3_0_15_pkg
+Compiling package axi_utils_v2_0_11.axi_utils_v2_0_11_pkg
+Compiling package floating_point_v7_1_21.floating_point_v7_1_21_consts
+Compiling package ieee.math_real
+Compiling package floating_point_v7_1_21.floating_point_v7_1_21_exp_table...
+Compiling package mult_gen_v12_0_24.mult_gen_v12_0_24_pkg
+Compiling package ieee.std_logic_arith
+Compiling package ieee.std_logic_signed
+Compiling package floating_point_v7_1_21.floating_point_v7_1_21_pkg
+Compiling package floating_point_v7_1_21.flt_utils
+Compiling package unisim.vcomponents
+Compiling package xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv_comp
+Compiling package ieee.vital_timing
+Compiling package ieee.vital_primitives
+Compiling package unisim.vpkg
+Compiling package floating_point_v7_1_21.vt2mutils
+Compiling package floating_point_v7_1_21.vt2mcomps
+Compiling package xil_defaultlib.$unit_sv_module_top_sv
+Compiling package uvm.uvm_pkg
+Compiling package std.std
+Compiling package xil_defaultlib.svr_pkg
+Compiling package xil_defaultlib.file_agent_pkg
+Compiling package xil_defaultlib.axi_pkg
+Compiling package xil_defaultlib.tme_top_subsystem_pkg
+Compiling package xil_defaultlib.$unit_dataflow_monitor_sv
+Compiling module xil_defaultlib.tme_top_tme_top_stream_stream_ap...
+Compiling module xil_defaultlib.tme_top_templ_buf_RAM_2P_BRAM_1R...
+Compiling module xil_defaultlib.tme_top_tme_top_stream_stream_ap...
+Compiling module xil_defaultlib.tme_top_tme_top_stream_stream_ap...
+Compiling module xil_defaultlib.tme_top_tme_top_stream_stream_ap...
+Compiling module xil_defaultlib.tme_top_mac_muladd_14s_6ns_12ns_...
+Compiling module xil_defaultlib.tme_top_mac_muladd_14s_6ns_12ns_...
+Compiling module xil_defaultlib.tme_top_flow_control_loop_pipe_s...
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_load_pa...
+Compiling module xil_defaultlib.tme_top_mac_muladd_15s_8ns_15s_1...
+Compiling module xil_defaultlib.tme_top_mac_muladd_15s_8ns_15s_1...
+Compiling module xil_defaultlib.tme_top_mac_muladd_8ns_8ns_32s_3...
+Compiling module xil_defaultlib.tme_top_mac_muladd_8ns_8ns_32s_3...
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_load_te...
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_reset_a...
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_VITIS_L...
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(adreg=0,alumodereg=0,ca...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=7,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=4,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=16,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=24,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=17,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=25,length=0)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=24,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [delay_default]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(adreg=0,alumodereg=0,a_...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=48,length=0)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=24,b_wi...]
+Compiling architecture struct of entity floating_point_v7_1_21.fix_mult_dsp48e1_sgl [\fix_mult_dsp48e1_sgl(registers=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.fix_mult [\fix_mult(c_xdevicefamily="zynq"...]
+Compiling architecture muxcy_v of entity unisim.MUXCY [muxcy_default]
+Compiling architecture xorcy_v of entity unisim.XORCY [xorcy_default]
+Compiling architecture fdre_v of entity unisim.FDRE [fdre_default]
+Compiling architecture fde_v of entity unisim.FDE [fde_default]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=7)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8,fast_input=true)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=32,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(fast_input=true)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.special_detect [\special_detect(c_xdevicefamily=...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=3)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=3,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=3,fast_input=true)...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=4,fast_input=true)...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=4,length=3,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8,length=2)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=3,length=0,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=4,fast_input=true)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=0,fast_input=true)...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=14)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_mult_exp [\flt_mult_exp(c_xdevicefamily="z...]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=30,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=18,length=0)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=30,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=2)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=25)\]
+Compiling architecture struct of entity floating_point_v7_1_21.flt_round_dsp_opt_full [\flt_round_dsp_opt_full(c_xdevic...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_mult_round [\flt_mult_round(c_xdevicefamily=...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_dec_op_lat [\flt_dec_op_lat(c_xdevicefamily=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_mult [\flt_mult(c_xdevicefamily="zynq"...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21_viv [\floating_point_v7_1_21_viv(c_xd...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21 [\floating_point_v7_1_21(c_xdevic...]
+Compiling architecture tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip_arch of entity xil_defaultlib.tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip [tme_top_fmul_32ns_32ns_32_8_max_...]
+Compiling module xil_defaultlib.tme_top_fmul_32ns_32ns_32_8_max_...
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=23)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=25,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_div_mant_addsub [\flt_div_mant_addsub(c_xdevicefa...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=26)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=26,length=0)\]
+Compiling architecture virtex of entity floating_point_v7_1_21.flt_div_mant [\flt_div_mant(c_xdevicefamily="z...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=10,length=2,fast_in...]
+Compiling architecture rtl of entity floating_point_v7_1_21.special_detect [\special_detect(c_xdevicefamily=...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=25,fast_input=true...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=2,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=2,fast_input=true)...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=26,fast_input=true...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8,length=24)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=24,fast_input=true...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=3,length=23,fast_in...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=4,length=24,fast_in...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=23,fast_input=true...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_div_exp [\flt_div_exp(c_xdevicefamily="no...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=11,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=12,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=11)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=14,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=25,length=0,fast_in...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=3,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=0,fast_inp...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_round_bit [\flt_round_bit(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_21.renorm_and_round_logic [\renorm_and_round_logic(c_xdevic...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_dec_op_lat [\flt_dec_op_lat(c_xdevicefamily=...]
+Compiling architecture virtex of entity floating_point_v7_1_21.flt_div [\flt_div(c_xdevicefamily="zynq",...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21_viv [\floating_point_v7_1_21_viv(c_xd...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21 [\floating_point_v7_1_21(c_xdevic...]
+Compiling architecture tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip_arch of entity xil_defaultlib.tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip [tme_top_fdiv_32ns_32ns_32_30_no_...]
+Compiling module xil_defaultlib.tme_top_fdiv_32ns_32ns_32_30_no_...
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=64,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=16,fast_input=true)...]
+Compiling architecture rtl of entity floating_point_v7_1_21.norm_zero_det [\norm_zero_det(data_width=39,nor...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=64)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.mux4 [\mux4(c_xdevicefamily="zynq",wid...]
+Compiling architecture rtl of entity floating_point_v7_1_21.mux4 [\mux4(c_xdevicefamily="zynq",wid...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=3)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,fast_input=true)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.mux4 [\mux4(c_xdevicefamily="zynq",wid...]
+Compiling architecture rtl of entity floating_point_v7_1_21.mux4 [\mux4(c_xdevicefamily="zynq",wid...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=2)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8,length=0,fast_inp...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture rtl of entity floating_point_v7_1_21.lead_zero_encode [\lead_zero_encode(c_xdevicefamil...]
+Compiling architecture rtl of entity floating_point_v7_1_21.shift_msb_first [\shift_msb_first(a_width=64,resu...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=12,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_round_bit [\flt_round_bit(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_21.renorm_and_round_logic [\renorm_and_round_logic(c_xdevic...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(length=4)\]
+Compiling architecture synth of entity floating_point_v7_1_21.fix_to_flt_conv_exp [\fix_to_flt_conv_exp(c_xdevicefa...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_dec_op [\flt_dec_op(c_xdevicefamily="zyn...]
+Compiling architecture struct of entity floating_point_v7_1_21.fix_to_flt_conv [\fix_to_flt_conv(c_xdevicefamily...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21_viv [\floating_point_v7_1_21_viv(c_xd...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21 [\floating_point_v7_1_21(c_xdevic...]
+Compiling architecture tme_top_sitofp_64s_32_7_no_dsp_1_ip_arch of entity xil_defaultlib.tme_top_sitofp_64s_32_7_no_dsp_1_ip [tme_top_sitofp_64s_32_7_no_dsp_1...]
+Compiling module xil_defaultlib.tme_top_sitofp_64s_32_7_no_dsp_1...
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.compare_ne_im [\compare_ne_im(c_xdevicefamily="...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.compare_eq [\compare_eq(c_xdevicefamily="zyn...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.compare_gt [\compare_gt(c_xdevicefamily="zyn...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=3)\]
+Compiling architecture rtl of entity floating_point_v7_1_21.fp_cmp [\fp_cmp(c_xdevicefamily="zynq",c...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21_viv [\floating_point_v7_1_21_viv(c_xd...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21 [\floating_point_v7_1_21(c_xdevic...]
+Compiling architecture tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip_arch of entity xil_defaultlib.tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip [tme_top_fcmp_32ns_32ns_1_4_no_ds...]
+Compiling module xil_defaultlib.tme_top_fcmp_32ns_32ns_1_4_no_ds...
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=5,fast_input=true)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=24)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=5,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=6,fast_input=true)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=22)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=6,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=7,fast_input=true)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=4)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=20)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=5)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=18)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=9,fast_input=true)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=6)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=16)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=9,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=10,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=10,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=11,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=12)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=9)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=10)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=13,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=13,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=14,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=15,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=15,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=13)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=17,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=18,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=15)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=19,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=19,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=20,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=17)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=20,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=21,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=21,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=22,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=19)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=22,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=23,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=23,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=24,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=21)\]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=26,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=27,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=27,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=28,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=28,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=29,fast_input=true)...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant_addsub [\flt_sqrt_mant_addsub(c_xdevicef...]
+Compiling architecture synth of entity floating_point_v7_1_21.flt_sqrt_mant [\flt_sqrt_mant(c_xdevicefamily="...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=8,length=25,fast_in...]
+Compiling architecture rtl of entity floating_point_v7_1_21.special_detect [\special_detect(c_xdevicefamily=...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_latency...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=2,length=25,fast_in...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_sqrt_exp [\flt_sqrt_exp(c_xdevicefamily="n...]
+Compiling architecture synth of entity xbip_pipe_v3_0_11.xbip_pipe_v3_0_11_viv [\xbip_pipe_v3_0_11_viv(c_has_ce=...]
+Compiling architecture rtl of entity floating_point_v7_1_21.delay [\delay(width=12,length=0,fast_in...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture rtl of entity floating_point_v7_1_21.flt_round_bit [\flt_round_bit(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_21.renorm_and_round_logic [\renorm_and_round_logic(c_xdevic...]
+Compiling architecture virtex of entity floating_point_v7_1_21.flt_sqrt [\flt_sqrt(c_xdevicefamily="zynq"...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21_viv [\floating_point_v7_1_21_viv(c_xd...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21 [\floating_point_v7_1_21(c_xdevic...]
+Compiling architecture tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip_arch of entity xil_defaultlib.tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip [tme_top_fsqrt_32ns_32ns_32_28_no...]
+Compiling module xil_defaultlib.tme_top_fsqrt_32ns_32ns_32_28_no...
+Compiling module xil_defaultlib.tme_top_sparsemux_33_4_32_1_1(di...
+Compiling module xil_defaultlib.tme_top_sparsemux_33_4_24_1_1(di...
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_norm_co...
+Compiling module xil_defaultlib.tme_top_sparsemux_33_4_8_1_1(din...
+Compiling module xil_defaultlib.tme_top_correlation_core_Pipelin...
+Compiling module xil_defaultlib.tme_top_correlation_core_Pipelin...
+Compiling module xil_defaultlib.tme_top_sparsemux_433_8_8_1_1(di...
+Compiling module xil_defaultlib.tme_top_mac_muladd_8ns_8ns_24s_2...
+Compiling module xil_defaultlib.tme_top_mac_muladd_8ns_8ns_24s_2...
+Compiling module xil_defaultlib.tme_top_correlation_core_Pipelin...
+Compiling module xil_defaultlib.tme_top_mul_14s_7ns_14_2_1(NUM_S...
+Compiling module xil_defaultlib.tme_top_correlation_core
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_isq_ini...
+Compiling module xil_defaultlib.tme_top_sparsemux_33_4_8_1_1_x(d...
+Compiling module xil_defaultlib.tme_top_mul_8ns_8ns_16_5_1(NUM_S...
+Compiling module xil_defaultlib.tme_top_mac_mulsub_8ns_8ns_16ns_...
+Compiling module xil_defaultlib.tme_top_mac_mulsub_8ns_8ns_16ns_...
+Compiling module xil_defaultlib.tme_top_tme_top_Pipeline_isq_sli...
+Compiling module xil_defaultlib.tme_top_CTRL_s_axi
+Compiling architecture rtl of entity floating_point_v7_1_21.norm_zero_det [\norm_zero_det(data_width=39,nor...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture rtl of entity floating_point_v7_1_21.lead_zero_encode [\lead_zero_encode(c_xdevicefamil...]
+Compiling architecture rtl of entity floating_point_v7_1_21.shift_msb_first [\shift_msb_first(a_width=64,resu...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture struct of entity floating_point_v7_1_21.carry_chain [\carry_chain(c_xdevicefamily="zy...]
+Compiling architecture rtl of entity floating_point_v7_1_21.renorm_and_round_logic [\renorm_and_round_logic(c_xdevic...]
+Compiling architecture synth of entity floating_point_v7_1_21.fix_to_flt_conv_exp [\fix_to_flt_conv_exp(c_xdevicefa...]
+Compiling architecture struct of entity floating_point_v7_1_21.fix_to_flt_conv [\fix_to_flt_conv(c_xdevicefamily...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21_viv [\floating_point_v7_1_21_viv(c_xd...]
+Compiling architecture xilinx of entity floating_point_v7_1_21.floating_point_v7_1_21 [\floating_point_v7_1_21(c_xdevic...]
+Compiling architecture tme_top_uitofp_64ns_32_7_no_dsp_1_ip_arch of entity xil_defaultlib.tme_top_uitofp_64ns_32_7_no_dsp_1_ip [tme_top_uitofp_64ns_32_7_no_dsp_...]
+Compiling module xil_defaultlib.tme_top_uitofp_64ns_32_7_no_dsp_...
+Compiling module xil_defaultlib.tme_top_mul_24ns_24ns_48_5_1(NUM...
+Compiling module xil_defaultlib.tme_top_mul_32ns_16ns_48_5_1(NUM...
+Compiling module xil_defaultlib.tme_top_mul_16ns_16ns_32_2_1(NUM...
+Compiling module xil_defaultlib.tme_top_mul_16s_16s_16_2_1(NUM_S...
+Compiling module xil_defaultlib.tme_top_regslice_both
+Compiling module xil_defaultlib.tme_top_regslice_both(DataWidth=...
+Compiling module xil_defaultlib.tme_top
+Compiling module xil_defaultlib.misc_interface_default
+Compiling module xil_defaultlib.svr_if(DATA_WIDTH=14)
+Compiling module xil_defaultlib.axi_if(ADDR_WIDTH=7,STRB_WIDTH=4...
+Compiling module xil_defaultlib.sv_module_top
+Compiling module xil_defaultlib.AESL_deadlock_idx0_monitor
+Compiling module xil_defaultlib.AESL_deadlock_kernel_monitor_top...
+Compiling module xil_defaultlib.nodf_module_intf_default
+Compiling module xil_defaultlib.seq_loop_intf(FSM_WIDTH=35)
+Compiling module xil_defaultlib.seq_loop_intf(FSM_WIDTH=59)
+Compiling module xil_defaultlib.upc_loop_intf(FSM_WIDTH=1)
+Compiling module xil_defaultlib.upc_loop_intf_default
+Compiling module xil_defaultlib.upc_loop_intf(FSM_WIDTH=4)
+Compiling module xil_defaultlib.dataflow_monitor_1
+Compiling module xil_defaultlib.apatb_tme_top_top
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot tme_top
+
+****** xsim v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Wed Aug 19 19:08:29 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source xsim.dir/tme_top/xsim_script.tcl
+# xsim {tme_top} -testplusarg UVM_VERBOSITY=UVM_NONE -testplusarg UVM_TESTNAME=tme_top_test_lib -testplusarg UVM_TIMEOUT=20000000000000 -autoloadwcfg -tclbatch {tme_top.tcl}
+Time resolution is 1 ps
+source tme_top.tcl
+## run all
+UVM_INFO C:/AMDDesignTools/2025.2/Vivado/data/system_verilog/uvm_1.2/xlnx_uvm_package.sv(18601) @ 0: reporter [UVM/RELNOTES] 
+----------------------------------------------------------------
+UVM-1.2
+(C) 2007-2014 Mentor Graphics Corporation
+(C) 2007-2014 Cadence Design Systems, Inc.
+(C) 2006-2014 Synopsys, Inc.
+(C) 2011-2013 Cypress Semiconductor Corp.
+(C) 2013-2014 NVIDIA Corporation
+----------------------------------------------------------------
+
+  ***********       IMPORTANT RELEASE NOTES         ************
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_NO_DEPRECATED undefined.
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.
+
+      (Specify +UVM_NO_RELNOTES to turn off this notice)
+
+UVM_INFO C:/AMDDesignTools/2025.2/Vivado/data/system_verilog/uvm_1.2/xlnx_uvm_package.sv(18648) @ 0: reporter [NO_DPI_TSTNAME] UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI
+UVM_INFO C:/AMDDesignTools/2025.2/Vivado/data/system_verilog/uvm_1.2/xlnx_uvm_package.sv(18752) @ 0: reporter [UVMTOP] UVM testbench topology:
+--------------------------------------------------------------------------------------------------
+Name                               Type                                      Size  Value          
+--------------------------------------------------------------------------------------------------
+uvm_test_top                       tme_top_test_lib                          -     @370           
+  top_env                          tme_top_env                               -     @381           
+    axi_lite_CTRL                  uvm_env                                   -     @428           
+      item_rtr_port                uvm_analysis_port                         -     @447           
+      item_wtr_port                uvm_analysis_port                         -     @437           
+      master                       uvm_agent                                 -     @840           
+        ardrv                      uvm_driver #(REQ,RSP)                     -     @1515          
+          item_read_imp            uvm_analysis_port                         -     @1544          
+          rsp_port                 uvm_analysis_port                         -     @1534          
+          seq_item_port            uvm_seq_item_pull_port                    -     @1524          
+          m_num_sent               integral                                  32    'h0            
+        arsqr                      axi_sequencer                             -     @1554          
+          rsp_export               uvm_analysis_export                       -     @1563          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @1681          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+        awdrv                      uvm_driver #(REQ,RSP)                     -     @987           
+          item_read_imp            uvm_analysis_port                         -     @1016          
+          rsp_port                 uvm_analysis_port                         -     @1006          
+          seq_item_port            uvm_seq_item_pull_port                    -     @996           
+          m_num_sent               integral                                  32    'h0            
+        awsqr                      axi_sequencer                             -     @1026          
+          rsp_export               uvm_analysis_export                       -     @1035          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @1153          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+        bdrv                       uvm_driver #(REQ,RSP)                     -     @1339          
+          item_read_imp            uvm_analysis_port                         -     @1368          
+          rsp_port                 uvm_analysis_port                         -     @1358          
+          seq_item_port            uvm_seq_item_pull_port                    -     @1348          
+          m_num_sent               integral                                  32    'h0            
+        bsqr                       axi_sequencer                             -     @1378          
+          rsp_export               uvm_analysis_export                       -     @1387          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @1505          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+        rdrv                       uvm_driver #(REQ,RSP)                     -     @1691          
+          item_read_imp            uvm_analysis_port                         -     @1720          
+          rsp_port                 uvm_analysis_port                         -     @1710          
+          seq_item_port            uvm_seq_item_pull_port                    -     @1700          
+          m_num_sent               integral                                  32    'h0            
+        rsqr                       axi_sequencer                             -     @1730          
+          rsp_export               uvm_analysis_export                       -     @1739          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @1857          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+        wdrv                       uvm_driver #(REQ,RSP)                     -     @1163          
+          item_read_imp            uvm_analysis_port                         -     @1192          
+          rsp_port                 uvm_analysis_port                         -     @1182          
+          seq_item_port            uvm_seq_item_pull_port                    -     @1172          
+          m_num_sent               integral                                  32    'h0            
+        wsqr                       axi_sequencer                             -     @1202          
+          rsp_export               uvm_analysis_export                       -     @1211          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @1329          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+      monitor                      uvm_monitor                               -     @662           
+        item_ar2r_port             uvm_analysis_port                         -     @731           
+        item_ar_port               uvm_analysis_port                         -     @701           
+        item_aw2b_port             uvm_analysis_port                         -     @721           
+        item_aw_port               uvm_analysis_port                         -     @671           
+        item_b_port                uvm_analysis_port                         -     @691           
+        item_r_port                uvm_analysis_port                         -     @711           
+        item_w_port                uvm_analysis_port                         -     @681           
+        checks_enable              integral                                  1     'h1            
+        coverage_enable            integral                                  1     'h1            
+      state                        axi_state                                 -     @741           
+        ar2r_imp                   uvm_analysis_imp_ar2r                     -     @810           
+        ar_imp                     uvm_analysis_imp_ar                       -     @780           
+        aw2b_imp                   uvm_analysis_imp_aw2b                     -     @800           
+        aw_imp                     uvm_analysis_imp_aw                       -     @750           
+        b_imp                      uvm_analysis_imp_b                        -     @770           
+        item_rtr_port              uvm_analysis_port                         -     @830           
+        item_wtr_port              uvm_analysis_port                         -     @820           
+        r_imp                      uvm_analysis_imp_r                        -     @790           
+        w_imp                      uvm_analysis_imp_w                        -     @760           
+        avg_rate                   integral                                  32    'h0            
+        exp_rate                   integral                                  32    'h0            
+        win_size                   integral                                  32    'h0            
+        bqnum_for_slaseq           integral                                  32    'h0            
+        rq_from_model_num          integral                                  32    'h0            
+      vsqr                         axi_virtual_sequencer                     -     @849           
+        rsp_export                 uvm_analysis_export                       -     @858           
+        seq_item_export            uvm_seq_item_pull_imp                     -     @976           
+        arbitration_queue          array                                     0     -              
+        lock_queue                 array                                     0     -              
+        num_last_reqs              integral                                  32    'd1            
+        num_last_rsps              integral                                  32    'd1            
+      cfg                          axi_cfg                                   -     @400           
+        has_checker                integral                                  1     'h1            
+        has_coverage               integral                                  1     'h1            
+        id_num                     integral                                  32    'h1            
+        reset_level                reset_level_enum                          32    RESET_LEVEL_LOW
+        drv_type                   drv_type_enum                             32    MASTER         
+        write_latency_mode         latency_mode_enum                         32    CHANNEL_FIRST  
+        read_latency_mode          latency_mode_enum                         32    CHANNEL_FIRST  
+        clatency                   axi_latency                               -     @424           
+          wr_latency               integral                                  32    'h0            
+          rd_latency               integral                                  32    'h0            
+    env_master_svr_patch_stream    uvm_env                                   -     @401           
+      m_agt                        uvm_agent                                 -     @1935          
+        drv                        uvm_driver #(REQ,RSP)                     -     @2083          
+          rsp_port                 uvm_analysis_port                         -     @2102          
+          seq_item_port            uvm_seq_item_pull_port                    -     @2092          
+        mon                        uvm_monitor                               -     @2112          
+          item_collect_port        uvm_analysis_port                         -     @2123          
+        sqr                        uvm_sequencer                             -     @1946          
+          rsp_export               uvm_analysis_export                       -     @1955          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @2073          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+    env_master_svr_templ_stream    uvm_env                                   -     @414           
+      m_agt                        uvm_agent                                 -     @2141          
+        drv                        uvm_driver #(REQ,RSP)                     -     @2289          
+          rsp_port                 uvm_analysis_port                         -     @2308          
+          seq_item_port            uvm_seq_item_pull_port                    -     @2298          
+        mon                        uvm_monitor                               -     @2318          
+          item_collect_port        uvm_analysis_port                         -     @2329          
+        sqr                        uvm_sequencer                             -     @2152          
+          rsp_export               uvm_analysis_export                       -     @2161          
+          seq_item_export          uvm_seq_item_pull_imp                     -     @2279          
+          arbitration_queue        array                                     0     -              
+          lock_queue               array                                     0     -              
+          num_last_reqs            integral                                  32    'd1            
+          num_last_rsps            integral                                  32    'd1            
+    refm                           tme_top_reference_model                   -     @457           
+      trans_num_idx                integral                                  32    'h0            
+    subsys_mon                     tme_top_subsystem_monitor                 -     @470           
+      CTRL_rtr_imp                 uvm_analysis_imp_axi_rtr_CTRL             -     @509           
+      CTRL_wtr_imp                 uvm_analysis_imp_axi_wtr_CTRL             -     @499           
+      scbd                         tme_top_scoreboard                        -     @2351          
+        refm                       tme_top_reference_model                   -     @457           
+          trans_num_idx            integral                                  32    'h0            
+      svr_master_patch_stream_imp  uvm_analysis_imp_svr_master_patch_stream  -     @479           
+      svr_master_templ_stream_imp  uvm_analysis_imp_svr_master_templ_stream  -     @489           
+    tme_top_virtual_sqr            tme_top_virtual_sequencer                 -     @519           
+      rsp_export                   uvm_analysis_export                       -     @528           
+      seq_item_export              uvm_seq_item_pull_imp                     -     @646           
+      arbitration_queue            array                                     0     -              
+      lock_queue                   array                                     0     -              
+      num_last_reqs                integral                                  32    'd1            
+      num_last_rsps                integral                                  32    'd1            
+    env_master_svr_patch_stream    uvm_env                                   -     @401           
+    env_master_svr_templ_stream    uvm_env                                   -     @414           
+    refm                           tme_top_reference_model                   -     @457           
+    tme_top_virtual_sqr            tme_top_virtual_sequencer                 -     @519           
+    tme_top_cfg                    tme_top_config                            -     @395           
+      port_patch_stream_cfg        svr_config                                -     @396           
+        svr_type                   svr_inst_type                             32    SVR_MASTER     
+        prt_type                   svr_protocol_type                         32    AXIS           
+        is_active                  svr_active_passive_enum                   1     SVR_ACTIVE     
+        reset_level                svr_reset_level_enum                      1     RESET_LEVEL_LOW
+        spec_cfg                   svr_spec_cfg_enum                         32    NORMAL         
+        clatency                   svr_latency                               -     @397           
+          transfer_latency         integral                                  32    'h0            
+      port_templ_stream_cfg        svr_config                                -     @398           
+        svr_type                   svr_inst_type                             32    SVR_MASTER     
+        prt_type                   svr_protocol_type                         32    AXIS           
+        is_active                  svr_active_passive_enum                   1     SVR_ACTIVE     
+        reset_level                svr_reset_level_enum                      1     RESET_LEVEL_LOW
+        spec_cfg                   svr_spec_cfg_enum                         32    NORMAL         
+        clatency                   svr_latency                               -     @399           
+          transfer_latency         integral                                  32    'h0            
+      CTRL_cfg                     axi_cfg                                   -     @400           
+        has_checker                integral                                  1     'h1            
+        has_coverage               integral                                  1     'h1            
+        id_num                     integral                                  32    'h1            
+        reset_level                reset_level_enum                          32    RESET_LEVEL_LOW
+        drv_type                   drv_type_enum                             32    MASTER         
+        write_latency_mode         latency_mode_enum                         32    CHANNEL_FIRST  
+        read_latency_mode          latency_mode_enum                         32    CHANNEL_FIRST  
+        clatency                   axi_latency                               -     @424           
+          wr_latency               integral                                  32    'h0            
+          rd_latency               integral                                  32    'h0            
+      check_ena                    integral                                  32    'h0            
+      cover_ena                    integral                                  32    'h0            
+--------------------------------------------------------------------------------------------------
+
+UVM_INFO C:/AMDDesignTools/2025.2/Vivado/data/system_verilog/uvm_1.2/xlnx_uvm_package.sv(20867) @ 0: reporter [UVM/COMP/NAMECHECK] This implementation of the component name checks requires DPI to be enabled
+////////////////////////////////////////////////////////////////////////////////////
+// Inter-Transaction Progress: Completed Transaction / Total Transaction
+// Intra-Transaction Progress: Measured Latency / Latency Estimation * 100%
+//
+// RTL Simulation : "Inter-Transaction Progress" ["Intra-Transaction Progress"] @ "Simulation Time"
+////////////////////////////////////////////////////////////////////////////////////
+// RTL Simulation : 0 / 14 [0.00%] @ "113000"
+// RTL Simulation : 1 / 14 [100.00%] @ "23043000"
+// RTL Simulation : 2 / 14 [100.00%] @ "25828000"
+// RTL Simulation : 3 / 14 [100.00%] @ "321163000"
+// RTL Simulation : 4 / 14 [100.00%] @ "629543000"
+// RTL Simulation : 5 / 14 [100.00%] @ "938858000"
+// RTL Simulation : 6 / 14 [100.00%] @ "1311508000"
+// RTL Simulation : 7 / 14 [100.00%] @ "1825313000"
+// RTL Simulation : 8 / 14 [100.00%] @ "2341228000"
+// RTL Simulation : 9 / 14 [100.00%] @ "2945698000"
+// RTL Simulation : 10 / 14 [100.00%] @ "3756048000"
+// RTL Simulation : 11 / 14 [100.00%] @ "4569783000"
+// RTL Simulation : 12 / 14 [100.00%] @ "4774508000"
+// RTL Simulation : 13 / 14 [100.00%] @ "4979188000"
+// RTL Simulation : 14 / 14 [100.00%] @ "6318523000"
+////////////////////////////////////////////////////////////////////////////////////
+$finish called at time : 6318607500 ps : File "C:/AMDDesignTools/2025.2/Vivado/data/system_verilog/uvm_1.2/xlnx_uvm_package.sv" Line 18699
+run: Time (s): cpu = 00:00:00 ; elapsed = 00:01:44 . Memory (MB): peak = 236.352 ; gain = 0.000
+## quit
+INFO: xsimkernel Simulation Memory Usage: 562848 KB (Peak: 562848 KB), Simulation CPU Usage: 101749 ms
+INFO: [Common 17-206] Exiting xsim at Wed Aug 19 19:10:15 2026...
+INFO: [COSIM 212-316] Starting C post checking ...
+tb_tme_cases_b1.txt: 12 cases, 31659 patch bytes, 11760 template bytes
+
+--- direct DUT tests (contract §4.6) ---
+  flat-templ-4x4 (illegal input)   patch  12x10  templ  4x4   raw 0x00000000 @(0,0)  want 0x00000000 @(0,0)  PASS
+  min-nonflat dt=15 (must score 1.0) patch   4x4   templ  4x4   raw 0x3F800000 @(0,0)  want 0x3F800000 @(0,0)  PASS
+  bound-half0-half255-216x96       dt = 6989889945600 (want 6989889945600)  PASS
+  preserve-operands-all255         N*ST2 = 27959559782400, (ST)^2 = 27959559782400, dt = 0 (want 27959559782400/27959559782400/0)  PASS
+  num-max-positive-216x96          num = 6989889945600 (want 6989889945600)  PASS
+  num-max-negative-216x96          num = -6989889945600 (want -6989889945600)  PASS
+  num-cancel-all255                num = 0 (want 0)  PASS
+  width-minimum-witness            43/44: dt = 6989889945600 ok, num = -1806203076608 (pinned -1806203076608); 44/44: num = 6989889945600  PASS
+  width-coupling-witness           48/48: 6132117600000, 44/44: 6132117600000, 44/45: -11460068444416 (pinned -11460068444416, want 6132117600000)  PASS
+--- direct tests: 0 failure(s) ---
+
+[ 0] b1-w001-tw216                b1-width    patch  216x13  templ 216x8   gold +1.0000 @(  0,  3)  dut +1.0000 @(  0,  3)  PASS
+[ 1] b1-w015-tw216                b1-width    patch  230x13  templ 216x8   gold +1.0000 @( 14,  2)  dut +1.0000 @( 14,  2)  PASS
+[ 2] b1-w016-tw216                b1-width    patch  231x13  templ 216x8   gold +1.0000 @( 15,  4)  dut +1.0000 @( 15,  4)  PASS
+[ 3] b1-w017-tw216                b1-width    patch  232x13  templ 216x8   gold +1.0000 @( 16,  1)  dut +1.0000 @( 16,  1)  PASS
+[ 4] b1-w031-tw100                b1-width    patch  130x21  templ 100x12  gold +1.0000 @( 30,  5)  dut +1.0000 @( 30,  5)  PASS
+[ 5] b1-w032-tw100                b1-width    patch  131x21  templ 100x12  gold +1.0000 @( 31,  3)  dut +1.0000 @( 31,  3)  PASS
+[ 6] b1-w033-tw100                b1-width    patch  132x21  templ 100x12  gold +1.0000 @( 32,  8)  dut +1.0000 @( 32,  8)  PASS
+[ 7] b1-w095-tw020                b1-width    patch  114x27  templ  20x12  gold +1.0000 @( 94,  7)  dut +1.0000 @( 94,  7)  PASS
+[ 8] b1-w096-tw020                b1-width    patch  115x27  templ  20x12  gold +1.0000 @( 95, 12)  dut +1.0000 @( 95, 12)  PASS
+[ 9] b1-tie-samerow               b1-width    patch   47x21  templ  16x12  gold +1.0000 @(  5,  4)  dut +1.0000 @(  5,  4)  PASS
+[10] b1-tie-rowmajor              b1-width    patch   47x21  templ  16x12  gold +1.0000 @( 31,  2)  dut +1.0000 @( 31,  2)  PASS
+[11] b1-lane15                    lane15      patch   88x39  templ  24x16  gold +0.5532 @( 31,  6)  dut +0.5532 @( 31,  6)  PASS
+
+12/12 cases passed
+TESTBENCH PASSED
+INFO [HLS SIM]: The maximum depth reached by any hls::stream() instance in the design is 3432
+INFO: [COSIM 212-1000] *** C/RTL co-simulation finished: PASS ***
+INFO: [HLS 200-2161] Finished Command cosim_design Elapsed time: 00:03:17; Allocated memory: 17.215 MB.
+INFO: [HLS 200-1510] Running: close_project 
+INFO: [HLS 200-112] Total CPU user time: 23 seconds. Total CPU system time: 7 seconds. Total elapsed time: 294.125 seconds; peak allocated memory: 840.977 MB.
+INFO: [vitis-run 60-791] Total elapsed time: 0h 4m 56s
+INFO: [vitis-run 60-1662] Stopping dispatch session having empty uuid.

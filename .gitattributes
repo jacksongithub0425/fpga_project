@@ -60,3 +60,8 @@ sw/tme_standalone_bringup.py -text
 logs/b1_20260818/** -text
 logs/b1_board_20260818/** -text
 logs/b1_rerun_20260818/** -text
+
+# Priority 5 (B2), same rule and same reason: logs/b2_20260819/MANIFEST.sha256
+# binds these, and the Vitis/Vivado transcripts in there are raw tool output
+# whose trailing whitespace and line endings are part of what was produced.
+logs/b2_20260819/** -text

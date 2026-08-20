@@ -1,0 +1,41 @@
+# Priority 5 (B2) evidence manifest
+# sha256 of each artifact; text is EOL-normalised to LF first.
+# Verify with: python tme_b2_manifest.py --verify
+#
+# This binds files, not claims.  tme_b1_ab.py --assert and
+# tme_cycle_model.py --assert are what say the numbers are right;
+# this says they are the same numbers.
+
+c8c7b0882af33214da5f7bbedca9ff9b985629517ddada37a9eacaacaec5d8ce  hls/template_match/b1_sources/correlation_core.b2.cpp  # source b2
+72d0e37460a417ad4364deb8771a59928b149517d2175e5097426777aeed96d1  hls/template_match/correlation_core.cpp  # source shipped
+222e5d7704debcf15bc3f3373987681d0f67801d6e4791850a96ed99a8863178  hls/template_match/template_match_b1_b1/b1/sim/report/verilog/result.transaction.rpt  # cosim b1 (control)
+fafdeb5e3e61eb8783013f97f1ce4f3192526119b9cf2b5bdba2f46f84785d06  hls/template_match/template_match_b1_b2/b2/sim/report/verilog/result.transaction.rpt  # cosim b2
+5e82ca5719df662bfbc4758ebc07b86f2f7e5f786c1107484d341acd35ec5fa4  hls/template_match/template_match_b1_b1/b1/syn/report/csynth.rpt  # csynth b1 (control)
+45e9415399ae276ff0a372fbba75e7b761a44ee709931b88c23ed916fcf97727  hls/template_match/template_match_b1_b2/b2/syn/report/csynth.rpt  # csynth b2
+b63184fd5df94a589bd40bad0ac13597fbeae365093d40b3d7c49ec8cf893e97  logs/b2_20260819/b2_post_route_wns.txt  # routed wns
+429bfa8b267b62850793127a5128efc0316e44b564d828090e23f45a811d6421  logs/b2_20260819/b2_post_route_utilization.rpt  # routed utilisation
+8fad9a8996d5aa8c9181106cfd58368aacab431239af4f3022835792cd5bf3f8  logs/b2_20260819/post_route_timing_summary.rpt  # routed timing summary
+a5e3f6d89fb9734159e174d51f643fd39908a6a7d63ca40641c95a02812fbd9e  logs/b2_20260819/post_route_worst_paths.rpt  # routed worst paths
+1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf  logs/b2_20260819/tme_standalone.bit  # bitstream (never run on hardware)
+11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744  logs/b2_20260819/tme_standalone.hwh  # hardware handoff
+1f2c9b47b02fefb0114c426146c23308cb63b483c1764885f336c0cdf61d9df4  vivado/tme_standalone/build_tme_standalone.tcl  # build script
+c257b43da86f80909fba3024785b5e9b5f645c1783d1f4edea6ec1885c3903a2  hls/template_match/package_b2.tcl  # packaging script
+3c0502308ef3d1a15a3537311c629f5d5793e870bc46af7eb0f4ce8ebebc36c3  hls/template_match/run_hls_b1.tcl  # ab project script
+b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
+c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
+a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
+32e80c2fb1838ee7445955f53cb2a033010944c537df97ee30e77c41adfc14ab  sw/tme_cycle_model.py  # model
+6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  logs/b2_20260819/tme_cycle_model.py.pre_b2  # model pre-B2
+a4995157c973db0348b6984c7679dcef3d6d63d5490934ac07503b494db249ca  sw/tme_b2_ab.py  # adjudicator
+d798c878ecec94f1d4da5a03b86cce00b4d0ba8a868f8716d613ba24992d4593  sw/tme_b2_mutants.py  # mutant gate
+8dd9572f1aef1caebb4e7def441e113822d965bebc46e24998232cb99db8e89f  sw/tme_b2_manifest.py  # manifest tool
+53d92ac02d507bb3d9c34657121815b8d5ddcaf67d541293179dfdc9fe13a63d  logs/b2_20260819/run_b2.log  # log b2
+a5f01c7bb0a7c60506b43f61593d7b88b0cf95443528c1aac04c992cb8c20b5c  logs/b2_20260819/package_b2.log  # log packaging
+792f1b5e313bff61d7d224d2e2406999daf2eb2ce9d63a8cb8dc0cd4fde4c137  logs/b2_20260819/vivado_b2_125.log  # log vivado
+248533024d5fb4a0440881e0c5e5aaffec0485eb99c8b226811dea9a98ffef33  logs/b2_20260819/PREDICTION.txt  # prediction (pre-registered)
+4ee637784595e61b0caeaf01bbde50e4b567cd21986e28d580e18b9ec8ae694a  logs/b2_20260819/b2_mutants.txt  # mutant gate output
+da6168068f9981df5f5b23f6fcf0e93afadb435c41fa804d1ca764027a09c084  logs/b2_20260819/b2_ab.txt  # adjudicator output
+66992c5177ecb21f7c0888419927a5fd15ec833714d909770937a6ce7b842475  logs/b2_20260819/b2_ab_negative_control.txt  # adjudicator negative control
+21997afb275d40adaa7b09319ebcf57e2cc13b4f0d156455e700e8bd559bc9eb  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
+3583db3987b541a4c706f52e32534ff1ddf6537ce36fb4000d84512a35b92727  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
+bf842f1a513acee7ec63ed8ff269fed79ceffe52ce34dd242f30bbfb058d3001  hls/template_match/b1_sources/README.md  # pinned-source README

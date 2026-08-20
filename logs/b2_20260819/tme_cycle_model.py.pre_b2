@@ -32,12 +32,7 @@ Board agreement is nevertheless COARSE: +/-1 ms at 125 MHz is +/-125,000
 cycles, three orders of magnitude looser than the co-simulation.  The board
 says the term is right at workload widths; the cosim is what makes it exact.
 
-`B2` was implemented and co-simulated as a paired A/B against `b1` on
-2026-08-19 -- 14/14 transactions exact, control intact on all 14.  Its tile
-term is therefore MEASURED.  It has NOT been run on the board and has no
-board session of its own.
-
-B0b remains unimplemented and its term is unmeasured.
+B2 / B0b remain unimplemented, and their terms are unmeasured.
 
 ALL page-level figures here -- for EVERY variant, `cur` included -- are
 PROJECTIONS: each sums a per-invocation cycle term over the 20,680 modelled
@@ -52,13 +47,9 @@ That is now false for B1 and has been since 2026-08-18:
         TILE TERM is measured -- paired RTL co-simulation, 14/14 transactions
         exact -- and silicon-corroborated, 7/7 vectors at a gated 125.0 MHz on
         2026-08-19.  Only the summation over the workload is projected.
-  B2    RTL EXISTS (hls/template_match/b1_sources/correlation_core.b2.cpp).
-        Its TILE TERM is measured -- paired RTL co-simulation against `b1`,
-        14/14 transactions exact -- and its C/RTL co-simulation passes the
-        pinned twelve-case suite.  NO BOARD SESSION EXISTS: unlike B1, nothing
-        has run this core on silicon.  Only the summation over the workload is
-        projected, and the clock it is summed at is borrowed from the routed
-        result rather than observed on a board running THIS core.
+  B2    no RTL.  Term written in the same style as B1's original projection,
+        which turned out to be optimistic by T + 1 per (output row, template
+        row).  Unmeasured in exactly the way B1's was.
   B0b   no RTL, and its count-pass II is bracketed [1, 3] rather than known, so
         it is quoted as two endpoints and never as one number.
 
@@ -95,26 +86,12 @@ THE EVIDENCE HIERARCHY (do not collapse these tiers when quoting)
                   = +/-125,000 cycles, three orders of magnitude coarser than
                   the co-simulation.  The board says the term is right at
                   workload widths; the cosim is what makes it exact.
-  cycle-validated, not silicon-corroborated
-                  B2 20.405 s/page.  The RTL EXISTS and its cycle term is
-                  measured (paired RTL co-simulation against `b1`, 14/14
-                  transactions exact), but NO BOARD HAS RUN IT.  That is one
-                  tier below B1, which has a board session, and the difference
-                  is not cosmetic: B2 adds a 231-element shift register with a
-                  per-register enable to a design that routed 8.000 ns with
-                  0.134571 ns of slack.  Do not quote B2 at 125 MHz as though
-                  the clock were established for it.
-  architectural projection  B0b 17.743731 / 18.035794 at II=1 and II=3 on the
-                  count pass -- no RTL exists, and the II itself is projected
-                  rather than measured.  Both endpoints MOVED when B2 was
-                  measured (from 17.513998 / 17.806062), because B0b is defined
-                  as B2 minus the window statistics plus the count pass and so
-                  inherits B2's term whole.  B1 and B2 are now two warnings
-                  about this tier rather than one: B1's projected term was
-                  optimistic by T+1 per (output row, template row) and B2's by
-                  2*(T-1), which is a DIFFERENT shape -- so "the projection is
-                  optimistic by about B1's amount" is not a correction anyone
-                  may apply to B0b in advance.
+  architectural projection  B2 20.175, B0b 17.513998 / 17.806062 at II=1 and
+                  II=3 on the count pass -- no RTL exists, and the II itself is
+                  projected rather than measured.  B1 is now a warning about
+                  both: its predicted tile term was optimistic by T+1 cycles
+                  per (output row, template row), and B2/B0b's terms were
+                  written in the same style and have not been measured either.
   unproved        the combined image at 125 MHz, and end-to-end page latency.
                   ("the modified core at 125 MHz" left this line on 2026-08-19:
                   the B1 image routed at 8.000 ns and ran 7/7 on the board with
@@ -139,18 +116,12 @@ sub-term and replace it with one hoisted, vertically-reused count pass:
 
     B0b(N) = B2 - rh*th*(tw + rw + 21) + count_pass(N)
 
-    B2                     20.405165        MEASURED term, summed
+    B2                     20.175432        derived
     window statistics       2.807466        derived; the subtraction is asserted
-    B0b base               17.597699        derived  (variant="B0b_base")
+    B0b base               17.367966        derived  (variant="B0b_base")
     count_pass(II=1)        0.146031755778  derived
     count_pass(II=3)        0.438095267333  derived
-    -> endpoints           17.743730541333 and 18.035794052889
-
-WITHDRAWN: 17.513998132444 / 17.806061644000, and the 17.367966 base they were
-built on.  Nothing about the count pass changed -- the two count_pass terms
-above are the same numbers they always were.  What changed is B2, which B0b
-sits on top of, and which turned out to cost 2*(T-1) more per (output row,
-template row) than projected once it existed in RTL.
+    -> endpoints           17.513998132444 and 17.806061644000
 
 Every term is now computed rather than transcribed.  The count pass follows the
 no-row-cache algorithm -- initial vertical position scans th patch rows, one
@@ -285,52 +256,9 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         # assuming they pay T + 1, or that they pay only T + 1.
         tile = T * (2 * tw + 41) + 1
     elif variant in ("B2", "B0b_base"):
-        # Overlap reuse: tile 0 loads the full seg_len, each later tile slides
-        # the overlap down by PAR_COLS and refills only PAR_COLS = 16 new
-        # pixels.
-        #
-        # MEASURED, not projected.  Paired RTL co-simulation of the b2 solution
-        # against the b1 one -- the same fourteen invocations, the same pinned
-        # vectors, only correlation_core changed (sw/tme_b2_ab.py, 2026-08-19)
-        # -- gives
-        #
-        #     tile = T * (tw + 44) + tw - 2
-        #
-        # exactly, on 14/14 transactions spanning T in {1,2,3,5,6} and tw in
-        # {4,16,20,24,100,216}.  The control reproduced its own published B1
-        # term on all 14 in the same comparison, which is what makes the
-        # difference attributable to the reuse.
-        #
-        # WHAT THIS REPLACED, AND WHAT THE MISS WAS.  The projected term was
-        # T*(tw + 41) + (tw - 1) -- written in the same style as B1's withdrawn
-        # projection, i.e. "the reuse saves exactly the pixels it does not
-        # re-read", counting 25 per tile and nothing per call.  Two candidate
-        # answers were REGISTERED BEFORE THE BUILD (tme_b2_ab.py --predict,
-        # which reads no b2 report and is recomputable at any time): that
-        # projection, and B1's measured term minus the naive saving, which
-        # differ by rh*th*(T + 1).  THE MEASUREMENT MATCHED NEITHER.  The
-        # shortfall against the naive reuse arithmetic is
-        #
-        #     rh * th * 2 * (T - 1)      i.e. (a, b) = (+2, -2) in a*T + b
-        #
-        # so B1's T + 1 did NOT recur, in shape or in size.  That is the point
-        # of having measured it: nothing about B1 predicted this, and the
-        # earlier revision of this file said so in advance.
-        #
-        # THE SHAPE IS MEASURED; THE MECHANISM IS NOT.  Two cycles per tile
-        # beyond the pixels, minus two per call, is what fourteen transactions
-        # pin.  Whether that is the shift's own state, the t == 0 branch, or
-        # the extra loop region is NOT established -- no experiment here
-        # separates them, exactly as with B1's T + 1.  Do not quote a cause,
-        # and do not assume B0b pays this shape either.
-        #
-        # CONSEQUENCE WORTH KNOWING: the saving over B1 is (T - 1)*(tw - 3) per
-        # (output row, template row).  It is ZERO at T = 1 -- a single-tile
-        # invocation has nothing to reuse and the measurement confirms an exact
-        # tie on all five such transactions -- and positive for every legal
-        # geometry with more than one tile, since contract 4.1 puts tw >= 4.
-        # Unlike B1, which LOSES at tw = 216, B2 is never a regression.
-        tile = T * (tw + 44) + (tw - 2)
+        # Overlap reuse: first tile loads the full segment, each later tile
+        # refills only PAR_COLS = 16 new pixels.
+        tile = T * (tw + 41) + (tw - 1)
     else:
         raise ValueError("unknown variant: " + variant)
 
@@ -354,9 +282,9 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
 # cycles per iteration of the new hoisted pass.  Two of the three terms are
 # computed from the model above and asserted exactly:
 #
-#     B2                                    20.405165 s/page  (measured term)
+#     B2                                    20.175432 s/page
 #     window statistics  rh*th*(tw+rw+21)    2.807466 s/page
-#     B0b base  (variant="B0b_base")        17.597699 s/page
+#     B0b base  (variant="B0b_base")        17.367966 s/page
 #
 # The third is now DERIVED as well -- see b0b_count_pass_iterations below.  What
 # remains projected is the MULTIPLIER, not the iteration count.
@@ -786,59 +714,6 @@ FROZEN = {
         "board_fclk_mhz": 125.0000,
         "board_cases": 7,
     },
-    # B2, frozen EXACTLY, for the same reason B1 is: TOL = 5e-4 on a per-page
-    # average spans +/- 2,250,000 cycles, and the whole overhead this block
-    # records is smaller than that.
-    #
-    # Measured by paired RTL co-simulation against the `b1` solution on
-    # 2026-08-19 (sw/tme_b2_ab.py, 14/14 transactions exact, control intact on
-    # all 14).  The PAGE FIGURE is still a projection: it sums the measured
-    # term over 20,680 modelled trials and no page has been run anywhere.
-    #
-    # NOTE WHAT IS NOT HERE.  B1's block carries routed_wns_ns, board_fclk_mhz
-    # and board_cases.  B2 has NO board session, so those fields do not exist
-    # rather than holding a borrowed number.
-    "b2": {
-        "aggregate_cycles": 91823241527,        # exact, asserted with ==
-        "s_per_page": 20.405164783777778,       # aggregate / 36 / 125e6
-        # What the model said before any B2 RTL existed, and by how much it was
-        # wrong.  Optimistic again, and by more than B1's miss -- 0.2297 s/page
-        # against 0.0946.
-        "withdrawn_projection": 20.175432,
-        "projection_miss": 0.22973278377777717,
-        # TWO candidates were registered before the build and the measurement
-        # matched NEITHER (tme_b2_ab.py --predict).  The projected term was
-        # T*(tw+41)+(tw-1); B1's measured term minus the naive reuse saving
-        # would have been T*(tw+42)+tw.  The RTL is T*(tw+44)+(tw-2): the
-        # shortfall against the naive arithmetic is 2*(T-1) per (output row,
-        # template row), not B1's (T+1).  B1's overhead did not recur, in
-        # shape or in size.
-        "shortfall_per_tile": 2,
-        "shortfall_per_call": -2,
-        # Unlike B1, B2 WINS at the compiled maximum template width.  The
-        # saving over B1 is (T-1)*(tw-3) per (output row, template row), which
-        # is zero only at T = 1 and positive for every legal tw >= 4.
-        "phase_s_max_cycles": 16939521,
-        "phase_s_max_delta_cycles": -6543360,   # against B1, not against `cur`
-        # Routed 2026-08-19 at the same 8.000 ns B1 was probed at.  IT CLOSES,
-        # AND IT ALMOST DOES NOT: 0.011710 ns is 0.15% of the period, against
-        # B1's 0.134571 ns (1.7%).  Read it as "this run closed", not as "B2
-        # closes 8 ns" -- a re-run with a different seed is not obliged to.
-        #
-        # The BINDING PATH ALSO MOVED, and that is the part with consequences.
-        # B1 bound on templ_buf -> t_row, outside correlation_core; B2 binds on
-        # its own shift register feeding the MAC's DSP input.  So the next
-        # change to correlation_core -- B0b -- starts from 0.012 ns of slack on
-        # a path it will itself be touching, not from B1's 0.135 ns on a path
-        # somewhere else.
-        "routed_period_ns": 8.000,
-        "routed_wns_ns": 0.011710,
-        "routed_binding_path_in_core": True,
-        # Post-route, against B1's 14,792 LUT / 18,483 FF / 115 BRAM / 34 DSP.
-        # BRAM and DSP are unchanged; the shift register is pure fabric.
-        "routed_luts": 20694,
-        "routed_ffs": 24409,
-    },
     "s_per_page_at_125mhz": {
         "pl_full_context": 631.930606,    # today's PL, side-common full context
         "shared_roi_int_quirk": 60.764,   # historical, int() truncation
@@ -850,25 +725,13 @@ FROZEN = {
         # integer cycle count in FROZEN["b1"] below, because a 5e-4 tolerance on
         # a per-page average hides 2.25 million cycles.
         "B1": 26.334,
-        # Measured tile term, same status as B1's and same caveat: the BINDING
-        # freeze is the exact integer aggregate in FROZEN["b2"] above.  20.175
-        # was the projection this replaced; see that block.
-        "B2": 20.405,
+        "B2": 20.175,
         # Endpoints, not a range: 17.652 used to sit inside [17.514, 17.806]
         # and pass, which let the discarded attribution survive.  Each endpoint
         # is now checked on its own.
-        #
-        # THESE MOVED WHEN B2 WAS MEASURED, and they had to.  B0b is DEFINED as
-        # B2 minus the window statistics plus the count pass, so B2's projected
-        # tile term was load-bearing for both endpoints.  The 17.513998 /
-        # 17.806062 pair is WITHDRAWN -- not because the count-pass arithmetic
-        # changed (it did not; FROZEN["b0b_count_pass"] is untouched) but
-        # because its base did.  What is still projected here is the count
-        # pass's II, exactly as before; what is no longer projected is
-        # everything underneath it.
-        "B0b_base": 17.597699,
-        "B0b_at_1_cyc": 17.743730541333,
-        "B0b_at_3_cyc": 18.035794052889,
+        "B0b_base": 17.367966,
+        "B0b_at_1_cyc": 17.513998132444,
+        "B0b_at_3_cyc": 17.806061644000,
     },
 }
 TOL = 5e-4
@@ -991,76 +854,6 @@ def b1_evidence_crosscheck():
     checked += 1
     if "re-invocation check: PASS" not in txt:
         fail.append("B1 board transcript: no passing re-invocation check")
-    return fail, checked
-
-
-def b2_evidence_crosscheck():
-    """Re-read the B2 routed report, if it is present.
-
-    B2 has NO board transcript to read -- it was never run on silicon -- so
-    this checks strictly less than b1_evidence_crosscheck does, and the
-    asymmetry is the point rather than an omission.  What it can check is that
-    the frozen routed numbers are the ones in the report.
-
-    Returns (failures, checked_count).  An absent report yields ([], 0) --
-    never a pass.
-    """
-    root = Path(__file__).resolve().parents[2]
-    if not (root / "logs").is_dir():          # clean checkout: sw/ is a sibling
-        root = Path(__file__).resolve().parents[1]
-    routed = root / "logs" / "b2_20260819" / "b2_post_route_wns.txt"
-    util = root / "logs" / "b2_20260819" / "b2_post_route_utilization.rpt"
-    if not routed.exists():
-        return [], 0
-
-    fail, checked = [], 0
-    b2f = FROZEN["b2"]
-    txt = routed.read_text(errors="replace")
-
-    m = re.search(r"constrained period\s*:\s*([0-9.]+)\s*ns", txt)
-    if not m:
-        fail.append("B2 routed report: no constrained period line")
-    else:
-        checked += 1
-        if abs(float(m.group(1)) - b2f["routed_period_ns"]) > 1e-9:
-            fail.append("B2 routed period: report says {} ns, frozen {}".format(
-                m.group(1), b2f["routed_period_ns"]))
-    m = re.search(r"post-route WNS\s*:\s*([0-9.+-]+)\s*ns", txt)
-    if not m:
-        fail.append("B2 routed report: no post-route WNS line")
-    else:
-        checked += 1
-        if abs(float(m.group(1)) - b2f["routed_wns_ns"]) > 5e-7:
-            fail.append("B2 routed WNS: report says {} ns, frozen {}".format(
-                m.group(1), b2f["routed_wns_ns"]))
-    checked += 1
-    if "all constraints met" not in txt:
-        fail.append("B2 routed report does not say 'all constraints met'")
-
-    # The binding path moved INTO correlation_core.  That is a claim the report
-    # can settle, and it is the one that governs what B0b inherits, so it is
-    # checked rather than asserted in prose.
-    checked += 1
-    m = re.search(r"binding path.*?\n\s*from:\s*(\S+)", txt, re.S)
-    if not m:
-        fail.append("B2 routed report: no binding path")
-    elif ("correlation_core" in m.group(1)) != b2f["routed_binding_path_in_core"]:
-        fail.append("B2 binding path: report says {}, frozen "
-                    "routed_binding_path_in_core={}".format(
-                        m.group(1), b2f["routed_binding_path_in_core"]))
-
-    if util.exists():
-        u = util.read_text(errors="replace")
-        for key, label in (("routed_luts", "Slice LUTs"),
-                           ("routed_ffs", "Slice Registers")):
-            m = re.search(r"\|\s*" + label + r"\s*\|\s*(\d+)\s*\|", u)
-            if not m:
-                fail.append("B2 utilisation report: no '{}' row".format(label))
-            else:
-                checked += 1
-                if int(m.group(1)) != b2f[key]:
-                    fail.append("B2 {}: report says {}, frozen {}".format(
-                        label, m.group(1), b2f[key]))
     return fail, checked
 
 
@@ -1209,9 +1002,7 @@ def check(results):
     fail.extend(rpt_fail)
     b1_fail, b1_n = b1_evidence_crosscheck()
     fail.extend(b1_fail)
-    b2_fail, b2_n = b2_evidence_crosscheck()
-    fail.extend(b2_fail)
-    results["crosschecks_run"] = log_n + rpt_n + b1_n + b2_n
+    results["crosschecks_run"] = log_n + rpt_n + b1_n
     # Name the sources that were NOT available.  A smaller count is easy to
     # miss; "board transcripts: absent" is not.  Neither is a failure -- the
     # frozen literals still stand alone -- but a clone that checked two values
@@ -1221,10 +1012,6 @@ def check(results):
             "read" if log_n else "absent",
         "P2 routed report (post_route_wns.txt)": "read" if rpt_n else "absent",
         "B1 routed + board (logs/b1_*/)": "read" if b1_n else "absent",
-        # B2 has a routed report and NO board transcript.  The label says so,
-        # so a reader cannot mistake "read" here for the same thing as B1's.
-        "B2 routed only, no board (logs/b2_20260819/)":
-            "read" if b2_n else "absent",
     }
 
     scales, templates, _ = discover_workload()
@@ -1267,52 +1054,6 @@ def check(results):
                     "LOSS at tw = MAX_TEMPL_W and that must stay visible".format(
                         ps_b1 - FROZEN["phase_s"]["max_cycles"],
                         b1f["phase_s_max_delta_cycles"]))
-
-    # B2's binding freeze, on the same footing as B1's and for the same
-    # reason.  The phase-s delta is against B1, because B2 is B1 plus the reuse
-    # and that is the difference the co-simulation measured.
-    b2f = FROZEN["b2"]
-    agg2 = page_cycles(templates_b1, scales_b1, "per_trial", "B2")
-    if agg2 != b2f["aggregate_cycles"]:
-        fail.append("B2 aggregate: {:,} cycles != frozen {:,} (delta {:+,})".format(
-            agg2, b2f["aggregate_cycles"], agg2 - b2f["aggregate_cycles"]))
-    if abs(agg2 / PAGES / TARGET_CLOCK_HZ - b2f["s_per_page"]) > 1e-12:
-        fail.append("B2 s/page: {!r} != frozen {!r}".format(
-            agg2 / PAGES / TARGET_CLOCK_HZ, b2f["s_per_page"]))
-    if abs((b2f["s_per_page"] - b2f["withdrawn_projection"])
-           - b2f["projection_miss"]) > 1e-12:
-        fail.append("B2 projection miss: frozen {!r} is not measured minus "
-                    "withdrawn".format(b2f["projection_miss"]))
-    ps_b2 = cycles(*PHASE_S_GEOMETRY, "B2")
-    if ps_b2 != b2f["phase_s_max_cycles"]:
-        fail.append("B2 phase-s-max: {:,} != frozen {:,}".format(
-            ps_b2, b2f["phase_s_max_cycles"]))
-    if ps_b2 - b1f["phase_s_max_cycles"] != b2f["phase_s_max_delta_cycles"]:
-        fail.append("B2 phase-s-max delta vs B1: {:+,} != frozen {:+,} -- B2 "
-                    "WINS at tw = MAX_TEMPL_W where B1 lost, and that must "
-                    "stay visible".format(
-                        ps_b2 - b1f["phase_s_max_cycles"],
-                        b2f["phase_s_max_delta_cycles"]))
-    # The measured tile term itself, independent of any workload sum: the
-    # closed form must be what cycles() actually computes, at every geometry
-    # the co-simulation covered plus the Phase-S maximum.  Without this the
-    # term lives only in a comment and in the file that reads the reports.
-    for pw, ph, tw, th in ((12, 10, 4, 4), (232, 13, 216, 8), (130, 21, 100, 12),
-                           (114, 27, 20, 12), (88, 39, 24, 16), (311, 159, 216, 96)):
-        rw, rh = pw - tw + 1, ph - th + 1
-        T = math.ceil(rw / 16)
-        want = (pw * ph + 24 + rh * (5 * rw + 99)
-                + rh * th * (T * (tw + 44) + tw - 2 + 3 * tw + 3 * rw + 33))
-        if cycles(pw, ph, tw, th, "B2") != want:
-            fail.append("B2 tile term at {}: cycles()={:,} != T*(tw+44)+tw-2 "
-                        "closed form {:,}".format((pw, ph, tw, th),
-                                                  cycles(pw, ph, tw, th, "B2"),
-                                                  want))
-        # And the saving over B1, which is what makes B2 never a regression.
-        if (cycles(pw, ph, tw, th, "B1") - cycles(pw, ph, tw, th, "B2")
-                != rh * th * (T - 1) * (tw - 3)):
-            fail.append("B2 saving over B1 at {} is not rh*th*(T-1)*(tw-3)"
-                        .format((pw, ph, tw, th)))
 
     for key in ("pl_full_context", "shared_roi_int_quirk", "shared_roi",
                 "side_common_roi", "per_trial_roi", "B1", "B2"):
@@ -1427,9 +1168,7 @@ def main():
     print("-" * 78)
     print("  The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.")
     print("  What is NOT demonstrated is any PAGE, for any variant:")
-    print("  Phase S is a driver change with no RTL; B0b is unimplemented RTL.")
-    print("  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact.")
-    print("  It has NO BOARD SESSION -- its clock is borrowed, not observed.")
+    print("  Phase S is a driver change with no RTL; B2 and B0b are unimplemented RTL.")
     print("  B1 IS implemented: cycle term cosim-measured, routed at 8.000 ns, and RUN")
     print("  ON THE BOARD at its OWN observed 125.0000 MHz -- it does not borrow the")
     print("  unmodified core's clock.  Every s/page below is still a projection.")
@@ -1441,7 +1180,7 @@ def main():
         ("side_common_roi", "Phase S, one ROI per side", "no RTL; side-common reading"),
         ("per_trial_roi", "Phase S, per-trial ROI", "no RTL; needs driver change"),
         ("B1", "  + B1 runtime segment width", "cosim-validated TERM; page projected"),
-        ("B2", "  + B2 overlap reuse", "cosim-validated TERM; NO board run"),
+        ("B2", "  + B2 overlap reuse", "architectural projection"),
         ("B0b_base", "  + B0b, stats term deleted", "deletion only, no count pass"),
         ("B0b_at_1_cyc", "  + B0b count pass @ II=1", "iterations derived; II projected"),
         ("B0b_at_3_cyc", "  + B0b count pass @ II=3", "iterations derived; II projected"),
@@ -1478,8 +1217,7 @@ def main():
         n = r.get("crosschecks_run", 0)
         print("frozen evidence re-proved: cosim x{}, {} board runs at {} clocks, "
               "clock linearity, workload, Phase S, ROI variants, "
-              "B1 EXACT aggregate + phase-s-max delta, "
-              "B2 EXACT aggregate + routed WNS, "
+              "B1 EXACT aggregate + phase-s-max delta, B2, "
               "B0b decomposition + both endpoints".format(
                   len(COSIM_TRANSACTIONS), len(BOARD_MEASUREMENTS),
                   len({hz for _, _, hz, _, _ in BOARD_MEASUREMENTS})))

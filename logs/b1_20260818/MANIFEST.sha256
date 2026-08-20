@@ -9,7 +9,7 @@
 9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  hls/template_match/b1_sources/correlation_core.cur.cpp  # source cur
 e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/b1_sources/correlation_core.b1.cpp  # source b1
 17e3b1ec8169c61d8e91c6ed005cb8e53e5afc7d4bd590ec32dcc254f9519242  hls/template_match/b1_sources/correlation_core.b1b.cpp  # source b1b
-ad9355015d472ff88dc91ba7bcb727ea4c3cfe82d86960a1ff644f9a7250da67  hls/template_match/correlation_core.cpp  # source shipped
+72d0e37460a417ad4364deb8771a59928b149517d2175e5097426777aeed96d1  hls/template_match/correlation_core.cpp  # source shipped
 50457ed35da2a28fe6c150e90c4c8b4d6f4a0acb39e2520291be01755a3bfd5f  logs/b1_20260818/correlation_core.cpp.b1_break  # source cosimmed b1
 9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  logs/b1_20260818/correlation_core.cpp.pre_b1  # source pre-B1
 79a006c562c69858a5de551cfe16baf9df027d4ac2e3dcb0fdd34f3e9431ebe0  hls/template_match/template_match_b1_cur/cur/sim/report/verilog/result.transaction.rpt  # cosim cur
@@ -33,14 +33,14 @@ ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_202608
 c9cc770ba94369f83c4f93fe53784dda260f78979267963f889498423aaaab7b  logs/b1_rerun_20260818/run_cur.log  # rerun log cur
 f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_20260818/run_b1.log  # rerun log b1
 8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
-6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  sw/tme_cycle_model.py  # model
+32e80c2fb1838ee7445955f53cb2a033010944c537df97ee30e77c41adfc14ab  sw/tme_cycle_model.py  # model
 e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
 f381eab2273210a1360fe7db04819430a6f463e119ea87ed6cd12d77ef130693  sw/tme_b1_ab.py  # adjudicator
 85b3c443c97a58e77fc0e101f400b30b8298ed5cb6a0e156af9e4c5f3f199488  sw/tme_scale_policy.py  # scale policy
 36de753a793122e8fe6c9dabde5e79e4300cca8fb0f6d1e77bb981b1f0392688  sw/tme_b1_manifest.py  # manifest tool
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
-5453e3c10ddf85067c5d114f7ca6b5f8276288df3e5cd575a810aabf49967e43  hls/template_match/run_hls_b1.tcl  # ab project script
+3c0502308ef3d1a15a3537311c629f5d5793e870bc46af7eb0f4ce8ebebc36c3  hls/template_match/run_hls_b1.tcl  # ab project script
 a956ac494708eb9819e5541d189de67281baae2d98187eff80b3d6234fb8dc64  hls/template_match/package_b1.tcl  # packaging script
 681af37e3e9702d5e31b50d970abb7a1977e54f2802f9810e2f90bf979f675d5  hls/template_match/csim_prod_b1.tcl  # prod csim script
 a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
@@ -65,6 +65,6 @@ fab0c8a5b098e8eea6bd09728fb956ac502682e1c4a8c7ae1909163503b918da  sw/tme_standal
 3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  hls/template_match/tb_tme_patches_phase_s.bin  # board vectors patches
 9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  hls/template_match/tb_tme_templs_phase_s.bin  # board vectors templates
 b338e54b5f91c1441085a4ec930b8b69ec9ef149a142c48ad8a70c16386ff6d0  hls/template_match/tb_tme_phase_s.sha256  # board vector record
-7631f0cc7344b9673326a1b29266f39ca04638d004a7f265d14f8f60e66f19c6  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
-0dc5d1fa431e1dabfcc195ae07e912e93308e98c698b0435ed27fd826904765b  hls/template_match/b1_sources/README.md  # pinned-source README
+d3548c2325847e376b76626cc100806f8bbb8f3f3140eed9cef499a00db569b4  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
+bf842f1a513acee7ec63ed8ff269fed79ceffe52ce34dd242f30bbfb058d3001  hls/template_match/b1_sources/README.md  # pinned-source README
 276f995594b7a9c7dfe97a05f232e76a5dc58fb08a1e4eb0f3cb15c6851e58f0  trace_20260818b/B1_COLUMN_STALE.md  # stale-column marker

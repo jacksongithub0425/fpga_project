@@ -109,6 +109,16 @@ baseline_cpu_*/
 !logs/scale_policy_20260818/
 !logs/scale_policy_20260818/**
 
+# The Priority 5 (B2) evidence set, on exactly the same argument: it is bound by
+# logs/b2_20260819/MANIFEST.sha256 and verified by
+# `python sw/tme_b2_manifest.py --verify`, and a manifest over files a clean
+# checkout does not contain is a local checksum rather than evidence. It also
+# carries tme_cycle_model.py.pre_b2, WITHOUT WHICH `tme_b2_ab.py --predict`
+# cannot run at all: that mode reads the pre-measurement model deliberately, so
+# that the withdrawn projection cannot be quietly replaced by the answer.
+!logs/b2_20260819/
+!logs/b2_20260819/**
+
 # The Priority 2 and Priority 3 transcripts, 145 KB, on a narrower argument:
 # sw/tme_cycle_model.py --assert RE-READS them to corroborate its frozen
 # literals, and in a checkout that lacks them it reports

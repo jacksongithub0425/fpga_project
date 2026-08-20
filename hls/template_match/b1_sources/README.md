@@ -1,6 +1,13 @@
-# Pinned `correlation_core.cpp` snapshots — Priority 4 (B1)
+# Pinned `correlation_core.cpp` snapshots — Priorities 4 (B1) and 5 (B2)
 
-These three files are **immutable evidence**, not working sources. `run_hls_b1.tcl`
+The directory name is B1's, because that is the measurement it was created
+for. It is now the pinned-snapshot directory for `correlation_core`
+generally: Priority 5 added `correlation_core.b2.cpp` here rather than
+forking the flow, which is exactly what the paragraph below told it to do.
+Renaming the directory would break every path in
+`logs/b1_20260818/MANIFEST.sha256`.
+
+These four files are **immutable evidence**, not working sources. `run_hls_b1.tcl`
 compiles one of them per solution and refuses to proceed if its SHA-256 has
 moved. Edit `../correlation_core.cpp` — the shipped file — and add a *new*
 snapshot here if a new variant needs measuring.
@@ -10,6 +17,7 @@ snapshot here if a new variant needs measuring.
 | `correlation_core.cur.cpp` | `9ca36c47…b699d2b` | the unmodified core; byte-identical to git `eb1c8ac` |
 | `correlation_core.b1.cpp` | `e33fe219…54c4a51` | runtime `seg_len`, `if (i >= seg_len) break` — **the shipped form** |
 | `correlation_core.b1b.cpp` | `17e3b1ec…f9519242` | hoisted clamped bound, no per-iteration exit test |
+| `correlation_core.b2.cpp` | `c8c7b088…caec5d8ce` | B1 **plus horizontal overlap reuse** — **the shipped form** |
 
 ## Why they exist
 
@@ -35,6 +43,16 @@ thing it claims to reproduce. Pinning removes that ordering dependency entirely.
 * **`b1b`** — reconstructed by applying the hoisted-bound edit to
   `correlation_core.cpp.b1_break`, i.e. to the exact source the `b1` solution
   was simulated from. This reproduces what the `b1b` solution compiled.
+* **`b2`** — copied from the working tree at the moment it was pinned, and
+  byte-identical to the shipped `../correlation_core.cpp` **as compiled**. The
+  shipped file has since gained the MEASURED tile term in its comments, so the
+  two now differ — **in comments only**, and `diff` over the non-comment lines
+  is empty. This is the same situation `b1` is in and it arises the same way:
+  the measurement cannot be written down until after the thing is measured, and
+  the snapshot cannot change afterwards without invalidating the digests that
+  bind the measurement to it. The snapshot is the authority on *what was
+  compiled*; `../correlation_core.cpp` is the authority on *current wording*.
+  Do **not** reconcile them by editing the snapshot.
 
 ## Which report came from which
 
@@ -43,6 +61,7 @@ thing it claims to reproduce. Pinning removes that ordering dependency entirely.
 | `template_match_b1_cur/cur` | `correlation_core.cur.cpp` | control, 14 transactions, reproduces the published `cur` tile term (k = 25) |
 | `template_match_b1_b1/b1` | `correlation_core.b1.cpp` | 14 transactions, `tile = T*(2*tw + 41) + 1` |
 | `template_match_b1_b1b/b1b` | `correlation_core.b1b.cpp` | **byte-identical report to `b1`** — the negative result |
+| `template_match_b1_b2/b2` | `correlation_core.b2.cpp` | 14 transactions, `tile = T*(tw + 44) + tw - 2` |
 
 One project per variant, each opened with `-reset`. They shared a single
 `template_match_b1` until 2026-08-18, which made the A/B build unsafe to
@@ -53,7 +72,12 @@ the other half of the pair. The old tree is kept, marked, and read by nothing
 
 Adjudicate any of them with:
 
-    python tme_b1_ab.py --sol {b1|b1b} --assert
+    python tme_b1_ab.py --sol {b1|b1b} --assert       # control `cur`
+    python tme_b2_ab.py --assert                      # control `b1`
+
+**B2's control is `b1`, not `cur`.** B2 is B1 plus the reuse, so pairing it
+against the unmodified core would fold two changes into one difference and
+leave neither attributable. The `cur` report is still what anchors B1.
 
 ## The comments inside these files are FROZEN, and one of them is now wrong
 
@@ -74,3 +98,24 @@ the overhead is established; the mechanism stays unlocalized.
 The correction lives in the shipped `../correlation_core.cpp`, which is the
 authority on current wording. These files are the authority on what was
 compiled. Do not reconcile them by editing a snapshot.
+
+## Priority 5 (B2): what the snapshot measured, and what it did not
+
+`correlation_core.b2.cpp` was co-simulated against `b1` on the same fourteen
+invocations and the same pinned vectors. The measured tile term is
+
+    tile = T*(tw + 44) + tw - 2      per (output row, template row)
+
+exact on 14/14, with the `b1` control still reproducing its own published term
+on all 14 in the same comparison. The saving over B1 is `(T-1)*(tw-3)`, which
+is zero at `T = 1` and positive for every legal `tw >= 4` — so unlike B1, which
+**loses** at `tw = 216`, B2 is never a regression.
+
+**Two candidates were registered before the build and it matched neither**
+(`tme_b2_ab.py --predict`, which reads the retained pre-measurement copy of the
+model and no `b2` report at all). B1's `T + 1` overhead did **not** recur: the
+shortfall against the naive reuse arithmetic is `2*(T - 1)`.
+
+**No board session exists for B2.** B1 has one; B2 has a routed result and
+nothing more. Do not quote B2's s/page at 125 MHz as though the clock were
+established for this core.

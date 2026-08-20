@@ -1,0 +1,28 @@
+PRE-REGISTERED B2 PREDICTIONS -- computed from the PRE-B2 model snapshot and the
+`b1` report alone.  No b2 report is read by this mode, and the snapshot
+cannot be updated, so these numbers are recomputable at any time.
+
+  case                                 geom   rw  T pre-RTL proj  control-naive    diff
+  direct flat-templ-4x4     12x10     4x4       9  1        4,512          4,568      56
+  direct min-nonflat dt=15     4x4      4x4       1  1          528            536       8
+  b1-w001-tw216            216x13   216x8       1  1       58,944         59,040      96
+  b1-w015-tw216            230x13   216x8      15  1       61,562         61,658      96
+  b1-w016-tw216            231x13   216x8      16  1       61,749         61,845      96
+  b1-w017-tw216            232x13   216x8      17  2       74,272         74,416     144
+  b1-w031-tw100            130x21   100x12     31  2      102,134        102,494     360
+  b1-w032-tw100            131x21   100x12     32  2      102,565        102,925     360
+  b1-w033-tw100            132x21   100x12     33  3      119,916        120,396     480
+  b1-w095-tw020            114x27    20x12     95  6      158,782        160,126   1,344
+  b1-w096-tw020            115x27    20x12     96  6      159,465        160,809   1,344
+  b1-tie-samerow            47x21    16x12     32  2       40,321         40,681     360
+  b1-tie-rowmajor           47x21    16x12     32  2       40,321         40,681     360
+  b1-lane15                 88x39    24x16     65  5      262,464        264,768   2,304
+  suite total                                          1,247,535      1,254,943   7,408
+
+  pre-RTL proj   tile = T*(tw+41) + (tw-1), read from logs/b2_20260819/tme_cycle_model.py.pre_b2
+  control-naive  measured `b1` - rh*th*(T-1)*(tw-1)
+  the gap is rh*th*(T + 1) on every transaction -- B1's shape, and its sign
+
+  MEASURED (tme_b2_ab.py, 2026-08-19): tile = T*(tw+44) + (tw-2),
+  i.e. NEITHER of the above.  The shortfall against control-naive is 2*(T-1),
+  not the (T+1) B1 paid -- a different shape, not a repeat.
