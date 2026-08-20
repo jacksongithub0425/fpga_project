@@ -55,10 +55,11 @@ That is now false for B1 and has been since 2026-08-18:
   B2    RTL EXISTS (hls/template_match/b1_sources/correlation_core.b2.cpp).
         Its TILE TERM is measured -- paired RTL co-simulation against `b1`,
         14/14 transactions exact -- and its C/RTL co-simulation passes the
-        pinned twelve-case suite.  NO BOARD SESSION EXISTS: unlike B1, nothing
-        has run this core on silicon.  Only the summation over the workload is
-        projected, and the clock it is summed at is borrowed from the routed
-        result rather than observed on a board running THIS core.
+        pinned twelve-case suite.  It has RUN ON SILICON (2026-08-20,
+        logs/b2_board_20260819/) at its own observed 125.0000 MHz: phase_s 7/7
+        and hw 9/9, so unlike B1's phase_s-only session the tile count is
+        exercised to T = 52 rather than only T = 6.  Only the summation over
+        the workload is projected.
   B0b   no RTL, and its count-pass II is bracketed [1, 3] rather than known, so
         it is quoted as two endpoints and never as one number.
 
@@ -95,15 +96,32 @@ THE EVIDENCE HIERARCHY (do not collapse these tiers when quoting)
                   = +/-125,000 cycles, three orders of magnitude coarser than
                   the co-simulation.  The board says the term is right at
                   workload widths; the cosim is what makes it exact.
-  cycle-validated, not silicon-corroborated
-                  B2 20.405 s/page.  The RTL EXISTS and its cycle term is
-                  measured (paired RTL co-simulation against `b1`, 14/14
-                  transactions exact), but NO BOARD HAS RUN IT.  That is one
-                  tier below B1, which has a board session, and the difference
-                  is not cosmetic: B2 adds a 231-element shift register with a
-                  per-register enable to a design that routed 8.000 ns with
-                  0.134571 ns of slack.  Do not quote B2 at 125 MHz as though
-                  the clock were established for it.
+  cycle-validated workload projection, silicon-corroborated
+                  B2 20.405 s/page.  Read every word, as for B1.  The RTL
+                  EXISTS, its CYCLE TERM is measured (paired RTL co-simulation
+                  against `b1`, 14/14 transactions exact) and it is now
+                  silicon-corroborated (board session 2026-08-20,
+                  logs/b2_board_20260819/): FCLK0 gated at 125.0000 MHz, the
+                  routed 8.000 ns image, phase_s 7/7 and hw 9/9 -- score within
+                  +/-0.005 and exact location, per the tolerance above -- with
+                  a verified re-invocation after each suite's largest case.
+                  The 231-element shift register that routed with only
+                  0.011710 ns of slack does run at 125 MHz on this part.
+
+                  B2'S SILICON COVERAGE IS BROADER THAN B1'S, and that is the
+                  part worth quoting.  B1's session was phase_s only, so every
+                  case had T = 6.  B2 ran the hw suite too, which reaches
+                  T = 38 (stress-max-envelope) and T = 52 (stress-max-result),
+                  the compiled maximum, and moves the full 251,740 B single
+                  transfer.  Since B2 is an INDEXING change whose behaviour is
+                  "what tile t inherits from tile t-1", tile count is the axis
+                  it was most likely to be wrong on, and that axis is now
+                  exercised in silicon rather than only in C simulation.
+
+                  The PAGE FIGURE is still a projection, summing that term over
+                  20,680 modelled trials.  NO PAGE HAS BEEN RUN, on any
+                  hardware, at any clock.  "20.405 s/page" is not a measured
+                  page time and must never be written as one.
   architectural projection  B0b 17.743731 / 18.035794 at II=1 and II=3 on the
                   count pass -- no RTL exists, and the II itself is projected
                   rather than measured.  Both endpoints MOVED when B2 was
@@ -480,6 +498,47 @@ BOARD_MEASUREMENTS = [
 # instead; do not rely on this tolerance to catch a transcription error.
 BOARD_TOLERANCE_S = 0.005       # model must land within this
 
+# B2 ON SILICON -- a SEPARATE table, deliberately.  BOARD_MEASUREMENTS above is
+# the UNCHANGED core (`cur`) at two clocks, and its two-clock linearity ratio is
+# a claim about that core; folding B2 rows into it would silently redefine both.
+# These rows are the B2 image, one clock, and they are checked against
+# cycles(..., "B2") rather than the default variant.
+#
+# Session: logs/b2_board_20260819/, 2026-08-20, commit 729582e.  FCLK0 gated at
+# 125.0000 MHz, expected-HWH-VLNV TermCountB2:hls:tme_top:0.2, ten-file checksum
+# gate, both suites, verified re-invocation and DMA halt, RESTORE_VERIFIED.
+#
+# WHAT THESE ROWS ADD OVER THE COSIM.  The co-simulation pinned the term exactly
+# but only to T = 6.  The last two rows are T = 38 and T = 52 -- the compiled
+# maximum -- so the tile-count axis is now silicon-exercised.  Agreement there is
+# the strongest single number in this file: a 2.059 s measurement against a
+# 2.0572 s model is 0.09%.
+#
+# READ THE RESIDUALS AS OVERHEAD, NOT ERROR.  Every one is POSITIVE and lands
+# between +0.0016 and +0.0025 s, with no trend against case size.  That is the
+# fixed per-invocation DMA setup, marshalling and polling cost the cycle model
+# does not describe -- the same effect BOARD_MEASUREMENTS shows for `cur` -- and
+# it is why the seven-case phase_s total is 0.408 s against a 0.394 s core term.
+BOARD_MEASUREMENTS_B2 = [
+    ("phase-s-min-templ",     ( 99,  67,   4,  4), 125e6, 0.004, "2026-08-20 B2 phase_s"),
+    ("phase-s-origin",        (147,  94,  52, 31), 125e6, 0.020, "2026-08-20 B2 phase_s"),
+    ("phase-s-workload-mode", (147,  94,  52, 31), 125e6, 0.020, "2026-08-20 B2 phase_s"),
+    ("phase-s-workload-wide", (259, 105, 164, 42), 125e6, 0.050, "2026-08-20 B2 phase_s"),
+    ("phase-s-final-cell",    (215, 157, 120, 94), 125e6, 0.088, "2026-08-20 B2 phase_s"),
+    ("phase-s-workload-max",  (215, 157, 120, 94), 125e6, 0.088, "2026-08-20 B2 phase_s"),
+    ("phase-s-max",           (311, 159, 216, 96), 125e6, 0.138, "2026-08-20 B2 phase_s"),
+    ("stress-max-envelope",   (820, 307, 216, 96), 125e6, 2.059, "2026-08-20 B2 hw, T=38"),
+    ("stress-max-result",     (820, 307,   4,  4), 125e6, 0.063, "2026-08-20 B2 hw, T=52"),
+]
+
+# The B1 board session measured the same seven phase_s cases on the B1 image at
+# the same gated clock (logs/b1_board_20260818/03_run.txt).  Retained here so the
+# B1-vs-B2 wall-time comparison is a pair of frozen tables rather than a sentence
+# quoting one of them from memory.  Same stimulus, same runner logic, same clock;
+# only the bitstream differed.
+BOARD_PHASE_S_B1_SECONDS = 0.544
+BOARD_PHASE_S_B2_SECONDS = 0.408
+
 BOARD_FULL_ENVELOPE = (820, 307, 216, 96)
 BOARD_CLOCK_HZ = 31.25e6        # the shipping image's measured PL rate
 BOARD_SECONDS = 13.362          # measured, full envelope, 31.25 MHz
@@ -748,6 +807,45 @@ FROZEN = {
         "clock_linearity": {
             "stress-max-envelope": 3.998205,   # compute-dominated
             "stress-max-result":   3.953216,   # overhead-dominated
+        },
+    },
+    # THE B2 BOARD SESSION, frozen on the same footing as `board` above and for
+    # the same reason: BOARD_TOLERANCE_S is far too loose to catch 2.059 edited
+    # to 2.058, so the measured seconds are pinned by exact comparison.
+    "board_b2": {
+        # Exact duplicate of BOARD_MEASUREMENTS_B2, by (case, clock) -> seconds.
+        "measurements": {
+            ("phase-s-min-templ",     125e6): 0.004,
+            ("phase-s-origin",        125e6): 0.020,
+            ("phase-s-workload-mode", 125e6): 0.020,
+            ("phase-s-workload-wide", 125e6): 0.050,
+            ("phase-s-final-cell",    125e6): 0.088,
+            ("phase-s-workload-max",  125e6): 0.088,
+            ("phase-s-max",           125e6): 0.138,
+            ("stress-max-envelope",   125e6): 2.059,
+            ("stress-max-result",     125e6): 0.063,
+        },
+        # The gate itself, so a later reader does not have to trust prose.
+        "session": {
+            "measured_fclk0_mhz": 125.0,
+            "routed_period_ns": 8.000,
+            "routed_wns_ns": 0.011710,
+            "hwh_vlnv": "TermCountB2:hls:tme_top:0.2",
+            "phase_s_passed": 7,
+            "phase_s_total": 7,
+            "hw_passed": 9,
+            "hw_total": 9,
+            # Tile counts the hw suite reaches that no B2 co-simulation did.
+            "max_tile_count": 52,
+            "envelope_tile_count": 38,
+            "max_single_transfer_bytes": 251740,
+        },
+        # The paired wall-time comparison, same stimulus and clock, B1 image vs
+        # B2 image.  DERIVED from the two totals rather than transcribed.
+        "phase_s_pair": {
+            "b1_seconds": 0.544,
+            "b2_seconds": 0.408,
+            "saving_seconds": 0.136,
         },
     },
     "phase_s": {
@@ -1044,12 +1142,12 @@ def b1_evidence_crosscheck():
 
 
 def b2_evidence_crosscheck():
-    """Re-read the B2 routed report, if it is present.
+    """Re-read the B2 routed report and board transcript, if present.
 
-    B2 has NO board transcript to read -- it was never run on silicon -- so
-    this checks strictly less than b1_evidence_crosscheck does, and the
-    asymmetry is the point rather than an omission.  What it can check is that
-    the frozen routed numbers are the ones in the report.
+    Until 2026-08-20 this checked strictly less than b1_evidence_crosscheck,
+    because B2 had no board transcript to read.  It now has one, and it carries
+    MORE than B1's: B1's session ran phase_s only, so this reads two suite
+    tallies and two re-invocation checks rather than one of each.
 
     Returns (failures, checked_count).  An absent report yields ([], 0) --
     never a pass.
@@ -1110,6 +1208,84 @@ def b2_evidence_crosscheck():
                 if int(m.group(1)) != b2f[key]:
                     fail.append("B2 {}: report says {}, frozen {}".format(
                         label, m.group(1), b2f[key]))
+
+    # THE BOARD TRANSCRIPT.  Two suites, so every tally below is checked TWICE
+    # and a transcript carrying only one of them fails -- that asymmetry with
+    # B1 is the whole reason the hw suite was run, and it must not be possible
+    # to lose it by quoting a phase_s-only transcript here.
+    # WHERE THE BOARD TRANSCRIPT LIVES.  Unlike every other evidence directory,
+    # logs/b2_board_20260819/ is canonical in the UPLOAD worktree -- the board
+    # protocol was prepared and committed there directly, which is why
+    # tme_b1_manifest.resolve() special-cases exactly this prefix.  `root` above
+    # points at the outer development tree, so look there first and then fall
+    # back to the upload tree.  In a clone the two are the same directory and
+    # this costs one stat.
+    run = root / "logs" / "b2_board_20260819" / "03_run.txt"
+    if not run.exists():
+        alt = (Path(__file__).resolve().parents[1] / "logs"
+               / "b2_board_20260819" / "03_run.txt")
+        if alt.exists():
+            run = alt
+    if run.exists():
+        sess = FROZEN["board_b2"]["session"]
+        txt = run.read_text(errors="replace")
+
+        clocks = re.findall(r"FCLK0 gate: PASS.*?([0-9]+\.[0-9]+) MHz", txt)
+        if len(clocks) != 2:
+            fail.append("B2 board transcript: {} passing FCLK0 gate lines, "
+                        "expected 2 (one per suite)".format(len(clocks)))
+        for got in clocks:
+            checked += 1
+            if abs(float(got) - sess["measured_fclk0_mhz"]) > 1e-4:
+                fail.append("B2 board clock: transcript says {} MHz, frozen "
+                            "{}".format(got, sess["measured_fclk0_mhz"]))
+
+        # The VLNV gate. It checks HWH metadata consistency, NOT fabric
+        # readback -- see the session plan -- but a transcript that does not
+        # carry it is not the gated run this freeze describes.
+        vlnv = re.findall(r"expected-HWH-VLNV gate: PASS.*?is (\S+)", txt)
+        if len(vlnv) != 2:
+            fail.append("B2 board transcript: {} passing HWH-VLNV gate lines, "
+                        "expected 2".format(len(vlnv)))
+        for got in vlnv:
+            checked += 1
+            if got != sess["hwh_vlnv"]:
+                fail.append("B2 board VLNV: transcript says {}, frozen "
+                            "{}".format(got, sess["hwh_vlnv"]))
+
+        tallies = [(int(a), int(b))
+                   for a, b in re.findall(r"(\d+)/(\d+) cases passed", txt)]
+        want = [(sess["phase_s_passed"], sess["phase_s_total"]),
+                (sess["hw_passed"], sess["hw_total"])]
+        checked += 1
+        if tallies != want:
+            fail.append("B2 board tallies: transcript says {}, frozen "
+                        "{}".format(tallies, want))
+
+        reinvokes = re.findall(r"re-invocation check: (\w+)", txt)
+        checked += 1
+        if reinvokes != ["PASS", "PASS"]:
+            fail.append("B2 board transcript: re-invocation checks are {}, "
+                        "expected two PASSes".format(reinvokes))
+
+        # The wrapper's own verdict, and the restoration it gates on.
+        checked += 1
+        if "B2_GATE_PASS" not in txt:
+            fail.append("B2 board transcript: no B2_GATE_PASS line")
+        checked += 1
+        if "RESTORE_VERIFIED" not in txt:
+            fail.append("B2 board transcript: no RESTORE_VERIFIED line")
+        checked += 1
+        if "CHECKSUM_GATE_PASS 10/10" not in txt:
+            fail.append("B2 board transcript: no 10/10 checksum gate line")
+        # The maximum single transfer, re-read rather than trusted.
+        checked += 1
+        m = re.search(r"3\.1 EXERCISED:.*?moved ([\d,]+) B", txt)
+        if not m:
+            fail.append("B2 board transcript: no exercised max-transfer line")
+        elif int(m.group(1).replace(",", "")) != sess["max_single_transfer_bytes"]:
+            fail.append("B2 board max transfer: transcript says {}, frozen "
+                        "{}".format(m.group(1), sess["max_single_transfer_bytes"]))
     return fail, checked
 
 
@@ -1229,6 +1405,82 @@ def check(results):
                         "(> {}s) [{}]".format(name, geom, hz / 1e6, model_s, meas,
                                               BOARD_TOLERANCE_S, note))
 
+    # THE B2 BOARD SESSION.  Same two-layer treatment as the `cur` rows above:
+    # the SET is frozen so a dropped row fails, each measured value is frozen
+    # EXACTLY, and the model is then held to BOARD_TOLERANCE_S -- against
+    # cycles(..., "B2"), which is the whole point of a separate table.
+    live_b2 = {(n, hz): m for n, _g, hz, m, _t in BOARD_MEASUREMENTS_B2}
+    frozen_b2 = FROZEN["board_b2"]["measurements"]
+    if len(BOARD_MEASUREMENTS_B2) != len(frozen_b2):
+        fail.append("board_b2: {} measurement rows != frozen {}".format(
+            len(BOARD_MEASUREMENTS_B2), len(frozen_b2)))
+    for key in sorted(set(live_b2) | set(frozen_b2), key=lambda k: (k[0], k[1])):
+        if key not in live_b2:
+            fail.append("board_b2: frozen row {} @ {:g}MHz is MISSING from "
+                        "BOARD_MEASUREMENTS_B2".format(key[0], key[1] / 1e6))
+        elif key not in frozen_b2:
+            fail.append("board_b2: row {} @ {:g}MHz is not frozen".format(
+                key[0], key[1] / 1e6))
+        elif live_b2[key] != frozen_b2[key]:
+            fail.append("board_b2: {} @ {:g}MHz measured {} != frozen {}".format(
+                key[0], key[1] / 1e6, live_b2[key], frozen_b2[key]))
+
+    # THE RESIDUALS ARE A CLAIM, SO CHECK THEM.  The table's comment says every
+    # residual is POSITIVE and small -- fixed per-invocation overhead the model
+    # does not describe.  A negative residual would mean silicon beat the cycle
+    # term, which would falsify the term rather than the overhead story, and it
+    # must not be able to appear here unnoticed.
+    B2_RESIDUAL_MAX_S = 0.003
+    for name, geom, hz, meas, note in BOARD_MEASUREMENTS_B2:
+        model_s = cycles(*geom, "B2") / hz
+        resid = meas - model_s
+        if abs(resid) > BOARD_TOLERANCE_S:
+            fail.append("board_b2 {} {} @ {:g}MHz: model {:.4f}s vs measured "
+                        "{}s (> {}s) [{}]".format(name, geom, hz / 1e6, model_s,
+                                                  meas, BOARD_TOLERANCE_S, note))
+        if not 0.0 < resid <= B2_RESIDUAL_MAX_S:
+            fail.append("board_b2 {} residual {:+.4f}s is outside (0, {}] -- "
+                        "the table claims every residual is positive "
+                        "per-invocation overhead [{}]".format(
+                            name, resid, B2_RESIDUAL_MAX_S, note))
+
+    # The paired phase_s wall totals, DERIVED from the rows rather than trusted.
+    pair = FROZEN["board_b2"]["phase_s_pair"]
+    ps_b2_total = round(sum(m for n, _g, _hz, m, _t in BOARD_MEASUREMENTS_B2
+                            if n.startswith("phase-s-")), 3)
+    if ps_b2_total != pair["b2_seconds"]:
+        fail.append("board_b2 phase_s total: rows sum to {} != frozen {}".format(
+            ps_b2_total, pair["b2_seconds"]))
+    if ps_b2_total != BOARD_PHASE_S_B2_SECONDS:
+        fail.append("board_b2 phase_s total: rows sum to {} != module constant "
+                    "{}".format(ps_b2_total, BOARD_PHASE_S_B2_SECONDS))
+    if round(pair["b1_seconds"] - pair["b2_seconds"], 3) != pair["saving_seconds"]:
+        fail.append("board_b2 phase_s saving: {} - {} != frozen {}".format(
+            pair["b1_seconds"], pair["b2_seconds"], pair["saving_seconds"]))
+    if pair["b1_seconds"] != BOARD_PHASE_S_B1_SECONDS:
+        fail.append("board_b2 phase_s B1 total: frozen {} != module constant "
+                    "{}".format(pair["b1_seconds"], BOARD_PHASE_S_B1_SECONDS))
+
+    # The session's geometry claims, RECOMPUTED.  "T = 52 is the compiled
+    # maximum" and "251,740 B" are the two facts that make the hw suite worth
+    # running; neither may sit here as a transcribed number.
+    sess = FROZEN["board_b2"]["session"]
+    for key, geom in (("envelope_tile_count", (820, 307, 216, 96)),
+                      ("max_tile_count",      (820, 307,   4,  4))):
+        pw, _ph, tw, _th = geom
+        got = -(-(pw - tw + 1) // 16)
+        if got != sess[key]:
+            fail.append("board_b2 {}: {} tiles from {} != frozen {}".format(
+                key, got, geom, sess[key]))
+    if 820 * 307 != sess["max_single_transfer_bytes"]:
+        fail.append("board_b2 max_single_transfer_bytes: 820*307 = {} != frozen "
+                    "{}".format(820 * 307, sess["max_single_transfer_bytes"]))
+    if sess["phase_s_passed"] != sess["phase_s_total"] or             sess["hw_passed"] != sess["hw_total"]:
+        fail.append("board_b2 session: the gate is only evidence if both suites "
+                    "were clean; frozen {}/{} and {}/{}".format(
+                        sess["phase_s_passed"], sess["phase_s_total"],
+                        sess["hw_passed"], sess["hw_total"]))
+
     # Linearity, DERIVED from the rows above rather than transcribed.  It is a
     # COMPUTE-DOMINATED claim: the envelope case must track the clock, and the
     # overhead-dominated 4x4 case must visibly NOT.  Asserting both directions
@@ -1270,9 +1522,9 @@ def check(results):
             "read" if log_n else "absent",
         "P2 routed report (post_route_wns.txt)": "read" if rpt_n else "absent",
         "B1 routed + board (logs/b1_*/)": "read" if b1_n else "absent",
-        # B2 has a routed report and NO board transcript.  The label says so,
-        # so a reader cannot mistake "read" here for the same thing as B1's.
-        "B2 routed only, no board (logs/b2_20260819/)":
+        # B2 now has BOTH, and its board coverage exceeds B1's: two suites
+        # rather than one, reaching T = 52 instead of only T = 6.
+        "B2 routed + board, 2 suites (logs/b2_*/)":
             "read" if b2_n else "absent",
     }
 
@@ -1522,17 +1774,37 @@ def main():
     print("  full envelope      {:,} cycles".format(r["full_envelope_cycles"]))
     print("  Phase S 311x159    {:,} cycles  = {:.3f}x".format(
         r["phase_s_cycles"], r["phase_s_speedup"]))
+    sess = FROZEN["board_b2"]["session"]
+    pair = FROZEN["board_b2"]["phase_s_pair"]
+    print("  B2 board session   the B2 image itself, {} MHz gated, {}:".format(
+        sess["measured_fclk0_mhz"], sess["hwh_vlnv"]))
+    for name, geom, hz, meas, note in BOARD_MEASUREMENTS_B2:
+        pw, ph, tw, th = geom
+        model_s = cycles(*geom, "B2") / hz
+        print("    {:<22} {:>3}x{:<3}/{:>3}x{:<2} T={:<2}  model {:8.4f}s  "
+              "meas {:6.3f}s  {:+.1f} ms".format(
+                  name, pw, ph, tw, th, -(-(pw - tw + 1) // 16),
+                  model_s, meas, (meas - model_s) * 1e3))
+    print("    every residual is POSITIVE: fixed per-invocation DMA/marshalling")
+    print("    cost the cycle model does not describe, not model error.")
+    print("    phase_s totals, same stimulus and clock: B1 {:.3f}s -> B2 {:.3f}s "
+          "({:.3f}s saved)".format(pair["b1_seconds"], pair["b2_seconds"],
+                                   pair["saving_seconds"]))
+    print("    tile count reached: T={} (hw suite) vs T=6 (cosim and B1's session)"
+          .format(sess["max_tile_count"]))
     print()
     print("PROJECTION - initial trials only, s/page @ {:g} MHz".format(TARGET_CLOCK_HZ / 1e6))
     print("-" * 78)
     print("  The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.")
     print("  What is NOT demonstrated is any PAGE, for any variant:")
     print("  Phase S is a driver change with no RTL; B0b is unimplemented RTL.")
-    print("  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact.")
-    print("  It has NO BOARD SESSION -- its clock is borrowed, not observed.")
+    print("  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact,")
+    print("  and RUN ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s 7/7 and")
+    print("  hw 9/9, reaching T = 52 where the cosim reached only T = 6.")
     print("  B1 IS implemented: cycle term cosim-measured, routed at 8.000 ns, and RUN")
-    print("  ON THE BOARD at its OWN observed 125.0000 MHz -- it does not borrow the")
-    print("  unmodified core's clock.  Every s/page below is still a projection.")
+    print("  ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s only, so T = 6.")
+    print("  Neither borrows the unmodified core's clock.  Every s/page below is still")
+    print("  a projection: NO PAGE HAS BEEN RUN, for any variant, at any clock.")
     labels = [
         ("pl_full_context", "TODAY'S PL: side-common full context", "deployed; 622x300 / 622x224"),
         ("current_core", "CPU per-base context patch policy", "silicon-anchored formula"),
@@ -1541,7 +1813,7 @@ def main():
         ("side_common_roi", "Phase S, one ROI per side", "no RTL; side-common reading"),
         ("per_trial_roi", "Phase S, per-trial ROI", "no RTL; needs driver change"),
         ("B1", "  + B1 runtime segment width", "cosim-validated TERM; page projected"),
-        ("B2", "  + B2 overlap reuse", "cosim-validated TERM; NO board run"),
+        ("B2", "  + B2 overlap reuse", "cosim+board TERM to T=52; page projected"),
         ("B0b_base", "  + B0b, stats term deleted", "deletion only, no count pass"),
         ("B0b_at_1_cyc", "  + B0b count pass @ II=1", "iterations derived; II projected"),
         ("B0b_at_3_cyc", "  + B0b count pass @ II=3", "iterations derived; II projected"),

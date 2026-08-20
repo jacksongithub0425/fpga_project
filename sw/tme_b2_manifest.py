@@ -79,11 +79,13 @@ def entries() -> list[tuple[str, str]]:
         # The image itself.  Retained on the same argument B1's is: it is built
         # from a Vivado block design that lives OUTSIDE this repository
         # (C:/Users/lychee/tc25/vivado_project/), so it is not regenerable from
-        # anything committed here.  Unlike B1's, this one has NEVER RUN on a
-        # board -- keeping it is what makes a future board session possible
+        # anything committed here.  It HAS now run: the 2026-08-20 session in
+        # logs/b2_board_20260819/ loaded these exact bytes, verified by the
+        # ten-file checksum gate in 03_run.sh before the overlay was
+        # constructed.  Keeping the image is what makes that session repeatable
         # against the artifact these cycle numbers were routed from, rather
         # than against a rebuild that would have its own WNS.
-        ("bitstream (never run on hardware)", LOGS + "/tme_standalone.bit"),
+        ("bitstream (as run, 2026-08-20)", LOGS + "/tme_standalone.bit"),
         ("hardware handoff", LOGS + "/tme_standalone.hwh"),
         # The prepared board gate.  These are protocol inputs, not board
         # results: no transcript exists yet.  The board-side checksum manifest
@@ -103,6 +105,27 @@ def entries() -> list[tuple[str, str]]:
         ("board host hash record", B2BOARD + "/01_hashes_local.txt"),
         ("board run wrapper", B2BOARD + "/03_run.sh"),
         ("board restore script", B2BOARD + "/04_restore.sh"),
+        # THE SESSION ITSELF, 2026-08-20.  The protocol above is what was
+        # committed BEFORE the run; these are what came back.  Both halves are
+        # pinned, because a protocol without its transcript proves nothing and
+        # a transcript without its protocol cannot be audited.
+        ("board session record", B2BOARD + "/B2_BOARD_SESSION.md"),
+        ("board prestate", B2BOARD + "/00_prestate.txt"),
+        ("board remote hashes", B2BOARD + "/02_hashes_remote.txt"),
+        ("board run transcript", B2BOARD + "/03_run.txt"),
+        ("board restore transcript", B2BOARD + "/04_restore.txt"),
+        # ATTEMPT 1, RETAINED RATHER THAN DISCARDED.  Its host-side capture was
+        # truncated by a SIGPIPE at 10,240 bytes, so it does not establish the
+        # hw result and the session record does not claim it does.  It is
+        # pinned anyway: a session that says "we re-ran it" must retain what it
+        # re-ran, or the sentence is unfalsifiable.  See B2_BOARD_SESSION.md.
+        ("board prestate (attempt 1)", B2BOARD + "/00_prestate_attempt1.txt"),
+        ("board remote hashes (attempt 1)",
+         B2BOARD + "/02_hashes_remote_attempt1.txt"),
+        ("board run transcript (attempt 1, TRUNCATED)",
+         B2BOARD + "/03_run_attempt1_TRUNCATED.txt"),
+        ("board restore transcript (attempt 1)",
+         B2BOARD + "/04_restore_attempt1.txt"),
         # THE PACKAGED IP, AND READ THE ROLE -- IT IS NOT B1'S.  B1's manifest
         # pins its IP as a RE-EXPORT: package_b1.tcl ran after the Vivado build
         # and overwrote the directory the bitstream had been built from, so

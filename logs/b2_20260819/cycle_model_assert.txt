@@ -20,17 +20,33 @@ VALIDATION (silicon-backed)
     stress-max-result    ratio 3.953216  vs 4  ->  -1.1696%   FIXED OVERHEAD visible
   full envelope      417,519,492 cycles
   Phase S 311x159    23,476,737 cycles  = 17.784x
+  B2 board session   the B2 image itself, 125.0 MHz gated, TermCountB2:hls:tme_top:0.2:
+    phase-s-min-templ       99x67 /  4x4  T=6   model   0.0016s  meas  0.004s  +2.4 ms
+    phase-s-origin         147x94 / 52x31 T=6   model   0.0179s  meas  0.020s  +2.1 ms
+    phase-s-workload-mode  147x94 / 52x31 T=6   model   0.0179s  meas  0.020s  +2.1 ms
+    phase-s-workload-wide  259x105/164x42 T=6   model   0.0483s  meas  0.050s  +1.7 ms
+    phase-s-final-cell     215x157/120x94 T=6   model   0.0864s  meas  0.088s  +1.6 ms
+    phase-s-workload-max   215x157/120x94 T=6   model   0.0864s  meas  0.088s  +1.6 ms
+    phase-s-max            311x159/216x96 T=6   model   0.1355s  meas  0.138s  +2.5 ms
+    stress-max-envelope    820x307/216x96 T=38  model   2.0572s  meas  2.059s  +1.8 ms
+    stress-max-result      820x307/  4x4  T=52  model   0.0608s  meas  0.063s  +2.2 ms
+    every residual is POSITIVE: fixed per-invocation DMA/marshalling
+    cost the cycle model does not describe, not model error.
+    phase_s totals, same stimulus and clock: B1 0.544s -> B2 0.408s (0.136s saved)
+    tile count reached: T=52 (hw suite) vs T=6 (cosim and B1's session)
 
 PROJECTION - initial trials only, s/page @ 125 MHz
 ------------------------------------------------------------------------------
   The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.
   What is NOT demonstrated is any PAGE, for any variant:
   Phase S is a driver change with no RTL; B0b is unimplemented RTL.
-  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact.
-  It has NO BOARD SESSION -- its clock is borrowed, not observed.
+  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact,
+  and RUN ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s 7/7 and
+  hw 9/9, reaching T = 52 where the cosim reached only T = 6.
   B1 IS implemented: cycle term cosim-measured, routed at 8.000 ns, and RUN
-  ON THE BOARD at its OWN observed 125.0000 MHz -- it does not borrow the
-  unmodified core's clock.  Every s/page below is still a projection.
+  ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s only, so T = 6.
+  Neither borrows the unmodified core's clock.  Every s/page below is still
+  a projection: NO PAGE HAS BEEN RUN, for any variant, at any clock.
   TODAY'S PL: side-common full context    631.931     2527.7 @31.25MHz   deployed; 622x300 / 622x224
   CPU per-base context patch policy       333.413     1333.7 @31.25MHz   silicon-anchored formula
   Phase S, per-base ROI, int() quirk       60.764      243.1 @31.25MHz   historical figure only
@@ -38,7 +54,7 @@ PROJECTION - initial trials only, s/page @ 125 MHz
   Phase S, one ROI per side                94.697      378.8 @31.25MHz   no RTL; side-common reading
   Phase S, per-trial ROI                   36.476      145.9 @31.25MHz   no RTL; needs driver change
     + B1 runtime segment width             26.334      105.3 @31.25MHz   cosim-validated TERM; page projected
-    + B2 overlap reuse                     20.405       81.6 @31.25MHz   cosim-validated TERM; NO board run
+    + B2 overlap reuse                     20.405       81.6 @31.25MHz   cosim+board TERM to T=52; page projected
     + B0b, stats term deleted              17.598       70.4 @31.25MHz   deletion only, no count pass
     + B0b count pass @ II=1                17.744       71.0 @31.25MHz   iterations derived; II projected
     + B0b count pass @ II=3                18.036       72.1 @31.25MHz   iterations derived; II projected
@@ -48,8 +64,8 @@ PROJECTION - initial trials only, s/page @ 125 MHz
   Neither the combined image nor an end-to-end page has been demonstrated at 125 MHz.
 
 frozen evidence re-proved: cosim x9, 4 board runs at 2 clocks, clock linearity, workload, Phase S, ROI variants, B1 EXACT aggregate + phase-s-max delta, B2 EXACT aggregate + routed WNS, B0b decomposition + both endpoints
-source corroboration: 18 value(s) re-read from source
+source corroboration: 28 value(s) re-read from source
   B1 routed + board (logs/b1_*/)                 READ
-  B2 routed only, no board (logs/b2_20260819/)   READ
+  B2 routed + board, 2 suites (logs/b2_*/)       READ
   P2 board transcripts (logs/board_125mhz_gate/) READ
   P2 routed report (post_route_wns.txt)          READ

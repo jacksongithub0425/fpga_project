@@ -120,6 +120,14 @@ pre-RTL projection the miss is `3*T - 1 = (T + 1) + 2*(T - 1)`: B1's `T + 1`
 overhead recurs, and `2*(T - 1)` is the additional miss against the
 control-naive baseline that already includes B1's correction.
 
-**No board session exists for B2.** B1 has one; B2 has a routed result and
-nothing more. Do not quote B2's s/page at 125 MHz as though the clock were
-established for this core.
+**B2 has a board session, and it is broader than B1's.** 2026-08-20,
+`logs/b2_board_20260819/`: the routed 8.000 ns image at a gated 125.0000 MHz,
+`phase_s` 7/7 and `hw` 9/9, score within +/-0.005 and exact `(x, y)`, with a
+verified re-invocation after each suite's largest case. B1's session ran
+`phase_s` only, so every case had `T = 6`; the `hw` suite reaches `T = 38` and
+`T = 52` -- the compiled maximum -- and moves the full 251,740 B transfer. For
+an indexing change, that is the axis that mattered.
+
+**The s/page figure is still a projection.** The board validates the tile
+*term*, at one tile count per case; 20.405 s/page sums that term over 20,680
+modelled trials. No page has been run, on any hardware, at any clock.

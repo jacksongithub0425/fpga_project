@@ -1,9 +1,15 @@
 # B2 board session — fail-closed plan and retained pre-run predictions
 
-**Status: NOT RUN.** This directory contains only the prepared protocol,
-checksum manifest, and host-side hash record. There is no `03_run.txt`, no
-`02_hashes_remote.txt` and no `04_restore.txt`, and B2 has never been on
-silicon.
+**Status: RUN, and it passed.** 2026-08-20, at commit `729582e`. See
+`B2_BOARD_SESSION.md` for the result and `03_run.txt` for the transcript.
+
+**Everything below this block is the unmodified pre-run text.** Only this
+status paragraph was edited after the session; the predictions, the procedure
+table and the abort conditions are exactly as they were committed beforehand,
+and `git show c8aa9c1:logs/b2_board_20260819/B2_BOARD_SESSION_PLAN.md` plus
+`git log -p` on this file are how a reader confirms that rather than taking
+this sentence's word for it. Predictions are only worth committing early if
+editing them later is visible.
 
 **This file is committed before the session deliberately.** Priority 5's
 evidence had to withdraw a "registered before the build" claim because the
