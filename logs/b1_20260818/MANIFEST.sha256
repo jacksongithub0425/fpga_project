@@ -9,7 +9,7 @@
 9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  hls/template_match/b1_sources/correlation_core.cur.cpp  # source cur
 e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/b1_sources/correlation_core.b1.cpp  # source b1
 17e3b1ec8169c61d8e91c6ed005cb8e53e5afc7d4bd590ec32dcc254f9519242  hls/template_match/b1_sources/correlation_core.b1b.cpp  # source b1b
-72d0e37460a417ad4364deb8771a59928b149517d2175e5097426777aeed96d1  hls/template_match/correlation_core.cpp  # source shipped
+483493e8583126f244ddddb01600ebd0915d4be45e9aae94e991e57395a1ffcb  hls/template_match/correlation_core.cpp  # source shipped
 50457ed35da2a28fe6c150e90c4c8b4d6f4a0acb39e2520291be01755a3bfd5f  logs/b1_20260818/correlation_core.cpp.b1_break  # source cosimmed b1
 9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  logs/b1_20260818/correlation_core.cpp.pre_b1  # source pre-B1
 79a006c562c69858a5de551cfe16baf9df027d4ac2e3dcb0fdd34f3e9431ebe0  hls/template_match/template_match_b1_cur/cur/sim/report/verilog/result.transaction.rpt  # cosim cur
@@ -33,7 +33,7 @@ ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_202608
 c9cc770ba94369f83c4f93fe53784dda260f78979267963f889498423aaaab7b  logs/b1_rerun_20260818/run_cur.log  # rerun log cur
 f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_20260818/run_b1.log  # rerun log b1
 8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
-32e80c2fb1838ee7445955f53cb2a033010944c537df97ee30e77c41adfc14ab  sw/tme_cycle_model.py  # model
+debea679406b33852c1c41ef06e7eda6ff900116c37cb4138a9666a48536b40a  sw/tme_cycle_model.py  # model
 e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
 f381eab2273210a1360fe7db04819430a6f463e119ea87ed6cd12d77ef130693  sw/tme_b1_ab.py  # adjudicator
 85b3c443c97a58e77fc0e101f400b30b8298ed5cb6a0e156af9e4c5f3f199488  sw/tme_scale_policy.py  # scale policy

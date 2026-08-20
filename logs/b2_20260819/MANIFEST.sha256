@@ -7,7 +7,10 @@
 # this says they are the same numbers.
 
 c8c7b0882af33214da5f7bbedca9ff9b985629517ddada37a9eacaacaec5d8ce  hls/template_match/b1_sources/correlation_core.b2.cpp  # source b2
-72d0e37460a417ad4364deb8771a59928b149517d2175e5097426777aeed96d1  hls/template_match/correlation_core.cpp  # source shipped
+483493e8583126f244ddddb01600ebd0915d4be45e9aae94e991e57395a1ffcb  hls/template_match/correlation_core.cpp  # source shipped
+e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/b1_sources/correlation_core.b1.cpp  # source b1 (control)
+bcccd44c187bd7c008d8de7bbd87dfa33c1d7bf72c1fbfbae1b8046bb30f59db  hls/template_match/tme_top.cpp  # build input tme_top.cpp
+19b15033530f96ad7ad04b0ef24414428295ca02634faacab04751b541b2178b  hls/template_match/tme_top.h  # build input tme_top.h
 222e5d7704debcf15bc3f3373987681d0f67801d6e4791850a96ed99a8863178  hls/template_match/template_match_b1_b1/b1/sim/report/verilog/result.transaction.rpt  # cosim b1 (control)
 fafdeb5e3e61eb8783013f97f1ce4f3192526119b9cf2b5bdba2f46f84785d06  hls/template_match/template_match_b1_b2/b2/sim/report/verilog/result.transaction.rpt  # cosim b2
 5e82ca5719df662bfbc4758ebc07b86f2f7e5f786c1107484d341acd35ec5fa4  hls/template_match/template_match_b1_b1/b1/syn/report/csynth.rpt  # csynth b1 (control)
@@ -18,24 +21,30 @@ b63184fd5df94a589bd40bad0ac13597fbeae365093d40b3d7c49ec8cf893e97  logs/b2_202608
 a5e3f6d89fb9734159e174d51f643fd39908a6a7d63ca40641c95a02812fbd9e  logs/b2_20260819/post_route_worst_paths.rpt  # routed worst paths
 1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf  logs/b2_20260819/tme_standalone.bit  # bitstream (never run on hardware)
 11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744  logs/b2_20260819/tme_standalone.hwh  # hardware handoff
+ea0d8a051812efef6fce51906ebd89b24a8a9aa185496ff72a18cd8cf9f771f4  hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml  # packaged IP (the image's input)
+5d602b3e839a4c3cc4799c2da496c6ff560ce0bcc837a930f0854c7872a66eab  hls/template_match/template_match_b1_b2/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip  # packaged IP archive (the image's input)
 1f2c9b47b02fefb0114c426146c23308cb63b483c1764885f336c0cdf61d9df4  vivado/tme_standalone/build_tme_standalone.tcl  # build script
 c257b43da86f80909fba3024785b5e9b5f645c1783d1f4edea6ec1885c3903a2  hls/template_match/package_b2.tcl  # packaging script
 3c0502308ef3d1a15a3537311c629f5d5793e870bc46af7eb0f4ce8ebebc36c3  hls/template_match/run_hls_b1.tcl  # ab project script
+ec7e7402c8667e153f9428b302539927956dcb2640d6398cde2910d77face574  hls/template_match/csim_prod_b2.tcl  # prod csim script b2
+bd1759368aaf5b05423df1468ddd4f6b590d0fd4e047b83263786af996b75f92  logs/b2_20260819/csim_prod_b2.log  # prod csim log b2
 b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_match/tme_tb.cpp  # testbench
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
-32e80c2fb1838ee7445955f53cb2a033010944c537df97ee30e77c41adfc14ab  sw/tme_cycle_model.py  # model
+cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
+debea679406b33852c1c41ef06e7eda6ff900116c37cb4138a9666a48536b40a  sw/tme_cycle_model.py  # model
 6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  logs/b2_20260819/tme_cycle_model.py.pre_b2  # model pre-B2
-a4995157c973db0348b6984c7679dcef3d6d63d5490934ac07503b494db249ca  sw/tme_b2_ab.py  # adjudicator
-d798c878ecec94f1d4da5a03b86cce00b4d0ba8a868f8716d613ba24992d4593  sw/tme_b2_mutants.py  # mutant gate
-8dd9572f1aef1caebb4e7def441e113822d965bebc46e24998232cb99db8e89f  sw/tme_b2_manifest.py  # manifest tool
+10a3f41aa057b36a1c9f790f3e06c44bb2bf9468a182f36aad2f69971647bdb1  sw/tme_b2_ab.py  # adjudicator
+8c0f48a94c329a4c8bcd893fd5963bc161385a5446f0c00f3707490d31beb338  sw/tme_b2_mutants.py  # mutant gate
+c88d94b9629f294c619823588b877dd8c1ba8c24ad8aedd554ecf961190c275e  sw/tme_b2_manifest.py  # manifest tool
+36de753a793122e8fe6c9dabde5e79e4300cca8fb0f6d1e77bb981b1f0392688  sw/tme_b1_manifest.py  # manifest tool (imported)
 53d92ac02d507bb3d9c34657121815b8d5ddcaf67d541293179dfdc9fe13a63d  logs/b2_20260819/run_b2.log  # log b2
 a5f01c7bb0a7c60506b43f61593d7b88b0cf95443528c1aac04c992cb8c20b5c  logs/b2_20260819/package_b2.log  # log packaging
 792f1b5e313bff61d7d224d2e2406999daf2eb2ce9d63a8cb8dc0cd4fde4c137  logs/b2_20260819/vivado_b2_125.log  # log vivado
-248533024d5fb4a0440881e0c5e5aaffec0485eb99c8b226811dea9a98ffef33  logs/b2_20260819/PREDICTION.txt  # prediction (pre-registered)
-4ee637784595e61b0caeaf01bbde50e4b567cd21986e28d580e18b9ec8ae694a  logs/b2_20260819/b2_mutants.txt  # mutant gate output
-da6168068f9981df5f5b23f6fcf0e93afadb435c41fa804d1ca764027a09c084  logs/b2_20260819/b2_ab.txt  # adjudicator output
+c6182de9bbccffb24865c3a283de9146dc4e022cc2135c14bca60e28da65dcab  logs/b2_20260819/PREDICTION.txt  # pre-RTL baselines (reconstructed)
+a4b452a253224f849d998d3c8a0befb77572c1663fffd2db6fa4a4397e0e31ea  logs/b2_20260819/b2_mutants.txt  # mutant gate output
+4173d756cfd4c08ea16dc764b602d02627931613ee6e987b0c4c0b0e14613ac1  logs/b2_20260819/b2_ab.txt  # adjudicator output
 66992c5177ecb21f7c0888419927a5fd15ec833714d909770937a6ce7b842475  logs/b2_20260819/b2_ab_negative_control.txt  # adjudicator negative control
 21997afb275d40adaa7b09319ebcf57e2cc13b4f0d156455e700e8bd559bc9eb  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
-3583db3987b541a4c706f52e32534ff1ddf6537ce36fb4000d84512a35b92727  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
+5f68646fdf39f744b0545bca3c5d9a1eee5846c3cec0209b1e268943894ecc4a  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
 bf842f1a513acee7ec63ed8ff269fed79ceffe52ce34dd242f30bbfb058d3001  hls/template_match/b1_sources/README.md  # pinned-source README

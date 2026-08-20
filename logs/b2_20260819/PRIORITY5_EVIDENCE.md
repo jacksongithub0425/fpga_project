@@ -1,14 +1,15 @@
 # Priority 5 — B2, horizontal overlap reuse: evidence
 
-Captured 2026-08-19. Every figure here regenerates from the tools
-(`tme_b2_ab.py --assert`, `tme_b2_mutants.py --assert`,
-`tme_cycle_model.py --assert`, `tme_b2_manifest.py --verify`), and nothing is
-transcribed by hand.
+Captured 2026-08-19; corrected the same day (six claims — see the change note
+at the end). Every figure here regenerates from the tools (`tme_b2_ab.py
+--assert`, `tme_b2_mutants.py --assert`, `tme_cycle_model.py --assert`,
+`tme_b2_manifest.py --verify`), and nothing is transcribed by hand.
 
     cd hls/template_match
     <venv>/python.exe tme_generate_production.py --suite b1     # if absent
     TME_SOLUTION=b1 vitis-run.bat --mode hls --tcl run_hls_b1.tcl   # the control
     TME_SOLUTION=b2 vitis-run.bat --mode hls --tcl run_hls_b1.tcl
+    vitis-run.bat --mode hls --tcl csim_prod_b2.tcl    # broad geometry, T <= 52
     vitis-run.bat --mode hls --tcl package_b2.tcl
     TME_IP_REPO=.../template_match_b1_b2/b2/impl/ip \
     TME_HLS_VLNV=TermCountB2:hls:tme_top:0.2 TME_FCLK_MHZ=125 \
@@ -77,41 +78,115 @@ partially-masked tile instead of being recomputed there.
 s/page figures are **workload projections** built from that term over 20,680
 modelled trials — no page has been run on any hardware at any clock.
 
-| | s/page @ 125 MHz | basis |
-|---|---|---|
-| Phase S, per-trial ROI | 36.476 | projection, projected term |
-| + B1, measured | 26.334292108222 | projection, measured term, board-corroborated |
-| + B2, as **projected** before any RTL existed | 20.175432 | projection, **withdrawn** term |
-| + B2, as **measured** by RTL co-simulation | **20.405164783778** | projection, **measured** term |
+| | aggregate cycles | s/page @ 125 MHz | basis |
+|---|---|---|---|
+| Phase S, per-trial ROI | — | 36.476 | projection, projected term |
+| + B1, measured | 118,504,314,487 | 26.334292108222 | projection, measured term, board-corroborated |
+| + B2, as **projected** before any RTL existed | 90,789,445,687 | 20.175432374889 | projection, **withdrawn** term |
+| + B2, as **measured** by RTL co-simulation | **91,823,241,527** | **20.405164783778** | projection, **measured** term |
 
 The projected tile term was `T*(tw + 41) + (tw - 1)`. The RTL is
 
     tile = T * (tw + 44) + tw - 2
 
-exact on 14/14 transactions. The projection was optimistic by **0.229733
-s/page** — more than twice B1's miss of 0.094596.
+exact on 14/14 transactions. The projection was optimistic by exactly
 
-### The prediction was registered before the build, and it was wrong in a new way
+    1,033,795,840 cycles  =  0.229732408889 s/page
 
-`tme_b2_ab.py --predict` computes two candidates from the **retained
-pre-measurement copy of the model** and the **`b1` transaction report** — it
-reads no `b2` report at all, so it cannot see the answer, and its numbers are
-recomputable at any time rather than resting on a timestamp:
+against B1's miss of 425,680,640 cycles = 0.094595697778.
 
-| candidate | tile term | what it would have meant |
+> **The withdrawn figure is frozen as an integer, and it was wrong until now.**
+> It used to sit in `FROZEN["b2"]` as the rounded `20.175432`, with the miss
+> computed as *measured minus that* — `0.22973278377777717`, which is
+> **1,687 cycles** away from the truth. Six decimal places on a page average is
+> a 2.25-million-cycle tolerance, so a rounded projection cannot pin its own
+> miss. Both endpoints and the difference are now cycle counts, the s/page
+> figures are derived from them, and `tme_cycle_model.py --assert` checks the
+> integer identity `91,823,241,527 − 90,789,445,687 = 1,033,795,840` before it
+> checks any float. B1's block got the same treatment; its withdrawn projection
+> was already cycle-exact (118,078,633,847), so only the last digit of the
+> float moved.
+>
+> The withdrawn aggregate is **recomputable, not transcribed**: load
+> `logs/b2_20260819/tme_cycle_model.py.pre_b2` and call `page_cycles` on the
+> workload this repo discovers. That snapshot reproduces the live model's `cur`
+> (164,143,337,975) and `B1` (118,504,314,487) aggregates **exactly**, which is
+> what says the two differ in the B2 term and in nothing else.
+
+### What was pre-registered, and what only looks it
+
+This section previously claimed the prediction was "registered before the
+build". **The retained timestamps contradict that**, so here is the actual
+chronology, from the file mtimes in this directory:
+
+| artifact | written | relative to the answer |
 |---|---|---|
-| pre-RTL projection | `T*(tw+41) + (tw-1)` | B1's overhead did not recur |
-| control-naive | `T*(tw+42) + tw` | B1's `T+1` recurred exactly once |
-| **measured** | **`T*(tw+44) + tw-2`** | **neither** |
+| `b1_sources/correlation_core.b2.cpp` | 19:04:37 | the RTL source |
+| `template_match_b1_b2/.../result.transaction.rpt` | **19:10:13** | **the answer exists** |
+| `run_b2.log` (cosim finished) | 19:10:16 | — |
+| `.../impl/ip/` (packaged) | 19:16:08 | +6 min |
+| `tme_cycle_model.py.pre_b2` (snapshot) | 19:19:15 | **+9 min** |
+| `PREDICTION.txt` | 19:19:23 | **+9 min** |
+| `b2_mutants.txt` (adequacy gate) | 19:27:40 | **+17 min** |
 
-The shortfall against the naive reuse arithmetic
-`rh*th*(T-1)*(tw-1)` is
+So:
 
-    2 * (T - 1)     cycles per (output row, template row)
+* **The pre-RTL projection IS pre-registered — by git, not by a timestamp.**
+  `T*(tw+41) + (tw-1)` and the `20.175432` page figure entered
+  `sw/tme_cycle_model.py` in commit **`e762cbf`, 2026-08-17 23:11**, two days
+  before the B2 source existed and nineteen hours before the build. That is the
+  one part of this no later edit could have manufactured, and it is the part
+  the "the projection was optimistic by X" claim actually rests on.
+* **`--predict` and its snapshot are a RECONSTRUCTION.** Both postdate the
+  measurement. What makes the snapshot usable is not its mtime but that its
+  content is checkable against `e762cbf` and that `--assert` refuses to run if
+  it ever starts carrying the measured term.
+* **`control-naive` was never predicted by anyone.** It is computed by
+  `tme_b2_ab.py` after the fact. It is a useful *baseline* — "B1's measured
+  term plus perfect reuse" — and calling it a candidate prediction was wrong.
+* **The mutant adequacy gate is a POST-BUILD test**, not a precondition the
+  build had to pass. It is weaker in exactly one way — the suite could not have
+  been changed in response to what it found, because the measurement already
+  existed — and in no other.
 
-against B1's `T + 1`. **B1's overhead did not recur, in size or in shape.**
-That outcome is only worth stating because both alternatives were written down
-first.
+### The miss, decomposed — and B1's overhead DID recur
+
+| candidate | tile term | provenance |
+|---|---|---|
+| pre-RTL projection | `T*(tw+41) + (tw-1)` | pre-registered, commit `e762cbf` |
+| control-naive | `T*(tw+42) + tw` | computed after the fact, a baseline |
+| **measured** | **`T*(tw+44) + tw-2`** | **matches neither** |
+
+Against the **pre-RTL projection** — the like-for-like comparison, since that
+is the one B1 also made — the miss is, exactly on 14/14 transactions:
+
+    3T - 1  =  (T + 1)  +  2 * (T - 1)     per (output row, template row)
+
+**Read both terms.**
+
+* The `(T + 1)` is **B1's own correction, and it recurs.** At `T = 1` the
+  second term is zero and the *entire* miss is B1's `T + 1` — confirmed on all
+  five single-tile transactions (`flat-templ-4x4`, `min-nonflat`,
+  `b1-w001/w015/w016-tw216`), where the miss is exactly `rh*th*2`.
+* The `2 * (T - 1)` is the **additional** miss, and it is additional *only*
+  against `control-naive`, a baseline that already contains B1's term.
+
+> **The earlier wording — "B1's overhead did not recur, in size or in shape" —
+> was false**, and it was false in the direction that made B2 look like an
+> independent surprise rather than a compounding one. The correct statement is
+> that B1's `T+1` recurred *and* a further `2*(T-1)` was added on top. Quoting
+> `2*(T-1)` without naming its baseline inverts the conclusion.
+>
+> This is now machine-checked. `tme_b2_ab.py --assert` gained **check 4**: the
+> miss against the pre-RTL projection must equal `rh*th*(3T-1)`, that must
+> equal `rh*th*((T+1) + 2*(T-1))`, and at `T = 1` the whole miss must be
+> `rh*th*(T+1)`. It reports **14/14 and 5/5**. A revision that quietly restates
+> the old claim has to make this fail first.
+
+**What this does and does not license for B0b.** A naive projection has now
+been optimistic twice, in two different shapes (`T+1`, then `3T-1`). That is a
+reason to measure B0b's term rather than project it. It is **not** a licence to
+apply either correction to B0b in advance.
 
 > A safeguard was added after a near miss. The first version of `--predict`
 > read the **live** model, which was true right up until the model was corrected
@@ -178,7 +253,7 @@ is not the workload; the page figure comes from `tme_cycle_model` over the
 comparison — that is what makes a `b2` residual attributable to the change and
 not to the harness.
 
-### Three checks, failing for different reasons
+### Four checks, failing for different reasons
 
 1. **The control is intact** — every `b1` transaction still equals
    `T*(2*tw+41)+1`. 14/14.
@@ -187,6 +262,11 @@ not to the harness.
 3. **The fitted shape** — the shortfall fits one `rh*th*(a*T + b)` with
    `(a, b) = (+2, −2)`, fitted from the B2 data and not read from the model.
    14/14.
+4. **The decomposition** — the miss against the pre-RTL projection is
+   `rh*th*(3T-1) = rh*th*((T+1) + 2*(T-1))`, and at `T = 1` the whole miss is
+   `rh*th*(T+1)`. **14/14 and 5/5.** This is the check that keeps "B1's
+   overhead recurred and was compounded" from decaying back into "B1's overhead
+   did not recur".
 
 `--negative-control` perturbs the declared model by +7 and confirms check 2
 fails on 0/14 while check 3 still passes 14/14: **the two are independent**.
@@ -214,7 +294,48 @@ Both against the **pinned** b1 suite, whose three files were SHA-256 verified by
 `run_hls_b1.tcl` before the build, and against the b2 snapshot, verified the
 same way (`c8c7b088…caec5d8ce`).
 
-### The suite was proved adequate BEFORE the build, not assumed
+### Broad geometry: the tile-count range the b1 suite does not reach
+
+**The b1 co-simulation suite tops out at `T = 6` tiles.** B2 is an *indexing*
+change whose entire behaviour is "what tile `t` inherits from tile `t-1`", so
+tile count is the axis along which it is most likely to be wrong — and six
+tiles is not a sample of an axis the RTL is compiled to run to **52**. Until
+this ran, "B2 is functionally correct" was a claim about roughly one ninth of
+the tile-count range.
+
+`hls/template_match/csim_prod_b2.tcl` — a new hermetic project
+(`template_match_b2_prod`), the same b2 snapshot verified by digest, the same
+four production vectors `csim_prod_b1.tcl` checks:
+
+    15/15 cases passed  +  9 direct and bound tests
+    TESTBENCH PASSED
+    CSim done with 0 errors.
+
+| | b1 cosim suite | **production suite** |
+|---|---|---|
+| tile counts `T` | 1, 2, 3, 5, 6 | 1, 12, 19, 20, 22, **29, 52** |
+| widest result map `rw` | 96 | **817** (`prod-max-result`, 820×307 / 4×16) |
+| largest template | 216×96 | 216×96, and 164×94 at `T = 29` |
+
+`T = 52` is `ceil(MAX_RESULT_W / PAR_COLS)` — the compiled maximum, and the
+`LOOP_TRIPCOUNT max` the tile loop is annotated with. `prod-lane15-full`
+exercises the lane-15 pair at `T = 29`; `prod-max-result` puts its peak at
+`(816, 291)`, the last valid column of the widest legal map, which is precisely
+where a tile-break or lane-mask error surfaces.
+
+**What this is and is not.** C simulation exercises the **source**, not the
+RTL. That is the right trade here for the same reason `csim_prod_b1.tcl` gives:
+these maps do not fit in xsim, and a wrong overlap, a wrong refill base or a
+dropped `seg[seg_len-1]` is an indexing defect that shows up identically in C.
+A *timing*-dependent defect would not, and this suite says nothing about one.
+The co-simulation above remains the only RTL-level functional evidence, and it
+remains capped at `T = 6`.
+
+It ran hermetically: `template_match_b2_prod` is its own project, and the
+measured `b2` project's transaction report and `csynth.rpt` are byte-unchanged
+across it (the manifest re-verifies both).
+
+### The suite was proved adequate — after the build, not before it
 
 Overlap reuse replaces a re-read with **carried state**, which is the thing a
 vector suite is least likely to probe by accident. Priority 5's brief names the
@@ -226,16 +347,29 @@ the DUT's float32 reduction against every case's golden:
 
 | defect | what it breaks | detected |
 |---|---|---|
-| `shift_by=15` / `shift_by=17` | off-by-one slide | **all 256** stale fills, 7 cases |
+| `shift_by=15` / `shift_by=17` | off-by-one slide | **all 256** uniform fills, 7 cases |
 | `refill_n=15` | drops `seg[seg_len-1]` — the lane-15 hazard | **all 256**, 6 cases |
 | `refill_off=+1` | leaves `seg[tw-1]` holding the old tile | **all 256**, 8 cases |
 | `refill_u0=-16` | refills from the previous tile's column base | **all 256**, 8 cases |
 | `no-full-tile0` | reuse carried across rows **and invocations** | **all 256**, 8 cases |
 
-A cell counts the stale register fills for which a case *fails* the testbench
-check. **`all 256` is an unconditional detection** — no value the register file
-could be holding lets that defect through, the same standard `build_lane15` is
-held to.
+**Read "all 256" exactly, because the earlier wording overstated it.** The
+sweep sets *every* element of the 231-register file to the **same byte** and
+walks that byte over `0..255`. It is a sweep over **256 uniform fills**, not
+over the `256**231` arbitrary register states, and it never claimed to be one.
+What makes the uniform sweep worth running is narrow and stated: the only
+mutants whose result can depend on the fill at all are those that read above
+`seg_len-1`, where nothing has been written; for every other mutant the two
+endpoint evaluations agree and the fill is provably irrelevant. **A defect
+sensitive to some non-uniform pattern that no uniform fill reproduces is
+outside what this file tests.**
+
+When this ran: `b2_mutants.txt` is stamped 19:27:40, seventeen minutes after
+the co-simulation report it is supposed to have gated. It is a **post-build
+adequacy test of the pinned suite**. That weakens it in exactly one way — the
+suite could not have been changed in response to what it found — and in no
+other: the mutants, the goldens and the counts are all recomputable, and none
+of them reads a `b2` report.
 
 And the honest implementation reproduces the direct cross-correlation, the
 golden `(x, y)` and score, and is independent of the stale fill, on 12/12 cases.
@@ -252,15 +386,24 @@ is damaged only when `p < tw - 1 - 16t`, i.e. when
 
     u = 16t + p  <  tw - 1
 
-**independently of `t`.** The damaged set is exactly the output columns
-`u < tw - 1`, however many tiles the map has — verified on all 12 cases, where
-the largest differing column is always `< tw - 1`.
+**independently of `t`.** The damage is therefore **confined to** the output
+columns `u < tw - 1`, however many tiles the map has — verified on all 12
+cases, where the largest differing column is always `< tw - 1`.
 
-So a case detects a cross-invocation defect **only if its argmax lies in the
-first `tw - 1` columns**, and that prediction matches the observed detection on
-12/12:
+**Note the direction of that result.** It is a *containment* bound: no column
+at or above `tw - 1` can differ. It does **not** say every column below
+`tw - 1` does differ — a lane can inherit a stale value that happens to leave
+the accumulated `sti` unchanged, and nothing here rules that out.
 
-| case | tw−1 | max damaged u | argmax u | predicted | observed |
+So exactly one implication is derived, and it is the one that matters for test
+design: a case detects a cross-invocation defect **only if its argmax lies in
+the first `tw - 1` columns**. That is what proves the four blind cases *must*
+be blind. The converse — argmax below the bound ⇒ detects — is **not** derived;
+it is reported below because it matches the observation on 12/12, not because
+the geometry requires it, and `--selftest` labels the column `conjecture` for
+that reason:
+
+| case | tw−1 | max damaged u | argmax u | conjecture | observed |
 |---|---|---|---|---|---|
 | b1-w001-tw216 | 215 | 0 | 0 | detects | detects |
 | b1-w015-tw216 | 215 | 14 | 14 | detects | detects |
@@ -275,10 +418,11 @@ first `tw - 1` columns**, and that prediction matches the observed detection on
 | b1-tie-rowmajor | 15 | 14 | 31 | blind | blind |
 | b1-lane15 | 23 | 20 | 31 | blind | blind |
 
-The four blind cases are blind **by construction**: the width sweep
-deliberately plants its peak at the *last* valid column, `u = rw - 1`, because
-that is where a tile-count or lane-mask error shows up. No amount of extra
-width cases would help. This matters beyond B2 — the same geometry will govern
+The four blind cases are blind **by construction, and that half IS derived**:
+the width sweep deliberately plants its peak at the *last* valid column,
+`u = rw - 1` — where a tile-count or lane-mask error shows up — and the
+containment bound then guarantees the mutant cannot reach it. No amount of
+extra width cases would help. This matters beyond B2 — the same geometry will govern
 any later variant that carries state between calls, **B0b included**.
 
 **Two variations turned out to be INERT, and saying so is part of the result:**
@@ -342,10 +486,16 @@ correlation core entirely. B2 binds on
     to:   …/grp_correlation_core_Pipeline_mac_loop_fu_8736/…_psdsp_6/D
 
 — its own segment shift register feeding the MAC's DSP input, i.e. exactly the
-structure B2 added. So **B0b starts from 0.012 ns of slack on a path it will
-itself be touching**, not from B1's 0.135 ns on a path somewhere else. That is
-a materially worse starting position than the B1 → B2 step had, and it is a
-reason to route B0b early rather than at the end.
+structure B2 added. So **B0b inherits 0.012 ns of margin on a path inside the
+block it edits**, not B1's 0.135 ns on a path somewhere else.
+
+> **Say that precisely — the earlier wording overclaimed.** It read "a path it
+> will itself be touching", which asserts more than is known. B0b deletes the
+> window statistics and hoists a count pass; **it does not modify the
+> `seg` → DSP path**, and nothing here predicts that it will. What it can do is
+> perturb placement and routing around a path with 12 ps to give. That is a
+> real risk and a good reason to route B0b **early** rather than at the end —
+> but it is not the claim that B0b attacks the critical path.
 
 `tme_cycle_model.py --assert` re-reads all of this out of the report rather than
 trusting the literals: period, WNS, the "all constraints met" verdict, whether
@@ -373,6 +523,57 @@ before.
 
 ---
 
+## The packaged IP is preserved, and it is the image's actual input
+
+B1 learned this one the expensive way: `package_b1.tcl` re-ran *after* the
+Vivado build and overwrote the `impl/ip` directory the bitstream had been built
+from, so B1's manifest can only pin a **re-export** whose bytes post-date its
+own image.
+
+**B2's do not.** The chronology in `vivado_b2_125.log` and the file mtimes:
+
+| | time | |
+|---|---|---|
+| `package_b2.tcl` finished | 19:16:09 | IP exported |
+| Vivado loaded the IP repo | — | `Loaded user IP repository '…/template_match_b1_b2/b2/impl/ip'` |
+| first synthesis run launched | 19:17:10 | |
+| `impl/ip/` last written | 19:16:08 | **not touched since** |
+
+So these are the exact bytes `tme_standalone.bit` was built from:
+
+| artifact | sha256 | size |
+|---|---|---|
+| `component.xml` | `ea0d8a051812efef6fce51906ebd89b24a8a9aa185496ff72a18cd8cf9f771f4` | 139,790 |
+| `TermCountB2_hls_tme_top_0_2.zip` | `5d602b3e839a4c3cc4799c2da496c6ff560ce0bcc837a930f0854c7872a66eab` | 652,564 |
+
+Both are now **in the B2 manifest and committed to git**, with `.gitignore`
+negations and `-text` attributes so a fresh clone reproduces the bytes rather
+than the platform's line-ending conventions. The manifest binding is what
+detects an overwrite; the **git copy** is what survives one. Pinning them is
+also what will let the board session say *which core ran* rather than inferring
+it from a log line.
+
+Three further inputs were pinned at the same time, having been load-bearing and
+unrecorded:
+
+* **`tme_top.cpp` and `tme_top.h`** — compiled alongside the snapshot in every
+  one of these projects. The snapshot was digest-verified and its two build
+  partners were not, so an edit to either would have changed *both* halves of a
+  "paired" measurement with no manifest noticing.
+* **`b1_sources/correlation_core.b1.cpp`** — the control's source. B2's claim
+  is a difference against `b1`; the control's source is evidence for B2 exactly
+  as much as its report is.
+* **`sw/tme_b1_manifest.py`** — the *imported implementation*. Every digest in
+  this manifest is produced by its `digest`, written by its `write` and copied
+  by its `mirror`; this file supplies only the entry list. Leaving it unpinned
+  meant the rule that produced every number here was itself unrecorded, so a
+  change to the EOL or binary-suffix policy would have silently reinterpreted
+  the whole manifest.
+
+`tme_b2_manifest.py --verify` now binds **42 artifacts**, up from 33.
+
+---
+
 ## What Priority 5 did NOT do
 
 * **No board session.** B1 has one; B2 has a routed result and nothing more.
@@ -386,8 +587,14 @@ before.
 * **No new vector suite.** Deliberate: the pinned b1 suite is what makes the
   measurement a *pair*, and its adequacy for the new defect classes was
   established rather than assumed (above). Adding cases would have broken the
-  pairing.
+  pairing. The **production** suite was run separately, against the same
+  snapshot, precisely so the pairing stayed intact.
+* **No RTL-level evidence above `T = 6`.** The broad-geometry pass to `T = 52`
+  is C simulation. It exercises the source, not what Vitis compiled.
 * **The mechanism behind the `2*(T-1)` is not localized.** Only its shape is.
+* **The mutant sweep is over 256 uniform fills**, not over arbitrary register
+  states, and its containment result bounds where damage *may* appear rather
+  than proving where it *does*.
 
 ## Knock-on: B0b's endpoints moved
 
@@ -404,7 +611,38 @@ so it inherits B2's tile term whole. Correcting B2 moved both endpoints:
 untouched and its two terms (0.146031755778 and 0.438095267333 s/page) are the
 same numbers they always were. What changed is the base underneath them.
 
-There are now **two** warnings attached to that tier rather than one: B1's
-projected term was optimistic by `T+1` per (output row, template row) and B2's
-by `2*(T-1)`, which is a *different shape*. So "the projection is optimistic by
-about B1's amount" is not a correction anyone may apply to B0b in advance.
+There are now **two** warnings attached to that tier rather than one, and the
+second is worse than the first reading of it suggested. B1's projected term was
+optimistic by `T+1` per (output row, template row). B2's was optimistic by
+`3T-1 = (T+1) + 2*(T-1)` — **B1's miss recurred in full, and a further
+`2*(T-1)` accumulated on top of it.** Two naive projections, two misses, both
+in the direction that flattered the change, and the second larger than the
+first in both absolute and per-tile terms.
+
+So: measure B0b's term, do not project it. And do **not** apply either
+correction to B0b in advance — "optimistic by about B1's amount" was already
+wrong for B2, and there is no reason to think "optimistic by about B2's amount"
+will be right for B0b.
+
+B0b has no `FROZEN` block of its own — only the count-pass terms in
+`FROZEN["b0b_count_pass"]` and the two endpoints in
+`FROZEN["s_per_page_at_125mhz"]`, all of them derived or projected. It must not
+acquire a measured tile term, a routed WNS or a board figure by inheritance
+from B2's; those are what the two steps B2 has been through are for.
+
+---
+
+## Change note, 2026-08-19: six claims corrected
+
+Every one of these was found by re-reading the evidence against the artifacts,
+and each is a claim that was stronger than what the artifacts support.
+
+| # | claim as written | as corrected |
+|---|---|---|
+| 1 | "B1's overhead did not recur, in size or in shape" | **False.** miss vs the pre-RTL projection is `3T-1 = (T+1) + 2*(T-1)`; B1's `T+1` recurs, and at `T=1` it is the whole miss. `2*(T-1)` is the *additional* miss against a baseline that already carries B1's term. Now enforced by `tme_b2_ab.py` check 4 (14/14, 5/5). |
+| 2 | withdrawn projection `20.175432`, miss `0.22973278377777717` | Rounded, and the miss derived from it was **1,687 cycles wrong**. Frozen as integers: `90,789,445,687` → `1,033,795,840` cycles → `0.229732408889` s/page, asserted as an integer identity. |
+| 3 | "registered BEFORE the build" | Timestamps say otherwise. The **projection** is pre-registered by commit `e762cbf` (2026-08-17); `--predict`, its snapshot and the mutant gate all **postdate** the 19:10:13 cosim report. Relabelled *reconstructed pre-RTL baselines* and *post-build adequacy test*. |
+| 4 | packaged IP unpinned | `component.xml` and the IP ZIP are the **actual input** to the bitstream (exported 19:16:08, read by a synthesis run launched 19:17:10). Both now in git and in the manifest, along with `tme_top.cpp/.h`, the B1 control source and the imported `tme_b1_manifest.py`. 33 → **42** artifacts. |
+| 5 | functional evidence capped at `T = 6` | Hermetic production C-sim added (`csim_prod_b2.tcl`): **15/15 + 9 direct**, tile counts to `T = 52`, the compiled maximum. |
+| 6a | "B0b starts on a path it will itself be touching" | B0b **inherits** the 12 ps margin; it does not modify the `seg` → DSP path. It may disturb placement around it — still a reason to route early, not a claim about what B0b edits. |
+| 6b | "all 256 possible stale register fills" | **256 uniform fills**, not `256**231` states. And the self-healing result is a *containment* bound: it proves the blind cases must be blind; it does not prove every column below `tw-1` changes. |

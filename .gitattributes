@@ -42,6 +42,15 @@ sw/trace_*_provenance.json -text
 hls/template_match/tb_tme_*_phase_s.* -text
 hls/template_match/template_match_b1/b1/impl/ip/*.zip -text
 
+# Priority 5's packaged IP. The ZIP is binary; component.xml is TEXT that
+# ships with LF endings, and logs/b2_20260819/MANIFEST.sha256 pins it at
+# ea0d8a05...f9f771f4 -- a digest that is only reproducible from the bytes AMD
+# emitted. A CRLF checkout would still verify (the manifest normalises .xml),
+# but it would no longer be the packaged artifact, and the point of keeping it
+# is that it IS the packaged artifact.
+hls/template_match/template_match_b1_b2/b2/impl/ip/*.zip -text
+hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml -text
+
 # The board runner AS IT RAN. logs/b1_board_20260818/01_hashes_local.txt,
 # 02_hashes_remote.txt and 03_run.txt all pin it at
 # f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153, taken with

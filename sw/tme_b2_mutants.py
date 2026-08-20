@@ -5,8 +5,19 @@ B2 adds HORIZONTAL OVERLAP REUSE to correlation_core.  Tile 0 still loads the
 whole segment; every later tile slides the overlap down by PAR_COLS and refills
 only the PAR_COLS pixels that are new.  That replaces a re-read with CARRIED
 STATE, and carried state is the thing a vector suite is least likely to probe
-by accident -- so before spending an RTL co-simulation on it, this file asks
-whether the suite that will be run can actually fail.
+by accident -- so this file asks whether the suite that will be run can
+actually fail.
+
+WHEN THIS RAN.  After the build, not before it.  The b2 co-simulation report
+was written at 19:10:13 on 2026-08-19; this file's retained output,
+logs/b2_20260819/b2_mutants.txt, is stamped 19:27:40.  It is therefore a
+POST-BUILD ADEQUACY TEST of the pinned suite, not a gate the build had to pass
+first.  That weakens it in exactly one way -- the suite could not have been
+changed in response to what it found, because by then the measurement existed
+-- and in no other: the mutants, the goldens and the detection counts are all
+recomputable, and none of them reads a b2 report.  Earlier drafts of this
+header said "before the build"; the timestamps say otherwise and the
+timestamps win.
 
 WHY THIS FILE EXISTS AT ALL, AND WHY IT IS NOT A NEW SUITE.  B2's measurement
 has to be PAIRED against B1's, and a pair is only worth something if both
@@ -15,27 +26,41 @@ its `cur` and `b1` transaction reports are retained, so running B2 through it
 gives a three-way comparison at zero stimulus risk.  Adding cases would have
 broken that.  The question then becomes whether the OLD suite is adequate for
 the NEW defect classes, and that is a question with an answer rather than a
-matter of taste.  It is answered here, before the build, not asserted after it.
+matter of taste.  It is answered here, by construction rather than by assertion -- though see
+WHEN THIS RAN above for when "here" was.
 
 WHAT IS ESTABLISHED
 -------------------
 Six defect classes, each an edit a reasonable person might make to the
 overlap-reuse code, are each broken by at least one case in the pinned suite
-for ALL 256 possible stale register fills -- an unconditional detection, the
-same standard build_lane15 is held to.  Two further variations are shown to be
-INERT: they change no result anywhere, so they are not defects and no suite
-could or should catch them.
+for ALL 256 UNIFORM STALE FILLS SWEPT -- the same standard build_lane15 is
+held to.  Two further variations are shown to be INERT: they change no result
+anywhere, so they are not defects and no suite could or should catch them.
+
+READ "ALL 256" EXACTLY.  The sweep sets EVERY element of the 231-register file
+to the same byte and walks that byte over 0..255.  It is a sweep over 256
+uniform fills, NOT over the 256**231 arbitrary register states, and it does not
+claim to be.  What makes the uniform sweep worth running is narrow and stated:
+the only mutants whose result can depend on the fill at all are those that read
+above seg_len-1, where nothing has been written; for every other mutant the two
+endpoint evaluations agree and the fill is provably irrelevant (see
+_n_stale_breaking).  A defect sensitive to some NON-uniform pattern that no
+uniform fill reproduces is outside what this file tests.
 
 Two structural arguments are re-proved rather than asserted, because each
 explains a column of the table that would otherwise be a bare count:
 
   * the out-of-patch PAD VALUE is unreachable (only masked lanes ever read it),
     while the `idx < pw` GUARD is still required for memory safety;
-  * a cross-invocation reuse defect damages EXACTLY the output columns
-    u < tw - 1 and self-heals beyond them, so only a case whose argmax lies
-    there can detect it.  That is why `no-full-tile0` is caught by eight of the
-    twelve cases rather than all twelve, and it is a fact about GEOMETRY, not
-    about this suite's luck.
+  * a cross-invocation reuse defect can damage AT MOST the output columns
+    u < tw - 1, self-healing beyond them, so ONLY a case whose argmax lies
+    there can detect it.  Note the direction: that is a CONTAINMENT result, an
+    upper bound on where a difference may appear.  It proves the four blind
+    cases must be blind.  It does NOT prove that every column below tw - 1
+    actually changes, so it does not by itself predict the eight detections --
+    those are observed, and the table reports them as observations that are
+    consistent with the bound.  Either way it is a fact about GEOMETRY rather
+    than about this suite's luck.
 
 WHAT IS NOT ESTABLISHED
 -----------------------
@@ -247,8 +272,10 @@ def load_suite(name: str = "b1") -> list[dict]:
 
 
 # The five ways the overlap-reuse code can be got wrong, as edits rather than
-# as prose.  Each must be broken UNCONDITIONALLY -- for every one of the 256
-# values a stale register could hold -- by at least one case in the suite.
+# as prose.  Each must be broken by at least one case in the suite for every
+# one of the 256 UNIFORM fills swept -- i.e. for every value a stale register
+# could uniformly hold, not for every arbitrary state of the 231-register file.
+# See the module docstring, READ "ALL 256" EXACTLY.
 DEFECTS = {
     "shift_by=15":    dict(shift_by=15),
     "shift_by=17":    dict(shift_by=17),
@@ -365,14 +392,26 @@ def selftest_self_healing(cases: list[dict]) -> tuple[int, list]:
 
         u = 16*t + p  <  tw - 1
 
-    independently of t.  THE DAMAGED SET IS EXACTLY THE OUTPUT COLUMNS
+    independently of t.  THE DAMAGE IS CONFINED TO THE OUTPUT COLUMNS
     u < tw - 1, however many tiles the map has.
 
-    The consequence for test design is sharp: a case detects this defect only
-    if its argmax lies in the first tw - 1 columns.  Wide templates with peaks
-    at the far right -- which is where the WIDTH sweep deliberately puts them,
-    to test the tile break -- are blind to it by construction, and no amount of
-    extra width cases would help.
+    READ THE DIRECTION OF THAT RESULT.  It is a CONTAINMENT bound: no column at
+    or above tw - 1 can differ.  It does NOT say every column below tw - 1 does
+    differ -- a lane can inherit a stale value that happens to leave the
+    accumulated sti unchanged, and nothing here rules that out.
+
+    So exactly one implication is derived, and it is the one that matters for
+    test design: a case detects this defect ONLY IF its argmax lies in the
+    first tw - 1 columns.  Wide templates with peaks at the far right -- which
+    is where the WIDTH sweep deliberately puts them, to test the tile break --
+    are blind by construction, and no amount of extra width cases would help.
+    The CONVERSE (argmax below the bound => detects) is not derived.  It is
+    checked below because it happens to hold on all twelve cases, and a case
+    where it stopped holding would be worth knowing about -- but it is reported
+    as an OBSERVATION, not as a consequence of the geometry.
+
+    `in_bound` is the derived claim and a violation of it is a real failure.
+    `predicted == observed` is the observation.
 
     Returns (violations, per-case rows).  Violations must be 0.
     """
@@ -426,15 +465,17 @@ def main() -> int:
             bad += 1
 
         heal_bad, heal = selftest_self_healing(cases)
-        print("SELF-HEALING ARGUMENT: a cross-invocation reuse defect damages "
-              "EXACTLY the output")
-        print("columns u < tw - 1, however many tiles the map has -- so a case "
-              "detects it only if")
-        print("its argmax lies there.  This is what explains the "
-              "`no-full-tile0` column below.")
+        print("SELF-HEALING ARGUMENT: a cross-invocation reuse defect can "
+              "damage AT MOST the")
+        print("output columns u < tw - 1, however many tiles the map has.  That CONTAINMENT is")
+        print("derived, and it proves one direction: a case detects this defect ONLY IF its")
+        print("argmax lies there.  `max damaged u` < `tw-1` is the derived claim being checked.")
+        print("The `conjecture` column applies the CONVERSE too, which is NOT derived -- it")
+        print("is reported because it matches `observed` on every case, not because the")
+        print("geometry requires it.  This is what explains the `no-full-tile0` column below.")
         print()
         print(f"  {'case':<22} {'tw-1':>5} {'max damaged u':>14} "
-              f"{'argmax u':>9} {'predicted':>10} {'observed':>9}")
+              f"{'argmax u':>9} {'conjecture':>11} {'observed':>9}")
         for r in heal:
             mark = "" if (r["in_bound"] and r["predicted"] == r["observed"]) \
                 else "   <-- ARGUMENT FAILS"
@@ -491,10 +532,11 @@ def main() -> int:
               " ".join(f"{x:>16s}" for x in cells))
 
     print()
-    print("  A cell counts the stale register fills for which the case FAILS "
-          "the testbench\n  check.  `ALL 256` is an unconditional detection: "
-          "no value the register file\n  could be holding lets that defect "
-          "through.")
+    print("  A cell counts the UNIFORM stale fills for which the case FAILS "
+          "the testbench\n  check -- every register set to the same byte, "
+          "that byte swept 0..255.\n  `ALL 256` means no such fill lets the "
+          "defect through.\n  It is NOT a sweep over the 256**231 "
+          "arbitrary register states, and does not claim to be.")
     print()
     for m in DEFECTS:
         ok = best[m] == 256

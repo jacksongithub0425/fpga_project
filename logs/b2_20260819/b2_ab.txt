@@ -66,9 +66,14 @@ PAIRED RTL CO-SIMULATION -- template_match_b1_{b1,b2}
   suite total: 1,388,191 -> 1,263,391 cycles (1.099x on this suite).  The suite is NOT the workload;
   the page figure comes from tme_cycle_model over the 20,680-trial trace, not from here.
 
-OK -- three independent checks passed:
+  DECOMPOSITION  miss vs pre-RTL projection = rh*th*(3T-1) = rh*th*((T+1) + 2*(T-1)) : 14/14 exact
+                 of which T = 1, where the whole miss is B1's (T+1)      : 5/5 exact
+
+OK -- four independent checks passed:
   1. the `b1` control still reproduces its published tile term;
   2. every measured B2 latency matches the DECLARED model in tme_cycle_model;
   3. every shortfall against the naive reuse arithmetic fits one rh*th*(a*T + b),
-     fitted here and not read from the model.
+     fitted here and not read from the model;
+  4. the miss against the pre-RTL projection is rh*th*((T+1) + 2*(T-1)) --
+     B1's correction RECURS and a further 2*(T-1) is added to it.
 Cycle counts only.  No page time and no clock is measured by this file.

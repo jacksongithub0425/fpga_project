@@ -304,18 +304,22 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         # WHAT THIS REPLACED, AND WHAT THE MISS WAS.  The projected term was
         # T*(tw + 41) + (tw - 1) -- written in the same style as B1's withdrawn
         # projection, i.e. "the reuse saves exactly the pixels it does not
-        # re-read", counting 25 per tile and nothing per call.  Two candidate
-        # answers were REGISTERED BEFORE THE BUILD (tme_b2_ab.py --predict,
-        # which reads no b2 report and is recomputable at any time): that
-        # projection, and B1's measured term minus the naive saving, which
-        # differ by rh*th*(T + 1).  THE MEASUREMENT MATCHED NEITHER.  The
-        # shortfall against the naive reuse arithmetic is
+        # re-read", counting 25 per tile and nothing per call.  It is genuinely
+        # PRE-REGISTERED: it entered this file in commit e762cbf, 2026-08-17,
+        # before any B2 source existed.  The second candidate, B1's measured
+        # term minus the naive saving, is a BASELINE computed after the fact by
+        # tme_b2_ab.py; the two differ by rh*th*(T + 1).  THE MEASUREMENT
+        # MATCHED NEITHER.  The shortfall against the naive reuse arithmetic is
         #
         #     rh * th * 2 * (T - 1)      i.e. (a, b) = (+2, -2) in a*T + b
         #
-        # so B1's T + 1 did NOT recur, in shape or in size.  That is the point
-        # of having measured it: nothing about B1 predicted this, and the
-        # earlier revision of this file said so in advance.
+        # BUT THAT IS THE SHORTFALL AGAINST A BASELINE THAT ALREADY CARRIES
+        # B1's CORRECTION.  Measured against the pre-registered projection --
+        # the like-for-like comparison, since that is the one B1 also made --
+        # the miss is rh*th*(3T - 1) = rh*th*((T + 1) + 2*(T - 1)).  B1's
+        # T + 1 DID recur; at T = 1 it is the whole miss.  What is new is the
+        # additional 2*(T - 1).  Quote the shortfall only with its baseline
+        # named, and see tme_b2_ab.py check 4, which enforces this.
         #
         # THE SHAPE IS MEASURED; THE MECHANISM IS NOT.  Two cycles per tile
         # beyond the pixels, minus two per call, is what fourteen transactions
@@ -772,8 +776,16 @@ FROZEN = {
         # wrong.  Frozen so the correction cannot be quietly rounded away: the
         # miss is against the EXACT old projection, not against the 26.240 that
         # was itself a rounded freeze.
-        "withdrawn_projection": 26.239696410444444,
-        "projection_miss": 0.09459569777777599,
+        # EXACT, and integers first.  A projection quoted only as a float is
+        # a projection whose miss can drift by whatever the rounding hid; see
+        # the B2 block below, where a 20.175432 written to six places put the
+        # frozen miss 1,687 cycles away from the truth.  Both endpoints and
+        # the difference are frozen as CYCLE COUNTS, and the s/page figures are
+        # derived from them rather than transcribed alongside them.
+        "withdrawn_aggregate_cycles": 118078633847,
+        "withdrawn_projection": 26.23969641044444,
+        "projection_miss_cycles": 425680640,
+        "projection_miss": 0.09459569777777778,
         # The cost at the compiled maximum template width, where B1 LOSES.
         "phase_s_max_cycles": 23482881,
         "phase_s_max_delta_cycles": 6144,
@@ -801,18 +813,45 @@ FROZEN = {
     "b2": {
         "aggregate_cycles": 91823241527,        # exact, asserted with ==
         "s_per_page": 20.405164783777778,       # aggregate / 36 / 125e6
-        # What the model said before any B2 RTL existed, and by how much it was
-        # wrong.  Optimistic again, and by more than B1's miss -- 0.2297 s/page
-        # against 0.0946.
-        "withdrawn_projection": 20.175432,
-        "projection_miss": 0.22973278377777717,
-        # TWO candidates were registered before the build and the measurement
-        # matched NEITHER (tme_b2_ab.py --predict).  The projected term was
-        # T*(tw+41)+(tw-1); B1's measured term minus the naive reuse saving
-        # would have been T*(tw+42)+tw.  The RTL is T*(tw+44)+(tw-2): the
-        # shortfall against the naive arithmetic is 2*(T-1) per (output row,
-        # template row), not B1's (T+1).  B1's overhead did not recur, in
-        # shape or in size.
+        # What the model said before any B2 RTL existed, and by how much it
+        # was wrong.  Optimistic again, and by more than B1's miss -- 0.2297
+        # s/page against 0.0946.
+        #
+        # FROZEN AS INTEGERS, AND THIS ONE HAD TO BE CORRECTED.  The withdrawn
+        # projection used to sit here as the rounded 20.175432, and the miss
+        # beside it was that float subtracted from the measured s/page --
+        # 0.22973278377777717, which is 1,687 CYCLES away from the real
+        # difference.  Rounding a page average to six places is a 2.25-million-
+        # cycle tolerance, so a withdrawn number quoted that way cannot pin its
+        # own miss.  The withdrawn AGGREGATE is what the pre-B2 model actually
+        # summed over the same 20,680 trials, and it is recomputable: load
+        # logs/b2_20260819/tme_cycle_model.py.pre_b2 and call page_cycles on
+        # the workload this file discovers.  That snapshot reproduces THIS
+        # file's `cur` and `B1` aggregates exactly, which is what says the two
+        # differ in the B2 term and nothing else.
+        "withdrawn_aggregate_cycles": 90789445687,
+        "withdrawn_projection": 20.17543237488889,
+        "projection_miss_cycles": 1033795840,
+        "projection_miss": 0.2297324088888889,
+        # TWO candidate terms, and the measurement matched NEITHER
+        # (tme_b2_ab.py --predict).  The pre-RTL projection was T*(tw+41)+(tw-1)
+        # -- committed 2026-08-17 in e762cbf, before the B2 source existed;
+        # B1's measured term minus the naive reuse saving would have been
+        # T*(tw+42)+tw.  The RTL is T*(tw+44)+(tw-2).
+        #
+        # READ THE DECOMPOSITION, NOT JUST THE SHORTFALL.  Against the pre-RTL
+        # projection -- the analogue of the projection B1 withdrew -- the miss
+        # is
+        #
+        #     3T - 1 = (T + 1) + 2*(T - 1)   per (output row, template row)
+        #
+        # exact on 14/14.  The (T + 1) is B1's own correction and it RECURS:
+        # at T = 1 the second term vanishes and the entire miss IS B1's (T+1),
+        # on all five single-tile transactions.  The 2*(T - 1) below is the
+        # ADDITIONAL miss, measured against control-naive, a baseline that
+        # already carries B1's term.  "B1's overhead did not recur" is FALSE
+        # and was written here once; tme_b2_ab.py's check 4 now fails if the
+        # decomposition ever stops holding.
         "shortfall_per_tile": 2,
         "shortfall_per_call": -2,
         # Unlike B1, B2 WINS at the compiled maximum template width.  The
@@ -828,9 +867,17 @@ FROZEN = {
         # The BINDING PATH ALSO MOVED, and that is the part with consequences.
         # B1 bound on templ_buf -> t_row, outside correlation_core; B2 binds on
         # its own shift register feeding the MAC's DSP input.  So the next
-        # change to correlation_core -- B0b -- starts from 0.012 ns of slack on
-        # a path it will itself be touching, not from B1's 0.135 ns on a path
+        # change to correlation_core -- B0b -- INHERITS 0.012 ns of margin on a
+        # path inside the block it edits, rather than B1's 0.135 ns on a path
         # somewhere else.
+        #
+        # SAY THAT PRECISELY.  B0b deletes the window statistics and hoists a
+        # count pass; it does NOT modify the seg-shift -> DSP path itself, and
+        # nothing here predicts that it will.  What it can do is perturb
+        # placement and routing around a path with 12 ps to give.  That is a
+        # reason to route B0b EARLY -- the margin is small enough that a
+        # placement disturbance is a plausible way to lose it -- not a reason
+        # to say B0b attacks the critical path.
         "routed_period_ns": 8.000,
         "routed_wns_ns": 0.011710,
         "routed_binding_path_in_core": True,
@@ -1254,6 +1301,20 @@ def check(results):
     if abs(agg / PAGES / TARGET_CLOCK_HZ - b1f["s_per_page"]) > 1e-12:
         fail.append("B1 s/page: {!r} != frozen {!r}".format(
             agg / PAGES / TARGET_CLOCK_HZ, b1f["s_per_page"]))
+    # The withdrawn endpoint and the miss are checked as INTEGERS first.  A
+    # float identity here passes on numbers that are two thousand cycles apart,
+    # which is how the B2 block came to carry a miss derived from a rounded
+    # projection; see FROZEN["b2"].
+    if (b1f["aggregate_cycles"] - b1f["withdrawn_aggregate_cycles"]
+            != b1f["projection_miss_cycles"]):
+        fail.append("B1 projection miss: {:,} - {:,} != frozen {:,} cycles".format(
+            b1f["aggregate_cycles"], b1f["withdrawn_aggregate_cycles"],
+            b1f["projection_miss_cycles"]))
+    for k, c in (("withdrawn_projection", "withdrawn_aggregate_cycles"),
+                 ("projection_miss", "projection_miss_cycles")):
+        if b1f[k] != b1f[c] / PAGES / TARGET_CLOCK_HZ:
+            fail.append("B1 {}: frozen {!r} is not {} / 36 / 125e6 = {!r}".format(
+                k, b1f[k], c, b1f[c] / PAGES / TARGET_CLOCK_HZ))
     if abs((b1f["s_per_page"] - b1f["withdrawn_projection"])
            - b1f["projection_miss"]) > 1e-12:
         fail.append("B1 projection miss: frozen {!r} is not measured minus "
@@ -1279,6 +1340,20 @@ def check(results):
     if abs(agg2 / PAGES / TARGET_CLOCK_HZ - b2f["s_per_page"]) > 1e-12:
         fail.append("B2 s/page: {!r} != frozen {!r}".format(
             agg2 / PAGES / TARGET_CLOCK_HZ, b2f["s_per_page"]))
+    # THE WITHDRAWN PROJECTION, at cycle resolution.  This is the check that
+    # was missing when the withdrawn figure was frozen as the rounded 20.175432
+    # and the miss was computed from it: the float identity below passed on a
+    # miss that was 1,687 cycles wrong.  Integers first, floats derived.
+    if (b2f["aggregate_cycles"] - b2f["withdrawn_aggregate_cycles"]
+            != b2f["projection_miss_cycles"]):
+        fail.append("B2 projection miss: {:,} - {:,} != frozen {:,} cycles".format(
+            b2f["aggregate_cycles"], b2f["withdrawn_aggregate_cycles"],
+            b2f["projection_miss_cycles"]))
+    for k, c in (("withdrawn_projection", "withdrawn_aggregate_cycles"),
+                 ("projection_miss", "projection_miss_cycles")):
+        if b2f[k] != b2f[c] / PAGES / TARGET_CLOCK_HZ:
+            fail.append("B2 {}: frozen {!r} is not {} / 36 / 125e6 = {!r}".format(
+                k, b2f[k], c, b2f[c] / PAGES / TARGET_CLOCK_HZ))
     if abs((b2f["s_per_page"] - b2f["withdrawn_projection"])
            - b2f["projection_miss"]) > 1e-12:
         fail.append("B2 projection miss: frozen {!r} is not measured minus "

@@ -35,8 +35,11 @@
 // LANE 15 READS AN ELEMENT NO TILE EVER WROTE — a defect that is invisible to
 // a score-tolerance assert and to any suite whose peaks avoid lane 15.  The
 // case that detects it is build_lane15 in tme_generate_production.py: a PAIR
-// of lane-15 windows whose ordering the mutation reverses for all 256 possible
-// stale-register values, since no single window is safe against every one.
+// of lane-15 windows whose ordering the mutation reverses for all 256 UNIFORM
+// stale fills swept (every register set to the same byte), since no single
+// window is safe against every one.  That sweep is over fill VALUES, not over
+// the 256^231 arbitrary register states; see tme_b2_mutants.py for what the
+// distinction does and does not buy.
 //
 // SEG_W is the compile-time BOUND on that quantity, reached at tw =
 // MAX_TEMPL_W.  seg_len below is the per-invocation value.  Keeping each
@@ -113,18 +116,29 @@ void correlation_core(
     // on all 14 in the same comparison, which is what makes the difference
     // attributable to the reuse rather than to the harness.
     //
-    // THE PROJECTION WAS OPTIMISTIC AGAIN, AND DIFFERENTLY.  Two candidates
-    // were registered BEFORE the build (`tme_b2_ab.py --predict`, which reads
+    // THE PROJECTION WAS OPTIMISTIC AGAIN, AND B1'S OVERHEAD IS PART OF WHY.
+    // Two candidate terms are on record (`tme_b2_ab.py --predict`, which reads
     // the retained pre-measurement copy of the model and no b2 report at all):
-    // the pre-RTL projection T*(tw+41)+(tw-1), and B1's measured term minus the
-    // naive reuse saving, T*(tw+42)+tw.  THE RTL MATCHED NEITHER.  The
-    // shortfall against the naive arithmetic is
+    // the pre-RTL projection T*(tw+41)+(tw-1) -- committed 2026-08-17 in
+    // e762cbf, two days before this rewrite existed -- and B1's measured term
+    // minus the naive reuse saving, T*(tw+42)+tw.  THE RTL MATCHED NEITHER.
+    // Against the pre-RTL projection, which is the analogue of the projection
+    // B1 withdrew, the miss is
     //
-    //     2 * (T - 1)     cycles per (output row, template row)
+    //     3T - 1  =  (T + 1)  +  2 * (T - 1)     per (output row, template row)
     //
-    // where B1's was T + 1.  So B1's overhead did not recur -- not in size and
-    // not in shape -- which is the whole reason it had to be measured instead
-    // of adjusted for.  Do not carry a correction forward to B0b either.
+    // and READ BOTH TERMS.  The (T + 1) is B1's own correction, and it RECURS
+    // here exactly: at T = 1 the second term vanishes and the whole miss IS
+    // B1's (T + 1) -- confirmed on all five single-tile transactions.  What is
+    // new is the ADDITIONAL 2 * (T - 1), which is the miss against the
+    // control-naive baseline, i.e. against a projection that already carries
+    // B1's correction.  Quote 2*(T-1) only with that baseline named.
+    //
+    // So B1's overhead did not merely recur, it recurred AND was compounded --
+    // which is the reason the term had to be measured rather than adjusted for
+    // by B1's amount.  Do not carry either correction forward to B0b as a
+    // prediction; carry forward only that a naive projection has now been
+    // optimistic twice, in two different shapes.
     //
     // THE SHAPE IS MEASURED; THE MECHANISM IS NOT.  Two cycles per tile beyond
     // the pixels, minus two per call, is what the fourteen transactions pin.
@@ -148,8 +162,17 @@ void correlation_core(
     // is NOT tested by a new vector suite: sw/tme_b2_mutants.py shows that the
     // already-pinned b1 suite breaks on the `skip_first_full` mutant -- reuse
     // carried across tile 0, hence across template rows, output rows and calls
-    // -- for all 256 possible stale register fills, on eight of its twelve
-    // cases.  Keeping the stimulus identical to B1's is also what makes the
+    // -- on eight of its twelve cases, for all 256 UNIFORM stale fills it
+    // sweeps.  READ THAT BOUND EXACTLY: the sweep sets every register to the
+    // same byte and walks that byte 0..255.  It is not a sweep over arbitrary
+    // register states, of which there are 256^231, and it does not claim to
+    // be.  What makes the result more than anecdote is that the shift is
+    // SELF-HEALING -- the inherited prefix shrinks by PAR_COLS per tile -- so
+    // any damage this mutant can do is CONFINED to output columns u < tw - 1.
+    // That containment is derived; it is an upper bound on where a difference
+    // may appear, and it does NOT establish that every such column does
+    // differ.  The eight detections are observed, not predicted.
+    // Keeping the stimulus identical to B1's is also what makes the
     // paired co-simulation a comparison rather than two separate runs.
     //
     // The number of pixels carried over is tw - 1, which is ZERO at tw = 1.

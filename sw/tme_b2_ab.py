@@ -23,8 +23,8 @@ change.  Nothing about that result licenses assuming B2 pays the same, or pays
 only the same -- so this file fits the shortfall's shape from the B2 data alone
 and reports it, rather than testing a borrowed constant.
 
-THREE CHECKS, AND THEY FAIL FOR DIFFERENT REASONS
--------------------------------------------------
+FOUR CHECKS, AND THEY FAIL FOR DIFFERENT REASONS
+------------------------------------------------
   1. THE CONTROL IS INTACT.  Every `b1` transaction must still reproduce
      tme_cycle_model's published B1 term, T*(2*tw + 41) + 1.  If it does not,
      the pair is not a pair and nothing below is attributable to B2.
@@ -36,6 +36,14 @@ THREE CHECKS, AND THEY FAIL FOR DIFFERENT REASONS
      rh*th*(a*T + b) for one (a, b) across every transaction.  Two free
      parameters, solved from two transactions with different T; every other
      transaction is then a test of them rather than an input to them.
+  4. THE DECOMPOSITION (--assert only, needs the pre-B2 snapshot).  The miss
+     against the PRE-RTL PROJECTION must be rh*th*(3T - 1), and 3T - 1 must be
+     (T + 1) + 2*(T - 1) -- B1's correction plus an ADDITIONAL term, not
+     instead of it.  At T = 1 the second term is zero and the whole miss must
+     be B1's (T + 1).  This check exists because the natural summary of check 3
+     -- "the shortfall is 2*(T-1), not B1's T+1" -- reads as "B1's overhead did
+     not recur", and that is false: 2*(T-1) is measured against control-naive,
+     a baseline that ALREADY contains B1's term.  See predict().
 
 Checks 2 and 3 are computed from different things and neither is derived from
 the other -- the mistake tme_b1_ab.py records having made once, where the
@@ -321,44 +329,88 @@ def _load_pre_b2():
 def predict(ctl: list[int], ctl_name: str, ctl_variant: str) -> int:
     """The two candidate B2 terms, from the PRE-B2 model and the control report.
 
-    THIS READS NO b2 REPORT, and that is the point.  "The projection was
-    optimistic by X" is worth nothing if the projection was written after
-    seeing the answer, and a timestamp is a weak way to rule that out.  What
-    rules it out here is that this function CANNOT see the answer: its inputs
-    are the retained pre-measurement copy of tme_cycle_model and the retained
-    `b1` transaction report, both of which predate B2's RTL, so anyone can
-    recompute these numbers at any time and get the same ones.
+    THIS READS NO b2 REPORT.  "The projection was optimistic by X" is worth
+    nothing if the projection was written after seeing the answer, and this
+    function CANNOT see the answer: its inputs are the retained pre-measurement
+    copy of tme_cycle_model and the retained `b1` transaction report, so anyone
+    can recompute these numbers at any time and get the same ones.
+
+    WHAT IS AND IS NOT PRE-REGISTERED -- read this before quoting the word.
+
+      * The PRE-RTL PROJECTION genuinely is.  tile = T*(tw + 41) + (tw - 1)
+        entered sw/tme_cycle_model.py in commit e762cbf, 2026-08-17 23:11,
+        with the 20.175432 page figure beside it -- two days before any B2 RTL
+        was written (b1_sources/correlation_core.b2.cpp, 2026-08-19 19:04) and
+        nineteen hours before the build.  Git, not a file timestamp, is what
+        establishes that, and git is the only part of this that a later edit
+        could not have manufactured.
+      * THIS TOOL AND ITS SNAPSHOT ARE NOT.  logs/b2_20260819/
+        tme_cycle_model.py.pre_b2 was written at 19:19:15 and PREDICTION.txt at
+        19:19:23, while the b2 transaction report already existed at 19:10:13.
+        Both POSTDATE the measurement.  The snapshot is a reconstruction of the
+        pre-RTL model, and what makes it usable is not its mtime but that its
+        CONTENT is checkable against e762cbf and that --assert refuses to run
+        if it ever starts carrying the measured term.
+      * THE CONTROL-NAIVE CANDIDATE IS NOT pre-registered at all.  It is
+        computed here, by this file, after the fact.  It is a useful BASELINE
+        -- "what B1's measured term plus perfect reuse would have given" -- and
+        it is not a prediction anyone made in advance.
+
+    So call the projection pre-registered (git says so) and call this mode a
+    RECONSTRUCTION of the pre-RTL baselines.  The distinction costs nothing and
+    the alternative is a claim the timestamps contradict.
 
       pre-RTL projection
                   the snapshot's cycles(..., "B2"), i.e.
-                  tile = T*(tw + 41) + (tw - 1).  Written before any B2 RTL
-                  existed, in the same style as B1's projection -- which was
-                  WITHDRAWN for being optimistic by T + 1 per (output row,
-                  template row).
+                  tile = T*(tw + 41) + (tw - 1) -- the analogue of the
+                  projection B1 WITHDREW for being optimistic by T + 1 per
+                  (output row, template row).
       control-naive
                   the control's MEASURED latency minus exactly the pixels the
                   reuse skips, rh*th*(T - 1)*(tw - 1).  Equivalent to
-                  tile = T*(tw + 42) + tw when the control is `b1`.
+                  tile = T*(tw + 42) + tw when the control is `b1`.  Note what
+                  this baseline already contains: B1's measured term, hence
+                  B1's own T + 1 correction.
 
-    The two differ by rh*th*(T + 1): the same shape, and the same sign, as the
-    miss B1's own projection turned out to have.  Landing on the projection
-    would have meant B1's overhead did not recur; landing on control-naive
-    would have meant it recurred exactly once.
+    The two differ by rh*th*(T + 1) -- B1's shape and B1's sign.
 
-    THE MEASUREMENT LANDED ON NEITHER -- the shortfall is 2*(T - 1), so B1's
-    shape did not recur at all.  That outcome is only worth stating because
-    both alternatives were written down first, which is what this mode is for.
+    THE MEASUREMENT LANDED ON NEITHER, and the decomposition is the result:
+
+        measured - pre-RTL projection = 3T - 1 = (T + 1) + 2*(T - 1)
+
+    per (output row, template row), exact on 14/14.  BOTH TERMS MATTER.  The
+    (T + 1) is B1's correction and it RECURS -- at T = 1 the second term is
+    zero and the entire miss IS B1's (T + 1), which is what the five
+    single-tile transactions show.  The 2*(T - 1) is the ADDITIONAL miss, and
+    it is additional only relative to control-naive, a baseline that already
+    carries B1's correction.  Quoting 2*(T - 1) without naming that baseline
+    turns "B1's overhead recurred and was compounded" into "B1's overhead did
+    not recur", which is the opposite of what these numbers say.
     """
     pre = _load_pre_b2()
     rows = build_rows(ctl, None, ctl_variant)
     for r in rows:
         r["model_b2_declared"] = pre.cycles(r["pw"], r["ph"], r["tw"],
                                             r["th"], "B2")
-    print("PRE-REGISTERED B2 PREDICTIONS -- computed from the PRE-B2 model "
-          "snapshot and the")
-    print(f"`{ctl_name}` report alone.  No b2 report is read by this mode, and "
-          f"the snapshot")
-    print("cannot be updated, so these numbers are recomputable at any time.")
+    print("RECONSTRUCTED PRE-RTL B2 BASELINES -- computed from the pre-B2 "
+          "model snapshot")
+    print(f"and the `{ctl_name}` report alone.  No b2 report is read by this "
+          f"mode, so these")
+    print("numbers are recomputable at any time.")
+    print()
+    print("  PROVENANCE, stated exactly.  The pre-RTL projection is genuinely "
+          "pre-registered:")
+    print("  it entered sw/tme_cycle_model.py in commit e762cbf (2026-08-17 "
+          "23:11), two days")
+    print("  before the B2 source existed.  THIS TOOL IS NOT: the snapshot "
+          "(19:19:15) and")
+    print("  PREDICTION.txt (19:19:23) both postdate the b2 transaction report "
+          "(19:10:13).")
+    print("  They are a RECONSTRUCTION whose content is checkable against "
+          "e762cbf, not a")
+    print("  record written before the answer.  control-naive is computed here "
+          "and was")
+    print("  never predicted by anyone.")
     print()
     print(f"  {'case':<22} {'geom':>18} {'rw':>4} {'T':>2} "
           f"{'pre-RTL proj':>12} {'control-naive':>14} {'diff':>7}")
@@ -380,9 +432,16 @@ def predict(ctl: list[int], ctl_name: str, ctl_variant: str) -> int:
           "and its sign")
     print()
     print("  MEASURED (tme_b2_ab.py, 2026-08-19): tile = T*(tw+44) + (tw-2),")
-    print("  i.e. NEITHER of the above.  The shortfall against control-naive "
-          "is 2*(T-1),")
-    print("  not the (T+1) B1 paid -- a different shape, not a repeat.")
+    print("  i.e. NEITHER of the above.  Against the pre-RTL projection the "
+          "miss decomposes")
+    print("  as  3T - 1 = (T + 1) + 2*(T - 1)  per (output row, template "
+          "row), exact on 14/14.")
+    print("  The (T + 1) is B1's correction and it RECURS -- at T = 1 it is "
+          "the WHOLE miss.")
+    print("  The 2*(T - 1) is additional, and additional only against "
+          "control-naive, which")
+    print("  already carries B1's term.  Do not read this as \"B1's overhead "
+          "did not recur\".")
     return 0
 
 
@@ -466,6 +525,44 @@ def main() -> int:
                   "Restore the snapshot.", file=sys.stderr)
             bad += 1
 
+        # CHECK 4: THE DECOMPOSITION, machine-checked rather than asserted in
+        # prose.  The miss against the pre-RTL projection must be exactly
+        # rh*th*(3T - 1), and 3T - 1 must be exactly (T + 1) + 2*(T - 1) --
+        # i.e. B1's correction PLUS an additional 2*(T - 1), not instead of it.
+        # A revision that quietly restates this as "B1's overhead did not
+        # recur" has to make this check fail first.
+        n_dec = n_t1 = 0
+        for r in rows:
+            gg = (r["pw"], r["ph"], r["tw"], r["th"])
+            n, T = r["rh"] * r["th"], r["T"]
+            miss = r["meas_b2"] - pre.cycles(*gg, "B2")
+            if miss != n * (3 * T - 1) or 3 * T - 1 != (T + 1) + 2 * (T - 1):
+                print("", file=sys.stderr)
+                print(f"decomposition failed at {r['tag']}: miss {miss:,} "
+                      f"!= rh*th*(3T-1) = {n * (3 * T - 1):,}", file=sys.stderr)
+                bad += 1
+            else:
+                n_dec += 1
+            # At a single tile the 2*(T-1) term vanishes and the ENTIRE miss is
+            # B1's (T + 1).  This is the observation the corrected claim rests
+            # on, so it is checked separately rather than folded into the line
+            # above.
+            if T == 1:
+                if miss != n * (T + 1):
+                    print("", file=sys.stderr)
+                    print(f"T=1 miss at {r['tag']} is not rh*th*(T+1)",
+                          file=sys.stderr)
+                    bad += 1
+                else:
+                    n_t1 += 1
+        print()
+        print(f"  DECOMPOSITION  miss vs pre-RTL projection = "
+              f"rh*th*(3T-1) = rh*th*((T+1) + 2*(T-1)) : "
+              f"{n_dec}/{len(rows)} exact")
+        print(f"                 of which T = 1, where the whole miss is "
+              f"B1's (T+1)      : {n_t1}/"
+              f"{sum(1 for r in rows if r['T'] == 1)} exact")
+
     if args.json:
         args.json.write_text(json.dumps(
             dict(rows=rows, control=args.control, sol=args.sol,
@@ -477,14 +574,17 @@ def main() -> int:
         if bad:
             print(f"\nFAIL: {bad} discrepancy/ies", file=sys.stderr)
             return 1
-        print("\nOK -- three independent checks passed:\n"
+        print("\nOK -- four independent checks passed:\n"
               f"  1. the `{args.control}` control still reproduces its "
               f"published tile term;\n"
               "  2. every measured B2 latency matches the DECLARED model in "
               "tme_cycle_model;\n"
               "  3. every shortfall against the naive reuse arithmetic fits "
               "one rh*th*(a*T + b),\n     fitted here and not read from the "
-              "model.\n"
+              "model;\n"
+              "  4. the miss against the pre-RTL projection is "
+              "rh*th*((T+1) + 2*(T-1)) --\n     B1's correction RECURS and a "
+              "further 2*(T-1) is added to it.\n"
               "Cycle counts only.  No page time and no clock is measured by "
               "this file.")
     return 0

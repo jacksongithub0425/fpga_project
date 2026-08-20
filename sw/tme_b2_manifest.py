@@ -55,6 +55,15 @@ def entries() -> list[tuple[str, str]]:
         # THE CONTROL.  B2's whole claim is a difference against `b1`, so the
         # control's report is evidence for B2 exactly as much as B2's own is.
         # It is pinned in B1's manifest too -- deliberately, see the docstring.
+        ("source b1 (control)", HLS + "/b1_sources/correlation_core.b1.cpp"),
+        # The two files that are compiled ALONGSIDE the snapshot in every one
+        # of these projects.  They were unpinned here until 2026-08-19: the
+        # snapshot was verified by digest and its two build partners were not,
+        # so an edit to either would have changed both halves of a "paired"
+        # measurement without any manifest noticing.  They are pinned in B1's
+        # manifest for the same reason.
+        ("build input tme_top.cpp", HLS + "/tme_top.cpp"),
+        ("build input tme_top.h", HLS + "/tme_top.h"),
         ("cosim b1 (control)",
          B1M.project("b1") + "/b1/sim/report/verilog/result.transaction.rpt"),
         ("cosim b2", B1M.project("b2")
@@ -75,30 +84,75 @@ def entries() -> list[tuple[str, str]]:
         # than against a rebuild that would have its own WNS.
         ("bitstream (never run on hardware)", LOGS + "/tme_standalone.bit"),
         ("hardware handoff", LOGS + "/tme_standalone.hwh"),
+        # THE PACKAGED IP, AND READ THE ROLE -- IT IS NOT B1'S.  B1's manifest
+        # pins its IP as a RE-EXPORT: package_b1.tcl ran after the Vivado build
+        # and overwrote the directory the bitstream had been built from, so
+        # those bytes post-date the image and are not its input.  B2's do not.
+        # package_b2.tcl finished at 19:16:09; vivado_b2_125.log records
+        # `Loaded user IP repository
+        # '.../template_match_b1_b2/b2/impl/ip'` and its first synthesis run
+        # launched at 19:17:10; the directory has not been written since.
+        # These are the exact bytes tme_standalone.bit was built from, and
+        # pinning them is what lets a future board session say WHICH core ran
+        # rather than inferring it from a log line.
+        #
+        # They are also MIRRORED INTO GIT (--mirror), which is the part that
+        # actually preserves them: a re-run of package_b2.tcl overwrites the
+        # live directory, and then --verify fails loudly while the committed
+        # copy still holds the original.  That is the lesson B1 paid for.
+        ("packaged IP (the image's input)",
+         B1M.project("b2") + "/b2/impl/ip/component.xml"),
+        ("packaged IP archive (the image's input)",
+         B1M.project("b2") + "/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip"),
         # What produced them.
         ("build script", VIVADO + "/build_tme_standalone.tcl"),
         ("packaging script", HLS + "/package_b2.tcl"),
         ("ab project script", HLS + "/run_hls_b1.tcl"),
+        # The broad-geometry C simulation.  The b1 cosim suite reaches T = 6
+        # tiles; this one reaches T = 52, the compiled maximum.  Both the
+        # script and its transcript are pinned because the claim "B2 is
+        # functionally correct across the tile-count range" rests on the
+        # transcript, and the transcript is only evidence about the measured
+        # RTL's source if the script verified the same snapshot digest.
+        ("prod csim script b2", HLS + "/csim_prod_b2.tcl"),
+        ("prod csim log b2", LOGS + "/csim_prod_b2.log"),
         ("testbench", HLS + "/tme_tb.cpp"),
         ("generator", HLS + "/tme_generate_production.py"),
         # The vector record.  The payload is gitignored and regenerates from
         # pinned seeds; this file is what says a regeneration produced the
         # pixels both halves of the pair were actually measured on.
         ("vector record b1", HLS + "/tb_tme_b1.sha256"),
+        # The production stimulus, on the same argument: csim_prod_b2.tcl
+        # checks all four of its entries before it will run, so this file is
+        # what authenticates the 1.6 MB of pixels the broad-geometry pass was
+        # verified against.
+        ("vector record prod", HLS + "/tb_tme_prod.sha256"),
         # The tools that turn artifacts into claims.
         ("model", SWD + "/tme_cycle_model.py"),
         ("model pre-B2", LOGS + "/tme_cycle_model.py.pre_b2"),
         ("adjudicator", SWD + "/tme_b2_ab.py"),
         ("mutant gate", SWD + "/tme_b2_mutants.py"),
         ("manifest tool", SWD + "/tme_b2_manifest.py"),
+        # THE IMPORTED IMPLEMENTATION.  Everything above is hashed by
+        # tme_b1_manifest's `digest`, written by its `write` and copied by its
+        # `mirror` -- this file supplies only the entry list.  Leaving it
+        # unpinned meant the rule that produced every digest here was itself
+        # unrecorded, so a change to the EOL or binary-suffix policy would have
+        # silently reinterpreted the whole manifest.  It is pinned in B1's
+        # manifest too; both bind it, and if it moves both fail.
+        ("manifest tool (imported)", SWD + "/tme_b1_manifest.py"),
         # The transcripts.
         ("log b2", LOGS + "/run_b2.log"),
         ("log packaging", LOGS + "/package_b2.log"),
         ("log vivado", LOGS + "/vivado_b2_125.log"),
-        # The pre-registered prediction, written before the build ran.  Without
-        # it "the projection was optimistic by X" is a claim made after seeing
-        # the answer.
-        ("prediction (pre-registered)", LOGS + "/PREDICTION.txt"),
+        # The reconstructed pre-RTL baselines.  READ THE ROLE, IT WAS WRONG
+        # ONCE: this file used to be pinned as "prediction (pre-registered)",
+        # and it was written at 19:19:23, nine minutes AFTER the b2 transaction
+        # report existed at 19:10:13.  What is genuinely pre-registered is the
+        # PROJECTION it recomputes -- commit e762cbf, 2026-08-17 -- not this
+        # transcript.  Pinning it still matters: it is the artifact anyone can
+        # re-derive from the snapshot and the control report to check the miss.
+        ("pre-RTL baselines (reconstructed)", LOGS + "/PREDICTION.txt"),
         ("mutant gate output", LOGS + "/b2_mutants.txt"),
         ("adjudicator output", LOGS + "/b2_ab.txt"),
         ("adjudicator negative control", LOGS + "/b2_ab_negative_control.txt"),

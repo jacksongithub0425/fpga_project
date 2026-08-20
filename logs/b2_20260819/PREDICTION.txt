@@ -1,6 +1,14 @@
-PRE-REGISTERED B2 PREDICTIONS -- computed from the PRE-B2 model snapshot and the
-`b1` report alone.  No b2 report is read by this mode, and the snapshot
-cannot be updated, so these numbers are recomputable at any time.
+RECONSTRUCTED PRE-RTL B2 BASELINES -- computed from the pre-B2 model snapshot
+and the `b1` report alone.  No b2 report is read by this mode, so these
+numbers are recomputable at any time.
+
+  PROVENANCE, stated exactly.  The pre-RTL projection is genuinely pre-registered:
+  it entered sw/tme_cycle_model.py in commit e762cbf (2026-08-17 23:11), two days
+  before the B2 source existed.  THIS TOOL IS NOT: the snapshot (19:19:15) and
+  PREDICTION.txt (19:19:23) both postdate the b2 transaction report (19:10:13).
+  They are a RECONSTRUCTION whose content is checkable against e762cbf, not a
+  record written before the answer.  control-naive is computed here and was
+  never predicted by anyone.
 
   case                                 geom   rw  T pre-RTL proj  control-naive    diff
   direct flat-templ-4x4     12x10     4x4       9  1        4,512          4,568      56
@@ -24,5 +32,8 @@ cannot be updated, so these numbers are recomputable at any time.
   the gap is rh*th*(T + 1) on every transaction -- B1's shape, and its sign
 
   MEASURED (tme_b2_ab.py, 2026-08-19): tile = T*(tw+44) + (tw-2),
-  i.e. NEITHER of the above.  The shortfall against control-naive is 2*(T-1),
-  not the (T+1) B1 paid -- a different shape, not a repeat.
+  i.e. NEITHER of the above.  Against the pre-RTL projection the miss decomposes
+  as  3T - 1 = (T + 1) + 2*(T - 1)  per (output row, template row), exact on 14/14.
+  The (T + 1) is B1's correction and it RECURS -- at T = 1 it is the WHOLE miss.
+  The 2*(T - 1) is additional, and additional only against control-naive, which
+  already carries B1's term.  Do not read this as "B1's overhead did not recur".

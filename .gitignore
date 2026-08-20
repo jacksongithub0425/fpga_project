@@ -138,6 +138,24 @@ baseline_cpu_*/
 !hls/template_match/template_match_b1/b1/impl/ip/component.xml
 !hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip
 
+# Priority 5's packaged IP, and NOT for the same reason as B1's above. B1's is
+# a re-export that post-dates its bitstream. B2's is the directory
+# vivado_b2_125.log names as its IP repository, exported at 19:16:09 and read
+# by a synthesis run launched at 19:17:10 -- the actual input to
+# logs/b2_20260819/tme_standalone.bit, which has never run on a board. If a
+# later `package_b2.tcl` overwrites the working copy, the committed one here is
+# the only thing that still says what was routed. 792 KB, and worth it.
+!hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml
+!hls/template_match/template_match_b1_b2/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip
+
+# The `!logs/<dir>/**` negations above re-include EVERYTHING under those paths,
+# including bytecode. `tme_b2_ab.py --predict` imports the retained
+# tme_cycle_model.py.pre_b2 snapshot, which makes CPython drop a .pyc beside it
+# in logs/b2_20260819/__pycache__/. That is build output of a specific
+# interpreter version, not evidence, and re-ignoring it here is narrower than
+# weakening the negation.
+logs/**/__pycache__/
+
 # The phase_s board vectors, on the same argument as gate 4's and gate 5's: the
 # B1 board session's entire claim to being a CONTROLLED comparison is that the
 # runner and these three files did not change between it and the Priority 3
