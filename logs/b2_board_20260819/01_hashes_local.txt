@@ -1,0 +1,47 @@
+=== HOST-SIDE HASHES, prepared for the B2 session ===
+PREPARED 2026-08-20T03:33:05Z -- NOT YET LOADED. The session
+re-hashes all six files INSIDE 03_run.txt; this file is the host-side record
+taken before transfer, and 02_hashes_remote.txt is the board-side one.
+--- B2 overlay (TermCountB2:hls:tme_top:0.2, routed 8.000 ns, WNS +0.011710 ns) ---
+1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf */c/Users/lychee/tc25/vivado_project/tme_b2_125/overlay_output/tme_standalone.bit
+11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744 */c/Users/lychee/tc25/vivado_project/tme_b2_125/overlay_output/tme_standalone.hwh
+--- runner + vectors (the hash-bound phase_s suite) ---
+fab0c8a5b098e8eea6bd09728fb956ac502682e1c4a8c7ae1909163503b918da */c/Users/lychee/Desktop/FPGA/.github-upload/sw/tme_standalone_bringup.py
+9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_cases_phase_s.txt
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72 */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_patches_phase_s.bin
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd */c/Users/lychee/Desktop/FPGA/.github-upload/hls/template_match/tb_tme_templs_phase_s.bin
+
+--- CONTROLLED COMPARISON: what differs from the B1 session (logs/b1_board_20260818) ---
+All three VECTOR files are BYTE-IDENTICAL to both the Priority 3 and the B1
+sessions, so the stimulus is a constant across all three:
+  tb_tme_cases_phase_s.txt   9970f100...  same
+  tb_tme_patches_phase_s.bin 3c22a422...  same
+  tb_tme_templs_phase_s.bin  9fd283bf...  same
+
+THE RUNNER IS NOT BYTE-IDENTICAL, and that is a change from B1's session,
+which could claim byte-identity with Priority 3's.  State it exactly:
+  B1 as-run  f7b00b0e...   ->  B2 will run  fab0c8a5...
+The entire difference is 12 lines added at the phase_s banner: one comment
+block, and two print() calls that emit the "'the unchanged core' above is
+STALE" notice.  No control flow, no arithmetic, no register access and no DMA
+path is touched, and the diff is reproducible with
+  diff logs/b1_board_20260818/tme_standalone_bringup.py.as_run \
+       sw/tme_standalone_bringup.py
+It changes the TRANSCRIPT TEXT and nothing that is measured.  A reader who
+wants byte-identity with B1 should re-run the .as_run copy; a reader who wants
+the staleness notice in the transcript should use the current file.  This
+session uses the current file, and this paragraph is why.
+
+THE OVERLAY DIFFERS, which is the point:
+  .bit  2cd4a2b0... (B1)  ->  1116891c... (B2)
+  .hwh  ffa94282... (B1)  ->  11abec6a... (B2)
+
+INDEPENDENT CONFIRMATION OF WHICH CORE IS IN THE PL.  A file hash proves which
+BYTES were sent; it does not prove what the fabric ended up holding.  The
+runner prints the overlay's IP dictionary, and the VLNV read back from the
+loaded design must say
+
+    tme_top_0    TermCountB2:hls:tme_top:0.2
+
+where B1's transcript says TermCountB1.  If it says anything else, the run is
+void regardless of the hashes.

@@ -74,3 +74,7 @@ logs/b1_rerun_20260818/** -text
 # binds these, and the Vitis/Vivado transcripts in there are raw tool output
 # whose trailing whitespace and line endings are part of what was produced.
 logs/b2_20260819/** -text
+
+# The B2 board session's transcripts, same rule: raw tool and shell output,
+# hashed as-is on both the host and the board.
+logs/b2_board_20260819/** -text
