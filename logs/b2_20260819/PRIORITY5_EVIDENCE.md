@@ -573,11 +573,17 @@ unrecorded:
   change to the EOL or binary-suffix policy would have silently reinterpreted
   the whole manifest.
 
-The off-board correction grew the set from 33 to 42 artifacts. The prepared
-fail-closed board protocol now adds the runner, both vector payloads, checksum
-manifest, plan, and three scripts: `tme_b2_manifest.py --verify` binds **55
-artifacts**. These additions are protocol, not a silicon result; B2 remains
-not-run until the transcripts exist.
+The off-board correction grew the set from 33 to 42 artifacts. The
+fail-closed board protocol added the runner, both vector payloads, checksum
+manifest, plan and three scripts, and the 2026-08-20 session then added its
+transcripts: `tme_b2_manifest.py --verify` binds **64 artifacts**.
+
+**B2 has since run on silicon** (`logs/b2_board_20260819/`, commit `196f985`):
+phase_s 7/7 and hw 9/9 at a gated 125.0000 MHz, exercising tile counts
+{1, 3, 4, 6, 38, 52} against the T = 6 this document's co-simulation reached.
+Nothing in the sections above was measured on hardware, and none of it is
+restated as though it were; the board result is recorded in
+`B2_BOARD_SESSION.md` and frozen in `FROZEN["board_b2"]`.
 
 ---
 

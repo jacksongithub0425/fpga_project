@@ -87,8 +87,9 @@ def entries() -> list[tuple[str, str]]:
         # than against a rebuild that would have its own WNS.
         ("bitstream (as run, 2026-08-20)", LOGS + "/tme_standalone.bit"),
         ("hardware handoff", LOGS + "/tme_standalone.hwh"),
-        # The prepared board gate.  These are protocol inputs, not board
-        # results: no transcript exists yet.  The board-side checksum manifest
+        # The board gate's INPUTS.  Listed separately from its transcripts
+        # below because the two are different kinds of evidence: these are what
+        # was sent, those are what came back.  The board-side checksum manifest
         # binds the nine suite inputs plus the authenticated restore script
         # consumed by 03_run.sh, while listing them here also makes a clean
         # checkout independently verifiable.

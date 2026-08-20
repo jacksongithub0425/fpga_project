@@ -34,7 +34,7 @@ ea88a30131a83f84bf34aefbd7844132b01d054a125e6c715b873d7258eb32ba  logs/b2_board_
 09d1749d98d10b1fde33978d09a6d5d6bd59e31138550f0ca9a6ed070533f0a0  logs/b2_board_20260819/01_hashes_local.txt  # board host hash record
 77073871fd97b7885c2258f2287639b6f3d34c8b38943d3f24af1cc041224638  logs/b2_board_20260819/03_run.sh  # board run wrapper
 99bac0dc2d9582a51abbfb9044633f49498efc5dc93943c283449b3c3ae764b3  logs/b2_board_20260819/04_restore.sh  # board restore script
-e0aaad14d69ebd507f552b0411cde6798fc802003ace0cb1670ee8085eac4fce  logs/b2_board_20260819/B2_BOARD_SESSION.md  # board session record
+4474ed569e9ebf1ce9624d94289da947bdb10f10b5cf6b7f12a0346a1a5e67e0  logs/b2_board_20260819/B2_BOARD_SESSION.md  # board session record
 020b1ad601fc64b3ee472b7c10df497c690ecf4c5badcbbb23ed53f0b1628533  logs/b2_board_20260819/00_prestate.txt  # board prestate
 2243237ed5ae17d0631e52bc42a8a0fd0c7d8aab2d5eb6d581046e632689c187  logs/b2_board_20260819/02_hashes_remote.txt  # board remote hashes
 d0c1b15cb176abc7d92f5f8c323144a29bd55686d5fd328025a5141f8cb7da53  logs/b2_board_20260819/03_run.txt  # board run transcript
@@ -54,11 +54,11 @@ b745dcf9c2609fa11f460fffdb53bc48e3a57348af02437261f28f3a8dc5899e  hls/template_m
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
 cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
-8e217e0215716b5d3e1c2338eeac81449691369d79a6e4dfb8e8c0ac48bb1ad6  sw/tme_cycle_model.py  # model
+313ec55d98d7b0e06682a78964cdae61421b65cf42618787e47735e736f43fc5  sw/tme_cycle_model.py  # model
 6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  logs/b2_20260819/tme_cycle_model.py.pre_b2  # model pre-B2
 6a765f2da35af226a972c00cf80f49db087367d4a3b08c9c7f7dc637c8013327  sw/tme_b2_ab.py  # adjudicator
 8c0f48a94c329a4c8bcd893fd5963bc161385a5446f0c00f3707490d31beb338  sw/tme_b2_mutants.py  # mutant gate
-96691807ec9420dcd21831a648ab5e5c899606b9b7a07e8029ae6fa43b8c7300  sw/tme_b2_manifest.py  # manifest tool
+5f347c3adf18cc8a4a868dd363bcc7f8ee5e226eb4650013ab1786b152e37b77  sw/tme_b2_manifest.py  # manifest tool
 718f506f70b8529c9a939c0448db2cf2e3c63096364adce811099b6f0a739e6b  sw/tme_b1_manifest.py  # manifest tool (imported)
 53d92ac02d507bb3d9c34657121815b8d5ddcaf67d541293179dfdc9fe13a63d  logs/b2_20260819/run_b2.log  # log b2
 a5f01c7bb0a7c60506b43f61593d7b88b0cf95443528c1aac04c992cb8c20b5c  logs/b2_20260819/package_b2.log  # log packaging
@@ -67,6 +67,6 @@ c6182de9bbccffb24865c3a283de9146dc4e022cc2135c14bca60e28da65dcab  logs/b2_202608
 a4b452a253224f849d998d3c8a0befb77572c1663fffd2db6fa4a4397e0e31ea  logs/b2_20260819/b2_mutants.txt  # mutant gate output
 4173d756cfd4c08ea16dc764b602d02627931613ee6e987b0c4c0b0e14613ac1  logs/b2_20260819/b2_ab.txt  # adjudicator output
 66992c5177ecb21f7c0888419927a5fd15ec833714d909770937a6ce7b842475  logs/b2_20260819/b2_ab_negative_control.txt  # adjudicator negative control
-ad8c9c60ec315acdd1896e07e6f5f8705766dd0e90c998c33f9b1236cc942c6b  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
-12fc3ac08f1f0b640ff0e36346714185d65aa9eddc1c6d95b903217179fc9869  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
+4d128b17b0f64f243cd151a4a2be04706a23d08aa28081ef8a06f6981c906ce0  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
+7de191b69828d182b4fcf86981386cb62e317737b5d8735dea575ebfae52dee9  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
 6a40c544ccf125d569fb988d239431baf921673dc3b0787dba19c771037d273c  hls/template_match/b1_sources/README.md  # pinned-source README

@@ -32,10 +32,11 @@ Retained transcripts, in order:
 This comes before the results, because a reader who finds
 `03_run_attempt1_TRUNCATED.txt` in this directory is owed the reason.
 
-**Attempt 1 (05:46:18Z) was not a failed gate. It was a failed capture.** The
-board-side run was driven correctly and its own artifacts are intact, but the
-host-side command piped `tee` into `head -120`; `head` exited first, `tee` took
-`SIGPIPE`, and the local transcript was cut at exactly 10,240 bytes — a clean
+**Attempt 1 (05:46:18Z) is an INDETERMINATE gate, caused by a failed
+capture.** Its outcome is unknown — not passed, and equally not shown to have
+failed. The board-side run was driven correctly and its own artifacts are
+intact, but the host-side command piped `tee` into `head -120`; `head` exited
+first, `tee` took `SIGPIPE`, and the local transcript was cut at 10,240 bytes — a clean
 10 KiB buffer boundary. What survived shows every gate passing, `phase_s` 7/7
 with its re-invocation, and `hw` cases `[0]`–`[5]` all `PASS`. What was lost is
 `hw` cases `[6]`–`[8]`, the `hw` tally, its re-invocation, the DMA-halt result
@@ -61,8 +62,9 @@ section can be checked rather than believed:
 | `04_restore_attempt1.txt` | 868 | `RESTORE_VERIFIED`, all four clocks matched |
 
 The honest summary of attempt 1 is: **gates passed, `phase_s` passed, `hw`
-incomplete in the record, board restored.** It is not evidence that `hw` passed,
-and the result below rests on attempt 2 alone.
+indeterminate, board restored.** It is not evidence that `hw` passed, and it is
+not evidence that anything failed; it is a gate whose verdict was lost. The
+result below rests on attempt 2 alone.
 
 ---
 
@@ -89,9 +91,17 @@ JSON rather than from hardcoded defaults. The four shipping directories
 
 ### `phase_s` — the paired B1/B2 comparison at `T = 6`
 
-Same three vector files and the same gated clock as the B1 session; only the
-bitstream differs. Predictions are from `B2_BOARD_SESSION_PLAN.md`, committed
-before the run.
+The three vector files are byte-identical to the B1 session's and the clock is
+the same gated 125.0000 MHz, so the stimulus and the timed execution path are
+constant. **The runner is not byte-identical**: B1 ran `f7b00b0e`, this session
+ran `ca62cbbc`, which adds the finite-FCLK guard and the expected-HWH-VLNV
+check. Both run to completion before `ap_start` and neither touches a timed
+region, so the comparison stands — but it is "same stimulus, same clock, same
+measured path", not "only the bitstream differs". B1 could claim byte-identity
+with Priority 3; this session cannot, and `01_hashes_local.txt` says so rather
+than omitting it.
+
+Predictions are from `B2_BOARD_SESSION_PLAN.md`, committed before the run.
 
 | case | patch / templ | B1 measured | **B2 predicted** | **B2 measured** | delta |
 |---|---|---|---|---|---|
@@ -142,17 +152,28 @@ reached `T = 52` in **C simulation of the source**, not the RTL. These two rows
 are the RTL itself at `T = 38` and `T = 52`, the compiled maximum. A 2.059 s
 measurement against a 2.0572 s model is **0.09%**.
 
-**Read every residual as overhead, not error.** All nine are positive, between
-+1.6 and +2.5 ms, with no trend against case size — fixed per-invocation DMA
-setup, marshalling and polling that the cycle model does not describe. A
-negative residual would mean silicon beat the term and would falsify it;
-`tme_cycle_model.check()` now fails on one.
+**The residuals are consistent with fixed overhead.** All nine are positive,
+between +1.6 and +2.5 ms, with no trend against case size — the shape a fixed
+per-invocation DMA setup / marshalling / polling cost would have. *Consistent
+with* is the claim: nothing here isolates the cause, and no measurement in this
+session separates that overhead from PS scheduling or from a small constant
+missing from the term itself.
+
+Nor would a *negative* residual immediately falsify the term. Wall times print
+to milliseconds, so each carries ±0.5 ms of rounding on its own and a true
+residual of zero can print negative. `tme_cycle_model.check()` therefore bounds
+the residuals to `[-0.5 ms, +3 ms]` and fails only on an excursion below the
+print floor — silicon beating the term by more than rounding explains.
 
 ### Against the unmodified core, same suite and clock
 
 The `cur` rows frozen from the 2026-08-17 probe ran this same `hw` suite at the
-same gated 125 MHz, so this is a paired comparison with only the bitstream
-changed:
+same gated 125 MHz. **The stimulus, the clock and the timed execution path were
+constant; the runner was not.** This session used a revised
+`tme_standalone_bringup.py` (`ca62cbbc`) carrying additional *pre-run* gates —
+the finite-FCLK guard and the expected-HWH-VLNV check — which execute before
+`ap_start` and outside every timed region. "Only the bitstream changed" would be
+wrong; the accurate statement is that nothing inside the measurement changed:
 
 | case | `cur` | B2 | speed-up |
 |---|---|---|---|
@@ -168,8 +189,10 @@ changed:
 * The B2 RTL runs on silicon at an observed, gated 125.0000 MHz — the
   231-element shift register that routed with only 0.011710 ns of slack does
   close on this part in practice, not only in the report.
-* It is functionally correct on both pinned suites, at every tile count from
-  `T = 1` to `T = 52`, and at the maximum single-transfer geometry.
+* It is functionally correct on both pinned suites at the tile counts those
+  suites contain — **{1, 3, 4, 6, 38, 52}**, not every value in 1..52 — and at
+  the maximum single-transfer geometry. Sixteen cases sample that range; they
+  do not sweep it.
 * It is re-invocable after each suite's largest case, so the `static` BRAMs and
   column accumulators are not carrying residue across invocations.
 * The measured cycle term tracks silicon to within a constant few milliseconds

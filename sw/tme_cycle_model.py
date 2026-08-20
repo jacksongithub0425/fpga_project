@@ -34,8 +34,10 @@ says the term is right at workload widths; the cosim is what makes it exact.
 
 `B2` was implemented and co-simulated as a paired A/B against `b1` on
 2026-08-19 -- 14/14 transactions exact, control intact on all 14.  Its tile
-term is therefore MEASURED.  It has NOT been run on the board and has no
-board session of its own.
+term is therefore MEASURED.  It was then RUN ON THE BOARD on 2026-08-20
+(logs/b2_board_20260819/): phase_s 7/7 and hw 9/9 at a gated 125.0000 MHz,
+exercising tile counts {1, 3, 4, 6, 38, 52} rather than only the T = 6 the
+cosim and B1's session covered.
 
 B0b remains unimplemented and its term is unmeasured.
 
@@ -514,11 +516,14 @@ BOARD_TOLERANCE_S = 0.005       # model must land within this
 # the strongest single number in this file: a 2.059 s measurement against a
 # 2.0572 s model is 0.09%.
 #
-# READ THE RESIDUALS AS OVERHEAD, NOT ERROR.  Every one is POSITIVE and lands
-# between +0.0016 and +0.0025 s, with no trend against case size.  That is the
-# fixed per-invocation DMA setup, marshalling and polling cost the cycle model
-# does not describe -- the same effect BOARD_MEASUREMENTS shows for `cur` -- and
-# it is why the seven-case phase_s total is 0.408 s against a 0.394 s core term.
+# THE RESIDUALS ARE CONSISTENT WITH FIXED OVERHEAD.  Every one is positive and
+# lands between +0.0016 and +0.0025 s, with no trend against case size, which is
+# what a fixed per-invocation DMA setup / marshalling / polling cost would look
+# like -- the same effect BOARD_MEASUREMENTS shows for `cur`.  CONSISTENT WITH is
+# the whole claim: nothing here isolates the cause, and no experiment in this
+# file separates DMA setup from PS scheduling or from a small constant the term
+# itself is missing.  It is why the seven-case phase_s total is 0.408 s against a
+# 0.394 s core term, but "why" is inference, not measurement.
 BOARD_MEASUREMENTS_B2 = [
     ("phase-s-min-templ",     ( 99,  67,   4,  4), 125e6, 0.004, "2026-08-20 B2 phase_s"),
     ("phase-s-origin",        (147,  94,  52, 31), 125e6, 0.020, "2026-08-20 B2 phase_s"),
@@ -534,8 +539,15 @@ BOARD_MEASUREMENTS_B2 = [
 # The B1 board session measured the same seven phase_s cases on the B1 image at
 # the same gated clock (logs/b1_board_20260818/03_run.txt).  Retained here so the
 # B1-vs-B2 wall-time comparison is a pair of frozen tables rather than a sentence
-# quoting one of them from memory.  Same stimulus, same runner logic, same clock;
-# only the bitstream differed.
+# quoting one of them from memory, and b2_evidence_crosscheck() re-reads BOTH
+# totals from their transcripts so neither can drift here unnoticed.
+#
+# WHAT WAS ACTUALLY CONSTANT: the three vector files (byte-identical), the gated
+# clock, and the timed execution path.  NOT the runner -- B1 ran f7b00b0e and B2
+# ran ca62cbbc, which adds a finite-FCLK guard and an expected-HWH-VLNV check.
+# Both complete before ap_start and neither is inside a timed region, so the
+# pairing holds; "only the bitstream differed" would be wrong and is the claim
+# B1's own session could make against Priority 3 but this one cannot.
 BOARD_PHASE_S_B1_SECONDS = 0.544
 BOARD_PHASE_S_B2_SECONDS = 0.408
 
@@ -838,6 +850,11 @@ FROZEN = {
             # Tile counts the hw suite reaches that no B2 co-simulation did.
             "max_tile_count": 52,
             "envelope_tile_count": 38,
+            # WHAT THE SIXTEEN CASES ACTUALLY SAMPLE.  Not "every tile count
+            # from 1 to 52" -- that was written once and is false.  These six
+            # values are what the two suites contain, recomputed from the
+            # transcript's case geometries by b2_evidence_crosscheck().
+            "tile_counts_sampled": (1, 3, 4, 6, 38, 52),
             "max_single_transfer_bytes": 251740,
         },
         # The paired wall-time comparison, same stimulus and clock, B1 image vs
@@ -1141,6 +1158,35 @@ def b1_evidence_crosscheck():
     return fail, checked
 
 
+# One `--- cases ---` row of a board transcript:
+#   [7] stress-max-envelope  stress  patch 820x307 templ 216x96  gold ... 2.059 s (
+# Both column layouts the runner emits are covered -- `@( 51, 33)` with padding
+# and `@(604,211)` without -- because the middle of the line is skipped and the
+# seconds are anchored on the " s (" that precedes the throughput figure.
+_BOARD_CASE_RE = re.compile(
+    r"^\[(\d+)\]\s+(\S+)\s+\S+\s+patch\s+(\d+)x(\d+)\s+templ\s+(\d+)x(\d+)\s+"
+    r".*?\s([0-9]+\.[0-9]+) s \(")
+
+
+def parse_board_cases(text):
+    """tag -> ((pw, ph, tw, th), seconds) for every case row in a transcript.
+
+    The frozen tables and FROZEN are checked against EACH OTHER in check(),
+    which catches an edit to one of them.  It does not catch a consistent edit
+    to both, and that is exactly the drift a freeze is supposed to prevent.
+    The retained transcript is the third party neither can be edited into
+    agreement with, so the geometries and wall times are re-read from it.
+    """
+    rows = {}
+    for line in text.splitlines():
+        m = _BOARD_CASE_RE.match(line)
+        if m:
+            rows[m.group(2)] = ((int(m.group(3)), int(m.group(4)),
+                                 int(m.group(5)), int(m.group(6))),
+                                float(m.group(7)))
+    return rows
+
+
 def b2_evidence_crosscheck():
     """Re-read the B2 routed report and board transcript, if present.
 
@@ -1286,6 +1332,80 @@ def b2_evidence_crosscheck():
         elif int(m.group(1).replace(",", "")) != sess["max_single_transfer_bytes"]:
             fail.append("B2 board max transfer: transcript says {}, frozen "
                         "{}".format(m.group(1), sess["max_single_transfer_bytes"]))
+
+        # EVERY ROW OF THE MEASUREMENT TABLE, RE-READ.  check() compares
+        # BOARD_MEASUREMENTS_B2 against FROZEN["board_b2"] element-wise, which
+        # fails on an edit to one of them and PASSES on a consistent edit to
+        # both.  This is the pass that makes that impossible: the geometry and
+        # the wall time of every frozen row must be the ones the transcript
+        # records, and the transcript is not something the freeze can rewrite.
+        rows = parse_board_cases(txt)
+        checked += 1
+        want_rows = sess["phase_s_total"] + sess["hw_total"]
+        if len(rows) != want_rows:
+            fail.append("B2 board transcript: {} case rows, expected {} "
+                        "({} phase_s + {} hw) -- a short transcript is a "
+                        "truncated capture, not a smaller suite".format(
+                            len(rows), want_rows, sess["phase_s_total"],
+                            sess["hw_total"]))
+        # WHICH TILE COUNTS THE SESSION ACTUALLY SAMPLED, from all sixteen
+        # cases rather than the nine timed rows.  This is the assertion behind
+        # "tile counts {1, 3, 4, 6, 38, 52}"; without it that set is prose.
+        checked += 1
+        sampled = tuple(sorted({-(-(g[0] - g[2] + 1) // 16)
+                                for _tag, (g, _s) in rows.items()}))
+        if sampled != tuple(sess["tile_counts_sampled"]):
+            fail.append("B2 board tile counts: transcript samples {} != frozen "
+                        "{}".format(sampled, tuple(sess["tile_counts_sampled"])))
+
+        for name, geom, _hz, meas, note in BOARD_MEASUREMENTS_B2:
+            if name not in rows:
+                fail.append("B2 board transcript: frozen row {} has no case "
+                            "line [{}]".format(name, note))
+                continue
+            t_geom, t_secs = rows[name]
+            checked += 1
+            if t_geom != geom:
+                fail.append("B2 board {}: transcript geometry {} != frozen "
+                            "{}".format(name, t_geom, geom))
+            if t_secs != meas:
+                fail.append("B2 board {}: transcript {} s != frozen {} s -- the "
+                            "table and FROZEN agree with each other but not "
+                            "with the run".format(name, t_secs, meas))
+
+        # The two phase_s totals, summed from the transcripts rather than
+        # trusted.  B1's comes from ITS OWN transcript: the pair is the headline
+        # comparison, and a frozen 0.544 that no longer matches the B1 session
+        # would otherwise sit here indefinitely.
+        checked += 1
+        ps_b2 = round(sum(secs for tag, (_g, secs) in rows.items()
+                          if tag.startswith("phase-s-")), 3)
+        if ps_b2 != FROZEN["board_b2"]["phase_s_pair"]["b2_seconds"]:
+            fail.append("B2 phase_s total: transcript sums to {} != frozen "
+                        "{}".format(ps_b2,
+                                    FROZEN["board_b2"]["phase_s_pair"]["b2_seconds"]))
+
+        b1_run = root / "logs" / "b1_board_20260818" / "03_run.txt"
+        if b1_run.exists():
+            b1_rows = parse_board_cases(b1_run.read_text(errors="replace"))
+            checked += 1
+            ps_b1 = round(sum(secs for tag, (_g, secs) in b1_rows.items()
+                              if tag.startswith("phase-s-")), 3)
+            if ps_b1 != FROZEN["board_b2"]["phase_s_pair"]["b1_seconds"]:
+                fail.append("B1 phase_s total: its transcript sums to {} != "
+                            "frozen {}".format(
+                                ps_b1,
+                                FROZEN["board_b2"]["phase_s_pair"]["b1_seconds"]))
+            # The comparison is only paired if both ran the same geometries.
+            checked += 1
+            shared = {t: g for t, (g, _s) in b1_rows.items()
+                      if t.startswith("phase-s-")}
+            mismatched = sorted(
+                t for t, g in shared.items()
+                if t in rows and rows[t][0] != g)
+            if mismatched:
+                fail.append("B1/B2 phase_s pairing: {} ran different geometries "
+                            "in the two sessions".format(mismatched))
     return fail, checked
 
 
@@ -1425,11 +1545,15 @@ def check(results):
             fail.append("board_b2: {} @ {:g}MHz measured {} != frozen {}".format(
                 key[0], key[1] / 1e6, live_b2[key], frozen_b2[key]))
 
-    # THE RESIDUALS ARE A CLAIM, SO CHECK THEM.  The table's comment says every
-    # residual is POSITIVE and small -- fixed per-invocation overhead the model
-    # does not describe.  A negative residual would mean silicon beat the cycle
-    # term, which would falsify the term rather than the overhead story, and it
-    # must not be able to appear here unnoticed.
+    # THE RESIDUAL BOUND, AND WHY IT IS NOT "STRICTLY POSITIVE".  An earlier
+    # revision asserted resid > 0 and justified it as "a negative residual would
+    # falsify the term".  That was too strong.  Wall times print to milliseconds,
+    # so a measurement carries +/-0.0005 s of rounding on its own: a TRUE
+    # residual of exactly zero can print negative, and a small negative residual
+    # inside that floor falsifies nothing.  The floor is therefore the lower
+    # bound, and only an excursion BELOW it -- silicon beating the cycle term by
+    # more than rounding can explain -- is treated as a failure.
+    B2_PRINT_FLOOR_S = 0.0005          # wall times print to milliseconds
     B2_RESIDUAL_MAX_S = 0.003
     for name, geom, hz, meas, note in BOARD_MEASUREMENTS_B2:
         model_s = cycles(*geom, "B2") / hz
@@ -1438,11 +1562,11 @@ def check(results):
             fail.append("board_b2 {} {} @ {:g}MHz: model {:.4f}s vs measured "
                         "{}s (> {}s) [{}]".format(name, geom, hz / 1e6, model_s,
                                                   meas, BOARD_TOLERANCE_S, note))
-        if not 0.0 < resid <= B2_RESIDUAL_MAX_S:
-            fail.append("board_b2 {} residual {:+.4f}s is outside (0, {}] -- "
-                        "the table claims every residual is positive "
-                        "per-invocation overhead [{}]".format(
-                            name, resid, B2_RESIDUAL_MAX_S, note))
+        if not -B2_PRINT_FLOOR_S <= resid <= B2_RESIDUAL_MAX_S:
+            fail.append("board_b2 {} residual {:+.4f}s is outside "
+                        "[-{}, {}] -- below the print floor means silicon beat "
+                        "the cycle term by more than rounding explains [{}]".format(
+                            name, resid, B2_PRINT_FLOOR_S, B2_RESIDUAL_MAX_S, note))
 
     # The paired phase_s wall totals, DERIVED from the rows rather than trusted.
     pair = FROZEN["board_b2"]["phase_s_pair"]
@@ -1785,12 +1909,14 @@ def main():
               "meas {:6.3f}s  {:+.1f} ms".format(
                   name, pw, ph, tw, th, -(-(pw - tw + 1) // 16),
                   model_s, meas, (meas - model_s) * 1e3))
-    print("    every residual is POSITIVE: fixed per-invocation DMA/marshalling")
-    print("    cost the cycle model does not describe, not model error.")
-    print("    phase_s totals, same stimulus and clock: B1 {:.3f}s -> B2 {:.3f}s "
-          "({:.3f}s saved)".format(pair["b1_seconds"], pair["b2_seconds"],
-                                   pair["saving_seconds"]))
-    print("    tile count reached: T={} (hw suite) vs T=6 (cosim and B1's session)"
+    print("    residuals are all positive and trendless -- CONSISTENT WITH fixed")
+    print("    per-invocation overhead, though nothing here isolates its cause.")
+    print("    phase_s totals, same stimulus and clock (runner differs outside the")
+    print("    timed path): B1 {:.3f}s -> B2 {:.3f}s ({:.3f}s saved)".format(
+        pair["b1_seconds"], pair["b2_seconds"], pair["saving_seconds"]))
+    print("    tile counts SAMPLED by the 16 cases: {} -- vs T=6 alone in the"
+          .format(list(sess["tile_counts_sampled"])))
+    print("    cosim and in B1's session.  Six values, not a sweep of 1..{}."
           .format(sess["max_tile_count"]))
     print()
     print("PROJECTION - initial trials only, s/page @ {:g} MHz".format(TARGET_CLOCK_HZ / 1e6))

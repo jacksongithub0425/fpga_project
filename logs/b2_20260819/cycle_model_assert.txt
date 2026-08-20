@@ -30,10 +30,12 @@ VALIDATION (silicon-backed)
     phase-s-max            311x159/216x96 T=6   model   0.1355s  meas  0.138s  +2.5 ms
     stress-max-envelope    820x307/216x96 T=38  model   2.0572s  meas  2.059s  +1.8 ms
     stress-max-result      820x307/  4x4  T=52  model   0.0608s  meas  0.063s  +2.2 ms
-    every residual is POSITIVE: fixed per-invocation DMA/marshalling
-    cost the cycle model does not describe, not model error.
-    phase_s totals, same stimulus and clock: B1 0.544s -> B2 0.408s (0.136s saved)
-    tile count reached: T=52 (hw suite) vs T=6 (cosim and B1's session)
+    residuals are all positive and trendless -- CONSISTENT WITH fixed
+    per-invocation overhead, though nothing here isolates its cause.
+    phase_s totals, same stimulus and clock (runner differs outside the
+    timed path): B1 0.544s -> B2 0.408s (0.136s saved)
+    tile counts SAMPLED by the 16 cases: [1, 3, 4, 6, 38, 52] -- vs T=6 alone in the
+    cosim and in B1's session.  Six values, not a sweep of 1..52.
 
 PROJECTION - initial trials only, s/page @ 125 MHz
 ------------------------------------------------------------------------------
@@ -64,7 +66,7 @@ PROJECTION - initial trials only, s/page @ 125 MHz
   Neither the combined image nor an end-to-end page has been demonstrated at 125 MHz.
 
 frozen evidence re-proved: cosim x9, 4 board runs at 2 clocks, clock linearity, workload, Phase S, ROI variants, B1 EXACT aggregate + phase-s-max delta, B2 EXACT aggregate + routed WNS, B0b decomposition + both endpoints
-source corroboration: 28 value(s) re-read from source
+source corroboration: 42 value(s) re-read from source
   B1 routed + board (logs/b1_*/)                 READ
   B2 routed + board, 2 suites (logs/b2_*/)       READ
   P2 board transcripts (logs/board_125mhz_gate/) READ
