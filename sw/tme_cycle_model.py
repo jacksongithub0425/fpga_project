@@ -149,8 +149,9 @@ sub-term and replace it with one hoisted, vertically-reused count pass:
 WITHDRAWN: 17.513998132444 / 17.806061644000, and the 17.367966 base they were
 built on.  Nothing about the count pass changed -- the two count_pass terms
 above are the same numbers they always were.  What changed is B2, which B0b
-sits on top of, and which turned out to cost 2*(T-1) more per (output row,
-template row) than projected once it existed in RTL.
+sits on top of.  Its miss versus the pinned pre-B2 projection is 3*T - 1 per
+(output row, template row); 2*(T-1) is only the additional cost versus the
+control-naive schedule.
 
 Every term is now computed rather than transcribed.  The count pass follows the
 no-row-cache algorithm -- initial vertical position scans th patch rows, one

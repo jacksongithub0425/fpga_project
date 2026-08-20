@@ -1,8 +1,15 @@
 === HOST-SIDE HASHES, prepared for the B2 session ===
 PROTOCOL REVISION PREPARED -- NOT YET LOADED.
 03_run.sh first verifies `B2_BOARD_INPUTS.sha256` against its wrapper-embedded
-digest, then verifies these exact nine board-side names with `sha256sum -c`
-before either overlay load.
+digest, then verifies these exact ten board-side names with `sha256sum -c`
+before either overlay load. It also writes the four control hashes below to
+the mandatory retained `02_hashes_remote.txt` before configuring PL.
+
+--- Mandatory control hashes: compare to 02_hashes_remote.txt ---
+ea88a30131a83f84bf34aefbd7844132b01d054a125e6c715b873d7258eb32ba  00_prestate.sh
+77073871fd97b7885c2258f2287639b6f3d34c8b38943d3f24af1cc041224638  03_run.sh
+99bac0dc2d9582a51abbfb9044633f49498efc5dc93943c283449b3c3ae764b3  04_restore.sh
+92578a6ede5dc96a438a2232727b5fba4e174fc3da48b6c640e0d5f216f9cb49  B2_BOARD_INPUTS.sha256
 
 --- Original six-file gate: B2 overlay, runner, and phase_s vectors ---
 1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf  tme_standalone.bit
@@ -16,6 +23,9 @@ ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  tme_standalone
 378d4d6e3559b4afb1d1f22f7e618d3eb011c49f0b523226588a6ed7b6f6ad6e  tb_tme_cases_hw.txt
 5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53  tb_tme_patches_hw.bin
 026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350  tb_tme_templs_hw.bin
+
+--- Authenticated restoration input ---
+99bac0dc2d9582a51abbfb9044633f49498efc5dc93943c283449b3c3ae764b3  04_restore.sh
 
 --- Controlled comparison and scope ---
 The three phase_s vector files remain byte-identical to the Priority 3 and B1

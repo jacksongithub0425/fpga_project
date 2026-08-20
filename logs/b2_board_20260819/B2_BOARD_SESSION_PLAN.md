@@ -33,7 +33,9 @@ Per-case cycle counts from `tme_cycle_model.cycles(..., "B1"/"B2")`, and B1's
 
 Pure-core time at 125 MHz: B1 **0.527800 s**, B2 **0.394045 s**, saving
 **0.133755 s**. B1's measured wall total was 0.544 s, so non-core overhead
-(DMA setup, PS-side marshalling) is **at least 0.016 s** — about 3%. The `B2
+(DMA setup, PS-side marshalling) is approximately **0.01620 s** — about 3%.
+Because the seven individual wall times were printed to the nearest 0.001 s,
+the rounding range for this estimate is **0.01270–0.01970 s**. The `B2
 predicted` column scales B1's measured wall time by the cycle ratio, which
 *assumes that overhead scales too*; it does not, so those figures are a
 **lower bound on the wall time**, i.e. an upper bound on the speed-up. Accounting
@@ -42,10 +44,12 @@ does not scale with the cycle ratio, treat the seven-case prediction as roughly
 **0.407–0.414 s, excluding re-invocation**. Including the small-case rerun gives
 roughly **0.414 s**. These are estimates, against B1's measured 0.544 s.
 
-**What would falsify the cycle model.** The cycle counts above are not
-adjustable. If the measured wall times come in materially above these — beyond
-what a constant 0.016 s of overhead explains — then either the term is wrong or
-the clock is not what the gate says.
+**How to interpret a timing discrepancy.** The cycle counts above are not
+adjustable, but excess wall time alone does not uniquely falsify either the
+cycle term or the clock gate: PS scheduling, DMA setup, marshalling, and other
+OS variation can add wall time. A material discrepancy must be reported and
+investigated; attributing it to the term or clock requires direct cycle-counter
+or otherwise isolated timing evidence.
 
 ---
 
@@ -75,27 +79,30 @@ B1/B2 timing comparison on unchanged stimulus.
 | 2 | observed FCLK0 = 125 MHz | `--expect-fclk-mhz 125 --fclk-tol-mhz 0.01`, **fail-closed**: an unreadable clock aborts too |
 | 3 | re-invocation | built into the runner — a smaller case is re-run after the largest, catching stale BRAM; its result gates the exit status |
 | 4 | DMA halt | teardown drives RS=0 and requires a **positive register read-back** within 0.5 s per channel; an unproved halt holds the buffer and fails the run |
-| 5 | artifact hashes | `03_run.sh` first checks the checksum manifest against the digest embedded in the committed wrapper, then runs `sha256sum -c B2_BOARD_INPUTS.sha256` over all nine loaded inputs before either `Overlay()` call; the original six-file gate is preserved and the three `hw` vectors extend it |
+| 5 | artifact and control hashes | before either `Overlay()` call, `03_run.sh` writes and retains board-side hashes of `00_prestate.sh`, `03_run.sh`, `04_restore.sh`, and `B2_BOARD_INPUTS.sha256`; it then checks the checksum manifest against the digest embedded in the committed wrapper and runs `sha256sum -c B2_BOARD_INPUTS.sha256` over the nine suite inputs plus `04_restore.sh` |
 | 6 | HWH consistency | both runner calls require `TermCountB2:hls:tme_top:0.2`; this gates the VLNV parsed from the HWH metadata and is explicitly **not fabric readback** |
 | 7 | broad silicon geometry | `--suite hw` covers approximately `T=38`, maximum `T=52`, and the 251,740-byte DMA geometry |
-| 8 | verified restoration | `00_prestate.sh` persists the four measured clocks; an exit trap runs `04_restore.sh` after either suite succeeds or fails, and restore mismatch/failure exits nonzero |
+| 8 | authenticated, verified restoration | `04_restore.sh` is in the pre-overlay checksum gate; `03_run.sh` validates exactly four finite, positive captured clocks before PL configuration; its exit trap runs the authenticated restore after either suite succeeds or fails, and restore mismatch/failure exits nonzero |
 
 ### Steps
 
     0. sh 00_prestate.sh       -> 00_prestate.txt + prestate_fclks.json
-    1. transfer the nine inputs and the prepared scripts/manifest into tme_b2/
-    2. optional diagnostic hash listing -> 02_hashes_remote.txt
-    3. sh 03_run.sh            -> 03_run.txt
-         - sha256sum -c over the pinned checksum manifest, then all nine inputs,
-           before overlay load
+    1. transfer the ten checksum-gated inputs and remaining prepared control
+       files into tme_b2/
+    2. sh 03_run.sh            -> 03_run.txt
+         - mandatory board-side control hashes -> 02_hashes_remote.txt
+         - sha256sum -c over the pinned checksum manifest, then all ten inputs,
+           including 04_restore.sh, before overlay load
+         - strict validation of all four captured clocks before overlay load
          - phase_s at expected 125 MHz and expected HWH VLNV
          - hw at expected 125 MHz and expected HWH VLNV
          - EXIT trap invokes 04_restore.sh even if either suite fails
-    4. the trap writes 04_restore.txt and echoes it into 03_run.txt; the
+    3. the trap writes 04_restore.txt and echoes it into 03_run.txt; the
        restore log must contain RESTORE_VERIFIED and the wrapper must exit zero
 
-**Abort conditions.** Any of these voids the run: any of the nine checksums
-fails; FCLK0 is unreadable, non-finite, or outside 125 ± 0.01 MHz; the HWH IP
+**Abort conditions.** Any of these voids the run: a mandatory control hash or
+any of the ten checksum checks fails; the captured pre-state is not exactly four
+finite, positive clocks; FCLK0 is unreadable, non-finite, or outside 125 ± 0.01 MHz; the HWH IP
 dictionary reports a VLNV other than `TermCountB2:hls:tme_top:0.2`; either
 suite fails; a DMA channel cannot be proved halted; or restoration does not
 print `RESTORE_VERIFIED` and exit zero.
@@ -121,5 +128,7 @@ only the coordinates are exact. Report each suite separately: "7/7" for
 `phase_s` and "9/9" for `hw`, each within 0.005 with exact `(x, y)`.
 
 The wall times are a **corroboration** of the cycle term, not the pass
-criterion. A run that passes 7/7 but comes in at B1's wall times would mean the
-core is correct and the model is wrong, and both halves have to be reported.
+criterion. A run that passes 7/7 but comes in at B1's wall times establishes
+functional correctness but does not by itself isolate a model error from
+PS/DMA/OS variation; the discrepancy and both categories of explanation have
+to be reported.

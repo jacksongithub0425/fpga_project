@@ -87,8 +87,9 @@ def entries() -> list[tuple[str, str]]:
         ("hardware handoff", LOGS + "/tme_standalone.hwh"),
         # The prepared board gate.  These are protocol inputs, not board
         # results: no transcript exists yet.  The board-side checksum manifest
-        # binds all nine files consumed by 03_run.sh, while listing the payloads
-        # here also makes a clean checkout independently verifiable.
+        # binds the nine suite inputs plus the authenticated restore script
+        # consumed by 03_run.sh, while listing them here also makes a clean
+        # checkout independently verifiable.
         ("board runner", SWD + "/tme_standalone_bringup.py"),
         ("board phase-s cases", HLS + "/tb_tme_cases_phase_s.txt"),
         ("board phase-s patches", HLS + "/tb_tme_patches_phase_s.bin"),

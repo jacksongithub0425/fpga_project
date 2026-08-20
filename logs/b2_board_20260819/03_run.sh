@@ -4,8 +4,9 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 CHECKSUM_FILE="$SCRIPT_DIR/B2_BOARD_INPUTS.sha256"
-CHECKSUM_FILE_SHA256=26101c12df931dd5235fec12a99adbf2464ed3b00b9bb74d353a124ca5b93a51
+CHECKSUM_FILE_SHA256=92578a6ede5dc96a438a2232727b5fba4e174fc3da48b6c640e0d5f216f9cb49
 PRESTATE_FILE=${PRESTATE_FILE:-"$SCRIPT_DIR/prestate_fclks.json"}
+REMOTE_HASH_LOG="$SCRIPT_DIR/02_hashes_remote.txt"
 RESTORE_LOG=${RESTORE_LOG:-"$SCRIPT_DIR/04_restore.txt"}
 EXPECTED_HWH_VLNV=TermCountB2:hls:tme_top:0.2
 
@@ -16,6 +17,14 @@ if [ ! -f "$PRESTATE_FILE" ]; then
     exit 2
 fi
 
+echo "=== MANDATORY BOARD-SIDE CONTROL HASHES ==="
+date -u +%Y-%m-%dT%H:%M:%SZ
+{
+    sha256sum 00_prestate.sh 03_run.sh 04_restore.sh \
+        "$(basename "$CHECKSUM_FILE")"
+} >"$REMOTE_HASH_LOG"
+cat "$REMOTE_HASH_LOG"
+
 echo "=== FAIL-CLOSED INPUT CHECKSUM GATE ==="
 date -u +%Y-%m-%dT%H:%M:%SZ
 # This command must finish successfully before either Python invocation can
@@ -23,7 +32,26 @@ date -u +%Y-%m-%dT%H:%M:%SZ
 printf '%s  %s\n' "$CHECKSUM_FILE_SHA256" "$(basename "$CHECKSUM_FILE")" | \
     sha256sum -c -
 sha256sum -c "$CHECKSUM_FILE"
-echo "CHECKSUM_GATE_PASS 9/9 (original six plus three hw-suite vectors)"
+echo "CHECKSUM_GATE_PASS 10/10 (nine suite inputs plus authenticated restore)"
+
+echo "=== PRE-STATE VALIDATION BEFORE PL CONFIGURATION ==="
+python3 - "$PRESTATE_FILE" <<'PY'
+import json
+import math
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    saved = json.load(fh)
+keys = [f"fclk{i}_mhz" for i in range(4)]
+if set(saved) != set(keys):
+    raise RuntimeError(f"captured keys are {sorted(saved)}, expected {keys}")
+values = [float(saved[key]) for key in keys]
+if any(not math.isfinite(value) or value <= 0 for value in values):
+    raise RuntimeError(f"captured clocks are not finite and positive: {values}")
+for key, value in zip(keys, values):
+    print(key, repr(value))
+print("PRESTATE_VALIDATION_PASS 4/4")
+PY
 
 restore_on_exit() {
     run_rc=$?
@@ -45,8 +73,9 @@ restore_on_exit() {
     exit 0
 }
 
-# Install cleanup only after the checksum gate. From here onward a failing
-# phase_s or hw invocation still restores base.bit and the captured clocks.
+# Install cleanup only after the checksum and pre-state gates. From here onward
+# a failing phase_s or hw invocation still restores base.bit and the captured
+# clocks.
 trap restore_on_exit EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
