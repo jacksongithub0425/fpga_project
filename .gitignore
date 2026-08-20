@@ -155,6 +155,13 @@ baseline_cpu_*/
 !hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml
 !hls/template_match/template_match_b1_b2/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip
 
+# The Priority 6 (B0b) evidence set, on the same argument as B1's and B2's.
+# It also carries PREDICTION.txt, which is committed BEFORE the first build
+# runs -- that is the whole point of it, and a prediction a clean checkout does
+# not contain cannot be checked against the result it predicted.
+!logs/b0b_20260820/
+!logs/b0b_20260820/**
+
 # The `!logs/<dir>/**` negations above re-include EVERYTHING under those paths,
 # including bytecode. `tme_b2_ab.py --predict` imports the retained
 # tme_cycle_model.py.pre_b2 snapshot, which makes CPython drop a .pyc beside it

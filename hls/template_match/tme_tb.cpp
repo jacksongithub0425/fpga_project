@@ -34,6 +34,13 @@
 // BRAMs and column accumulators from a larger previous case must never
 // leak into a smaller later one.
 //
+// "b0b" is the one suite name that selects no vectors of its own: it runs the
+// csim manifest plus run_b0b_direct_tests(), the Priority 6 vertical-reuse
+// corners.  They are gated to that suite because a direct DUT call is also a
+// co-simulation transaction, and sw/tme_b1_ab.py and sw/tme_b2_ab.py map
+// transaction indices onto (2 direct + 12 manifest) for `-argv b1` — adding
+// invocations to every suite would silently renumber B1's and B2's evidence.
+//
 // Two DIRECT DUT tests run before the manifest loop, in every suite (see
 // run_direct_tests, contract §4.6).  They exist outside the manifest because
 // the generator cannot express them: it raises ValueError on a flat template
@@ -414,6 +421,136 @@ static int run_direct_tests()
     return failures;
 }
 
+// ---------------------------------------------------------------------------
+// Priority 6 (B0b) — the vertical-reuse corners, run only under -argv "b0b".
+//
+// B0b replaces the per-(output row, template row) window statistics with one
+// pass that maintains them ACROSS output rows: subtract the row leaving the
+// window, add the row entering it.  The manifest suites exercise that richly
+// on real content — `stress-max-result` alone chains 303 vertical shifts —
+// but they cannot express the corners, because the generator needs a unique
+// non-degenerate peak and refuses a flat template.  These cases are the
+// corners:
+//
+//   * an accumulator that is subtracted from while it holds zero,
+//   * an accumulator at the maximum ΣI / ΣI² the envelope permits,
+//   * rh == 1, where the initialising pass runs and no shift ever happens,
+//   * rh == 2, exactly one shift,
+//   * a winner that lands on the FIRST output row, on the LAST, and in the
+//     middle, so an off-by-one in which row is subtracted moves the answer.
+//
+// EVERY EXPECTED VALUE HERE IS DERIVED, NOT MEASURED.  The flat cases score
+// +0.0 because di == 0 is the contract value (§4.6) and best_score starts at
+// -2.0f, so the first window wins the location.  The step cases put an EXACT
+// copy of the template in the patch: there ΣTI = ΣT², ΣI = ΣT and ΣI² = ΣT²,
+// so num = di = dt and the score is dt_f / sqrtf(dt_f*dt_f) = 1.0f exactly —
+// sqrt(fl(x*x)) == x under round-to-nearest, and dt = 4,161,600 is itself
+// exact in float32.  Every column of the step patches is identical, so the
+// winning row is reached at every u and the row-major first occurrence
+// selects u = 0.
+//
+// These do NOT run in the other suites, deliberately.  A direct DUT call is a
+// co-simulation transaction, and tme_b1_ab.py / tme_b2_ab.py map transaction
+// indices onto (2 direct + 12 manifest) for `-argv b1`.  Adding invocations
+// there would silently renumber B1's and B2's evidence.
+// ---------------------------------------------------------------------------
+
+// The 4x4 step template: two rows of 0 over two rows of 255.  Non-flat, so
+// dt > 0 and the input is legal; dt = 16*520200 - 2040^2 = 4,161,600.
+static void b0b_step_templ(unsigned char* t)
+{
+    for (int r = 0; r < 4; r++)
+        for (int c = 0; c < 4; c++)
+            t[r * 4 + c] = (unsigned char)(r < 2 ? 0 : 255);
+}
+
+// A patch whose rows are constant: 0 above `split`, 255 from `split` on.  The
+// window at output row v is an exact copy of the step template when
+// v + 2 == split, and that is the only v that scores 1.0.
+static void b0b_step_patch(unsigned char* p, int pw, int ph, int split)
+{
+    for (int r = 0; r < ph; r++)
+        for (int c = 0; c < pw; c++)
+            p[r * pw + c] = (unsigned char)(r < split ? 0 : 255);
+}
+
+static int run_b0b_direct_tests()
+{
+    printf("--- B0b vertical-reuse corners (Priority 6) ---\n");
+    int failures = 0;
+
+    unsigned char templ4[16];
+    b0b_step_templ(templ4);
+
+    // 1-2. Flat patches, non-flat template: every window has di == 0, so
+    //      every score is +0.0 and the first window keeps the location.
+    //      rh = 27, so 26 vertical shifts run against an accumulator that is
+    //      identically 0 (underflow probe) and against one at 16*255.
+    {
+        static unsigned char p[40 * 30];
+        memset(p, 0, sizeof p);
+        failures += !direct_case("b0b-zero-40x30 (rh=27, sub from 0)",
+                                 p, 40, 30, templ4, 4, 4, 0x00000000u, 0, 0);
+        memset(p, 255, sizeof p);
+        failures += !direct_case("b0b-ones-40x30 (rh=27, flat at 255)",
+                                 p, 40, 30, templ4, 4, 4, 0x00000000u, 0, 0);
+    }
+
+    // 3. rh == 1.  The initialising pass runs over all th rows and no
+    //    vertical shift ever happens — the one geometry where a broken shift
+    //    cannot be detected, which is why it is worth pinning that the
+    //    initialisation alone is right.  Maximum window too: 216x96 all-255
+    //    gives ΣI = 5,287,680 (23 bits, sum_t's stated bound) and
+    //    ΣI² = 1,348,358,400 (31 bits, sumsq_t's).
+    {
+        static unsigned char p[216 * 96];
+        memset(p, 255, sizeof p);
+        static unsigned char t[216 * 96];
+        memset(t, 0, sizeof t);
+        for (int c = 0; c < 216; c++) t[95 * 216 + c] = 255;   // non-flat
+        failures += !direct_case("b0b-ones-rh1-216x96 (init only, max win)",
+                                 p, 216, 96, t, 216, 96, 0x00000000u, 0, 0);
+
+        // 4. The same maximum window, now with two vertical shifts over it.
+        static unsigned char p3[216 * 98];
+        memset(p3, 255, sizeof p3);
+        failures += !direct_case("b0b-ones-216x98 (rh=3, max win + shifts)",
+                                 p3, 216, 98, t, 216, 96, 0x00000000u, 0, 0);
+    }
+
+    // 5. rh == 2: exactly one vertical shift, and the winner is on the far
+    //    side of it.  Rows 0-2 are 0 and rows 3-4 are 255, so the exact copy
+    //    of the template sits at v = 1.  v = 0 sees (0,0,0,255) and scores
+    //    2,080,800/sqrt(4,161,600*3,121,200) = 0.5774, so the peak is unique.
+    {
+        static unsigned char p[40 * 5];
+        b0b_step_patch(p, 40, 5, 3);
+        failures += !direct_case("b0b-step-rh2 (one shift, peak after it)",
+                                 p, 40, 5, templ4, 4, 4, 0x3F800000u, 0, 1);
+    }
+
+    // 6-8. The winner on the first output row, in the middle, and on the
+    //      last.  Same construction, three splits.  An off-by-one in which
+    //      row is subtracted or added moves the exact-copy window, so the
+    //      reported v moves with it; a reuse that decays over distance shows
+    //      up as the middle and last cases failing while the first passes.
+    {
+        static unsigned char p[40 * 30];
+        b0b_step_patch(p, 40, 30, 2);        // exact copy at v = 0
+        failures += !direct_case("b0b-step-first-row (peak at v=0)",
+                                 p, 40, 30, templ4, 4, 4, 0x3F800000u, 0, 0);
+        b0b_step_patch(p, 40, 30, 15);       // exact copy at v = 13
+        failures += !direct_case("b0b-step-mid-row (peak at v=13 of 27)",
+                                 p, 40, 30, templ4, 4, 4, 0x3F800000u, 0, 13);
+        b0b_step_patch(p, 40, 30, 28);       // exact copy at v = 26 = rh-1
+        failures += !direct_case("b0b-step-last-row (peak at v=rh-1)",
+                                 p, 40, 30, templ4, 4, 4, 0x3F800000u, 0, 26);
+    }
+
+    printf("--- B0b corners: %d failure(s) ---\n\n", failures);
+    return failures;
+}
+
 int main(int argc, char** argv)
 {
     // An unrecognised argument selects nothing and leaves the default in
@@ -426,19 +563,27 @@ int main(int argc, char** argv)
             strcmp(argv[i], "hw")      == 0 ||
             strcmp(argv[i], "phase_s") == 0 ||
             strcmp(argv[i], "b1")      == 0 ||
+            strcmp(argv[i], "b0b")     == 0 ||
             strcmp(argv[i], "prod")    == 0) {
             suite = argv[i];
         } else {
             fprintf(stderr, "unknown suite %s (expected csim, cosim, hw, "
-                            "phase_s, b1 or prod)\n", argv[i]);
+                            "phase_s, b1, b0b or prod)\n", argv[i]);
             return 1;
         }
     }
 
+    // "b0b" is not a vector suite: it is the csim manifest plus the
+    // vertical-reuse corners below.  Reusing the csim vectors is deliberate —
+    // they already contain the deepest reuse chain anywhere (820x307 with a
+    // 4x4 template is 303 vertical shifts over 817 columns), and a fresh
+    // suite would have to earn that coverage again.
+    const char* vec_suite = (strcmp(suite, "b0b") == 0) ? "csim" : suite;
+
     char cases_file[64], patch_file[64], templ_file[64];
-    snprintf(cases_file, sizeof(cases_file), "tb_tme_cases_%s.txt",   suite);
-    snprintf(patch_file, sizeof(patch_file), "tb_tme_patches_%s.bin", suite);
-    snprintf(templ_file, sizeof(templ_file), "tb_tme_templs_%s.bin",  suite);
+    snprintf(cases_file, sizeof(cases_file), "tb_tme_cases_%s.txt",   vec_suite);
+    snprintf(patch_file, sizeof(patch_file), "tb_tme_patches_%s.bin", vec_suite);
+    snprintf(templ_file, sizeof(templ_file), "tb_tme_templs_%s.bin",  vec_suite);
 
     // ---- Load and validate the manifest BEFORE running anything ---------
     FILE* fm = fopen(cases_file, "r");
@@ -503,6 +648,7 @@ int main(int argc, char** argv)
     // Counted separately from the manifest cases so the suite totals stay
     // comparable across runs, but a failure here fails the testbench.
     int direct_failures = run_direct_tests();
+    if (strcmp(suite, "b0b") == 0) direct_failures += run_b0b_direct_tests();
 
     // ---- Run every case through the DUT ---------------------------------
     int failures = 0;

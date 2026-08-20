@@ -23,6 +23,11 @@ hls/integration/tb_proto_* -text
 # which is the opposite of the reproducibility the snapshots exist for.
 hls/template_match/b1_sources/*.cpp -text
 
+# Priority 6's pinned tme_top snapshots, for exactly the same reason:
+# run_hls_b0b.tcl verifies each with `sha256sum` over RAW bytes before it will
+# compile it, and a CRLF checkout would change every digest.
+hls/template_match/b0b_sources/*.cpp -text
+
 # The Priority 0 evidence tools, for the same reason again: every trace
 # directory's provenance.json records their SHA-256 under `code_sha256`, so a
 # result can be tied to the code that produced it. core.autocrlf=true is set on

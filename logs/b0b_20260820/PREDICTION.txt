@@ -1,0 +1,117 @@
+PRIORITY 6 (B0b) -- PREDICTIONS, REGISTERED BEFORE THE FIRST BUILD
+======================================================================
+
+Committed before run_hls_b0b.tcl was executed for any solution.  B2's
+evidence had to be relabelled because its 'pre-registration' rested on
+file timestamps that turned out to post-date the cosim report; the fix
+recorded there was to put predictions in git BEFORE the run.  This is
+that, for B0b.
+
+THREE SOLUTIONS, TWO DIFFERENCES
+----------------------------------------------------------------------
+  b2ctl   the shipped core (tme_top.b2.cpp + correlation_core.b2.cpp),
+          byte-identical to what logs/b2_20260819 measured.
+  shadow  b2ctl PLUS the hoisted vertically-reused window-statistics
+          pass, compared at every result position.  Nothing removed.
+  b0b     the hoisted pass only; the repeated statistics loops deleted.
+
+  D1 = shadow - b2ctl   what the count pass COSTS
+  D2 = b0b    - shadow  what the repeated loops cost, i.e. what the
+                        model's window-statistics attribution is worth
+
+PREDICTION 1 -- THE CONTROL IS INTACT
+----------------------------------------------------------------------
+Every b2ctl transaction must equal tme_cycle_model.cycles(..., 'B2')
+exactly.  If it does not, the pair is not a pair and nothing below is
+attributable.  Zero free parameters.
+
+PREDICTION 2 -- THE COUNT PASS (D1)
+----------------------------------------------------------------------
+Iterations, already derived in tme_cycle_model.b0b_count_pass_iterations
+and unchanged by anything in this session:
+
+    S = th + 2*(rh - 1)            scans per invocation
+    I = S * pw                     iterations, since one scan is
+                                   tw + (rw - 1) = pw iterations
+
+The FROZEN endpoints assume D1 = N*I for N in {1, 3} and nothing else.
+That is the thing being tested, and it is expected to be optimistic:
+B1's projection missed by T+1 per (output row, template row) and B2's by
+3T-1, both in the direction that flattered the change.  NO CORRECTION IS
+CARRIED FORWARD -- neither shape is assumed to recur.  What is registered
+here is the SHAPE to be fitted:
+
+    D1 = S * (pw + k) + m          two free parameters
+
+k is per-scan overhead (pipeline flush of the two II=1 loops plus the
+call), m is per-invocation.  k = m = 0 is exactly the frozen II=1
+endpoint.
+
+COUNT THE CONSTRAINTS HONESTLY.  Under this shape the residual against
+S*pw depends on S alone, so transactions sharing an S restate one
+equation.  The suite spans S in {4, 16, 18, 30, 42, 62}
+-- 6 independent equations against two free parameters, so 4 surplus
+constraints.  The other 8 transactions sit at an already-constrained S
+with a DIFFERENT pw (the suite spans pw in {4, 12, 47, 88, 114, 115, 130, 131, 132, 216, 230, 231, 232}),
+so they test that the residual is a function of S alone rather than
+adding information about (k, m).
+
+PREDICTION 3 -- THE REMOVAL (D2)
+----------------------------------------------------------------------
+tme_cycle_model attributes the per-(output row, template row) cost as
+
+    template-row staging          2*tw + 3
+    window statistics             tw + rw + 21   <- what B0b removes
+    correlation writeback/control 2*rw + 8
+    accum_rows FSM transition     1
+
+Only the SUM of those four has ever been measured.  The split has not.
+D2 is the first direct measurement of one of its terms, and it predicts
+
+    D2 = -rh * th * (tw + rw + 21)
+
+with zero free parameters.  A miss here is a finding about the model's
+decomposition, not about B0b: the other three terms would have to absorb
+it, and 'fully attributed' would stop being true.
+
+PER-TRANSACTION TABLE (the b1 cosim suite: 2 direct + 12 manifest)
+----------------------------------------------------------------------
+#   pw x ph / tw x th           S        I  b2 cycles   D1 at II=1   D2 predicted
+0   12x10 / 4x4                16      192       4568          192           -952
+1   4x4 / 4x4                   4       16        536           16           -104
+2   216x13 / 216x8             18     3888      59040         3888         -11424
+3   230x13 / 216x8             18     4140      61658         4140         -12096
+4   231x13 / 216x8             18     4158      61845         4158         -12144
+5   232x13 / 216x8             18     4176      74512         4176         -12192
+6   130x21 / 100x12            30     3900     102734         3900         -18240
+7   131x21 / 100x12            30     3930     103165         3930         -18360
+8   132x21 / 100x12            30     3960     120876         3960         -18480
+9   114x27 / 20x12             42     4788     162046         4788         -26112
+10  115x27 / 20x12             42     4830     162729         4830         -26304
+11  47x21 / 16x12              30     1410      40921         1410          -8280
+12  47x21 / 16x12              30     1410      40921         1410          -8280
+13  88x39 / 24x16              62     5456     267840         5456         -42240
+
+WHOLE-WORKLOAD CONSEQUENCE, AND HOW TO RECOMPUTE IT
+----------------------------------------------------------------------
+The frozen s/page endpoints are
+    B0b base (deletion only)   17.597699
+    B0b at II=1                17.743730541333
+    B0b at II=3                18.035794052889
+Those sum a per-trial term over 20,680 modelled trials at 125 MHz.  They
+are NOT page times: no page has been run on any hardware at any clock.
+If the fit gives (k, m) != (0, 0) the endpoints move, and the replacement
+is B2 + D2 + D1 summed over the same workload -- not one of the two
+frozen numbers with a correction bolted on.
+
+WHAT THIS PREDICTION DOES NOT COVER
+----------------------------------------------------------------------
+  * the clock.  A cosim latency is a zero-stall RTL schedule; whether the
+    hoisted pass still closes 8.000 ns is a routed result.  B2 closed it
+    with +0.011710 ns, so B0b starts with 12 ps of margin on a path
+    inside correlation_core that B0b does not itself edit.
+  * silicon.  Nothing here has run on a board.
+  * the shadow build's own latency as a B0b figure.  shadow is b2ctl plus
+    a pass; it is SLOWER than b2ctl by construction and is not a variant
+    anyone would ship.
+
