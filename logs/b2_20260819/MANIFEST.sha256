@@ -68,5 +68,5 @@ a4b452a253224f849d998d3c8a0befb77572c1663fffd2db6fa4a4397e0e31ea  logs/b2_202608
 4173d756cfd4c08ea16dc764b602d02627931613ee6e987b0c4c0b0e14613ac1  logs/b2_20260819/b2_ab.txt  # adjudicator output
 66992c5177ecb21f7c0888419927a5fd15ec833714d909770937a6ce7b842475  logs/b2_20260819/b2_ab_negative_control.txt  # adjudicator negative control
 4d128b17b0f64f243cd151a4a2be04706a23d08aa28081ef8a06f6981c906ce0  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
-7de191b69828d182b4fcf86981386cb62e317737b5d8735dea575ebfae52dee9  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
+8851e2d1aa8ab274a63de7c7d2ecfa01f13c9022e3725612e29c75da80126775  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
 6a40c544ccf125d569fb988d239431baf921673dc3b0787dba19c771037d273c  hls/template_match/b1_sources/README.md  # pinned-source README

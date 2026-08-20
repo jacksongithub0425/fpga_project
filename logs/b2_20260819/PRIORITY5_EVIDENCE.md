@@ -1,7 +1,32 @@
 # Priority 5 — B2, horizontal overlap reuse: evidence
 
+## FROZEN STATUS
+
+> **B2 is implemented, cycle-validated, standalone timing-closed, and
+> silicon-validated at an observed 125 MHz through the compiled maximum tile
+> count.** The **20.405 s/page figure remains a workload projection**; no page
+> and no combined image has run.
+
+Read "through the compiled maximum tile count" as *reaching* `T = 52`, not
+sweeping to it: the board sampled **{1, 3, 4, 6, 38, 52}** across sixteen cases
+(`tme_cycle_model.py` asserts that set against the transcript). "Silicon-validated"
+means `|score − gold| ≤ 0.005` **and** exact `(x, y)` — a tolerance on the score,
+exactness only on the location.
+
+The four legs, and where each is proved:
+
+| leg | evidence |
+|---|---|
+| implemented | `b1_sources/correlation_core.b2.cpp`, digest-gated in every build script |
+| cycle-validated | paired RTL co-simulation against `b1`, 14/14 transactions exact, control intact on all 14 |
+| standalone timing-closed | routed at 8.000 ns, WNS **+0.011710 ns** — 0.15% of the period; read it as "this run closed", not "B2 closes 8 ns" |
+| silicon-validated | board session 2026-08-20, `logs/b2_board_20260819/` — phase_s 7/7, hw 9/9, gated 125.0000 MHz |
+
+---
+
 Captured 2026-08-19; corrected the same day (six claims — see the change note
-at the end). Every figure here regenerates from the tools (`tme_b2_ab.py
+at the end). The board session and a further six claim corrections followed on
+2026-08-20. Every figure here regenerates from the tools (`tme_b2_ab.py
 --assert`, `tme_b2_mutants.py --assert`, `tme_cycle_model.py --assert`,
 `tme_b2_manifest.py --verify`), and nothing is transcribed by hand.
 
