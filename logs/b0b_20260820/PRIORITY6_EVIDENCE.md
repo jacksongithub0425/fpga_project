@@ -127,6 +127,13 @@ loop:
 | achieved II | 4 | 4 | 4 |
 | iteration latency | 98 | 98 | 98 |
 
+The three `tme_top_Pipeline_norm_cols_csynth.rpt` reports these numbers come
+from are pinned in the manifest as of this review. They were not before: only
+`csynth.rpt` and `tme_top_csynth.rpt` were, so from a clean checkout the loop
+table was invisible and the checker reported the recorded move as *gone* — a
+wrong answer in the reassuring direction. It now distinguishes "the move is
+gone" from "the report that carries it is absent", and fails on both.
+
 `sw/tme_b0b_synth.py` compared **only the last two rows**, and those cannot move
 for this defect — a pipelined loop's own latency is not a function of its II and
 iteration latency. So the gate reported "no loop moved" for a difference it was

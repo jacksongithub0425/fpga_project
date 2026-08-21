@@ -117,6 +117,19 @@ def entries() -> list[tuple[str, str]]:
                     project(sol) + f"/{sol}/syn/report/csynth.rpt"))
         out.append((f"csynth top {sol}",
                     project(sol) + f"/{sol}/syn/report/tme_top_csynth.rpt"))
+        # THE norm_cols SUBMODULE REPORT IS EVIDENCE NOW, NOT BUILD OUTPUT.
+        # The withdrawal of the two-term split rests on one number read from
+        # these three files: norm_cols is 97 ~ 3361 in b2ctl and b0b and
+        # 99 ~ 3363 in shadow, with achieved II and iteration latency identical
+        # in all three.  Until 2026-08-20 only csynth.rpt and tme_top_csynth.rpt
+        # were pinned, so from a clean checkout tme_b0b_synth.py could not see
+        # the loop table at all -- it reported the recorded move as GONE, which
+        # is the reassuring direction of a wrong answer.  Three small text
+        # reports, pinned because a specific claim is read from them, not
+        # because more hashes are better.
+        out.append((f"csynth norm_cols {sol}",
+                    project(sol) + f"/{sol}/syn/report/"
+                                   "tme_top_Pipeline_norm_cols_csynth.rpt"))
     return out
 
 

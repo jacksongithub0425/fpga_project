@@ -18,7 +18,7 @@ c58b2d7a2a1f870fb1d70f974091972c94c19e853608c4b90d493c6db61a1811  hls/template_m
 549e1b4880800b9d0907124073a290207daaee67caceeeee4ea36a43f13bee8f  hls/template_match/run_hls_b0b_mutant.tcl  # mutant build script
 c05009a740d475c36c78d7fb5f90810128da46b967d0a5384c00f3ef341e1af2  sw/tme_b0b_ab.py  # adjudicator
 4dc2a02732109284668be96cc1ac7011d57d91d6d32e3ac25a897c0545aafd66  sw/tme_b0b_mutants.py  # mutant gate
-ea010e225f3826b4ab055b375836605805db1df2314de2c18e033c8888dd2eb2  sw/tme_b0b_synth.py  # synthesis reader
+dc8484eb8c723ebe06b39bf552e613bee8aaae605186f332ff0a10491961d2b8  sw/tme_b0b_synth.py  # synthesis reader
 959eb3c9488f00951c192fc037bc50ab27d55d04acfb66a7e46a1d65916ef479  sw/tme_cycle_model.py  # cycle model
 8ea4224eb10a5756e47c5ecc4f8ec603ac097b2b9a9ae3d3ce9e0d3f4e7bc13a  sw/tme_b1_manifest.py  # manifest rule
 d427834be51c6901a642ef5f3fecaaf263e10b9399560aed58877ec2258871b2  logs/b0b_20260820/PREDICTION.txt  # prediction
@@ -30,7 +30,7 @@ ca5f094d1896727f3ecfb6ce8031e137aa444749e4c72c47db4b1440c014ab4e  logs/b0b_20260
 fb9fbc363319c620834f2427b5a782676c0feea94cb84e4bee3ff60c10d0ec90  logs/b0b_20260820/smoke_b0b_b1.log  # csim b0b smoke
 d2be0ad43fa6f0d1a550014d06e9699295e59f4fbae0c4e51e19f11961fc371f  logs/b0b_20260820/b0b_mutants.txt  # mutant gate transcript
 3996cb1117b32893a787cfb86cacfb18b3b095aa7f13ee96a40e6f04cb9ed492  logs/b0b_20260820/b0b_mutants_list.txt  # mutant edits
-123f4b5ee562199036c2a1e970f7bcfee8fe305dc6c77d3e4f704c2cf20bf749  logs/b0b_20260820/PRIORITY6_EVIDENCE.md  # evidence document
+06df1c3361d504986299b2801176ea0764f5407148ee4d4c368dbc60e035cb0a  logs/b0b_20260820/PRIORITY6_EVIDENCE.md  # evidence document
 f909a1cad47440e4476e529e178c645bfdb89fd9541ef03d7cec21ff4b585df7  logs/b0b_20260820/b0b_ab.txt  # ab adjudication
 d94f96478abf7b76d2c9d56f38ac3f094341f952cde4842ce8987d776839e5db  logs/b0b_20260820/b0b_ab_negative_control.txt  # ab negative control
 809e7379f17a5c6eee3f6b39961d97744ce916c9db06c8667ecc73bd786d9687  logs/b0b_20260820/b0b_synth.txt  # synthesis comparison
@@ -47,11 +47,14 @@ f5565f36943c3b1a1e751044212d33fca9c3d791bba262587063737d0227037d  logs/b0b_20260
 fafdeb5e3e61eb8783013f97f1ce4f3192526119b9cf2b5bdba2f46f84785d06  hls/template_match/template_match_b0b_b2ctl/b2ctl/sim/report/verilog/result.transaction.rpt  # cosim b2ctl
 02e813cb2c659cbb41d99536383683284a4322592113538e8b8a832c088a8db4  hls/template_match/template_match_b0b_b2ctl/b2ctl/syn/report/csynth.rpt  # csynth b2ctl
 636684b33f70264517e95e759cfc982b367ad02fb8c6eaa180a29eb23718f800  hls/template_match/template_match_b0b_b2ctl/b2ctl/syn/report/tme_top_csynth.rpt  # csynth top b2ctl
+074d9800a170188198442fc13b23fcec1ba834ef02ae165589af46cf615c2c30  hls/template_match/template_match_b0b_b2ctl/b2ctl/syn/report/tme_top_Pipeline_norm_cols_csynth.rpt  # csynth norm_cols b2ctl
 cdbe8e5038ade3520f6c95207a0cb110523df937e67018d4897c8f3bb2d76990  logs/b0b_20260820/run_shadow.log  # run log shadow
 3594c5d6779df888f1e7031bc1dcb52bbf52024fb858dfa8a2a523233133f415  hls/template_match/template_match_b0b_shadow/shadow/sim/report/verilog/result.transaction.rpt  # cosim shadow
 7b95d13953a55c8cb0183f88f7373e4130bcb198e3d11853dd79cf5b83fd3e20  hls/template_match/template_match_b0b_shadow/shadow/syn/report/csynth.rpt  # csynth shadow
 72d70692792b043ae561e1e7244c26b8e3f57db189737b90a006559b70588f58  hls/template_match/template_match_b0b_shadow/shadow/syn/report/tme_top_csynth.rpt  # csynth top shadow
+4ec836a394e38c8fad6df6e62868d802aeca1bb09d4f0ab300dbf530bbb4bb52  hls/template_match/template_match_b0b_shadow/shadow/syn/report/tme_top_Pipeline_norm_cols_csynth.rpt  # csynth norm_cols shadow
 d4e70fbd885cc7d4c8f2beb5b74ad96c3715c6eb379e0e84587b0274939a886c  logs/b0b_20260820/run_b0b.log  # run log b0b
 b67db03577b8abad719eeb5b05d5ceae5ac7ac92165b3186ade869442b1a04c7  hls/template_match/template_match_b0b_b0b/b0b/sim/report/verilog/result.transaction.rpt  # cosim b0b
 3fd35a3a7ca1b6b6ed19c5ece08968398f4287b08ac92bda041d05a7a4467247  hls/template_match/template_match_b0b_b0b/b0b/syn/report/csynth.rpt  # csynth b0b
 0a054733c46c01870c9eebbf3e176b8e47631c986fe071808bbe9f310500bb82  hls/template_match/template_match_b0b_b0b/b0b/syn/report/tme_top_csynth.rpt  # csynth top b0b
+82f47a3852e41f7bab2cffc258eff6899c63c21fa8efe58a929bfdfe1115e789  hls/template_match/template_match_b0b_b0b/b0b/syn/report/tme_top_Pipeline_norm_cols_csynth.rpt  # csynth norm_cols b0b

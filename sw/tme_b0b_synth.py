@@ -313,8 +313,20 @@ def main() -> int:
                       if _key(e) in KNOWN_SCHEDULE_MOVES
                       and KNOWN_SCHEDULE_MOVES[_key(e)] != (e[4], e[5])]
         seen = {_key(e) for e in moved}
-        vanished = [k for k in KNOWN_SCHEDULE_MOVES
-                    if k[1] in have and k[2] in have and k not in seen]
+        # A RECORDED MOVE CAN BE GONE OR IT CAN BE UNREADABLE, AND THOSE ARE
+        # NOT THE SAME REPORT.  norm_cols lives in a SUBMODULE report, and
+        # until 2026-08-20 only csynth.rpt and tme_top_csynth.rpt were pinned:
+        # from a clean checkout the loop was not in `all_loops` at all, and
+        # this printed "a recorded move is gone -- the halves may now be
+        # separable".  That is a wrong answer in the reassuring direction, off
+        # a file that was simply absent.  Say which it is.
+        vanished, unreadable = [], []
+        for k in KNOWN_SCHEDULE_MOVES:
+            if k[1] not in have or k[2] not in have or k in seen:
+                continue
+            per = all_loops.get(k[0], {})
+            (vanished if k[1] in per and k[2] in per
+             else unreadable).append(k)
 
         if moved:
             print("  YES.  Shared PIPELINED leaf loops that differ:")
@@ -359,6 +371,19 @@ def main() -> int:
             print("  separable and nothing here says so yet:")
             for k in vanished:
                 print(f"    {k[0]} {k[3]}: {k[1]} vs {k[2]}")
+            rc = 1
+        if unreadable:
+            print()
+            print("  A RECORDED MOVE CANNOT BE CHECKED — the report that")
+            print("  carries it is not here.  This is NOT the same as the move")
+            print("  having gone away, and nothing below should be read as")
+            print("  evidence that the D1/D2 split is clean:")
+            for k in sorted(unreadable):
+                print(f"    {k[0]} {k[3]}: needs the submodule csynth report "
+                      f"for {k[1]} and {k[2]}")
+            print("  Build the three solutions, or check out a tree in which")
+            print("  the pinned tme_top_Pipeline_norm_cols_csynth.rpt files")
+            print("  are present (they are in the B0b manifest).")
             rc = 1
     if mod_moved:
         print()
