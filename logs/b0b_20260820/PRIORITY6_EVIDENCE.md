@@ -14,9 +14,25 @@ routed build behind it for this core. Not on silicon. See
     s/page at 125 MHz                          17.726035892444
     largest Phase-S trial (311×159 / 216×96)   14,950,652 cycles (−1,988,869 vs B2)
 
-Both terms are measured by paired RTL co-simulation over the same fourteen
-invocations. **The s/page is still a projection**: it sums a per-trial term over
-20,680 modelled trials, and no page has been run on any hardware at any clock.
+The **net** term is measured by paired RTL co-simulation over the same fourteen
+invocations, and the net is what is frozen. **The two bracketed halves are not
+separately owned** — see [The split is not
+identified](#the-split-is-not-identified-and-cannot-be-by-this-method).
+**The s/page is still a projection**: it sums a per-trial term over 20,680
+modelled trials, and no page has been run on any hardware at any clock.
+
+### What changed on review, 2026-08-20
+
+Five findings, all of them about the evidence rather than about the
+implementation. The measured net result is unchanged.
+
+| # | finding | resolution |
+|---|---|---|
+| 1 | the claimed clean two-term split was **contaminated**: the shadow's comparator reschedules `norm_cols` by +2 cycles a call, and the checker compared only the two columns that could not move | split **withdrawn**; checker now reads all four columns and the module wrapper, and holds them against a recorded inventory |
+| 2 | the two corpus components in `tme_cycle_model.py` were **wrong** — 3.088545 and 0.409416, each 0.239655641778 too large, the same offset, so the net stayed exact | corrected to 2.848889358222 and 0.169760466889, now **derived and asserted** rather than narrated |
+| 3 | `b0b_post_route_wns.txt` said the design **“closes”** while its own verdict line said `CONSTRAINTS VIOLATED` | generator's failed-timing branch written; the retained report carries a correction header naming the two stale passages |
+| 4 | B2's manifest line 12 had been silently **re-baselined** onto the living `tme_top.cpp`, which B0b edits | re-pointed at the immutable `b0b_sources/tme_top.b2.cpp` (`bcccd44c…`); `--write` now refuses to move an already-pinned digest without `--rebaseline` |
+| 5 | `run_hls_b0b_mutant.tcl` resolved paths against `[pwd]`, and its pinned-snapshot guard **failed open** on an empty glob | every path anchored to the script's own directory; the guard and the vector list fail closed; sweep re-run, 7/7 |
 
 ---
 
@@ -88,24 +104,86 @@ difference against a single control.
 | `shadow` | `b0b_sources/tme_top.shadow.cpp` | `b2ctl` **plus** the hoisted pass, computed alongside and compared at every result position; nothing removed |
 | `b0b` | `b0b_sources/tme_top.b0b.cpp` | the hoisted pass **only**; the repeated loops deleted |
 
-    D1 = shadow − b2ctl     the hoisted pass
-    D2 = b0b    − shadow    the deleted loops
+    D1 = shadow − b2ctl     the hoisted pass  PLUS the shadow's comparator
+    D2 = b0b    − shadow    −(the deleted loops) MINUS the same comparator
     D  = b0b    − b2ctl     what B0b changes about the shipped core (D ≡ D1 + D2)
+                            — the only one of the three that is comparator-free
 
 `correlation_core.b2.cpp`, `tme_top.h` and the b1 vector suite are digest-gated
 before the first `add_files` in every one of the three runs, so the only thing
 that moves between them is the one file under measurement.
 
-### The split is legitimate, and that is checked rather than assumed
+### The split is NOT identified, and cannot be by this method
 
-`shadow` adds a comparison **inside `norm_cols`**. If that had rescheduled the
-loop, `D1` would be the pass *plus* `rh` times a `norm_cols` change, and reading
-it as "what the pass costs" would be wrong. `sw/tme_b0b_synth.py` settles it from
-the csynth loop tables: **every pipelined leaf loop shared between solutions has
-the same achieved II and the same iteration latency in all three**, `norm_cols`
-(II=4, iteration latency 98) included. Only the non-pipelined containers
-`slide_v` and `accum_rows` move, which they must — their iteration latency is the
-sum of what is inside them.
+**This section previously claimed the opposite and the claim is withdrawn.**
+
+`shadow` adds a comparison **inside `norm_cols`**, and it *does* reschedule that
+loop:
+
+| | `b2ctl` | `shadow` | `b0b` |
+|---|---|---|---|
+| `norm_cols` loop latency | 97 ~ 3361 | **99 ~ 3363** | 97 ~ 3361 |
+| `norm_cols` module latency | 99 ~ 3363 | **101 ~ 3365** | 99 ~ 3363 |
+| achieved II | 4 | 4 | 4 |
+| iteration latency | 98 | 98 | 98 |
+
+`sw/tme_b0b_synth.py` compared **only the last two rows**, and those cannot move
+for this defect — a pipelined loop's own latency is not a function of its II and
+iteration latency. So the gate reported "no loop moved" for a difference it was
+structurally unable to see. It now reads all four scheduling columns plus the
+module wrapper, and `--assert` holds the result against a **recorded inventory**
+(`KNOWN_SCHEDULE_MOVES`) rather than against "none": a new move fails, the
+recorded one changing size fails, and the recorded one vanishing fails too,
+because that would make this section stale.
+
+`norm_cols` runs **once per output row**, so
+
+    D1 = pass + 2·rh          D2 = −(removal) − 2·rh          D unchanged
+
+`b2ctl` and `b0b` have identical `norm_cols` schedules, so **`D` carries none of
+it**. The frozen aggregate, the frozen s/page and the Phase-S figures are all
+unaffected. Only the split is, and equally in both directions.
+
+**The alternative fits exactly, which is the whole point.** Moving the
+comparator across gives
+
+    D1 − 2·rh = S·(pw + 29) + th + 3
+    D2 + 2·rh = −[rh·th·(tw + rw + 24) + rh]
+
+and these reproduce all fourteen transactions just as exactly, because they are
+the same fourteen numbers rearranged. `tme_b0b_ab.py` check 3b asserts this
+(14/14 on both forms, 14/14 still summing to the same `D`). The co-simulation
+constrains the **sum**; preferring one pair over the other is choosing a
+functional form, not reading a measurement.
+
+**No comparator-free control was built, because there cannot be one.** A shadow
+solution exists to hold *both* copies of the statistics live at once. A copy
+nothing reads is dead code and Vitis deletes it — at which point the solution is
+`b2ctl` or `b0b` and measures nothing. Some consumer must therefore read both
+copies, and the two array reads plus the compare already present are the
+cheapest such consumer: moving them into a loop of their own trades +2 inside
+`norm_cols` for a whole new loop region, and *selecting* between the copies
+instead of comparing them keeps both reads and so keeps the cost. `D1` and `D2`
+are unidentifiable **by this method, in principle** rather than by oversight.
+
+**What survives, and it is the part that mattered.** The nuisance is
+proportional to `rh`. `W`'s regressor is `rh·th` and `th` varies across the
+suite, so nothing `rh`-proportional can move it:
+
+| term | status |
+|---|---|
+| `tw + rw + 24` per (output row, template row) | **identified** — the removal's own cost |
+| `3` per output row | the removal's own share **+ 2 of comparator** |
+| `S·(pw + 30) + 5` | the pass **+ 2·rh** |
+
+So the pre-registration is **refuted either way**: it predicted `tw + rw + 21`
+and nothing per output row, and 24 is what the data give with or without the
+comparator. `tme_cycle_model.PER_ROW_TERMS["window_statistics"]` stands;
+`PER_OUTPUT_ROW_STATISTICS` and the pass's `(k, m)` do not, and the FROZEN keys
+were renamed `d1_*` / `d2_*` to say so.
+
+Only the non-pipelined containers `slide_v` and `accum_rows` move besides, which
+they must — their iteration latency is the sum of what is inside them.
 
 ---
 
@@ -432,6 +510,22 @@ four routed reports are committed** — `b0b_post_route_wns.txt`,
 `post_route_worst_paths.rpt` — and they are what every number above is read
 from. `tme_cycle_model.py --assert` re-reads the first two and fails if the
 verdict line ever stops saying `CONSTRAINTS VIOLATED`.
+
+**`b0b_post_route_wns.txt` carries a correction header, and the prose below it
+is partly stale.** The report was generated by a branch that had no
+failed-timing case, so its body says *"this result says the LOGIC closes at the
+probed period"* and *"this build met its constraint with room to spare"* about a
+run whose own verdict line is `CONSTRAINTS VIOLATED`. Every **measured** value
+in it is correct — the four slack numbers, the verdict, the budget-consumed and
+data-delay lines, the binding path. Two prose passages are not, and the header
+names both verbatim. The generator was fixed in
+`vivado/tme_standalone/build_tme_standalone.tcl`: the verdict now drives a `met`
+flag and every outcome sentence branches on it, including the case where a board
+measurement is supplied for a build that did not close (a contradiction the old
+prose would have printed as a pair of facts). The report is **not**
+regenerated — that would need the routed design reopened, and the numbers in it
+are the ones that were measured. `tme_cycle_model.py --assert` now also fails if
+the correction header is ever stripped.
 
 ### The follow-up this creates
 

@@ -322,6 +322,15 @@ proc ::tme_standalone::report_post_route_timing {out_dir} {
     # in post_route_timing_summary.rpt.
     set verdict [expr {$tns == 0 && $ths == 0 \
                        ? "all constraints met" : "CONSTRAINTS VIOLATED"}]
+    # EVERY SENTENCE OF PROSE BELOW THAT DESCRIBES THE OUTCOME BRANCHES ON
+    # THIS.  It used to branch on nothing: the clock-probe note said "this
+    # result says the LOGIC closes at the probed period" and "this build met
+    # its constraint with room to spare" unconditionally, so a run that
+    # VIOLATED its constraint generated a report claiming it had closed.  B0b
+    # (logs/b0b_20260820/) is the run that exposed it -- WNS -0.051470 ns, and
+    # a report saying it closed.  Prose that cannot say the negative result is
+    # not a report, and a reader who quotes it is not the one at fault.
+    set met [expr {$tns == 0 && $ths == 0}]
 
     # The clock the WNS is actually measured against.  Reporting WNS without
     # this is how a number gets misread — see the note written into the file
@@ -449,14 +458,60 @@ DESIGN; TME_FCLK_MHZ is ignored here."
         lappend lines "PYNQ applies the PS7's divisor pair to a 1000 MHz PL PLL"
         lappend lines "rather than the 1600 MHz Vivado assumed."
         lappend lines ""
-        lappend lines "So this result says the LOGIC closes at the probed period."
+        if {!$met} {
+            lappend lines "THIS PROBE FAILED.  The logic does NOT close at $period ns:"
+            lappend lines "the verdict above is $verdict, with WNS $wns ns and"
+            lappend lines "TNS $tns ns.  There is no frequency claim of any kind in"
+            lappend lines "this report -- not an implementation one and not a board"
+            lappend lines "one.  Quote it as 'does not close at $period ns in"
+            lappend lines "implementation', and quote the WNS only with the period"
+            lappend lines "beside it."
+            lappend lines ""
+            lappend lines "WHAT IT DOES NOT SAY EITHER.  One run at whatever effort"
+            lappend lines "this flow used does not establish that the design CANNOT"
+            lappend lines "close at $period ns.  A negative slack this small is the"
+            lappend lines "kind a directive change, a seed sweep or post-route"
+            lappend lines "phys_opt routinely recovers, and none of those was tried"
+            lappend lines "unless the build log above says so.  'Did not close' and"
+            lappend lines "'cannot close' are different claims; this report supports"
+            lappend lines "only the first."
+            lappend lines ""
+            lappend lines "The binding path below is where to look.  Note it may sit"
+            lappend lines "in a module this change did not touch: inheriting margin"
+            lappend lines "on someone else's path and then losing it to placement is"
+            lappend lines "a normal outcome, not evidence about the edit."
+        }
         set obs [observed_board_clock]
         if {[llength $obs] == 0} {
-            lappend lines "It does NOT say the board runs there: reaching it needs the"
-            lappend lines "PS7 FCLK config changed and the achieved rate re-measured"
-            lappend lines "from Clocks.fclk0_mhz on the board.  Until that measurement"
-            lappend lines "exists, quote this as 'closes at <period> in implementation',"
-            lappend lines "never as a board frequency."
+            if {$met} {
+                lappend lines "So this result says the LOGIC closes at the probed period."
+                lappend lines "It does NOT say the board runs there: reaching it needs the"
+                lappend lines "PS7 FCLK config changed and the achieved rate re-measured"
+                lappend lines "from Clocks.fclk0_mhz on the board.  Until that measurement"
+                lappend lines "exists, quote this as 'closes at <period> in implementation',"
+                lappend lines "never as a board frequency."
+            } else {
+                lappend lines "No board measurement is supplied here, and none is called"
+                lappend lines "for: a build that does not meet its own constraint has"
+                lappend lines "nothing to carry to a board.  Close the timing first."
+            }
+        } elseif {!$met} {
+            # A supplied board measurement plus a failed route is a
+            # CONTRADICTION, not a pair of facts to print side by side.
+            array set o $obs
+            lappend lines "A BOARD MEASUREMENT WAS SUPPLIED FOR A BUILD THAT DOES NOT"
+            lappend lines "CLOSE, AND THE TWO CANNOT BOTH BE ABOUT THIS RESULT:"
+            lappend lines ""
+            lappend lines "  observed Clocks.fclk0_mhz : $o(mhz)   <- OPERATOR-SUPPLIED"
+            lappend lines "  evidence                  : $o(evidence)"
+            lappend lines "  bitstream sha256          : $o(sha)"
+            lappend lines ""
+            lappend lines "The sha256 matches the bitstream beside this report, so the"
+            lappend lines "measurement is about THIS image -- an image whose timing"
+            lappend lines "was not met.  A part running at a rate its own static"
+            lappend lines "timing analysis rejects is running out of specification;"
+            lappend lines "it is not a closing build.  Do not quote $o(mhz) MHz as"
+            lappend lines "this design's operating frequency on the strength of it."
         } else {
             array set o $obs
             lappend lines "It does not, on its own, say the board runs there."
@@ -483,11 +538,21 @@ DESIGN; TME_FCLK_MHZ is ignored here."
         lappend lines "point this build is about."
     }
     lappend lines ""
-    lappend lines "Do NOT invert the data delay to get a maximum frequency.  This"
-    lappend lines "build met its constraint with room to spare, at which point"
-    lappend lines "the router stops trying -- the >90% routing share below is"
-    lappend lines "partly an artefact of a loose constraint, not a hard floor."
-    lappend lines "Re-implement at the target period and read the result."
+    lappend lines "Do NOT invert the data delay to get a maximum frequency."
+    if {$met} {
+        lappend lines "This build met its constraint with room to spare, at which"
+        lappend lines "point the router stops trying -- the routing share below is"
+        lappend lines "partly an artefact of a loose constraint, not a hard floor."
+        lappend lines "Re-implement at the target period and read the result."
+    } else {
+        lappend lines "This build did NOT meet its constraint, so the usual caveat"
+        lappend lines "-- that the router stopped early on a loose constraint --"
+        lappend lines "does not apply: it tried and came up $wns ns short.  The"
+        lappend lines "routing share below is therefore closer to a real picture of"
+        lappend lines "where the time goes than it would be in a passing run.  It is"
+        lappend lines "still not a maximum frequency: re-implement at the period you"
+        lappend lines "care about and read that result."
+    }
     lappend lines ""
     lappend lines "For comparison, the extractor's standalone image measured"
     lappend lines "WNS +10.144 ns against the same 20 ns constraint (budget"

@@ -12,8 +12,35 @@ be wrong.  The loop tables settle it by inspection instead of by assumption:
 if every loop b2ctl has is unchanged in shadow, the difference is the new
 module and nothing else.  If any of them moved, this prints which.
 
+IT DID MOVE, AND THIS FILE USED TO SAY IT DID NOT.  Until 2026-08-20 the
+comparison read two columns of the loop table -- achieved II and ITERATION
+latency -- and both are identical in all three solutions for norm_cols (II 4,
+iteration latency 98).  Its actual LATENCY is not:
+
+    norm_cols   b2ctl  97 ~ 3361      shadow  99 ~ 3363      b0b  97 ~ 3361
+    module      b2ctl  99 ~ 3363      shadow 101 ~ 3365      b0b  99 ~ 3363
+
+A pipelined loop's latency is not a function of the two columns that were
+being compared, so checking those two and reporting "no loop moved" was a
+check that could not fail for this defect class.  The shadow's comparison
+costs +2 cycles per norm_cols call, norm_cols runs once per OUTPUT ROW, and
+therefore `shadow - b2ctl` overstates the pass by 2*rh while `b0b - shadow`
+understates the removal by the same 2*rh.
+
+WHAT THAT DOES AND DOES NOT INVALIDATE.  It cancels in the NET: b2ctl and b0b
+have identical norm_cols schedules, so `b0b - b2ctl` -- the frozen law -- is
+uncontaminated.  Only the two HALVES are affected, in equal and opposite
+amounts.  See sw/tme_b0b_ab.py, which no longer publishes either half as a
+measurement of the pass or of the removal.
+
+The comparison now reads all four scheduling columns plus the module wrapper's
+own latency, and --assert holds the result against a RECORDED inventory of the
+one known difference rather than against "none".  A new difference fails; the
+known one changing size fails; the known one disappearing fails too, because
+that would mean the prose above is stale.
+
     python tme_b0b_synth.py            # three-way comparison
-    python tme_b0b_synth.py --assert   # exit 1 if a shared loop moved
+    python tme_b0b_synth.py --assert   # exit 1 on any UNRECORDED schedule move
     python tme_b0b_synth.py --json out.json
 
 WHAT A csynth NUMBER IS.  An estimate from the scheduler, not a measurement:
@@ -38,6 +65,31 @@ from tme_b1_ab import HLS                                      # noqa: E402
 
 SOLUTIONS = ("b2ctl", "shadow", "b0b")
 
+# THE INVENTORY OF SHARED-LOOP MOVEMENT THIS BUILD IS KNOWN TO HAVE.
+#
+# (loop, solution A, solution B, column) -> (value in A, value in B)
+#
+# One entry, and it is the shadow's comparison rescheduling the loop it sits
+# in.  The two rows are the same fact read on the two bounds of the same loop:
+# norm_cols is 2 cycles longer in `shadow` than in either of the solutions
+# without a comparison in it.  The pair (b2ctl, b0b) is deliberately ABSENT --
+# those two agree, which is what keeps the net law clean.
+#
+# This is a record of a measurement, not a tolerance.  Do not add an entry to
+# make a gate pass; an entry here is a statement that the difference has been
+# looked at, explained, and accounted for downstream.
+KNOWN_SCHEDULE_MOVES = {
+    ("tme_top_Pipeline_norm_cols/norm_cols", "b2ctl", "shadow",
+     "latency_min"): ("97", "99"),
+    ("tme_top_Pipeline_norm_cols/norm_cols", "b2ctl", "shadow",
+     "latency_max"): ("3361", "3363"),
+}
+
+
+def _key(entry) -> tuple:
+    """(loop, a, b, column) from a (loop, a, b, column, va, vb) difference."""
+    return (entry[0], entry[1], entry[2], entry[3])
+
 
 def syn_dir(sol: str) -> Path:
     return HLS / f"template_match_b0b_{sol}" / sol / "syn" / "report"
@@ -55,8 +107,14 @@ def parse_report(path: Path) -> dict:
         out["clk_estimated_ns"] = float(m.group(2))
         out["clk_uncertainty_ns"] = float(m.group(3))
 
+    # The module's own latency row.  The last cell is the pipeline TYPE, and it
+    # is not always one word: a pipelined module says "loop pipeline stp", so
+    # `\w+` matched only the unpipelined ones and every pipelined submodule
+    # silently parsed as having no latency at all.  That mattered: the module
+    # wrapper is the second, independent view of the norm_cols difference this
+    # file exists to detect, and it was reading as absent.
     m = re.search(r"\|\s*(\d+)\|\s*(\d+)\|\s*[\d.]+ \w+\|\s*[\d.]+ \w+\|"
-                  r"\s*(\d+)\|\s*(\d+)\|\s*\w+\|", txt)
+                  r"\s*(\d+)\|\s*(\d+)\|\s*[\w ]+\|", txt)
     if m:
         out["latency_min"] = int(m.group(1))
         out["latency_max"] = int(m.group(2))
@@ -185,6 +243,7 @@ def main() -> int:
             i = per[s]
             print(f"      {s:<8} II {i['ii_achieved']:>4}  "
                   f"iter-lat {i['iteration_latency']:>16}  "
+                  f"lat {i['latency_min']:>8} ~ {i['latency_max']:>10}  "
                   f"trip {i['trip_count']:>10}  pipelined {i['pipelined']}")
         shared = [s for s in have if s in per]
         if len(shared) > 1:
@@ -197,45 +256,121 @@ def main() -> int:
             # neither solution edits, get rescheduled?  norm_cols is the one
             # that matters here, because the shadow's comparison lives in it.
             container = ref["ii_achieved"] in ("-", "")
+            # ALL FOUR SCHEDULING COLUMNS.  Comparing only II and iteration
+            # latency is what let norm_cols through: a pipelined loop's own
+            # latency is not determined by those two, and norm_cols moved by
+            # +2 on both bounds with both of them unchanged.
             for s in shared[1:]:
-                if (per[s]["ii_achieved"] != ref["ii_achieved"]
-                        or per[s]["iteration_latency"]
-                        != ref["iteration_latency"]):
-                    (containers_changed if container else moved).append(
-                        (key, shared[0], s))
+                for col in ("ii_achieved", "iteration_latency",
+                            "latency_min", "latency_max"):
+                    if per[s][col] != ref[col]:
+                        (containers_changed if container else moved).append(
+                            (key, shared[0], s, col, ref[col], per[s][col]))
+    print()
+
+    print("SHARED MODULE LATENCY")
+    print("-" * 74)
+    # The module wrapper is a SECOND view of the same question, read from a
+    # different report.  norm_cols shows the +2 in both, which is why it can be
+    # quoted as a property of the design rather than of one parser.
+    mod_moved = []
+    for m in mods:
+        per = {s: data[s]["modules"][m] for s in have if m in data[s]["modules"]}
+        lat = {s: (r.get("latency_min"), r.get("latency_max"))
+               for s, r in per.items()}
+        if len(per) < 2 or all(v == (None, None) for v in lat.values()):
+            continue
+        vals = set(lat.values())
+        flag = "DIFFERS" if len(vals) > 1 else "same   "
+        print(f"  {flag}  {m:<44} "
+              + "  ".join(f"{s}={lat[s][0]}~{lat[s][1]}" for s in per))
+        if len(vals) > 1:
+            base = [s for s in have if s in per][0]
+            for s in list(per)[1:]:
+                if lat[s] != lat[base]:
+                    mod_moved.append((m, base, s, lat[base], lat[s]))
     print()
 
     print("DID ANY SHARED PIPELINED LOOP MOVE?")
     print("-" * 74)
+    rc = 0
     if len(have) < 2:
         # With one report there is no "shared loop", so "no loop moved" would
         # be true and worthless.  Say which it is.
         print("  UNANSWERED — only one solution has been synthesised, so no")
         print("  loop is shared.  Build the others before reading this.")
-    elif not moved:
-        print("  No.  Every PIPELINED loop present in more than one solution")
-        print("  has the same achieved II and the same iteration latency in")
-        print("  all of them, so a latency difference between solutions is")
-        print("  the loops that EXIST in one and not the other — which is")
-        print("  what makes the co-simulation difference attributable.")
-        print()
-        print("  In particular norm_cols is unchanged, so the shadow's")
-        print("  per-position comparison did not reschedule the loop it sits")
-        print("  in, and `shadow - b2ctl` is the added pass rather than the")
-        print("  pass plus rh times a norm_cols change.")
+        if args.strict:
+            rc = 1
     else:
-        for key, a, b in moved:
-            print(f"  {key}: differs between {a} and {b}")
+        # RECORDED, NOT ASSUMED.  The gate used to demand that nothing moved,
+        # which was a claim about the design; it is now an inventory of what
+        # DID move, which is a claim about this build.  Anything outside the
+        # inventory fails, and so does the inventory drifting -- if norm_cols
+        # stops differing by exactly +2 the narrative in this file and in
+        # tme_b0b_ab.py is stale and must be rewritten before anyone quotes it.
+        unrecorded = [e for e in moved if _key(e) not in KNOWN_SCHEDULE_MOVES]
+        wrong_size = [e for e in moved
+                      if _key(e) in KNOWN_SCHEDULE_MOVES
+                      and KNOWN_SCHEDULE_MOVES[_key(e)] != (e[4], e[5])]
+        seen = {_key(e) for e in moved}
+        vanished = [k for k in KNOWN_SCHEDULE_MOVES
+                    if k[1] in have and k[2] in have and k not in seen]
+
+        if moved:
+            print("  YES.  Shared PIPELINED leaf loops that differ:")
+            for key, a, b, col, va, vb in moved:
+                tag = "recorded" if _key((key, a, b, col, va, vb)) \
+                    in KNOWN_SCHEDULE_MOVES else "UNRECORDED"
+                print(f"    {key:<38} {col:<18} {a}={va} {b}={vb}   [{tag}]")
+            print()
+            print("  WHAT THAT MEANS FOR THE HALVES.  norm_cols is the loop the")
+            print("  shadow's per-position comparison lives in, and it runs once")
+            print("  per OUTPUT ROW.  So `shadow - b2ctl` is the hoisted pass")
+            print("  PLUS 2*rh, and `b0b - shadow` is the removal MINUS 2*rh.")
+            print("  Neither half is the thing its name says it is.")
+            print()
+            print("  WHAT IT DOES NOT TOUCH.  b2ctl and b0b agree on norm_cols,")
+            print("  so `b0b - b2ctl` carries none of this.  The frozen net law")
+            print("  is unaffected; only its split is.")
+        else:
+            print("  No.  Every PIPELINED loop present in more than one solution")
+            print("  matches on all four scheduling columns, so a latency")
+            print("  difference between solutions is the loops that EXIST in one")
+            print("  and not the other.")
+        if unrecorded:
+            print()
+            print("  UNRECORDED MOVES — the narrative here does not cover these:")
+            for key, a, b, col, va, vb in unrecorded:
+                print(f"    {key} {col}: {a}={va} {b}={vb}")
+            rc = 1
+        if wrong_size:
+            print()
+            print("  A RECORDED MOVE CHANGED SIZE — re-read the prose before")
+            print("  quoting any half:")
+            for key, a, b, col, va, vb in wrong_size:
+                want = KNOWN_SCHEDULE_MOVES[_key((key, a, b, col, va, vb))]
+                print(f"    {key} {col}: now {a}={va} {b}={vb}, "
+                      f"recorded {want}")
+            rc = 1
+        if vanished:
+            print()
+            print("  A RECORDED MOVE IS GONE.  That is good news and stale")
+            print("  documentation at the same time; the halves may now be")
+            print("  separable and nothing here says so yet:")
+            for k in vanished:
+                print(f"    {k[0]} {k[3]}: {k[1]} vs {k[2]}")
+            rc = 1
+    if mod_moved:
         print()
-        print("  A shared PIPELINED loop that moved means a solution")
-        print("  difference is not only the added or removed pass.  Quote the")
-        print("  co-simulation difference with that named, or measure around")
-        print("  it.")
+        print("  Module wrappers that differ (the same question, read from the")
+        print("  submodule reports rather than the top-level loop table):")
+        for m, a, b, la, lb in mod_moved:
+            print(f"    {m}: {a}={la[0]}~{la[1]}  {b}={lb[0]}~{lb[1]}")
     if containers_changed:
         print()
         print("  Non-pipelined CONTAINER loops that changed, as they must:")
-        for key, a, b in containers_changed:
-            print(f"    {key}: {a} vs {b}")
+        for key, a, b, col, va, vb in containers_changed:
+            print(f"    {key} {col}: {a}={va} {b}={vb}")
         print("  Their iteration latency is the sum of what is inside them,")
         print("  so a pass added to or removed from slide_v changes them by")
         print("  definition.  That is the change being measured.")
@@ -243,9 +378,7 @@ def main() -> int:
         args.json.write_text(json.dumps(data, indent=2), encoding="utf-8")
         print(f"wrote {args.json}")
 
-    if args.strict and moved:
-        return 1
-    return 0
+    return rc if args.strict else 0
 
 
 if __name__ == "__main__":

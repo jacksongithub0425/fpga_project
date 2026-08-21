@@ -63,7 +63,24 @@ def entries() -> list[tuple[str, str]]:
         # so an edit to either would have changed both halves of a "paired"
         # measurement without any manifest noticing.  They are pinned in B1's
         # manifest for the same reason.
-        ("build input tme_top.cpp", HLS + "/tme_top.cpp"),
+        #
+        # tme_top.cpp IS PINNED TO THE IMMUTABLE B2 SNAPSHOT, NOT TO THE LIVING
+        # FILE, AND THAT IS THE WHOLE POINT.  It used to name
+        # hls/template_match/tme_top.cpp, which is a file that keeps changing:
+        # B0b edits tme_top.cpp, so the 2026-08-20 manifest refresh quietly
+        # re-baselined this line from B2's actual build input (bcccd44c...) to
+        # B0b's core (0e10f5a3...).  A --verify then PASSED against a file B2
+        # was never built from, which is the exact failure a manifest exists to
+        # prevent: it looked like durability and was a moving target.
+        #
+        # b0b_sources/tme_top.b2.cpp is a byte copy of that input, taken before
+        # B0b touched anything and gated on bcccd44c... by run_hls_b0b.tcl,
+        # whose `b2ctl` control reproduces B2's published term from it.  So this
+        # entry now binds a file that CANNOT move.  A HISTORICAL manifest must
+        # name immutable snapshots; only a LIVING manifest may name living
+        # files, and B2's is finished.
+        ("build input tme_top.cpp (B2 snapshot)",
+         HLS + "/b0b_sources/tme_top.b2.cpp"),
         ("build input tme_top.h", HLS + "/tme_top.h"),
         ("cosim b1 (control)",
          B1M.project("b1") + "/b1/sim/report/verilog/result.transaction.rpt"),
@@ -210,6 +227,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--write", action="store_true")
+    ap.add_argument("--rebaseline", action="store_true",
+                    help="see tme_b1_manifest.write(); required to move an "
+                         "already-pinned digest")
     g.add_argument("--verify", action="store_true")
     g.add_argument("--mirror", action="store_true")
     args = ap.parse_args()
@@ -224,7 +244,7 @@ def main() -> int:
     if args.mirror:
         return B1M.mirror()
     if args.write:
-        rc = B1M.write()
+        rc = B1M.write(args.rebaseline)
         if rc == 0:
             # write() stamps B1's header text; correct it in place so the file
             # says what it is.  Doing this here rather than forking write()

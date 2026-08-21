@@ -20,15 +20,49 @@ single control-versus-variant difference would fold them together.  So:
     shadow  b2ctl PLUS the hoisted pass, compared at every result position
     b0b     the hoisted pass only; the repeated loops deleted
 
-    D1 = shadow - b2ctl     what the hoisted pass COSTS
-    D2 = b0b    - shadow    what the repeated loops cost
-    D  = b0b    - b2ctl     what B0b changes about the shipped core
+    D1 = shadow - b2ctl      the hoisted pass PLUS the shadow's comparator
+    D2 = b0b    - shadow     -(the repeated loops) MINUS the same comparator
+    D  = b0b    - b2ctl      what B0b changes about the shipped core
 
-The split is only legitimate if the shadow's comparison did not reschedule the
-loop it sits in.  sw/tme_b0b_synth.py settles that from the csynth loop tables
-rather than by assumption: every pipelined leaf loop shared between solutions
-has the same II and the same iteration latency in all three, norm_cols
-included.  Run it alongside this file.
+ONLY D IS OWNED.  The split into D1 and D2 is NOT, and the claim that it was
+is withdrawn as of 2026-08-20.
+
+The shadow's comparison lives inside norm_cols, and it reschedules that loop:
+97 ~ 3361 in b2ctl and b0b, 99 ~ 3363 in shadow, with achieved II (4) and
+iteration latency (98) identical in all three.  sw/tme_b0b_synth.py used to
+compare only those two columns and therefore reported "no loop moved" for a
+difference it could not see; it now reads all four and pins the +2 in a
+recorded inventory.  norm_cols runs once per OUTPUT ROW, so
+
+    D1 = pass + 2*rh          D2 = -(removal) - 2*rh          D unchanged
+
+b2ctl and b0b agree on norm_cols, so D -- the frozen law -- carries none of it.
+
+THE ALTERNATIVE FITS EXACTLY, WHICH IS THE POINT.  Shifting 2*rh across gives
+
+    D1 - 2*rh = S*(pw + 29) + th + 3
+    D2 + 2*rh = -[rh*th*(tw + rw + 24) + rh]
+
+and these reproduce all fourteen transactions just as exactly, because they are
+the same fourteen numbers rearranged.  The co-simulation constrains the SUM.
+Preferring one pair over the other is choosing a functional form.
+
+NO COMPARATOR-FREE CONTROL WAS BUILT, BECAUSE THERE CANNOT BE ONE.  A shadow
+solution exists to keep BOTH copies of the statistics live at once.  A copy
+nothing reads is dead code and Vitis deletes it, at which point the solution is
+b2ctl or b0b and measures nothing.  Some consumer must therefore read both
+copies, and the cheapest one is the two array reads and the compare already
+present -- a separate comparison loop trades +2 inside norm_cols for a whole
+loop region, and selecting between the copies instead of comparing them keeps
+both reads and so keeps the cost.  D1 and D2 are unidentifiable BY THIS METHOD,
+in principle rather than by oversight.
+
+WHAT SURVIVES, AND IT IS THE PART THAT MATTERED.  The nuisance is proportional
+to rh.  W's regressor is rh*th and th varies across the suite, so no
+rh-proportional term can move W: `tw + rw + 24` per (output row, template row)
+is the removal's own cost, and the pre-registered `tw + rw + 21` is refuted
+with or without the comparator.  What does not survive is the pass's
+(k, m) = (30, 5) and the removal's 3 per output row.
 
 WHAT THE MEASUREMENT OVERTURNED
 -------------------------------
@@ -59,9 +93,14 @@ SIX CHECKS, AND THEY FAIL FOR DIFFERENT REASONS
      reports are not a comparison and nothing below is attributable.
   2. D1's SHAPE.  D1 must be S*(pw + k) + m for one (k, m) across every
      transaction.  Two free parameters, solved from the first two transactions
-     with different S; every other transaction then TESTS them.
+     with different S; every other transaction then TESTS them.  This is a
+     shape check on the DIFFERENCE and says nothing about the pass.
   3. D2's SHAPE.  D2 must be -(rh*th*(tw + rw + W) + c*rh) for one (W, c),
-     solved the same way and tested the same way.
+     solved the same way and tested the same way.  W is identified; c is not.
+  3b. THE SPLIT IS NOT IDENTIFIED, DEMONSTRATED.  Shifting the comparator's
+     2*rh from one half to the other must fit every transaction exactly and
+     leave D untouched.  If it ever stops doing so, the algebra in this
+     docstring is wrong and someone has learned something.
   4. THE FIT MATCHES THE FREEZE.  The four fitted constants must equal
      FROZEN["b0b"].  Checks 2 and 3 establish the SHAPE from this run's data;
      this one says the shape has not drifted from what was published.
@@ -282,10 +321,13 @@ def report(rows: list[dict], have: dict[str, bool], strict: bool) -> int:
               f"{r.get('D1', 0):>9}{r.get('D1_resid', 0):>8}"
               f"{r.get('D2', 0):>10}{r['d2_prereg']:>11}{r.get('D', 0):>10}")
     print()
-    print("  D1 = shadow - b2ctl   the hoisted pass")
-    print("  D2 = b0b    - shadow  the deleted loops")
+    print("  D1 = shadow - b2ctl   the hoisted pass PLUS the shadow's")
+    print("                        comparator (+2 per output row)")
+    print("  D2 = b0b    - shadow  -(the deleted loops) MINUS the same")
     print("  D  = b0b    - b2ctl   what B0b changes about the shipped core;")
-    print("                        D == D1 + D2 is an identity, not a check")
+    print("                        D == D1 + D2 is an identity, not a check.")
+    print("                        D is the ONLY one of the three that is")
+    print("                        comparator-free, and the only one frozen.")
     print()
 
     km = fit_d1(rows) if have["shadow"] and have["b2ctl"] else None
@@ -293,6 +335,7 @@ def report(rows: list[dict], have: dict[str, bool], strict: bool) -> int:
 
     # ---- check 2: D1's shape -------------------------------------------
     print("CHECK 2 - D1 = S*(pw + k) + m, one (k, m) for every transaction")
+    print("          (a shape check on the DIFFERENCE; D1 is not the pass)")
     print("-" * 78)
     if km is None:
         print("  needs both b2ctl and shadow reports - SKIPPED")
@@ -322,6 +365,11 @@ def report(rows: list[dict], have: dict[str, bool], strict: bool) -> int:
         print(f"  II=1, iteration latencies 7 and 14, the same as the isq_init")
         print(f"  and isq_slide they replace), so the miss is entirely the")
         print(f"  per-scan constant that was never modelled.")
+        print()
+        print(f"  k = {k} AND m = {m} ARE NOT PROPERTIES OF THE PASS.  D1 carries")
+        print(f"  the shadow's comparator, +2 per output row.  Take it out and")
+        print(f"  the same fourteen numbers read S*(pw + {k - 1}) + th + 3 -- a")
+        print(f"  th-dependent constant instead of a fixed one.  See check 3b.")
     print()
 
     # ---- check 3: D2's shape -------------------------------------------
@@ -356,10 +404,73 @@ def report(rows: list[dict], have: dict[str, bool], strict: bool) -> int:
         print(f"  is the first of its four terms to be measured, and the other")
         print(f"  three now sum to 2*tw + 2*rw + 9 rather than + 12.  WHICH of")
         print(f"  them was over-attributed is NOT established.")
+        print()
+        print(f"  W = {W} SURVIVES THE COMPARATOR AND c = {c} DOES NOT.  The")
+        print(f"  nuisance is proportional to rh; W's regressor is rh*th and th")
+        print(f"  varies across the suite, so nothing rh-proportional can move")
+        print(f"  W.  The refutation above therefore holds either way.  c is")
+        print(f"  the removal's own share plus the comparator's 2.")
         print(f"  Note tw + rw = pw + 1, so the measured cost is "
               f"rh*th*(pw + {W + 1}) + {c}*rh:")
         print(f"  it depends on the PATCH WIDTH alone, which is what the two")
         print(f"  deleted loops actually scan (tw priming + rw - 1 sliding).")
+    print()
+
+    # ---- check 3b: the split is not identified --------------------------
+    print("CHECK 3b - the D1/D2 split is NOT identified, and here is the proof")
+    print("-" * 78)
+    if km is None or wc is None:
+        print("  needs all three reports - SKIPPED")
+        if strict:
+            fail.append("check 3b: reports missing")
+    else:
+        k, m = km
+        W, c = wc
+        nu = M.B0B_SPLIT_NUISANCE_PER_OUTPUT_ROW
+        print(f"  csynth locates the shadow's comparator in norm_cols at +{nu}")
+        print(f"  cycles per call, and norm_cols runs once per output row.  So")
+        print(f"  shift {nu}*rh from D1 to D2 and refit:")
+        print()
+        print(f"    as measured       D1 = S*(pw + {k}) + {m}")
+        print(f"                      D2 = -[rh*th*(tw + rw + {W}) + {c}*rh]")
+        print(f"    comparator out    D1 = S*(pw + {k - 1}) + th + 3")
+        print(f"                      D2 = -[rh*th*(tw + rw + {W}) + "
+              f"{c - nu}*rh]")
+        print()
+        bad1 = bad2 = badD = 0
+        for r in rows:
+            rh, S, th = r["rh"], r["S"], r["th"]
+            alt1 = S * (r["pw"] + k - 1) + th + 3
+            alt2 = -(rh * th * (r["tw"] + r["rw"] + W) + (c - nu) * rh)
+            if alt1 != r["D1"] - nu * rh:
+                bad1 += 1
+            if alt2 != r["D2"] + nu * rh:
+                bad2 += 1
+            if alt1 + alt2 != r["D"]:
+                badD += 1
+        n = len(rows)
+        print(f"  {n - bad1}/{n} transactions match the decontaminated D1 form")
+        print(f"  {n - bad2}/{n} transactions match the decontaminated D2 form")
+        print(f"  {n - badD}/{n} transactions still sum to the SAME D")
+        if bad1 or bad2 or badD:
+            fail.append("check 3b: the decontaminated pair does not reproduce "
+                        "the data -- the algebra in this file's docstring is "
+                        "wrong")
+        print()
+        print("  BOTH PAIRS FIT EXACTLY, because they are the same fourteen")
+        print("  numbers rearranged.  The co-simulation constrains D and not")
+        print("  the split, so NEITHER pair is a measurement of the pass or of")
+        print("  the removal.  The decontaminated one is the leading candidate")
+        print("  -- it is where csynth puts the comparator -- and it is NOT")
+        print("  frozen: it rests on a scheduler estimate rather than on RTL,")
+        print("  and it cannot exclude a further per-invocation constant, which")
+        print("  trades against the +3 with no way to tell them apart.")
+        print()
+        print("  A COMPARATOR-FREE CONTROL WOULD SETTLE IT AND CANNOT EXIST.")
+        print("  The shadow's job is to keep both copies of the statistics")
+        print("  live; an unread copy is dead code and gets deleted, leaving")
+        print("  b2ctl or b0b.  Some consumer must read both, and the two array")
+        print("  reads already there are the cheapest one.")
     print()
 
     # ---- check 4: the fit matches the freeze ----------------------------
@@ -370,8 +481,11 @@ def report(rows: list[dict], have: dict[str, bool], strict: bool) -> int:
         if strict:
             fail.append("check 4: reports missing")
     else:
-        pairs = (("pass_k_per_scan", km[0]), ("pass_m_per_call", km[1]),
-                 ("removal_W", wc[0]), ("removal_c_per_output_row", wc[1]))
+        # Named for the DIFFERENCES they were fitted to, not for the pass and
+        # the removal.  The rename is the withdrawal: `pass_k_per_scan` said
+        # the fit was a property of the pass, and it is not.
+        pairs = (("d1_k_per_scan", km[0]), ("d1_m_per_call", km[1]),
+                 ("d2_W", wc[0]), ("d2_c_per_output_row", wc[1]))
         for name, got in pairs:
             want = froz[name]
             ok = got == want
@@ -435,6 +549,9 @@ def report(rows: list[dict], have: dict[str, bool], strict: bool) -> int:
         print(f"  per invocation:  B0b = B2 - [rh*th*(tw + rw + {W}) + {c}*rh]")
         print(f"                             + [S*(pw + {k}) + {m}]")
         print(f"                   S   = th + 2*(rh - 1)")
+        print(f"  The two bracketed terms are D2 and D1, so each carries the")
+        print(f"  shadow's comparator with opposite sign.  Their SUM is what is")
+        print(f"  being priced here, and the comparator is not in it.")
         print()
 
         def b0b_expr(pw, ph, tw, th):

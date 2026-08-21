@@ -228,7 +228,21 @@ def digest(path: Path) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def write() -> int:
+def _pinned_digests(rel_manifest: str) -> dict[str, str]:
+    """Path -> digest from an EXISTING manifest, or {} if there is none."""
+    man = resolve(rel_manifest)
+    if not man.exists():
+        return {}
+    out = {}
+    for line in man.read_text().splitlines():
+        if not line or line.startswith("#"):
+            continue
+        sha, rest = line.split("  ", 1)
+        out[rest.split("  #")[0].strip()] = sha
+    return out
+
+
+def write(rebaseline: bool = False) -> int:
     lines = ["# Priority 4 (B1) evidence manifest",
              "# sha256 of each artifact; text is EOL-normalised to LF first.",
              "# Verify with: python tme_b1_manifest.py --verify",
@@ -238,12 +252,14 @@ def write() -> int:
              "# this says they are the same numbers.",
              ""]
     missing = []
+    fresh: dict[str, str] = {}
     for role, rel in entries():
         path = resolve(rel)
         if not path.exists():
             missing.append((role, path))
             continue
-        lines.append(f"{digest(path)}  {rel}  # {role}")
+        fresh[rel] = digest(path)
+        lines.append(f"{fresh[rel]}  {rel}  # {role}")
     if missing:
         print("REFUSING TO WRITE -- these artifacts are absent:", file=sys.stderr)
         for role, path in missing:
@@ -251,6 +267,42 @@ def write() -> int:
         print("\nA manifest that silently omits what it cannot find is worse "
               "than none:\nit reads as complete.", file=sys.stderr)
         return 1
+
+    # RE-BASELINING IS THE FAILURE MODE THIS GUARD EXISTS FOR, AND IT ALREADY
+    # HAPPENED ONCE.  B2's manifest pinned the LIVING hls/template_match/
+    # tme_top.cpp.  B0b edits that file, so a routine --write on 2026-08-20
+    # replaced B2's recorded build input with B0b's core and said nothing.
+    # --verify then passed, against a file B2 was never built from.  A manifest
+    # whose refresh silently adopts whatever is on disk records the present,
+    # not the past, and the present needs no manifest.
+    #
+    # ADDING and REMOVING entries stays quiet: those are structural edits the
+    # caller just made on purpose, visible in the entry list and in the diff.
+    # A CHANGED DIGEST on an entry that is still listed is different -- it means
+    # a file the manifest already bound has moved underneath it -- so say so and
+    # stop.  Sometimes that IS legitimate (a shared living file moves and every
+    # manifest naming it must follow; that convention is B2's).  Then pass
+    # --rebaseline and the change is a deliberate, greppable act rather than a
+    # side effect.
+    prev = _pinned_digests(MANIFEST_REL)
+    moved = [(rel, prev[rel], fresh[rel]) for rel in fresh
+             if rel in prev and prev[rel] != fresh[rel]]
+    if moved and not rebaseline:
+        print("REFUSING TO WRITE -- these already-pinned artifacts have MOVED:",
+              file=sys.stderr)
+        for rel, old, new in sorted(moved):
+            print(f"  {rel}\n    pinned {old}\n    on disk {new}", file=sys.stderr)
+        print("\nRe-writing would replace the recorded evidence with whatever "
+              "is on disk\nnow.  If the file is a LIVING one that legitimately "
+              "moved, re-run with\n--rebaseline.  If it is HISTORICAL evidence, "
+              "pin an immutable snapshot\ninstead of the living path.",
+              file=sys.stderr)
+        return 1
+    if moved:
+        print(f"REBASELINED {len(moved)} already-pinned artifact(s):")
+        for rel, old, new in sorted(moved):
+            print(f"  {rel}\n    {old} -> {new}")
+
     out = resolve(MANIFEST_REL)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines) + "\n", newline="\n")
@@ -342,12 +394,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--write", action="store_true")
+    ap.add_argument("--rebaseline", action="store_true",
+                    help="allow --write to replace the pinned digest of an "
+                         "artifact that has MOVED; without it, write() "
+                         "refuses rather than silently adopting what is on "
+                         "disk")
     g.add_argument("--verify", action="store_true")
     g.add_argument("--mirror", action="store_true")
     args = ap.parse_args()
     if args.mirror:
         return mirror()
-    return write() if args.write else verify()
+    return write(args.rebaseline) if args.write else verify()
 
 
 if __name__ == "__main__":

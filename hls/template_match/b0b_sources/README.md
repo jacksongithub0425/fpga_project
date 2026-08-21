@@ -23,8 +23,20 @@ The usual A/B is control-plus-variant. B0b is two changes that a single
 difference would fold together — adding a pass and deleting the loops it
 replaces — so the middle solution separates them:
 
-    D1 = shadow - b2ctl     what the hoisted pass COSTS
-    D2 = b0b    - shadow    what the repeated loops cost
+    D1 = shadow - b2ctl     the hoisted pass PLUS the shadow's comparator
+    D2 = b0b    - shadow    -(the repeated loops) MINUS the same comparator
+    D  = b0b    - b2ctl     the frozen net law -- comparator-free
+
+    NEITHER HALF IS A COMPONENT COST.  The shadow's comparison lives inside
+    norm_cols and reschedules it by +2 cycles a call (97 ~ 3361 -> 99 ~ 3363,
+    with II and iteration latency unchanged, which is why the checker missed it
+    until 2026-08-20).  norm_cols runs once per output row, so D1 carries +2*rh
+    that the pass does not and D2 is short by the same.  They cancel in D.
+    Shifting them across gives S*(pw + 29) + th + 3 and
+    -[rh*th*(tw + rw + 24) + rh], which fit the same fourteen transactions just
+    as exactly -- so the split is not identified by these three solutions, and
+    a comparator-free fourth cannot exist (an unread copy of the statistics is
+    dead code and gets deleted).  See tme_b0b_ab.py check 3b.
 
 `D2` is worth as much as `D1`. `sw/tme_cycle_model.py` splits the measured
 per-(output row, template row) cost `3*tw + 3*rw + 33` into four terms —

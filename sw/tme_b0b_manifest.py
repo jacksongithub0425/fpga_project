@@ -124,6 +124,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--write", action="store_true")
+    ap.add_argument("--rebaseline", action="store_true",
+                    help="see tme_b1_manifest.write(); required to move an "
+                         "already-pinned digest")
     g.add_argument("--verify", action="store_true")
     g.add_argument("--mirror", action="store_true")
     args = ap.parse_args()
@@ -138,7 +141,7 @@ def main() -> int:
     if args.mirror:
         return B1M.mirror()
     if args.write:
-        rc = B1M.write()
+        rc = B1M.write(args.rebaseline)
         if rc == 0:
             path = B1M.resolve(MANIFEST_REL)
             text = path.read_text()

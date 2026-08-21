@@ -204,9 +204,14 @@ class Tracer:
             # COMPUTED FROM THE WITHDRAWN tw + rw + 21; see
             # trace_20260818b/B0b_COLUMN_STALE.md.
             "cycles_S_B0b": model.cycles(tw + 95, th + 63, tw, th, "B0b"),
-            # Kept because the DELETION is still a meaningful sub-term and the
-            # column name is now correct for what it holds: the measured
-            # removal, not the withdrawn attribution.
+            # Kept because the sub-term is still meaningful, but READ THE NAME
+            # CAREFULLY: this is B2 minus the MEASURED DIFFERENCE `b0b -
+            # shadow`, not B2 minus the deletion.  The shadow build carries a
+            # comparator worth 2 cycles per output row and that difference is
+            # short by it, so the column is 2*rh below "B2 with the statistics
+            # gone".  The ownership claim was withdrawn on 2026-08-20; see
+            # tme_cycle_model's B0b section.  The VALUE is unchanged -- it is
+            # the same measured difference it always was.
             "cycles_S_B0b_base": model.cycles(tw + 95, th + 63, tw, th, "B0b_base"),
             "count_pass_iterations": model.b0b_count_pass_iterations(
                 tw + 95, th + 63, tw, th),

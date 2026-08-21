@@ -139,14 +139,29 @@ THE EVIDENCE HIERARCHY (do not collapse these tiers when quoting)
                   hardware, at any clock.  "20.405 s/page" is not a measured
                   page time and must never be written as one.
   cosim-measured term, no silicon
-                  B0b 17.726036 s/page.  TWO measured terms, from THREE
+                  B0b 17.726036 s/page.  ONE measured NET term, from THREE
                   solutions built 2026-08-20: a `b2ctl` control byte-identical
                   to B2's build inputs, a `shadow` that adds the hoisted pass
-                  without removing anything, and `b0b` itself.  shadow - b2ctl
-                  prices the addition at S*(pw + 30) + 5 and b0b - shadow
-                  prices the removal at rh*th*(tw + rw + 24) + 3*rh, each exact
-                  on 14/14 transactions.  The control reproduced B2's published
-                  term on all 14 in the same comparison.
+                  without removing anything, and `b0b` itself.  b0b - b2ctl is
+                  the frozen law and it is clean: csynth puts every shared loop
+                  in those two at the same schedule.  The control reproduced
+                  B2's published term on all 14 transactions in the same
+                  comparison.
+
+                  THE TWO HALVES ARE NOT SEPARATELY OWNED, AND THAT CLAIM WAS
+                  WITHDRAWN ON 2026-08-20.  The shadow carries a comparison
+                  inside norm_cols and it reschedules that loop by +2 cycles a
+                  call (97 ~ 3361 -> 99 ~ 3363; the module wrapper agrees at
+                  99 ~ 3363 -> 101 ~ 3365).  norm_cols runs once per output
+                  row, so shadow - b2ctl overstates the pass by 2*rh and
+                  b0b - shadow understates the removal by the same 2*rh.  The
+                  two cancel in the net, which is why the frozen number is
+                  untouched.  What survives as a component claim is the
+                  per-(output row, template row) coefficient tw + rw + 24 --
+                  its regressor is rh*th and the nuisance is proportional to
+                  rh, so no amount of comparator moves it.  What does NOT
+                  survive is the pass's S*(pw + 30) + 5 and the removal's
+                  3 per output row.  See the B0b section below.
 
                   THIS TIER IS NOT THE SAME AS B1'S AND B2'S.  Those two closed
                   8.000 ns and ran on silicon.  B0b's routed run VIOLATED the
@@ -187,19 +202,80 @@ by sw/tme_b0b_ab.py, with correctness from a shadow build and its mutant gate.
     B0b = B2 - [rh*th*(tw + rw + 24) + 3*rh] + [S*(pw + 30) + 5]
                                                S = th + 2*(rh - 1)
 
-    B2                     20.405165        measured term, summed
-    window statistics       3.088545        MEASURED (b0b - shadow)
-    hoisted pass            0.409416        MEASURED (shadow - b2ctl)
-    -> B0b                 17.726036        aggregate 79,767,161,516 cycles
+    B2                     20.405164783778   measured term, summed
+    - D2, b0b - shadow      2.848889358222   the removal PLUS a comparator
+    + D1, shadow - b2ctl    0.169760466889   the pass PLUS the same comparator
+    -> B0b                 17.726035892444   aggregate 79,767,161,516 cycles
+
+    the comparator, both lines  0.000588231111   = 2*rh over the corpus
+
+THE TWO CORPUS COMPONENTS WERE WRONG UNTIL 2026-08-20, AND THE NET HID IT.
+They were published as 3.088545 and 0.409416.  Both are 0.239655641778 s/page
+too large -- the same offset, because both had been computed as a difference
+against an intermediate that was not this file's B0b_base.  A shared offset
+cancels in B2 - removed + added, so the net total stayed exactly right and
+nothing pointed at the components.  They are now DERIVED by check() from
+page_cycles_expr and asserted against FROZEN["b0b"], so prose and arithmetic
+cannot drift apart again.  Two wrong numbers whose errors cancel is the failure
+mode a correct total is worst at revealing.
 
 THREE SOLUTIONS, BECAUSE B0b IS TWO CHANGES.  Adding a pass and deleting the
 loops it replaces would have been one indivisible difference against a single
 control.  A `shadow` solution -- the pass computed ALONGSIDE the loops, nothing
-removed -- splits them, and csynth confirms the split is clean: every pipelined
-leaf loop the solutions share has the same II and the same iteration latency in
-all three, norm_cols (where the shadow's comparison lives) included.  So
-shadow - b2ctl is the pass and b0b - shadow is the removal, rather than either
-being contaminated by a rescheduling.
+removed -- splits them.
+
+THE SPLIT IS NOT CLEAN, AND THE CLAIM THAT IT WAS IS WITHDRAWN.  This file used
+to say csynth confirmed it, on the grounds that every shared pipelined leaf
+loop had the same II and the same ITERATION latency in all three.  Both are
+true and neither was the right question: a pipelined loop's own latency is not
+determined by those two columns, and norm_cols -- where the shadow's comparison
+lives -- moves from 97 ~ 3361 to 99 ~ 3363 with II and iteration latency
+unchanged.  sw/tme_b0b_synth.py compared only the two columns that could not
+move, so it reported "no loop moved" for a difference it could not see.  It now
+reads all four and holds them against a recorded inventory.
+
+WHAT THE +2 COSTS, AND WHAT IT DOES NOT.  norm_cols runs once per OUTPUT ROW,
+so the shadow carries +2*rh that belongs to the observation and not to the
+design:
+
+    D1 = shadow - b2ctl = the pass    + comparator
+    D2 = b0b    - shadow = -(removal) - comparator
+    D  = b0b    - b2ctl  = the pass   - removal        <- comparator-free
+
+b2ctl and b0b have identical norm_cols schedules, so D carries none of it.  The
+NET LAW IS UNAFFECTED.  Only its split is, and equally in both directions.
+
+WHY NO COMPARATOR-FREE CONTROL WAS BUILT.  Because there cannot be one.  A
+shadow solution exists to hold BOTH copies of the statistics live at once; a
+copy that nothing reads is dead code and Vitis deletes it, at which point the
+solution is either b2ctl or b0b and measures nothing.  So some consumer must
+read both copies, and the cheapest such consumer is exactly the two array reads
+and the compare that are already there.  Moving them into a loop of their own
+trades a +2 inside norm_cols for a whole new loop region; dropping the compare
+and selecting between the copies instead keeps both reads and so keeps the
+cost.  D1 and D2 are therefore unidentifiable BY THIS METHOD, in principle
+rather than by oversight.
+
+WHAT SURVIVES ANYWAY, AND IT IS THE PART THAT MATTERED.  The nuisance is
+proportional to rh.  W's regressor is rh*th, and th varies across the suite, so
+no rh-proportional term can move it:
+
+    tw + rw + 24 per (output row, template row)   IDENTIFIED
+    3 per output row                              = removal's own share + 2
+    S*(pw + 30) + 5                               = the pass + 2*rh
+
+The pre-registration is refuted either way -- it predicted tw + rw + 21 and
+nothing per output row, and 24 is what the data give with or without the
+comparator.  Under the csynth attribution (comparator = 2 per output row
+exactly, nothing per invocation) the decontaminated pair is
+
+    pass    = S*(pw + 29) + th + 3
+    removal = rh*th*(tw + rw + 24) + rh
+
+which reproduces the identical net.  IT IS NOT FROZEN.  It rests on a csynth
+schedule rather than on a co-simulation, and it cannot exclude a further
+per-invocation constant, which trades against the +3 with no way to tell them
+apart.  Quote the net; quote W; quote neither half as a component cost.
 
 TWO PROJECTIONS DIED HERE, AND ONLY ONE OF THEM WAS ABOUT B0b.
 
@@ -439,13 +515,20 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         raise ValueError("unknown variant: " + variant)
 
     if variant in ("B0b_base", "B0b"):
-        # B0b DELETES the repeated window statistics.  WHAT THAT DELETION IS
-        # WORTH IS MEASURED, not attributed: paired RTL co-simulation of the
-        # `b0b` solution against the `shadow` one -- the same fourteen
-        # invocations, the same pinned vectors, the only difference being the
-        # loops that are gone (sw/tme_b0b_ab.py, 2026-08-20) -- gives
+        # B0b DELETES the repeated window statistics.  Paired RTL
+        # co-simulation of the `b0b` solution against the `shadow` one -- the
+        # same fourteen invocations, the same pinned vectors
+        # (sw/tme_b0b_ab.py, 2026-08-20) -- gives
         #
-        #     removal = rh*th*(tw + rw + 24) + 3*rh
+        #     -D2 = rh*th*(tw + rw + 24) + 3*rh
+        #
+        # THAT IS THE DIFFERENCE, NOT THE DELETION.  The shadow also carries a
+        # comparator inside norm_cols worth 2 cycles per output row, so the
+        # deletion's own cost is this minus 2*rh.  The rh*th coefficient is
+        # unaffected (an rh-proportional nuisance cannot move it); the 3 per
+        # output row is.  The measured pair is used here because it is what
+        # was measured and because its offset cancels exactly against the pass
+        # term below -- see b0b_delta(), which asserts that.
         #
         # exactly, on 14/14 transactions.  Note tw + rw = pw + 1, so this is
         # rh*th*(pw + 25) + 3*rh: the statistics cost depends on the PATCH
@@ -478,9 +561,14 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         # MEASURED, from the `shadow` solution against `b2ctl` in the same
         # comparison:
         #
-        #     pass = S * (pw + 30) + 5,      S = th + 2*(rh - 1)
+        #     D1 = S * (pw + 30) + 5,        S = th + 2*(rh - 1)
         #
-        # exact on 14/14.  S*pw is the derived iteration count I (one scan is
+        # exact on 14/14 -- and again this is the DIFFERENCE.  It is the pass
+        # plus the shadow's comparator, +2*rh, the same 2*rh that D2 above is
+        # short by.  The two cancel here, which is why the total is a
+        # measurement even though neither line is a component cost.
+        #
+        # S*pw is the derived iteration count I (one scan is
         # tw + (rw - 1) = pw iterations); the +30 per scan and +5 per
         # invocation are the overhead the frozen endpoints assumed away.
         #
@@ -499,13 +587,21 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
 # ---------------------------------------------------------------------------
 # 1b. THE B0b PASS AND THE ATTRIBUTION IT CORRECTED
 # ---------------------------------------------------------------------------
-# B0b = B2 - window_statistics + hoisted_pass.  ALL THREE TERMS ARE NOW
-# MEASURED; none of them is projected any more:
+# B0b = B2 - D2 + D1, where D1 and D2 are the two MEASURED co-simulation
+# differences.  The NET is measured; the two differences are measured; what
+# neither of them is, is a component cost -- each carries the shadow build's
+# comparator, +2 cycles per output row, with opposite signs.
 #
-#     B2                                        20.405165 s/page   measured
-#     window statistics rh*th*(pw+25) + 3*rh     3.088545 s/page    measured
-#     hoisted pass      S*(pw+30) + 5            0.409416 s/page    measured
-#     -> B0b                                    17.726036 s/page
+#     B2                                        20.405164783778 s/page
+#     - D2   rh*th*(pw+25) + 3*rh                2.848889358222 s/page
+#     + D1   S*(pw+30) + 5                       0.169760466889 s/page
+#     -> B0b                                    17.726035892444 s/page
+#
+# THE TWO COMPONENT FIGURES WERE WRONG AND THE NET WAS RIGHT.  3.088545 and
+# 0.409416 stood here until 2026-08-20; both are 0.239655641778 too large,
+# the same offset, so B2 - removed + added came out exact.  check() now
+# derives both from page_cycles_expr and asserts them against FROZEN, which
+# is the only arrangement in which prose this specific stays true.
 #
 # WITHDRAWN: 17.743730541333 (II=1) and 18.035794052889 (II=3), and the
 # 17.597699 "B0b base" they were built on.  The measurement is 17.726036,
@@ -535,11 +631,17 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
 # three unchanged at 2*tw + 2*rw + 12.  Paired co-simulation of `b0b` against
 # `shadow` measured the removal directly:
 #
-#     window statistics = rh*th*(tw + rw + 24) + 3*rh
+#     -D2 = rh*th*(tw + rw + 24) + 3*rh
 #
-# exact on 14/14 transactions.  So the other three sum to 2*tw + 2*rw + 9, and
-# three cycles per OUTPUT ROW that were sitting inside the 5*rw + 99 term
-# belong here as well.
+# exact on 14/14 transactions.  So the other three sum to 2*tw + 2*rw + 9.
+#
+# READ THE TWO HALVES OF THAT DIFFERENTLY.  D2 is `b0b - shadow`, and the
+# shadow carries a comparator worth 2 cycles per OUTPUT ROW, so D2 is the
+# removal minus that comparator.  A nuisance proportional to rh cannot move a
+# coefficient whose regressor is rh*th when th varies, so tw + rw + 24 IS the
+# removal's own per-(output row, template row) cost.  The 3 per OUTPUT ROW is
+# not: it is the removal's own share plus the comparator's 2, and the split
+# between them rests on a csynth schedule rather than on this measurement.
 #
 # WHICH of the remaining three was over-attributed by 3 is NOT ESTABLISHED.
 # The measurement constrains their sum and nothing else.  The three
@@ -571,10 +673,56 @@ PER_ROW_TERMS = {
     "unattributed_correction": lambda tw, rw: -3,
 }
 
-# The window statistics also cost three cycles per OUTPUT ROW, measured in the
-# same comparison.  They came out of the 5*rw + 99 per-output-row term, whose
-# internal split had no evidence either; 3 of that 99 now has some.
+# THE PER-OUTPUT-ROW TERM OF D2, WHICH IS NOT THE SAME AS THE STATISTICS' OWN.
+# 3 is what `b0b - shadow` gives, and the shadow's comparator is 2 of it (see
+# FROZEN["b0b"]["comparator_cycles_per_output_row"], a csynth reading, not a
+# co-simulation).  So the statistics' own share is 1 IF that reading is right
+# and IF there is no further per-invocation constant, and neither is
+# established.  The model uses 3 because 3 is what was MEASURED and because the
+# offset cancels against the pass term; see B0B_SPLIT_NUISANCE_PER_OUTPUT_ROW.
+#
+# The claim that "3 of the 99 now has some evidence" is correspondingly
+# weakened: what has evidence is that D2 carries 3 per output row.
 PER_OUTPUT_ROW_STATISTICS = 3
+
+# The comparator the `shadow` build needs in order to be observable at all, in
+# cycles per output row, as located by csynth: norm_cols 97 ~ 3361 in b2ctl and
+# b0b, 99 ~ 3363 in shadow, with II and iteration latency identical in all
+# three.  It enters D1 as +2*rh and D2 as -2*rh and CANCELS in the net.
+#
+# Every figure in this file uses the MEASURED split, so this constant changes
+# nothing that is computed.  It exists so that the alternative split can be
+# written down and asserted to give the same total -- which is the proof that
+# the split is not identified, rather than a claim that either half is right.
+B0B_SPLIT_NUISANCE_PER_OUTPUT_ROW = 2
+
+
+def b0b_delta(pw: int, ph: int, tw: int, th: int, decontaminated: bool = False):
+    """What B0b changes about B2, by either of the two candidate splits.
+
+    Both return the SAME integer for every geometry.  That identity is the
+    content: the co-simulation constrains the sum and not the split, so a
+    "decontaminated" reading of the halves is a relabelling of the same law,
+    not a second measurement of it.
+
+    `decontaminated=False` is the measured pair, D1 and D2 as co-simulated.
+    `decontaminated=True` moves 2*rh from D1 to D2, which is where csynth puts
+    the shadow's comparator -- pass = S*(pw + 29) + th + 3 and removal =
+    rh*th*(tw + rw + 24) + rh.  NOT FROZEN; see the module docstring.
+    """
+    rw, rh = pw - tw + 1, ph - th + 1
+    S = th + 2 * (rh - 1)
+    W = FROZEN["b0b"]["d2_W"]
+    if decontaminated:
+        c = FROZEN["b0b"]["d2_c_per_output_row"] - B0B_SPLIT_NUISANCE_PER_OUTPUT_ROW
+        removal = rh * th * (tw + rw + W) + c * rh
+        pass_ = S * (pw + FROZEN["b0b"]["d1_k_per_scan"] - 1) + th + 3
+    else:
+        removal = (rh * th * (tw + rw + W)
+                   + FROZEN["b0b"]["d2_c_per_output_row"] * rh)
+        pass_ = (S * (pw + FROZEN["b0b"]["d1_k_per_scan"])
+                 + FROZEN["b0b"]["d1_m_per_call"])
+    return pass_ - removal
 
 
 def b0b_count_pass_iterations(pw: int, ph: int, tw: int, th: int) -> int:
@@ -1187,23 +1335,57 @@ FROZEN = {
     # integer and is asserted with ==, because TOL = 5e-4 on a 36-page average
     # spans +/- 2,250,000 cycles.
     #
-    # BOTH of its terms are measured, by paired RTL co-simulation over the same
-    # fourteen invocations (sw/tme_b0b_ab.py, 2026-08-20).  Three solutions
-    # were built, not two, because B0b is two changes: `shadow` adds the
-    # hoisted pass without removing anything, so shadow - b2ctl prices the
-    # addition and b0b - shadow prices the removal.
+    # The NET is measured, by paired RTL co-simulation over the same fourteen
+    # invocations (sw/tme_b0b_ab.py, 2026-08-20).  Three solutions were built,
+    # not two, because B0b is two changes: `shadow` adds the hoisted pass
+    # without removing anything, so shadow - b2ctl and b0b - shadow are the two
+    # halves of b0b - b2ctl.
+    #
+    # THE HALVES ARE NOT COMPONENT COSTS.  The keys below are named for the
+    # DIFFERENCES they were fitted to -- d1_*, d2_* -- and not for the pass and
+    # the removal, which is what they used to be called.  The shadow's
+    # comparator reschedules norm_cols by +2 cycles a call and norm_cols runs
+    # once per output row, so d1 carries +2*rh that the pass does not and d2 is
+    # short by the same.  They cancel in the aggregate, which is why it is
+    # frozen and they are not quotable as costs.  See the module docstring and
+    # sw/tme_b0b_synth.py, whose recorded inventory is what pins the +2.
     "b0b": {
         "aggregate_cycles": 79767161516,        # exact, asserted with ==
         "s_per_page": 17.726035892444,          # derived from the integer
-        # The hoisted pass, measured: S*(pw + k) + m with S = th + 2*(rh - 1).
+        # D1 = shadow - b2ctl, measured: S*(pw + k) + m with S = th + 2*(rh-1).
         # S*pw is the derived iteration count; k and m are the overhead the
-        # withdrawn endpoints assumed away.
-        "pass_k_per_scan": 30,
-        "pass_m_per_call": 5,
-        # The removal, measured: rh*th*(tw + rw + W) + c*rh.  The model
-        # attributed W = 21 and c = 0.
-        "removal_W": 24,
-        "removal_c_per_output_row": 3,
+        # withdrawn endpoints assumed away PLUS the comparator.  Neither k nor
+        # m is a property of the pass: shifting 2*rh out of D1 turns this into
+        # S*(pw + 29) + th + 3, which fits the same 14/14 exactly.
+        "d1_k_per_scan": 30,
+        "d1_m_per_call": 5,
+        # D2 = b0b - shadow, measured: -(rh*th*(tw + rw + W) + c*rh).  The
+        # model attributed W = 21 and c = 0.
+        #
+        # W IS IDENTIFIED AND c IS NOT.  The comparator's nuisance is
+        # proportional to rh; W's regressor is rh*th and th varies across the
+        # suite, so no rh-proportional term can move W.  c is the removal's own
+        # share plus the comparator's 2.
+        "d2_W": 24,
+        "d2_c_per_output_row": 3,
+        # csynth, not co-simulation: norm_cols is 97 ~ 3361 in b2ctl and b0b
+        # and 99 ~ 3363 in shadow, with II and iteration latency identical in
+        # all three.  This is what makes the split UNIDENTIFIED rather than
+        # merely unmeasured -- and it is also why no comparator-free control
+        # was built: a shadow solution needs both copies of the statistics
+        # live, an unread copy is deleted as dead code, and the cheapest
+        # consumer that keeps both live is the comparator already there.
+        "comparator_cycles_per_output_row": 2,
+        "comparator_source": "csynth loop table, not co-simulation",
+        # The corpus components, ASSERTED rather than described.  Both were
+        # written in prose as 3.088545 and 0.409416 until 2026-08-20; both were
+        # 0.239655641778 too large, the same offset, so the net stayed exact
+        # and nothing caught it.  check() now derives each from
+        # page_cycles_expr and compares it here.
+        "d2_s_per_page": 2.848889358222,
+        "d1_s_per_page": 0.169760466889,
+        "comparator_s_per_page": 0.000588231111,
+        "withdrawn_component_s_per_page": (3.088545, 0.409416),
         # Both withdrawn endpoints, kept so the assertion can prove the
         # measurement is OUTSIDE the interval they defined rather than inside
         # it.  A range check would have passed a wrong answer; this one fails
@@ -1314,7 +1496,43 @@ def evaluate():
             "B2": s_page("per_trial", "B2"),
             "B0b": s_page("per_trial", "B0b"),
         },
+        # B0b's two co-simulation DIFFERENCES, priced over the same corpus.
+        # Computed here rather than inside check() so they are printed, put in
+        # the JSON freeze, and asserted -- all three.  They were none of those
+        # things until 2026-08-20, which is how two wrong figures survived in
+        # the prose while the net they sum to stayed exactly right.
+        "b0b_stats_removed": page_cycles_expr(_b0b_d2_expr),
+        "b0b_pass_added": page_cycles_expr(_b0b_d1_expr),
+        "b0b_comparator": page_cycles_expr(_b0b_comparator_expr),
     }
+
+
+def _b0b_live(pw, ph, tw, th):
+    return pw - tw + 1 >= 1 and ph - th + 1 >= 1
+
+
+def _b0b_d2_expr(pw, ph, tw, th):
+    """-D2 = the b0b - shadow difference: the removal PLUS the comparator."""
+    if not _b0b_live(pw, ph, tw, th):
+        return 0
+    rw, rh = pw - tw + 1, ph - th + 1
+    return (rh * th * (tw + rw + FROZEN["b0b"]["d2_W"])
+            + FROZEN["b0b"]["d2_c_per_output_row"] * rh)
+
+
+def _b0b_d1_expr(pw, ph, tw, th):
+    """D1 = the shadow - b2ctl difference: the pass PLUS the comparator."""
+    if not _b0b_live(pw, ph, tw, th):
+        return 0
+    return ((th + 2 * (ph - th)) * (pw + FROZEN["b0b"]["d1_k_per_scan"])
+            + FROZEN["b0b"]["d1_m_per_call"])
+
+
+def _b0b_comparator_expr(pw, ph, tw, th):
+    """The shadow's comparator alone: +2 per output row, in BOTH differences."""
+    if not _b0b_live(pw, ph, tw, th):
+        return 0
+    return B0B_SPLIT_NUISANCE_PER_OUTPUT_ROW * (ph - th + 1)
 
 
 def measured_clock_ratios():
@@ -1485,6 +1703,26 @@ def b0b_evidence_crosscheck():
     checked += 1
     if f["routed_closes"] is not False:
         fail.append("FROZEN['b0b']['routed_closes'] is not False")
+
+    # THE RETAINED PROSE IS STALE AND MUST STAY MARKED AS SUCH.  The report was
+    # generated by a branch with no failed-timing case, so its body still says
+    # "the LOGIC closes at the probed period" about a run that violated its
+    # constraint.  The generator is fixed
+    # (vivado/tme_standalone/build_tme_standalone.tcl), but this artifact is
+    # NOT regenerated -- the numbers in it are the ones that were measured.  A
+    # correction header was prepended instead, and if anyone strips it the
+    # report reverts to claiming the opposite of its own verdict.
+    checked += 1
+    if "CORRECTION 2026-08-20" not in txt:
+        fail.append("B0b routed report has lost its correction header: the "
+                    "retained body says the logic CLOSES at the probed period "
+                    "and the verdict line says CONSTRAINTS VIOLATED.  Restore "
+                    "the header or regenerate the report with the fixed "
+                    "generator.")
+    elif "So this result says the LOGIC closes" in txt and \
+            "STALE 1" not in txt:
+        fail.append("B0b routed report still carries the 'closes' prose "
+                    "without the passage being marked stale")
 
     # The binding path is INSIDE correlation_core, which B0b does not edit.
     # That is what makes this a placement-sensitivity result rather than a
@@ -2171,13 +2409,28 @@ def check(results):
         rw, rh = pw - tw + 1, ph - th + 1
         S = th + 2 * (rh - 1)
         want = (cycles(pw, ph, tw, th, "B2")
-                - (rh * th * (tw + rw + b0b["removal_W"])
-                   + b0b["removal_c_per_output_row"] * rh)
-                + S * (pw + b0b["pass_k_per_scan"]) + b0b["pass_m_per_call"])
+                - (rh * th * (tw + rw + b0b["d2_W"])
+                   + b0b["d2_c_per_output_row"] * rh)
+                + S * (pw + b0b["d1_k_per_scan"]) + b0b["d1_m_per_call"])
         got = cycles(pw, ph, tw, th, "B0b")
         if got != want:
             fail.append("B0b term at {}: cycles()={} != halves={}".format(
                 (pw, ph, tw, th), got, want))
+        # THE SPLIT IS NOT IDENTIFIED, AND THIS IS WHERE THAT IS PROVED RATHER
+        # THAN DESCRIBED.  Moving the shadow's comparator out of D1 and into D2
+        # -- 2*rh, where csynth puts it -- gives a different pair of component
+        # laws and the SAME net.  A reader who prefers one pair is choosing a
+        # functional form, not reading a measurement.
+        meas = b0b_delta(pw, ph, tw, th, decontaminated=False)
+        deco = b0b_delta(pw, ph, tw, th, decontaminated=True)
+        if meas != deco:
+            fail.append("B0b split at {}: measured pair gives {} but the "
+                        "decontaminated pair gives {} -- if these ever differ, "
+                        "the two are no longer the same law and the docstring "
+                        "is wrong".format((pw, ph, tw, th), meas, deco))
+        if cycles(pw, ph, tw, th, "B2") + meas != got:
+            fail.append("B0b delta at {}: B2 + b0b_delta() != cycles(B0b)"
+                        .format((pw, ph, tw, th)))
     if cycles(*PHASE_S_GEOMETRY, "B0b") != b0b["phase_s_max_cycles"]:
         fail.append("B0b phase-s max: {} != frozen {}".format(
             cycles(*PHASE_S_GEOMETRY, "B0b"), b0b["phase_s_max_cycles"]))
@@ -2214,9 +2467,9 @@ def check(results):
             fail.append("post-B0b survivor at tw={} rw={}: {} != 2*tw+2*rw+9 = "
                         "{} (this is MEASURED now, not attributed)".format(
                             tw, rw, survives, 2 * tw + 2 * rw + 9))
-        if parts["window_statistics"] != tw + rw + FROZEN["b0b"]["removal_W"]:
+        if parts["window_statistics"] != tw + rw + FROZEN["b0b"]["d2_W"]:
             fail.append("window_statistics at tw={} rw={} is not the measured "
-                        "tw+rw+{}".format(tw, rw, FROZEN["b0b"]["removal_W"]))
+                        "tw+rw+{}".format(tw, rw, FROZEN["b0b"]["d2_W"]))
 
     # The count pass itself: both algebraic forms, the maximum Phase-S trial,
     # and the corpus total.  A change to the iteration shape must show up here
@@ -2248,20 +2501,32 @@ def check(results):
     # MEASURED halves.  Each half is a separate page_cycles_expr, so the three
     # numbers are computed independently and their identity is a check rather
     # than a restatement.
-    stats = page_cycles_expr(lambda pw, ph, tw, th: (
-        (ph - th + 1) * th * (tw + (pw - tw + 1) + FROZEN["b0b"]["removal_W"])
-        + FROZEN["b0b"]["removal_c_per_output_row"] * (ph - th + 1)
-        if pw - tw + 1 >= 1 and ph - th + 1 >= 1 else 0))
-    hoisted = page_cycles_expr(lambda pw, ph, tw, th: (
-        (th + 2 * (ph - th)) * (pw + FROZEN["b0b"]["pass_k_per_scan"])
-        + FROZEN["b0b"]["pass_m_per_call"]
-        if pw - tw + 1 >= 1 and ph - th + 1 >= 1 else 0))
+    stats = results["b0b_stats_removed"]
+    hoisted = results["b0b_pass_added"]
+    comparator = results["b0b_comparator"]
     lhs = results["s_page"]["B2"] - stats + hoisted
     if abs(lhs - results["s_page"]["B0b"]) > 1e-9:
-        fail.append("B0b decomposition: B2 - stats + pass = {:.12f} != B0b "
+        fail.append("B0b decomposition: B2 - D2 + D1 = {:.12f} != B0b "
                     "{:.12f}".format(lhs, results["s_page"]["B0b"]))
-    results["b0b_stats_removed"] = stats
-    results["b0b_pass_added"] = hoisted
+
+    # THE TWO COMPONENT FIGURES ARE NOW ASSERTED, NOT NARRATED.  They stood in
+    # this file's prose as 3.088545 and 0.409416, each 0.239655641778 too
+    # large.  The offset was the SAME in both, so the net came out exact and no
+    # check here could see it -- the decomposition test above passes for any
+    # pair of numbers that differ by the right amount.  Pinning each one
+    # separately is the only arrangement that catches a shared offset.
+    for key, got in (("d2_s_per_page", stats), ("d1_s_per_page", hoisted),
+                     ("comparator_s_per_page", comparator)):
+        want = FROZEN["b0b"][key]
+        if abs(got - want) > 1e-9:
+            fail.append("B0b {}: {:.12f} != frozen {}".format(key, got, want))
+    for wrong in FROZEN["b0b"]["withdrawn_component_s_per_page"]:
+        if abs(stats - wrong) < 1e-6 or abs(hoisted - wrong) < 1e-6:
+            fail.append("B0b components: {} is one of the WITHDRAWN prose "
+                        "figures -- restoring it would restore the shared "
+                        "offset that a correct net total conceals".format(wrong))
+    # (stats/hoisted/comparator come from evaluate(), so the numbers asserted
+    # above are the same objects that were printed and serialised.)
 
     return fail
 
@@ -2363,6 +2628,25 @@ def main():
         print("  {:<38} {:8.3f}   {:8.1f} @31.25MHz   {}".format(
             name, v, v * (TARGET_CLOCK_HZ / BOARD_CLOCK_HZ), note))
     print()
+    # PRINTED BECAUSE THEY WERE ONCE ONLY NARRATED.  check() computes these
+    # three and asserts them; the prose in this file carried two DIFFERENT
+    # numbers for months because nothing put the computed ones in front of a
+    # reader.  A derived figure that is never shown is a figure nobody checks.
+    if "b0b_stats_removed" in r:
+        print("  B0b's two co-simulation differences, over the same corpus:")
+        print("    B2                                  {:.12f}".format(
+            r["s_page"]["B2"]))
+        print("    - D2  (b0b - shadow)                {:.12f}".format(
+            r["b0b_stats_removed"]))
+        print("    + D1  (shadow - b2ctl)              {:.12f}".format(
+            r["b0b_pass_added"]))
+        print("    = B0b                               {:.12f}".format(
+            r["s_page"]["B0b"]))
+        print("    of which the shadow's comparator    {:.12f}  (in BOTH "
+              "lines, cancels)".format(r["b0b_comparator"]))
+        print("    Neither difference is a component cost: D1 is the pass plus")
+        print("    2*rh of comparator and D2 is the removal minus the same.")
+        print()
     print("  Excludes refinement, DMA, extraction and PS work.")
     print("  10 s/page is not reached by any modelled matcher change at the current trial count.")
     print("  Neither the combined image nor an end-to-end page has been demonstrated at 125 MHz.")
@@ -2392,8 +2676,9 @@ def main():
               "clock linearity, workload, Phase S, ROI variants, "
               "B1 EXACT aggregate + phase-s-max delta, "
               "B2 EXACT aggregate + routed WNS, "
-              "B0b EXACT aggregate + both measured halves + the rh=1 "
-              "regression + the withdrawn endpoints not bracketing it".format(
+              "B0b EXACT aggregate + the two corpus components + the "
+              "unidentified split + the rh=1 regression + the withdrawn "
+              "endpoints not bracketing it".format(
                   len(COSIM_TRANSACTIONS), len(BOARD_MEASUREMENTS),
                   len({hz for _, _, hz, _, _ in BOARD_MEASUREMENTS})))
         srcs = r.get("crosscheck_sources", {})

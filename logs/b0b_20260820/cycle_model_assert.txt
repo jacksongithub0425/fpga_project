@@ -65,12 +65,21 @@ PROJECTION - initial trials only, s/page @ 125 MHz
     + B2 overlap reuse                     20.405       81.6 @31.25MHz   cosim+board TERM to T=52; page projected
     + B0b hoisted window statistics        17.726       70.9 @31.25MHz   cosim-measured TERM; DOES NOT CLOSE 8 ns
 
+  B0b's two co-simulation differences, over the same corpus:
+    B2                                  20.405164783778
+    - D2  (b0b - shadow)                2.848889358222
+    + D1  (shadow - b2ctl)              0.169760466889
+    = B0b                               17.726035892444
+    of which the shadow's comparator    0.000588231111  (in BOTH lines, cancels)
+    Neither difference is a component cost: D1 is the pass plus
+    2*rh of comparator and D2 is the removal minus the same.
+
   Excludes refinement, DMA, extraction and PS work.
   10 s/page is not reached by any modelled matcher change at the current trial count.
   Neither the combined image nor an end-to-end page has been demonstrated at 125 MHz.
 
-frozen evidence re-proved: cosim x9, 4 board runs at 2 clocks, clock linearity, workload, Phase S, ROI variants, B1 EXACT aggregate + phase-s-max delta, B2 EXACT aggregate + routed WNS, B0b EXACT aggregate + both measured halves + the rh=1 regression + the withdrawn endpoints not bracketing it
-source corroboration: 52 value(s) re-read from source
+frozen evidence re-proved: cosim x9, 4 board runs at 2 clocks, clock linearity, workload, Phase S, ROI variants, B1 EXACT aggregate + phase-s-max delta, B2 EXACT aggregate + routed WNS, B0b EXACT aggregate + the two corpus components + the unidentified split + the rh=1 regression + the withdrawn endpoints not bracketing it
+source corroboration: 53 value(s) re-read from source
   B0b routed, DOES NOT CLOSE (logs/b0b_20260820/) READ
   B1 routed + board (logs/b1_*/)                 READ
   B2 routed + board, 2 suites (logs/b2_*/)       READ

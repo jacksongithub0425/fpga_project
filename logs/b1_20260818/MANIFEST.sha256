@@ -24,7 +24,7 @@ a4c0040827ce14e52ffd1ac988da1b81add8cbe5bb4312d2f08e4fc2fe48988f  hls/template_m
 a0bb9edfb65d7e4c6475395d8c961026627944b40c004deca8fe5971c3e31f3c  logs/b1_20260818/overlay_output/post_route_worst_paths.rpt  # routed worst paths
 2cd4a2b0fe696bc67585e6c79ce5d488151522b45f02e9050ea73bc9d98370a7  logs/b1_20260818/overlay_output/tme_standalone.bit  # bitstream
 ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_20260818/overlay_output/tme_standalone.hwh  # hardware handoff
-1f2c9b47b02fefb0114c426146c23308cb63b483c1764885f336c0cdf61d9df4  vivado/tme_standalone/build_tme_standalone.tcl  # build script
+26cc727c874b3515da4043f83d06deb3cc0f3790bfb76806762045596da95a08  vivado/tme_standalone/build_tme_standalone.tcl  # build script
 2bca7fd95fe8d34935a4e15201486098b5816ad3526e6ed1dd6ddb3ec1cc0b5b  hls/template_match/template_match_b1/b1/impl/ip/component.xml  # packaged IP (re-export)
 532e476b1343d24eeec27d9213ef767d10aba379ff4c0f54ce31a38ca2604b6a  hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip  # packaged IP archive (re-export)
 839a93e53dd341aba2354468aadec363708405b370f0ddb10b136ba0c2fa9702  hls/template_match/template_match_b1/SUPERSEDED.md  # superseded project marker
@@ -33,11 +33,11 @@ ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_202608
 c9cc770ba94369f83c4f93fe53784dda260f78979267963f889498423aaaab7b  logs/b1_rerun_20260818/run_cur.log  # rerun log cur
 f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_20260818/run_b1.log  # rerun log b1
 8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
-b1972acd8b6a0cbd12a43c72351c8b086f983ba0268ceb50e1fecae454bf6684  sw/tme_cycle_model.py  # model
+959eb3c9488f00951c192fc037bc50ab27d55d04acfb66a7e46a1d65916ef479  sw/tme_cycle_model.py  # model
 e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
 f381eab2273210a1360fe7db04819430a6f463e119ea87ed6cd12d77ef130693  sw/tme_b1_ab.py  # adjudicator
 12c79a802217faab1169ff0ab0fdd2dcbb0991b9585aae22a80723768b3e08b8  sw/tme_scale_policy.py  # scale policy
-718f506f70b8529c9a939c0448db2cf2e3c63096364adce811099b6f0a739e6b  sw/tme_b1_manifest.py  # manifest tool
+8ea4224eb10a5756e47c5ecc4f8ec603ac097b2b9a9ae3d3ce9e0d3f4e7bc13a  sw/tme_b1_manifest.py  # manifest tool
 c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
 5b988234c300a7ef9c321f5c39b8e8204038fd434150d5812113bbc2f91aa29f  hls/template_match/tme_tb.cpp  # testbench
 b73605cb9de997d0d477e9e57651902e30ce871caf4e7bf1f0db0d22f45e069c  hls/template_match/run_hls_b1.tcl  # ab project script
