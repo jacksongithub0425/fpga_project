@@ -1,0 +1,165 @@
+
+****** vitis-run v2025.2 (64-bit)
+  **** SW Build 6295257 on 2025-11-13-08:29:27
+  **** Start of session at: Thu Aug 20 00:00:29 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+  **** HLS Build v2025.2 6295257
+Sourcing Tcl script 'C:/Users/lychee/Desktop/FPGA/hls/template_match/run_hls_b0b.tcl'
+run_hls_b0b.tcl: tme_top snapshot b0b_sources/tme_top.shadow.cpp â€” verified
+run_hls_b0b.tcl: correlation_core snapshot b1_sources/correlation_core.b2.cpp â€” verified
+run_hls_b0b.tcl: header tme_top.h â€” verified
+run_hls_b0b.tcl: vector tb_tme_cases_b1.txt â€” verified
+run_hls_b0b.tcl: vector tb_tme_patches_b1.bin â€” verified
+run_hls_b0b.tcl: vector tb_tme_templs_b1.bin â€” verified
+run_hls_b0b.tcl: solution 'shadow' from b0b_sources/tme_top.shadow.cpp
+run_hls_b0b.tcl: project template_match_b0b_shadow (isolated per variant, -reset)
+run_hls_b0b.tcl: tme_top snapshot, correlation_core snapshot, header and vectors were all pre-build digest-gated; tme_tb.cpp is the only live input
+INFO: [HLS 200-1510] Running: open_project -reset template_match_b0b_shadow 
+WARNING: [HLS 200-2182] The 'template_match_b0b_shadow' project will not automatically appear within Vitis IDE workspaces and is meant only for TCL batch use.  Please use open_component instead of open_project/open_solution to generate Vitis IDE compatible component files and directory structure.
+Resolution: For help on HLS 200-2182 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-2182.html
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_shadow'.
+INFO: [HLS 200-1510] Running: set_top tme_top 
+INFO: [HLS 200-1510] Running: add_files b0b_sources/tme_top.shadow.cpp -cflags -IC:/Users/lychee/Desktop/FPGA/hls/template_match 
+INFO: [HLS 200-10] Adding design file 'b0b_sources/tme_top.shadow.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files b1_sources/correlation_core.b2.cpp -cflags -IC:/Users/lychee/Desktop/FPGA/hls/template_match 
+INFO: [HLS 200-10] Adding design file 'b1_sources/correlation_core.b2.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files tme_top.h 
+INFO: [HLS 200-10] Adding design file 'tme_top.h' to the project
+INFO: [HLS 200-1510] Running: add_files -tb tme_tb.cpp 
+INFO: [HLS 200-10] Adding test bench file 'tme_tb.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files -tb tb_tme_patches_b1.bin tb_tme_patches_cosim.bin tb_tme_patches_csim.bin tb_tme_patches_hw.bin tb_tme_patches_prod.bin tb_tme_templs_b1.bin tb_tme_templs_cosim.bin tb_tme_templs_csim.bin tb_tme_templs_hw.bin tb_tme_templs_prod.bin tb_tme_cases_b1.txt tb_tme_cases_cosim.txt tb_tme_cases_csim.txt tb_tme_cases_hw.txt tb_tme_cases_prod.txt tb_tme_counts_prod.txt 
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_b1.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_cosim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_csim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_hw.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_patches_prod.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_b1.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_cosim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_csim.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_hw.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_templs_prod.bin' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_b1.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_cosim.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_csim.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_hw.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_cases_prod.txt' to the project
+INFO: [HLS 200-10] Adding test bench file 'tb_tme_counts_prod.txt' to the project
+INFO: [HLS 200-1510] Running: open_solution -reset shadow 
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_shadow/shadow'.
+INFO: [HLS 200-10] Cleaning up the solution database.
+INFO: [HLS 200-1505] Using default flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: set_part xc7z020clg400-1 
+INFO: [HLS 200-1611] Setting target device to 'xc7z020-clg400-1'
+INFO: [HLS 200-1510] Running: create_clock -period 5ns -name default 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 5ns.
+INFO: [HLS 200-1510] Running: csim_design -argv b1 
+INFO: [SIM 211-2] *************** CSIM start ***************
+INFO: [HLS 200-2191] C-Simulation will use clang-16 as the compiler
+INFO: [HLS 200-2036] Building debug C Simulation binaries
+   Compiling ../../../../tme_tb.cpp in debug mode
+   Compiling ../../../../b1_sources/correlation_core.b2.cpp in debug mode
+   Compiling ../../../../b0b_sources/tme_top.shadow.cpp in debug mode
+   Generating csim.exe
+In file included from ../../../../tme_tb.cpp:56:
+In file included from ../../../../tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+In file included from ../../../../b1_sources/correlation_core.b2.cpp:1:
+In file included from C:/Users/lychee/Desktop/FPGA/hls/template_match\tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+In file included from ../../../../b0b_sources/tme_top.shadow.cpp:1:
+In file included from C:/Users/lychee/Desktop/FPGA/hls/template_match\tme_top.h:2:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\ap_int.h:10:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_common.h:668:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\etc/ap_private.h:68:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_half.h:26:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/etc/hls_half_fpo.h:19:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include\hls_fpo.h:140:
+In file included from C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:150:
+C:/AMDDesignTools/2025.2/Vitis/include\gmp.h:58:9: warning: '__GMP_LIBGMP_DLL' macro redefined [-Wmacro-redefined]
+#define __GMP_LIBGMP_DLL  0
+        ^
+C:/AMDDesignTools/2025.2/Vitis/include/floating_point_v7_1_bitacc_cmodel.h:142:9: note: previous definition is here
+#define __GMP_LIBGMP_DLL 1
+        ^
+1 warning generated.
+tb_tme_cases_b1.txt: 12 cases, 31659 patch bytes, 11760 template bytes
+
+--- direct DUT tests (contract §4.6) ---
+  [b0b-shadow] compared 63 of 63 result positions, 0 mismatch(es)  OK
+  flat-templ-4x4 (illegal input)   patch  12x10  templ  4x4   raw 0x00000000 @(0,0)  want 0x00000000 @(0,0)  PASS
+  [b0b-shadow] compared 1 of 1 result positions, 0 mismatch(es)  OK
+  min-nonflat dt=15 (must score 1.0) patch   4x4   templ  4x4   raw 0x3F800000 @(0,0)  want 0x3F800000 @(0,0)  PASS
+  bound-half0-half255-216x96       dt = 6989889945600 (want 6989889945600)  PASS
+  preserve-operands-all255         N*ST2 = 27959559782400, (ST)^2 = 27959559782400, dt = 0 (want 27959559782400/27959559782400/0)  PASS
+  num-max-positive-216x96          num = 6989889945600 (want 6989889945600)  PASS
+  num-max-negative-216x96          num = -6989889945600 (want -6989889945600)  PASS
+  num-cancel-all255                num = 0 (want 0)  PASS
+  width-minimum-witness            43/44: dt = 6989889945600 ok, num = -1806203076608 (pinned -1806203076608); 44/44: num = 6989889945600  PASS
+  width-coupling-witness           48/48: 6132117600000, 44/44: 6132117600000, 44/45: -11460068444416 (pinned -11460068444416, want 6132117600000)  PASS
+--- direct tests: 0 failure(s) ---
+
+  [b0b-shadow] compared 6 of 6 result positions, 0 mismatch(es)  OK
+[ 0] b1-w001-tw216                b1-width    patch  216x13  templ 216x8   gold +1.0000 @(  0,  3)  dut +1.0000 @(  0,  3)  PASS
+  [b0b-shadow] compared 90 of 90 result positions, 0 mismatch(es)  OK
+[ 1] b1-w015-tw216                b1-width    patch  230x13  templ 216x8   gold +1.0000 @( 14,  2)  dut +1.0000 @( 14,  2)  PASS
+  [b0b-shadow] compared 96 of 96 result positions, 0 mismatch(es)  OK
+[ 2] b1-w016-tw216                b1-width    patch  231x13  templ 216x8   gold +1.0000 @( 15,  4)  dut +1.0000 @( 15,  4)  PASS
+  [b0b-shadow] compared 102 of 102 result positions, 0 mismatch(es)  OK
+[ 3] b1-w017-tw216                b1-width    patch  232x13  templ 216x8   gold +1.0000 @( 16,  1)  dut +1.0000 @( 16,  1)  PASS
+  [b0b-shadow] compared 310 of 310 result positions, 0 mismatch(es)  OK
+[ 4] b1-w031-tw100                b1-width    patch  130x21  templ 100x12  gold +1.0000 @( 30,  5)  dut +1.0000 @( 30,  5)  PASS
+  [b0b-shadow] compared 320 of 320 result positions, 0 mismatch(es)  OK
+[ 5] b1-w032-tw100                b1-width    patch  131x21  templ 100x12  gold +1.0000 @( 31,  3)  dut +1.0000 @( 31,  3)  PASS
+  [b0b-shadow] compared 330 of 330 result positions, 0 mismatch(es)  OK
+[ 6] b1-w033-tw100                b1-width    patch  132x21  templ 100x12  gold +1.0000 @( 32,  8)  dut +1.0000 @( 32,  8)  PASS
+  [b0b-shadow] compared 1520 of 1520 result positions, 0 mismatch(es)  OK
+[ 7] b1-w095-tw020                b1-width    patch  114x27  templ  20x12  gold +1.0000 @( 94,  7)  dut +1.0000 @( 94,  7)  PASS
+  [b0b-shadow] compared 1536 of 1536 result positions, 0 mismatch(es)  OK
+[ 8] b1-w096-tw020                b1-width    patch  115x27  templ  20x12  gold +1.0000 @( 95, 12)  dut +1.0000 @( 95, 12)  PASS
+  [b0b-shadow] compared 320 of 320 result positions, 0 mismatch(es)  OK
+[ 9] b1-tie-samerow               b1-width    patch   47x21  templ  16x12  gold +1.0000 @(  5,  4)  dut +1.0000 @(  5,  4)  PASS
+  [b0b-shadow] compared 320 of 320 result positions, 0 mismatch(es)  OK
+[10] b1-tie-rowmajor              b1-width    patch   47x21  templ  16x12  gold +1.0000 @( 31,  2)  dut +1.0000 @( 31,  2)  PASS
+  [b0b-shadow] compared 1560 of 1560 result positions, 0 mismatch(es)  OK
+[11] b1-lane15                    lane15      patch   88x39  templ  24x16  gold +0.5532 @( 31,  6)  dut +0.5532 @( 31,  6)  PASS
+
+12/12 cases passed
+TESTBENCH PASSED
+INFO [HLS SIM]: The maximum depth reached by any hls::stream() instance in the design is 3432
+INFO: [SIM 211-1] CSim done with 0 errors.
+INFO: [SIM 211-3] *************** CSIM finish ***************
+INFO: [HLS 200-2161] Finished Command csim_design Elapsed time: 00:00:10; Allocated memory: 0.660 MB.
+run_hls_b0b.tcl: TME_B0B_CSIM_ONLY=1 â€” stopping before csynth
+INFO: [HLS 200-1510] Running: close_project 
+INFO: [HLS 200-112] Total CPU user time: 1 seconds. Total CPU system time: 1 seconds. Total elapsed time: 15.925 seconds; peak allocated memory: 147.008 MB.
+INFO: [vitis-run 60-791] Total elapsed time: 0h 0m 17s
+INFO: [vitis-run 60-1662] Stopping dispatch session having empty uuid.

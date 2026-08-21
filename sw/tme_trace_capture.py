@@ -190,14 +190,23 @@ class Tracer:
             "cycles_S": model.cycles(tw + 95, th + 63, tw, th),
             "cycles_S_B1": model.cycles(tw + 95, th + 63, tw, th, "B1"),
             "cycles_S_B2": model.cycles(tw + 95, th + 63, tw, th, "B2"),
-            # B0b in two independent pieces, because they scale differently.
-            # cycles_S_B0b_base is the DELETION of the window statistics; it is
-            # not B0b on its own.  count_pass_iterations is the hoisted pass's
-            # iteration count for THIS invocation -- one JSONL row is one
-            # invocation, so the shape is directly available here.  Converting
-            # iterations to cycles needs an initiation interval, which is
-            # PROJECTED rather than measured, so that multiplication is left to
-            # the model instead of being baked into the trace.
+            # B0b, MEASURED since 2026-08-20 -- both the hoisted pass and the
+            # removal it pays for, by three-solution paired co-simulation.  It
+            # is one column now.
+            #
+            # It used to be captured as cycles_S_B0b_base (the DELETION only)
+            # plus count_pass_iterations, deliberately leaving the
+            # iterations-to-cycles multiplication to the model because the II
+            # was projected.  Both halves of that arrangement are superseded:
+            # the II is 1 but the pass carries per-scan overhead the
+            # multiplication never had, and the removal was under-attributed.
+            # ANY TRACE CAPTURED BEFORE 2026-08-20 CARRIES A cycles_S_B0b_base
+            # COMPUTED FROM THE WITHDRAWN tw + rw + 21; see
+            # trace_20260818b/B0b_COLUMN_STALE.md.
+            "cycles_S_B0b": model.cycles(tw + 95, th + 63, tw, th, "B0b"),
+            # Kept because the DELETION is still a meaningful sub-term and the
+            # column name is now correct for what it holds: the measured
+            # removal, not the withdrawn attribution.
             "cycles_S_B0b_base": model.cycles(tw + 95, th + 63, tw, th, "B0b_base"),
             "count_pass_iterations": model.b0b_count_pass_iterations(
                 tw + 95, th + 63, tw, th),
@@ -332,12 +341,11 @@ def trace_derived(pages_done, cyc_totals, cp_iters):
     """s/page aggregates summed from THIS run's records, plus the comparison."""
     hz, out = model.TARGET_CLOCK_HZ, {}
     for key, frozen_key in (("S", "per_trial_roi"), ("S_B1", "B1"),
-                            ("S_B2", "B2"), ("S_B0b_base", "B0b_base")):
+                            ("S_B2", "B2"), ("S_B0b", "B0b")):
         got = cyc_totals[key] / pages_done / hz
         want = model.FROZEN["s_per_page_at_125mhz"][frozen_key]
         out[frozen_key] = {"trace": got, "frozen": want,
                            "matches_frozen": abs(got - want) <= 5e-3}
-    base = cyc_totals["S_B0b_base"] / pages_done / hz
     out["count_pass_iterations_initial"] = {
         "trace": cp_iters["initial"],
         "frozen": model.FROZEN["b0b_count_pass"]["corpus_iterations"],
@@ -345,11 +353,11 @@ def trace_derived(pages_done, cyc_totals, cp_iters):
                            == model.FROZEN["b0b_count_pass"]["corpus_iterations"]),
     }
     out["count_pass_iterations_refinement"] = {"trace": cp_iters["refine"]}
-    for n in (1, 3):
-        got = base + n * cp_iters["initial"] / pages_done / hz
-        want = model.FROZEN["s_per_page_at_125mhz"]["B0b_at_{}_cyc".format(n)]
-        out["B0b_at_{}_cyc".format(n)] = {
-            "trace": got, "frozen": want, "matches_frozen": abs(got - want) < 1e-9}
+    # The II=1 / II=3 endpoints this used to derive here are WITHDRAWN.  They
+    # were `deletion + n * iterations`, and both inputs were wrong: the pass
+    # carries per-scan overhead that no multiple of the iteration count can
+    # express, and the deletion was computed from the withdrawn tw + rw + 21.
+    # The measured B0b is summed above like any other variant.
     return out
 
 
@@ -506,7 +514,8 @@ def main():
     side_templates = load_side_templates()
     summary_rows = []
     totals = {"initial": 0, "refinement": 0, "left": 0, "right": 0}
-    cyc_totals = {k: 0 for k in ("current", "S", "S_B1", "S_B2", "S_B0b_base")}
+    cyc_totals = {k: 0 for k in ("current", "S", "S_B1", "S_B2", "S_B0b",
+                                 "S_B0b_base")}
     cp_iters = {"initial": 0, "refine": 0}
     cyc_refine = {}
     pages_done = 0
@@ -550,6 +559,7 @@ def main():
             # so summing over `recs` here would compare unlike quantities.
             for k, col in (("current", "cycles_current"), ("S", "cycles_S"),
                            ("S_B1", "cycles_S_B1"), ("S_B2", "cycles_S_B2"),
+                           ("S_B0b", "cycles_S_B0b"),
                            ("S_B0b_base", "cycles_S_B0b_base")):
                 cyc_totals[k] += sum(r[col] for r in init)
                 cyc_refine[k] = cyc_refine.get(k, 0) + sum(r[col] for r in refi)
@@ -564,6 +574,7 @@ def main():
                 "cycles_S": sum(r["cycles_S"] for r in recs),
                 "cycles_S_B1": sum(r["cycles_S_B1"] for r in recs),
                 "cycles_S_B2": sum(r["cycles_S_B2"] for r in recs),
+                "cycles_S_B0b": sum(r["cycles_S_B0b"] for r in recs),
                 "cycles_S_B0b_base": sum(r["cycles_S_B0b_base"] for r in recs),
                 "count_pass_iterations": sum(r["count_pass_iterations"] for r in recs),
                 "wall_seconds": round(dt, 3),
@@ -598,7 +609,7 @@ def main():
         print()
         print("measured trace vs frozen model, INITIAL TRIALS ONLY, s/page @ 125 MHz:")
         for k, frozen_key in (("S", "per_trial_roi"), ("S_B1", "B1"), ("S_B2", "B2"),
-                              ("S_B0b_base", "B0b_base")):
+                              ("S_B0b", "B0b")):
             got = cyc_totals[k] / pages_done / model.TARGET_CLOCK_HZ
             want = model.FROZEN["s_per_page_at_125mhz"][frozen_key]
             flag = "OK" if abs(got - want) <= 5e-3 else "DRIFT"
@@ -606,7 +617,7 @@ def main():
                 k, got, frozen_key, want, flag))
         print()
         print("refinement adds, s/page @ 125 MHz:")
-        for k in ("S", "S_B1", "S_B2", "S_B0b_base"):
+        for k in ("S", "S_B1", "S_B2", "S_B0b"):
             print("  {:<12} {:8.3f}".format(k, cyc_refine.get(k, 0) / pages_done / model.TARGET_CLOCK_HZ))
         print()
         cp = model.FROZEN["b0b_count_pass"]
@@ -616,20 +627,20 @@ def main():
             cp_iters["initial"], cp["corpus_iterations"],
             "OK" if cp_iters["initial"] == cp["corpus_iterations"] else "DRIFT"))
         print("  refinement       {:>15,} iterations".format(cp_iters["refine"]))
-        base = cyc_totals["S_B0b_base"] / pages_done / model.TARGET_CLOCK_HZ
-        for n in (1, 3):
-            ep = base + n * cp_iters["initial"] / pages_done / model.TARGET_CLOCK_HZ
-            key = "B0b_at_{}_cyc".format(n)
-            want = model.FROZEN["s_per_page_at_125mhz"][key]
-            print("  endpoint II={}    {:18.12f} s/page   frozen {:18.12f}   {}".format(
-                n, ep, want, "OK" if abs(ep - want) < 1e-9 else "DRIFT"))
         print()
-        print("cycles_S_B0b_base is the WINDOW-STATISTICS DELETION only; adding the")
-        print("count pass above gives B0b.  The ITERATION COUNT is derived per")
-        print("invocation and recorded in the trace; the II is PROJECTED (achieved")
-        print("throughput, not operator latency) and excludes pipeline setup/drain")
-        print("and FSM overhead until synthesis reports it -- which is why the")
-        print("iterations, not a cycle figure, are what this trace stores.")
+        print("The II=1 / II=3 ENDPOINTS this used to print here are WITHDRAWN.")
+        print("B0b was measured on 2026-08-20 by three-solution paired RTL")
+        print("co-simulation, and BOTH of the inputs those endpoints rested on")
+        print("were wrong: the hoisted pass carries per-scan overhead that no")
+        print("multiple of the iteration count can express (though the II itself")
+        print("really is 1), and the removal was computed from an attribution")
+        print("that was 3 too small per (output row, template row).  The measured")
+        print("B0b is in the table above.")
+        print()
+        print("The ITERATION COUNT above is unaffected and still checks out: it is")
+        print("derived per invocation and summed from this trace independently of")
+        print("the model's own total.  cycles_S_B0b_base is the measured REMOVAL")
+        print("only, not a runnable variant.")
     print()
     print("trials JSONL is LOCAL AND CONFIDENTIAL; trace_summary.csv is committable.")
     return 0

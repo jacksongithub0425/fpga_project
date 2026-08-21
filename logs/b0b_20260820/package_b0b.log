@@ -1,0 +1,109 @@
+
+****** vitis-run v2025.2 (64-bit)
+  **** SW Build 6295257 on 2025-11-13-08:29:27
+  **** Start of session at: Thu Aug 20 18:50:18 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+  **** HLS Build v2025.2 6295257
+Sourcing Tcl script 'C:/Users/lychee/Desktop/FPGA/hls/template_match/package_b0b.tcl'
+INFO: [HLS 200-1510] Running: open_project template_match_b0b_b0b 
+WARNING: [HLS 200-2182] The 'template_match_b0b_b0b' project will not automatically appear within Vitis IDE workspaces and is meant only for TCL batch use.  Please use open_component instead of open_project/open_solution to generate Vitis IDE compatible component files and directory structure.
+Resolution: For help on HLS 200-2182 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-2182.html
+INFO: [HLS 200-10] Opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b'.
+INFO: [HLS 200-1510] Running: open_solution b0b 
+INFO: [HLS 200-10] Opening solution 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b'.
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 5ns.
+INFO: [HLS 200-1611] Setting target device to 'xc7z020-clg400-1'
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.amd.com/access/sources/dita/topic?Doc_Version=2025.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: export_design -format ip_catalog -description PROVISIONAL, B0b â€” Terminal Matching Engine (TM_CCOEFF_NORMED, exact integer sums + float sqrt; template streams RAW uint8), with the per-(output row, template row) window-statistics loops replaced by ONE vertically-reused pass: the first output row scans all th patch rows, and every later output row subtracts the row leaving the window and adds the row entering it. Includes B1 (the runtime segment length) and B2 (horizontal overlap reuse) and is a strict superset of both. Carries the general sum of I and sum of I squared, not a foreground count, so the patch pixel domain is unrestricted and every existing vector stays valid. Functionally identical to the B2 solution by construction and by measurement: a shadow build computed both paths side by side and compared them at 2,911,495 result positions over 100 invocations in five C-simulation suites with zero disagreements, and sw/tme_b0b_mutants.py shows that comparison detects each of five deliberate defects. The change is a cycle-count change only. Not a release IP, not the 0.2 image the shipping measurements were taken on, and not Priority 4's or Priority 5's image. -vendor TermCountB0b -version 0.2 
+INFO: [IMPL 213-8] Exporting RTL as a Vivado IP.
+
+****** Vivado v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Thu Aug 20 18:50:23 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source run_ippack.tcl -notrace
+INFO: calling package_hls_ip ip_types=vitis sysgen json_file=C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/b0b_data.json outdir=C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip srcdir=C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b ippack_options_dict= ippack_options_dict=
+INFO: Copied 1 ipmisc file(s) to C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/misc
+INFO: Copied 50 verilog file(s) to C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/verilog
+INFO: Copied 43 vhdl file(s) to C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/vhdl
+INFO: Copied 10 swdriver file(s) to C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/drivers
+Generating 6 subcores in C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/subcore_prj:
+impl/misc/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip.tcl
+impl/misc/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip.tcl
+impl/misc/tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip.tcl
+impl/misc/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip.tcl
+impl/misc/tme_top_sitofp_64s_32_7_no_dsp_1_ip.tcl
+impl/misc/tme_top_uitofp_64ns_32_7_no_dsp_1_ip.tcl
+INFO: [ProjectBase 1-489] The host OS only allows 260 characters in a normal path. The project is stored in a path with more than 80 characters. If you experience issues with IP, Block Designs, or files not being found, please consider moving the project to a location with a shorter path. Alternately consider using the OS subst command to map part of the path to a drive letter.
+Current project path is 'C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/subcore_prj'
+INFO: Using COE_DIR=C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/verilog
+INFO: Generating tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip via file impl/misc/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip.tcl
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'C:/AMDDesignTools/2025.2/Vivado/data/ip'.
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip'...
+INFO: Done generating tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip via file impl/misc/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip.tcl
+INFO: Generating tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip via file impl/misc/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip.tcl
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip'...
+INFO: Done generating tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip via file impl/misc/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip.tcl
+INFO: Generating tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip via file impl/misc/tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip.tcl
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip'...
+INFO: Done generating tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip via file impl/misc/tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip.tcl
+INFO: Generating tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip via file impl/misc/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip.tcl
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip'...
+INFO: Done generating tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip via file impl/misc/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip.tcl
+INFO: Generating tme_top_sitofp_64s_32_7_no_dsp_1_ip via file impl/misc/tme_top_sitofp_64s_32_7_no_dsp_1_ip.tcl
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_sitofp_64s_32_7_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_sitofp_64s_32_7_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_sitofp_64s_32_7_no_dsp_1_ip'...
+INFO: Done generating tme_top_sitofp_64s_32_7_no_dsp_1_ip via file impl/misc/tme_top_sitofp_64s_32_7_no_dsp_1_ip.tcl
+INFO: Generating tme_top_uitofp_64ns_32_7_no_dsp_1_ip via file impl/misc/tme_top_uitofp_64ns_32_7_no_dsp_1_ip.tcl
+WARNING: [IP_Flow 19-4832] The IP name 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip' you have specified is long. The Windows operating system has path length limitations. It is recommended you use shorter names to reduce the likelihood of issues.
+INFO: [IP_Flow 19-1686] Generating 'Synthesis' target for IP 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip'...
+INFO: [IP_Flow 19-1686] Generating 'Simulation' target for IP 'tme_top_uitofp_64ns_32_7_no_dsp_1_ip'...
+INFO: Done generating tme_top_uitofp_64ns_32_7_no_dsp_1_ip via file impl/misc/tme_top_uitofp_64ns_32_7_no_dsp_1_ip.tcl
+INFO: Found 1 unique subcore IP: xilinx.com:ip:floating_point:7.1
+INFO: Copied 6 subcore files: C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/ip/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip/tme_top_fcmp_32ns_32ns_1_4_no_dsp_1_ip.xci C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/ip/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip/tme_top_fdiv_32ns_32ns_32_30_no_dsp_1_ip.xci C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/ip/tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip/tme_top_fmul_32ns_32ns_32_8_max_dsp_1_ip.xci C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/ip/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip/tme_top_fsqrt_32ns_32ns_32_28_no_dsp_1_ip.xci C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/ip/tme_top_sitofp_64s_32_7_no_dsp_1_ip/tme_top_sitofp_64s_32_7_no_dsp_1_ip.xci C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/ip/tme_top_uitofp_64ns_32_7_no_dsp_1_ip/tme_top_uitofp_64ns_32_7_no_dsp_1_ip.xci
+INFO: Import ports from HDL: C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/hdl/vhdl/tme_top.vhd (tme_top)
+INFO: Add axi4lite interface s_axi_CTRL
+INFO: Add clock interface ap_clk
+INFO: Add reset interface ap_rst_n
+INFO: Add interrupt interface interrupt
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'C:/AMDDesignTools/2025.2/Vivado/data/ip'.
+INFO: Add axi4stream interface patch_stream
+INFO: Add axi4stream interface templ_stream
+INFO: Calling post_process_vitis to specialize IP
+INFO: Calling post_process_sysgen to specialize IP
+Generating sysgen info xml from json file
+INFO: Created IP C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/component.xml
+INFO: Created IP archive C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip/TermCountB0b_hls_tme_top_0_2.zip
+INFO: [Common 17-206] Exiting Vivado at Thu Aug 20 18:50:46 2026...
+INFO: [HLS 200-802] Generated output file template_match_b0b_b0b/b0b/impl/export.zip
+INFO: [HLS 200-2161] Finished Command export_design Elapsed time: 00:00:26; Allocated memory: 19.770 MB.
+packaged TermCountB0b:hls:tme_top:0.2 - all four VLNV fields verified against component.xml
+IP repo for Vivado: C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b0b_b0b/b0b/impl/ip
+NEXT, IN THIS ORDER, AND DO NOT RE-EXPORT AFTERWARDS:
+  TME_IP_REPO=<the path above> TME_HLS_VLNV=TermCountB0b:hls:tme_top:0.2 \
+  TME_FCLK_MHZ=125 TME_BUILD_ROOT=<build dir> vivado -mode batch \
+    -source vivado/tme_standalone/build_tme_standalone.tcl -notrace
+INFO: [HLS 200-1510] Running: close_project 
+INFO: [HLS 200-112] Total CPU user time: 2 seconds. Total CPU system time: 1 seconds. Total elapsed time: 27.559 seconds; peak allocated memory: 165.652 MB.
+INFO: [vitis-run 60-791] Total elapsed time: 0h 0m 28s
+INFO: [vitis-run 60-1662] Stopping dispatch session having empty uuid.

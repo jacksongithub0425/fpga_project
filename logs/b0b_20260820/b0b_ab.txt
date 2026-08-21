@@ -1,0 +1,107 @@
+PRIORITY 6 (B0b) - hoisted window statistics, paired RTL co-simulation
+==============================================================================
+solutions present: b2ctl, shadow, b0b
+
+CHECK 1 - the control is intact (b2ctl == the published B2 term)
+------------------------------------------------------------------------------
+  14/14 transactions reproduce cycles(..., 'B2') exactly
+
+PER-TRANSACTION
+------------------------------------------------------------------------------
+#  geometry              S       I     b2ctl       D1    D1-I        D2  D2 prereg         D
+0  12x10/4x4            16     192      4568      677     485     -1057       -952      -380
+1  4x4/4x4               4      16       536      141     125      -119       -104        22
+2  216x13/216x8         18    3888     59040     4433     545    -11586     -11424     -7153
+3  230x13/216x8         18    4140     61658     4685     545    -12258     -12096     -7573
+4  231x13/216x8         18    4158     61845     4703     545    -12306     -12144     -7603
+5  232x13/216x8         18    4176     74512     4721     545    -12354     -12192     -7633
+6  130x21/100x12        30    3900    102734     4805     905    -18630     -18240    -13825
+7  131x21/100x12        30    3930    103165     4835     905    -18750     -18360    -13915
+8  132x21/100x12        30    3960    120876     4865     905    -18870     -18480    -14005
+9  114x27/20x12         42    4788    162046     6053    1265    -26736     -26112    -20683
+10 115x27/20x12         42    4830    162729     6095    1265    -26928     -26304    -20833
+11 47x21/16x12          30    1410     40921     2315     905     -8670      -8280     -6355
+12 47x21/16x12          30    1410     40921     2315     905     -8670      -8280     -6355
+13 88x39/24x16          62    5456    267840     7321    1865    -43464     -42240    -36143
+
+  D1 = shadow - b2ctl   the hoisted pass
+  D2 = b0b    - shadow  the deleted loops
+  D  = b0b    - b2ctl   what B0b changes about the shipped core;
+                        D == D1 + D2 is an identity, not a check
+
+CHECK 2 - D1 = S*(pw + k) + m, one (k, m) for every transaction
+------------------------------------------------------------------------------
+  fitted from the first two distinct S:  k = 30   m = 5
+  14/14 transactions match D1 = S*(pw + 30) + 5
+
+  The WITHDRAWN II=1 endpoint is k = m = 0, i.e. D1 = I.  Over
+  these 14 transactions that form gives 46,254 cycles; the
+  measurement is 57,964 - +11,710 (+25.32%).
+  csynth says the II really IS 1 (scan_init and scan_slide at
+  II=1, iteration latencies 7 and 14, the same as the isq_init
+  and isq_slide they replace), so the miss is entirely the
+  per-scan constant that was never modelled.
+
+CHECK 3 - D2 = -(rh*th*(tw + rw + W) + c*rh), one (W, c) for every
+          transaction
+------------------------------------------------------------------------------
+  fitted:  W = 24   c = 3
+  14/14 transactions match
+
+  THE PRE-REGISTRATION IS REFUTED, and this is the finding.
+  logs/b0b_20260820/PREDICTION.txt registered W = 21, c = 0
+  before the first build, straight from the model's four-way
+  split of the fitted per-row term.  Measured: W = 24, c = 3.
+  Over these 14 transactions the prediction is short by 5,190 cycles.
+  Only the SUM of that four-way split ever had evidence.  This
+  is the first of its four terms to be measured, and the other
+  three now sum to 2*tw + 2*rw + 9 rather than + 12.  WHICH of
+  them was over-attributed is NOT established.
+  Note tw + rw = pw + 1, so the measured cost is rh*th*(pw + 25) + 3*rh:
+  it depends on the PATCH WIDTH alone, which is what the two
+  deleted loops actually scan (tw priming + rw - 1 sliding).
+
+CHECK 4 - the fitted constants match FROZEN['b0b']
+------------------------------------------------------------------------------
+  pass_k_per_scan              fitted     30   frozen     30   OK
+  pass_m_per_call              fitted      5   frozen      5   OK
+  removal_W                    fitted     24   frozen     24   OK
+  removal_c_per_output_row     fitted      3   frozen      3   OK
+
+CHECK 5 - every b0b transaction == cycles(..., 'B0b')
+------------------------------------------------------------------------------
+  14/14 transactions match the declared model, zero free parameters
+
+WHERE B0b LOSES
+------------------------------------------------------------------------------
+  [ 1] direct min-nonflat dt=15   rh = 1    D = +22   (5*th + 2 = 22)
+  B0b is a REGRESSION at rh == 1, by exactly 5*th + 2 cycles:
+  a single output row has nothing to reuse vertically and the
+  hoisted pass still pays its per-scan overhead.  Derived, and
+  asserted in tme_cycle_model.check().  Anyone quoting B0b as a
+  uniform improvement is wrong.
+
+WHOLE-WORKLOAD CONSEQUENCE, from this run's fits
+------------------------------------------------------------------------------
+  per invocation:  B0b = B2 - [rh*th*(tw + rw + 24) + 3*rh]
+                             + [S*(pw + 30) + 5]
+                   S   = th + 2*(rh - 1)
+
+  s/page over the 20,680-trial corpus at 125 MHz: 17.726035892444
+    vs frozen B0b aggregate  17.726035892444  (+0.000000000000)
+    vs withdrawn_at_1_cyc   17.743730541333  (-0.017694648889)
+    vs withdrawn_at_3_cyc   18.035794052889  (-0.309758160445)
+    vs measured B2           20.405164783778  (-2.679128891333)
+
+  THE WITHDRAWN ENDPOINTS DID NOT BRACKET THIS.  The result
+  is below both.  The pass costs more than the II=1
+  endpoint assumed and the removal is worth more than the
+  model attributed; the second error is larger and points
+  the other way.
+
+  THIS IS NOT A PAGE TIME.  It sums a per-trial term over
+  20,680 MODELLED trials.  No page has been run on any
+  hardware at any clock, B0b has not been routed, and this run
+  adds no board evidence.
+
+all checks that could run PASSED

@@ -57,6 +57,7 @@ if {[info exists ::env(TME_B0B_SOLUTION)]} { set solution $::env(TME_B0B_SOLUTIO
 array set snapshot {
     b2ctl  {tme_top.b2.cpp      bcccd44c187bd7c008d8de7bbd87dfa33c1d7bf72c1fbfbae1b8046bb30f59db}
     shadow {tme_top.shadow.cpp  0d598d29bf73019673ce29e2300a95993dae427e71ac464b9712467c9485ef04}
+    b0b    {tme_top.b0b.cpp     5e791fe322d153f06e7686684dc89b51b0dd79c268e2e4bea9d92dadc2092102}
 }
 if {![info exists snapshot($solution)]} {
     error "TME_B0B_SOLUTION='$solution' has no pinned source in b0b_sources/.\
@@ -161,6 +162,16 @@ if {[info exists ::env(TME_B0B_CSIM_BROAD)] && $::env(TME_B0B_CSIM_BROAD) == "1"
 }
 if {[info exists ::env(TME_B0B_PROD)] && $::env(TME_B0B_PROD) == "1"} {
     csim_design -argv "prod"
+}
+
+# A csim-only smoke path, for iterating on the source before spending a
+# csynth + cosim on it.  It produces no evidence: a run under this flag has
+# no transaction report and no synthesis numbers, and the evidence manifest
+# records the full run.
+if {[info exists ::env(TME_B0B_CSIM_ONLY)] && $::env(TME_B0B_CSIM_ONLY) == "1"} {
+    puts "run_hls_b0b.tcl: TME_B0B_CSIM_ONLY=1 — stopping before csynth"
+    close_project
+    exit 0
 }
 
 csynth_design

@@ -141,6 +141,11 @@ baseline_cpu_*/
 !logs/b2_board_20260819/
 !logs/b2_board_20260819/**
 !hls/template_match/template_match_b1*/**/*.rpt
+
+# Priority 6's three A/B projects, on the same argument as Priority 4's: the
+# transaction reports ARE the measurement, and a manifest over files a clean
+# checkout does not contain is a local checksum rather than evidence.
+!hls/template_match/template_match_b0b_*/**/*.rpt
 !hls/template_match/template_match_b1/SUPERSEDED.md
 !hls/template_match/template_match_b1/b1/impl/ip/component.xml
 !hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip

@@ -85,7 +85,7 @@ RESULT_W, RESULT_H = 96, 64
 # The columns this file reports.  B0b appears as the two ENDPOINTS its
 # projected count-pass II brackets, because a single B0b number would imply an
 # II that synthesis has never reported.
-VARIANTS = ("S", "S_B1", "S_B2", "S_B0b@1", "S_B0b@3")
+VARIANTS = ("S", "S_B1", "S_B2", "S_B0b")
 
 _CYCLE_CACHE = {}
 
@@ -109,10 +109,12 @@ def trial_cycles(t, variant):
         v = model.cycles(pw, ph, tw, th, "B1")
     elif variant == "S_B2":
         v = model.cycles(pw, ph, tw, th, "B2")
-    elif variant == "S_B0b@1":
-        v = model.cycles_b0b(pw, ph, tw, th, 1)
-    elif variant == "S_B0b@3":
-        v = model.cycles_b0b(pw, ph, tw, th, 3)
+    elif variant == "S_B0b":
+        # ONE number now, not two endpoints.  B0b was measured on 2026-08-20
+        # (three-solution paired co-simulation) and model.cycles_b0b() -- the
+        # projected-II bracket this used to call -- raises rather than
+        # reproducing a withdrawn figure.
+        v = model.cycles(pw, ph, tw, th, "B0b")
     else:
         raise ValueError("unknown variant: " + variant)
     _CYCLE_CACHE[key] = v
@@ -341,9 +343,12 @@ def latency(calls, policy, pages):
     It also used to read `cycles_S_B0b`, a key no trace has ever carried -- the
     capture writes `cycles_S_B0b_base`, the window-statistics DELETION, which
     is not a runnable variant.  That raised KeyError and killed the whole
-    table, so no latency figure printed at all.  B0b is now computed through
-    model.cycles_b0b() and reported as the II=1 / II=3 ENDPOINTS it is honestly
-    bracketed by, never as a single number.
+    table, so no latency figure printed at all.  B0b was then computed through
+    model.cycles_b0b() and reported as the II=1 / II=3 ENDPOINTS it was
+    bracketed by.  Since 2026-08-20 it is MEASURED -- both its terms, by
+    three-solution paired co-simulation -- so it is one number again, computed
+    through model.cycles(..., "B0b").  The endpoints are withdrawn and did not
+    contain the measurement.
 
     `pages` is the CORPUS page count, not the number of pages that happened to
     produce a call.  Two of the 36 pages hold no endpoint, so the old
@@ -415,8 +420,11 @@ def latency(calls, policy, pages):
             k, i, f, rf, i + f + rf, base, base / max(i + f + rf, 1e-9)))
     print()
     print("  MODELLED, NOT MEASURED.  No page has been run on hardware at any")
-    print("  clock.  S_B1's tile term is measured; its page figure is not.  S_B2")
-    print("  and S_B0b have no RTL at all, and S_B0b's II is bracketed, not known.")
+    print("  clock, for any variant.  Every per-invocation TERM above is now")
+    print("  cosim-measured -- S_B1 and S_B2 on the board too, S_B0b not routed")
+    print("  and not on silicon -- but a page figure is a SUM over 20,680")
+    print("  modelled trials plus a modelled fallback and refinement policy.")
+    print("  None of these totals has been observed.")
 
 
 # ---------------------------------------------------------------------------

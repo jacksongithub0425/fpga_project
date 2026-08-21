@@ -39,7 +39,10 @@ term is therefore MEASURED.  It was then RUN ON THE BOARD on 2026-08-20
 exercising tile counts {1, 3, 4, 6, 38, 52} rather than only the T = 6 the
 cosim and B1's session covered.
 
-B0b remains unimplemented and its term is unmeasured.
+B0b IS implemented as of 2026-08-20 (b0b_sources/tme_top.b0b.cpp) and BOTH
+of its terms are measured -- the hoisted pass and the removal it pays for,
+separately, because a third `shadow` solution was built to separate them.
+It has NOT been routed and has NOT run on silicon.
 
 ALL page-level figures here -- for EVERY variant, `cur` included -- are
 PROJECTIONS: each sums a per-invocation cycle term over the 20,680 modelled
@@ -62,8 +65,19 @@ That is now false for B1 and has been since 2026-08-18:
         and hw 9/9, so unlike B1's phase_s-only session the tile count is
         exercised to T = 52 rather than only T = 6.  Only the summation over
         the workload is projected.
-  B0b   no RTL, and its count-pass II is bracketed [1, 3] rather than known, so
-        it is quoted as two endpoints and never as one number.
+  B0b   RTL EXISTS (hls/template_match/b0b_sources/tme_top.b0b.cpp).  BOTH
+        its terms are measured -- paired RTL co-simulation of three solutions,
+        14/14 transactions exact on each of the two differences -- and its
+        correctness was established before the measurement by a `shadow` build
+        that carried both computations and compared them at 2,911,495 result
+        positions over 100 invocations in five C-simulation suites, with a
+        mutant gate proving that comparison can fail.  ROUTED, AND IT DOES
+        NOT CLOSE -- WNS -0.051470 ns at 8.000 ns, binding on a `seg`
+        register feeding the MAC's DSP input inside correlation_core, a file
+        B0b does not edit.  NOT on silicon.  The CYCLE term is unaffected by
+        that (a cosim latency does not depend on the clock); the CONVERSION
+        to seconds is.  Its old [1, 3] II bracket is WITHDRAWN and DID NOT
+        CONTAIN the answer; see the B0b section below.
 
 Read the hierarchy below rather than this paragraph if the two ever disagree
 again: the hierarchy is what the assertions are written against.
@@ -124,17 +138,38 @@ THE EVIDENCE HIERARCHY (do not collapse these tiers when quoting)
                   20,680 modelled trials.  NO PAGE HAS BEEN RUN, on any
                   hardware, at any clock.  "20.405 s/page" is not a measured
                   page time and must never be written as one.
-  architectural projection  B0b 17.743731 / 18.035794 at II=1 and II=3 on the
-                  count pass -- no RTL exists, and the II itself is projected
-                  rather than measured.  Both endpoints MOVED when B2 was
-                  measured (from 17.513998 / 17.806062), because B0b is defined
-                  as B2 minus the window statistics plus the count pass and so
-                  inherits B2's term whole.  B1 and B2 are now two warnings
-                  about this tier rather than one: B1's projected term was
-                  optimistic by T+1 per (output row, template row).  Against
-                  B2's pre-RTL projection the miss is 3T-1: B1's T+1 recurs,
-                  plus an additional 2*(T-1).  Neither measured correction is
-                  a correction anyone may apply to B0b in advance.
+  cosim-measured term, no silicon
+                  B0b 17.726036 s/page.  TWO measured terms, from THREE
+                  solutions built 2026-08-20: a `b2ctl` control byte-identical
+                  to B2's build inputs, a `shadow` that adds the hoisted pass
+                  without removing anything, and `b0b` itself.  shadow - b2ctl
+                  prices the addition at S*(pw + 30) + 5 and b0b - shadow
+                  prices the removal at rh*th*(tw + rw + 24) + 3*rh, each exact
+                  on 14/14 transactions.  The control reproduced B2's published
+                  term on all 14 in the same comparison.
+
+                  THIS TIER IS NOT THE SAME AS B1'S AND B2'S.  Those two closed
+                  8.000 ns and ran on silicon.  B0b's routed run VIOLATED the
+                  constraint (WNS -0.051470 ns, TNS -0.051470 ns), and it has
+                  not run on silicon.  Its cycle claim is as strong as theirs;
+                  its clock claim is a NEGATIVE result.  Read that both ways:
+                  17.726036 s/page is a conversion at 125 MHz and this core has
+                  no closing build at 125 MHz -- and equally, ONE run at default
+                  effort with no directive or seed sweep does not establish that
+                  B0b CANNOT close 8 ns.
+
+                  THE OLD ENDPOINTS DID NOT BRACKET IT.  17.743731 (II=1) and
+                  18.035794 (II=3) are WITHDRAWN, and the measurement is BELOW
+                  BOTH.  Two projected inputs were wrong in opposite
+                  directions: the hoisted pass costs 25% more than the II=1
+                  endpoint assumed -- csynth confirms the II really is 1, so
+                  the whole miss is per-scan overhead that was never modelled
+                  -- while the REMOVAL is worth more than the four-way split
+                  attributed to it, and that dominates.  So the third
+                  consecutive optimistic projection was rescued by a second,
+                  larger error pointing the other way.  Read that as a reason
+                  to distrust unmeasured sub-terms, not as a reason to trust
+                  the endpoints.
   unproved        the combined image at 125 MHz, and end-to-end page latency.
                   ("the modified core at 125 MHz" left this line on 2026-08-19:
                   the B1 image routed at 8.000 ns and ran 7/7 on the board with
@@ -144,70 +179,106 @@ THE EVIDENCE HIERARCHY (do not collapse these tiers when quoting)
 seconds out of assumption and into measurement.  It does NOT promote B1 / B2 /
 B0b from projections to results.
 
-B0b: WHAT CHANGED, AND WHAT IS STILL PROJECTED
-----------------------------------------------
-An earlier revision of this file modelled B0b as `stat = 2*tw + 2*rw + 33` --
-"hoisting removes 1x of the fitted 3*(tw+rw)" -- and reported 17.652, with an
-"optimistic" variant reporting 12.604.  BOTH ARE WITHDRAWN.  That attribution
-was a guess at how the fitted term splits, and it survived review only because
-the assertion checked that 17.652 fell inside [17.514, 17.806] rather than
-checking the endpoints themselves.  A range check cannot distinguish a correct
-implementation from a wrong one that lands inside the range.
+B0b: MEASURED, AND WHAT THE MEASUREMENT OVERTURNED
+--------------------------------------------------
+Implemented and measured 2026-08-20.  Evidence: logs/b0b_20260820/, adjudicated
+by sw/tme_b0b_ab.py, with correctness from a shadow build and its mutant gate.
 
-B0b is now modelled as what it actually does -- delete the window-statistics
-sub-term and replace it with one hoisted, vertically-reused count pass:
+    B0b = B2 - [rh*th*(tw + rw + 24) + 3*rh] + [S*(pw + 30) + 5]
+                                               S = th + 2*(rh - 1)
 
-    B0b(N) = B2 - rh*th*(tw + rw + 21) + count_pass(N)
+    B2                     20.405165        measured term, summed
+    window statistics       3.088545        MEASURED (b0b - shadow)
+    hoisted pass            0.409416        MEASURED (shadow - b2ctl)
+    -> B0b                 17.726036        aggregate 79,767,161,516 cycles
 
-    B2                     20.405165        MEASURED term, summed
-    window statistics       2.807466        derived; the subtraction is asserted
-    B0b base               17.597699        derived  (variant="B0b_base")
-    count_pass(II=1)        0.146031755778  derived
-    count_pass(II=3)        0.438095267333  derived
-    -> endpoints           17.743730541333 and 18.035794052889
+THREE SOLUTIONS, BECAUSE B0b IS TWO CHANGES.  Adding a pass and deleting the
+loops it replaces would have been one indivisible difference against a single
+control.  A `shadow` solution -- the pass computed ALONGSIDE the loops, nothing
+removed -- splits them, and csynth confirms the split is clean: every pipelined
+leaf loop the solutions share has the same II and the same iteration latency in
+all three, norm_cols (where the shadow's comparison lives) included.  So
+shadow - b2ctl is the pass and b0b - shadow is the removal, rather than either
+being contaminated by a rescheduling.
 
-WITHDRAWN: 17.513998132444 / 17.806061644000, and the 17.367966 base they were
-built on.  Nothing about the count pass changed -- the two count_pass terms
-above are the same numbers they always were.  What changed is B2, which B0b
-sits on top of.  Its miss versus the pinned pre-B2 projection is 3*T - 1 per
-(output row, template row); 2*(T-1) is only the additional cost versus the
-control-naive schedule.
+TWO PROJECTIONS DIED HERE, AND ONLY ONE OF THEM WAS ABOUT B0b.
 
-Every term is now computed rather than transcribed.  The count pass follows the
-no-row-cache algorithm -- initial vertical position scans th patch rows, one
-horizontal row-count scan costs tw + (rw - 1) = pw iterations, and each of the
-rh - 1 subsequent vertical shifts scans the outgoing and incoming rows at 2*pw:
+1.  THE II WAS RIGHT AND THE ENDPOINTS WERE STILL WRONG.  csynth puts the
+    hoisted pass's two loops at II=1 with iteration latencies 7 and 14 --
+    IDENTICAL to the isq_init and isq_slide they replace, which is what the
+    source set out to preserve.  But the endpoints modelled the pass as N*I and
+    nothing else, and the measurement is S*(pw + 30) + 5: 30 cycles per scan of
+    pipeline flush and call overhead, 5 per invocation.  Over the cosim suite
+    that is +25% on the pass.  The II was never the risky part; the constant
+    that was not modelled at all was.
+
+2.  THE WINDOW-STATISTICS ATTRIBUTION WAS WRONG, AND THAT IS THE BIGGER
+    FINDING.  The model split the fitted per-(output row, template row) cost
+    3*tw + 3*rw + 33 four ways and called it "fully attributed".  Only the SUM
+    of that split ever had evidence.  The removal measures one of the four
+    directly, and it is `tw + rw + 24` per (output row, template row) PLUS 3
+    per output row -- not `tw + rw + 21` and nothing per output row.  So:
+
+      * the other three terms sum to 2*tw + 2*rw + 9, not 2*tw + 2*rw + 12;
+      * WHICH of the three was over-attributed is NOT ESTABLISHED.  PER_ROW_TERMS
+        now carries an explicit `unattributed_correction` of -3 rather than
+        silently shaving it off whichever line looked least defended;
+      * 3 cycles per output row came out of the 5*rw + 99 term, whose internal
+        split had no evidence either.
+      * "FULLY ATTRIBUTED" IS WITHDRAWN.
+
+    Note tw + rw = pw + 1, so the measured statistics cost is rh*th*(pw + 25) +
+    3*rh: it depends on the PATCH WIDTH alone.  That is what the two loops
+    actually scan -- tw priming iterations plus rw - 1 sliding ones -- so the
+    measured form is the one the source predicts and the attributed one was
+    not.
+
+THE SHAPES ARE MEASURED; THE MECHANISMS ARE NOT.  Fourteen transactions pin +30
+per scan, +5 per call, +3 per (output row, template row) over the old
+attribution, and +3 per output row.  WHY each is there is not established -- no
+experiment here separates pipeline flush from call overhead from loop-region
+control, exactly as none separated B1's T + 1 or B2's 2*(T - 1).  Do not quote a
+cause.  The 3*rh in particular is an accounting fact about where the cycles
+went, not a claim that reset_acc dropping two array writes is what produced it.
+
+THE WITHDRAWN ENDPOINTS DID NOT BRACKET THE ANSWER.  17.743730541333 (II=1) and
+18.035794052889 (II=3) are withdrawn, and 17.726036 is BELOW BOTH.  The two
+errors above point in opposite directions and the removal wins.  A range check
+would have reported "inside the bracket" for a wrong implementation, which this
+file already records once; here the correct implementation lands OUTSIDE it.
+check() asserts the measurement is below both endpoints, so a future revision
+cannot quietly restore the range and call it confirmed.
+
+THE ITERATION COUNT SURVIVED UNCHANGED.  b0b_count_pass_iterations still gives
 
     I = pw * [th + 2*(rh - 1)]  ==  pw * (2*ph - th)
 
     max Phase-S trial   311 * (96 + 2*63)  =      69,042 iterations
     whole 20,680-trial corpus              = 657,142,901 iterations
 
-WHAT IS STILL PROJECTED, AND IT IS NOT THE ITERATION COUNT.  The MULTIPLIER is.
-`scheduled_cycles_per_iteration` is an ACHIEVED INITIATION INTERVAL -- pipeline
-throughput, not operator latency -- and pipeline setup/drain plus FSM overhead
-are not modelled at all.  They stay unmodelled until synthesis reports the real
-II.  1 and 3 bracket the plausible range; neither is a prediction of which one
-obtains, and Priority 6 shadow mode is what decides.
+and FROZEN["b0b_count_pass"] is untouched.  It encodes an ALGORITHM CHOICE, not
+a lower bound: it assumes each row scan performs the horizontal rolling scan.
+A fused subtract-and-add loop would cost pw*ph iterations -- FEWER -- but reads
+four patch pixels per iteration against a 2-port cyclic-partitioned BRAM, and
+collides whenever tw is a multiple of PAR_COLS.  The implementation uses
+separate scans deliberately; see b0b_sources/README.md.
 
-The iteration count also encodes an ALGORITHM CHOICE, not a lower bound over
-all implementations: it assumes each row scan performs the horizontal rolling
-count.  A vertical-column-only implementation needs a further horizontal pass
-and costs more; caching row counts instead equals exactly pw*ph for the stated
-cached-row algorithm (because th + (rh - 1) == ph, the coefficient-1 form of
-the expression above IS pw*ph).  If the RTL does either, this formula is wrong
-and the endpoints move.
+B0b IS NOT A UNIFORM IMPROVEMENT.  At rh == 1 it LOSES, by exactly 5*th + 2
+cycles: one output row has nothing to reuse vertically and the pass still pays
+its per-scan overhead.  Derived, asserted in check(), and visible on the
+4x4/4x4 direct transaction as +22.  Over the real workload it wins by
+2.679 s/page.
 
-WHAT B0b DOES NOT FIX.  It removes only the tw + rw + 21 window-statistics
-sub-term.  The other 2*tw + 2*rw + 12 survives untouched, and it is FULLY
-ATTRIBUTED -- nothing in the per-(output row, template row) cost is unaccounted
-for any more:
+WHAT B0b DOES NOT FIX.  It removes only the window statistics.  The other
+2*tw + 2*rw + 9 survives untouched, and its internal split is now explicitly
+UNMEASURED:
 
-    template-row staging            2*tw + 3   <- the MEASURED critical path
-    correlation writeback/control   2*rw + 8
-    accum_rows FSM transition       1
+    template-row staging            2*tw + 3   <- attributed, not measured
+    correlation writeback/control   2*rw + 8   <- attributed, not measured
+    accum_rows FSM transition       1          <- attributed, not measured
+    unattributed correction        -3          <- what the measurement forces
                                     ---------
-                                    2*tw + 2*rw + 12
+                                    2*tw + 2*rw + 9
 
 Template-row staging is the binding path in the routed 8 ns build
 (templ_buf BRAM output -> the partitioned t_row registers, logic level 0), so
@@ -252,6 +323,13 @@ from pathlib import Path
 #                       2*tw + 2*rw + 12 survives and needs its own fix.
 #
 # T = ceil(rw/16) is the tile count at PAR_COLS=16.
+
+
+# Variants whose per-invocation term comes from paired RTL co-simulation rather
+# than from a projection.  sw/tme_b0b_ab.py reads this to decide whether
+# checking the declared model against a measurement is a real check or a
+# comparison of a projection with the thing that would replace it.
+MEASURED_VARIANTS = ("cur", "B1", "B2", "B0b")
 
 
 def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
@@ -305,7 +383,7 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
         # B2 and B0b must be measured on their own.  Nothing here licenses
         # assuming they pay T + 1, or that they pay only T + 1.
         tile = T * (2 * tw + 41) + 1
-    elif variant in ("B2", "B0b_base"):
+    elif variant in ("B2", "B0b_base", "B0b"):
         # Overlap reuse: tile 0 loads the full seg_len, each later tile slides
         # the overlap down by PAR_COLS and refills only PAR_COLS = 16 new
         # pixels.
@@ -360,47 +438,143 @@ def cycles(pw: int, ph: int, tw: int, th: int, variant: str = "cur") -> int:
     else:
         raise ValueError("unknown variant: " + variant)
 
-    if variant == "B0b_base":
-        # B0b DELETES the window-statistics sub-term (tw + rw + 21) from the
-        # per-(output row, template row) cost and replaces it with one hoisted,
-        # vertically-reused count pass costed separately by cycles_b0b().
-        #   (3*tw + 3*rw + 33) - (tw + rw + 21)  =  2*tw + 2*rw + 12
-        # This is the DELETION ONLY; it is not a runnable B0b on its own.
-        stat = 2 * tw + 2 * rw + 12
+    if variant in ("B0b_base", "B0b"):
+        # B0b DELETES the repeated window statistics.  WHAT THAT DELETION IS
+        # WORTH IS MEASURED, not attributed: paired RTL co-simulation of the
+        # `b0b` solution against the `shadow` one -- the same fourteen
+        # invocations, the same pinned vectors, the only difference being the
+        # loops that are gone (sw/tme_b0b_ab.py, 2026-08-20) -- gives
+        #
+        #     removal = rh*th*(tw + rw + 24) + 3*rh
+        #
+        # exactly, on 14/14 transactions.  Note tw + rw = pw + 1, so this is
+        # rh*th*(pw + 25) + 3*rh: the statistics cost depends on the PATCH
+        # WIDTH alone, which is what the two loops they replace actually scan
+        # (tw priming iterations plus rw - 1 sliding ones).
+        #
+        # THE PROJECTION WAS tw + rw + 21 PER (OUTPUT ROW, TEMPLATE ROW) AND
+        # NOTHING PER OUTPUT ROW.  It is short in both places.  That figure was
+        # never measured -- it was one term of a four-way split of the fitted
+        # 3*tw + 3*rw + 33, and only the SUM of that split had evidence.  Two
+        # consequences, both recorded rather than smoothed over:
+        #
+        #   1. The other three terms now sum to 2*tw + 2*rw + 9, not
+        #      2*tw + 2*rw + 12.  WHICH of the three was over-attributed is
+        #      NOT established; the measurement constrains their sum only.
+        #      "Fully attributed" is withdrawn -- see PER_ROW_TERMS.
+        #   2. Three cycles per OUTPUT ROW belonged to the statistics and were
+        #      inside the 5*rw + 99 term.  That term's internal split had no
+        #      evidence either; 3 of the 99 now has some.
+        stat = (3 * tw + 3 * rw + 33) - (tw + rw + 24)      # 2*tw + 2*rw + 9
+        per_row = 5 * rw + 96                               # 99 - 3
     else:
         stat = 3 * tw + 3 * rw + 33
+        per_row = 5 * rw + 99
 
-    return pw * ph + 24 + rh * (5 * rw + 99) + rh * th * (tile + stat)
+    total = pw * ph + 24 + rh * per_row + rh * th * (tile + stat)
+
+    if variant == "B0b":
+        # The hoisted, vertically-reused pass that replaces them.  ALSO
+        # MEASURED, from the `shadow` solution against `b2ctl` in the same
+        # comparison:
+        #
+        #     pass = S * (pw + 30) + 5,      S = th + 2*(rh - 1)
+        #
+        # exact on 14/14.  S*pw is the derived iteration count I (one scan is
+        # tw + (rw - 1) = pw iterations); the +30 per scan and +5 per
+        # invocation are the overhead the frozen endpoints assumed away.
+        #
+        # THE FROZEN ENDPOINTS ASSUMED pass = N*I FOR N IN {1, 3}, and csynth
+        # says N really is 1 -- scan_init and scan_slide come out at II=1 with
+        # iteration latencies 7 and 14, IDENTICAL to the isq_init and isq_slide
+        # they replace.  The 25% miss is entirely the per-scan constant, which
+        # was not modelled at all.  See the module docstring: the endpoints did
+        # not bracket the answer, and it is the REMOVAL being under-attributed
+        # that pulled the result back under them.
+        total += (th + 2 * (rh - 1)) * (pw + 30) + 5
+
+    return total
 
 
 # ---------------------------------------------------------------------------
-# 1b. THE B0b COUNT PASS
+# 1b. THE B0b PASS AND THE ATTRIBUTION IT CORRECTED
 # ---------------------------------------------------------------------------
-# B0b(N) = B2 - window_statistics + count_pass(N), where N is the achieved
-# cycles per iteration of the new hoisted pass.  Two of the three terms are
-# computed from the model above and asserted exactly:
+# B0b = B2 - window_statistics + hoisted_pass.  ALL THREE TERMS ARE NOW
+# MEASURED; none of them is projected any more:
 #
-#     B2                                    20.405165 s/page  (measured term)
-#     window statistics  rh*th*(tw+rw+21)    2.807466 s/page
-#     B0b base  (variant="B0b_base")        17.597699 s/page
+#     B2                                        20.405165 s/page   measured
+#     window statistics rh*th*(pw+25) + 3*rh     3.088545 s/page    measured
+#     hoisted pass      S*(pw+30) + 5            0.409416 s/page    measured
+#     -> B0b                                    17.726036 s/page
 #
-# The third is now DERIVED as well -- see b0b_count_pass_iterations below.  What
-# remains projected is the MULTIPLIER, not the iteration count.
+# WITHDRAWN: 17.743730541333 (II=1) and 18.035794052889 (II=3), and the
+# 17.597699 "B0b base" they were built on.  The measurement is 17.726036,
+# which is BELOW BOTH.  Read that carefully -- the pair was published as a
+# bracket and it did not contain the answer:
+#
+#   * the hoisted pass costs MORE than the II=1 endpoint assumed, by 25% on
+#     the cosim suite.  csynth says the II really is 1 (scan_init and
+#     scan_slide come out at II=1 with iteration latencies 7 and 14, the same
+#     as the isq_init and isq_slide they replace), so the whole miss is the
+#     +30-per-scan and +5-per-invocation overhead that was not modelled;
+#   * the REMOVAL is worth more than the model attributed, and that dominates.
+#
+# THE SECOND HALF IS THE MORE IMPORTANT FINDING.  It is not about B0b at all:
+# it says the four-way split of the fitted per-(output row, template row) term
+# was wrong, in a way no assertion here could have caught, because only the
+# SUM of the four had evidence.
 
 
 # The per-(output row, template row) term, split into the four parts it is
-# actually made of.  check() proves that THESE FOUR EXPRESSIONS sum to
-# 3*tw + 3*rw + 33 and that dropping the window statistics leaves
-# 2*tw + 2*rw + 12.  That is all it proves.  It does NOT verify that the prose
-# in the module docstring, or the comment above, still describes these
-# expressions -- no assertion can check English against code.  If you change a
-# term here, re-read both by hand.
+# made of.  ONE OF THE FOUR IS NOW MEASURED; the other three are not, and
+# their individual values are NO LONGER CLAIMED.
+#
+# What check() proves is what it always proved: that the four expressions sum
+# to the fitted 3*tw + 3*rw + 33.  What it can no longer prove -- because it is
+# no longer true -- is that removing the window statistics leaves the other
+# three unchanged at 2*tw + 2*rw + 12.  Paired co-simulation of `b0b` against
+# `shadow` measured the removal directly:
+#
+#     window statistics = rh*th*(tw + rw + 24) + 3*rh
+#
+# exact on 14/14 transactions.  So the other three sum to 2*tw + 2*rw + 9, and
+# three cycles per OUTPUT ROW that were sitting inside the 5*rw + 99 term
+# belong here as well.
+#
+# WHICH of the remaining three was over-attributed by 3 is NOT ESTABLISHED.
+# The measurement constrains their sum and nothing else.  The three
+# expressions below are kept at their previous values so that the sum
+# identity still holds and so that the history is legible, but each is now
+# labelled with what it is: an unmeasured share.  DO NOT quote any of them as
+# a measured cost.  "Fully attributed" is WITHDRAWN.
+#
+# No assertion can check English against code, so if you change a term here,
+# re-read the module docstring by hand.
 PER_ROW_TERMS = {
+    # MEASURED (tme_b0b_ab.py check 3b, 14/14).  Note tw + rw = pw + 1, so
+    # this is pw + 25: the statistics cost depends on the PATCH WIDTH alone,
+    # which is what the two loops actually scan -- tw priming iterations plus
+    # rw - 1 sliding ones.  There is a companion 3 per output row; see
+    # PER_OUTPUT_ROW_STATISTICS below.
+    "window_statistics": lambda tw, rw: tw + rw + 24,
+    # UNMEASURED SHARES.  These three sum to 2*tw + 2*rw + 9, which IS
+    # measured (it is what survives the removal).  Their individual split is a
+    # 2026-08-17 attribution that has never been tested and is now known to be
+    # 3 too large in total.
     "template_row_staging": lambda tw, rw: 2 * tw + 3,       # measured crit path
-    "window_statistics": lambda tw, rw: tw + rw + 21,        # what B0b removes
     "correlation_writeback_control": lambda tw, rw: 2 * rw + 8,
     "accum_rows_fsm_transition": lambda tw, rw: 1,
+    # The bookkeeping entry that makes the sum work out.  It is not a fifth
+    # mechanism -- it is the -3 the measurement says the three lines above
+    # collectively overstate by.  Naming it is better than silently shaving 3
+    # off whichever of them looked least defended.
+    "unattributed_correction": lambda tw, rw: -3,
 }
+
+# The window statistics also cost three cycles per OUTPUT ROW, measured in the
+# same comparison.  They came out of the 5*rw + 99 per-output-row term, whose
+# internal split had no evidence either; 3 of that 99 now has some.
+PER_OUTPUT_ROW_STATISTICS = 3
 
 
 def b0b_count_pass_iterations(pw: int, ph: int, tw: int, th: int) -> int:
@@ -433,23 +607,29 @@ def b0b_count_pass_iterations(pw: int, ph: int, tw: int, th: int) -> int:
 
 def cycles_b0b(pw: int, ph: int, tw: int, th: int,
                scheduled_cycles_per_iteration: int) -> int:
-    """B2 with the repeated window statistics replaced by one hoisted pass.
+    """WITHDRAWN.  Use cycles(..., "B0b"), which is measured.
 
-    `scheduled_cycles_per_iteration` is the ACHIEVED INITIATION INTERVAL of the
-    count pass -- throughput, not operator latency.  IT IS PROJECTED, NOT
-    MEASURED: pipeline setup/drain and FSM overhead are not modelled and stay
-    unmodelled until synthesis reports the real II.  Priority 6 shadow mode is
-    what supplies the true value; 1 and 3 bracket the plausible range and are
-    frozen as endpoints, not as a prediction of which one obtains.
+    This priced B0b as `B2 - rh*th*(tw+rw+21) + N*I` for a projected N.  Both
+    of those inputs turned out to be wrong, in opposite directions:
+
+      * N really is 1 -- csynth puts the hoisted pass's two loops at II=1,
+        with the same iteration latencies as the loops they replace -- but the
+        pass carries +30 per scan and +5 per invocation that this expression
+        does not model, so N*I understates it by 25% on the cosim suite;
+      * `tw + rw + 21` understates the removal.  The measurement is
+        `rh*th*(tw + rw + 24) + 3*rh`.
+
+    Net, the endpoints this produced (17.743730541333 and 18.035794052889)
+    BRACKETED NOTHING: the measured figure is 17.726036, below both.  Keeping
+    the function callable would let a caller reproduce a withdrawn number.
     """
-    rw, rh = pw - tw + 1, ph - th + 1
-    if rw < 1 or rh < 1:
-        return 0
-    old_stats = rh * th * (tw + rw + 21)
-    return (cycles(pw, ph, tw, th, "B2")
-            - old_stats
-            + scheduled_cycles_per_iteration
-            * b0b_count_pass_iterations(pw, ph, tw, th))
+    raise ValueError(
+        "cycles_b0b() is withdrawn: its projected II and its projected "
+        "window-statistics attribution were both wrong, and the endpoints it "
+        "produced (17.743730541333 / 18.035794052889) do not contain the "
+        "measured 17.726035892444.  Call cycles(pw, ph, tw, th, 'B0b'), which "
+        "is the paired-cosim-measured term.  The iteration count itself is "
+        "unchanged and still lives in b0b_count_pass_iterations().")
 
 
 # ---------------------------------------------------------------------------
@@ -1003,6 +1183,69 @@ FROZEN = {
         "routed_luts": 20694,
         "routed_ffs": 24409,
     },
+    # B0b, frozen EXACTLY, on B1's and B2's argument: the aggregate is an
+    # integer and is asserted with ==, because TOL = 5e-4 on a 36-page average
+    # spans +/- 2,250,000 cycles.
+    #
+    # BOTH of its terms are measured, by paired RTL co-simulation over the same
+    # fourteen invocations (sw/tme_b0b_ab.py, 2026-08-20).  Three solutions
+    # were built, not two, because B0b is two changes: `shadow` adds the
+    # hoisted pass without removing anything, so shadow - b2ctl prices the
+    # addition and b0b - shadow prices the removal.
+    "b0b": {
+        "aggregate_cycles": 79767161516,        # exact, asserted with ==
+        "s_per_page": 17.726035892444,          # derived from the integer
+        # The hoisted pass, measured: S*(pw + k) + m with S = th + 2*(rh - 1).
+        # S*pw is the derived iteration count; k and m are the overhead the
+        # withdrawn endpoints assumed away.
+        "pass_k_per_scan": 30,
+        "pass_m_per_call": 5,
+        # The removal, measured: rh*th*(tw + rw + W) + c*rh.  The model
+        # attributed W = 21 and c = 0.
+        "removal_W": 24,
+        "removal_c_per_output_row": 3,
+        # Both withdrawn endpoints, kept so the assertion can prove the
+        # measurement is OUTSIDE the interval they defined rather than inside
+        # it.  A range check would have passed a wrong answer; this one fails
+        # if anyone ever re-derives the range and calls it confirmed.
+        "withdrawn_at_1_cyc": 17.743730541333,
+        "withdrawn_at_3_cyc": 18.035794052889,
+        "withdrawn_base": 17.597699,
+        # The saving over B2 at the largest Phase-S trial, 311x159 / 216x96.
+        "phase_s_max_cycles": 14950652,
+        "phase_s_max_delta_cycles": -1988869,   # against B2
+        # B0b is a REGRESSION at rh == 1, by exactly 5*th + 2 cycles: with one
+        # output row there is nothing to reuse vertically, and the hoisted pass
+        # still pays its per-scan overhead.  Derived, and confirmed on the
+        # 4x4/4x4 direct transaction (th = 4 -> +22).
+        "rh1_regression_cycles": "5*th + 2",
+        # ROUTED 2026-08-20, AND IT DOES NOT CLOSE.  Same default Vivado flow
+        # that gave B1 +0.134571 ns and B2 +0.011710 ns at the same 8.000 ns
+        # constraint -- no strategy or directive override in any of the three,
+        # which is what makes them comparable.
+        #
+        # The binding path is a `seg` register feeding the MAC's DSP input
+        # INSIDE correlation_core -- structurally the path B2 bound on, and a
+        # file B0b does not edit.  B2's evidence named this risk in advance:
+        # B0b inherits 12 ps on a path it does not touch, and disturbing
+        # placement around it is a plausible way to lose it.  It lost it.
+        #
+        # CONSEQUENCE FOR EVERY B0b FIGURE HERE: the s/page is a conversion at
+        # 125 MHz, and this core has no routed build at 125 MHz.  The CYCLE
+        # term is unaffected -- it is a zero-stall RTL schedule and does not
+        # depend on the clock -- but "B0b at 125 MHz" is not supported.
+        #
+        # NOT ESTABLISHED: that B0b cannot close 8 ns.  One run, default
+        # effort, no directive or seed sweep and no post-route phys_opt.
+        "routed_period_ns": 8.000,
+        "routed_wns_ns": -0.051470,
+        "routed_tns_ns": -0.051470,
+        "routed_closes": False,
+        "routed_luts": 21176,
+        "routed_ffs": 24887,
+        "routed_bram": 115,
+        "routed_dsp": 34,
+    },
     "s_per_page_at_125mhz": {
         "pl_full_context": 631.930606,    # today's PL, side-common full context
         "shared_roi_int_quirk": 60.764,   # historical, int() truncation
@@ -1018,21 +1261,22 @@ FROZEN = {
         # freeze is the exact integer aggregate in FROZEN["b2"] above.  20.175
         # was the projection this replaced; see that block.
         "B2": 20.405,
-        # Endpoints, not a range: 17.652 used to sit inside [17.514, 17.806]
-        # and pass, which let the discarded attribution survive.  Each endpoint
-        # is now checked on its own.
+        # MEASURED, 2026-08-20.  Both of B0b's terms come from paired RTL
+        # co-simulation now; nothing about it is projected.  The BINDING freeze
+        # is the exact integer aggregate in FROZEN["b0b"] above.
         #
-        # THESE MOVED WHEN B2 WAS MEASURED, and they had to.  B0b is DEFINED as
-        # B2 minus the window statistics plus the count pass, so B2's projected
-        # tile term was load-bearing for both endpoints.  The 17.513998 /
-        # 17.806062 pair is WITHDRAWN -- not because the count-pass arithmetic
-        # changed (it did not; FROZEN["b0b_count_pass"] is untouched) but
-        # because its base did.  What is still projected here is the count
-        # pass's II, exactly as before; what is no longer projected is
-        # everything underneath it.
-        "B0b_base": 17.597699,
-        "B0b_at_1_cyc": 17.743730541333,
-        "B0b_at_3_cyc": 18.035794052889,
+        # WHAT THIS REPLACED.  The endpoints 17.743730541333 (II=1) and
+        # 18.035794052889 (II=3), and the 17.597699 base under them, are
+        # WITHDRAWN.  They were published as a bracket, and 17.726036 is below
+        # both of them -- so the bracket did not contain the answer.  Two
+        # projected inputs, wrong in opposite directions:
+        #   * the hoisted pass costs 25% MORE than the II=1 endpoint assumed
+        #     (the II really is 1; the miss is per-scan overhead), and
+        #   * the removal is worth MORE than the model attributed, which
+        #     dominates.
+        # The second is a finding about the old four-way split of the fitted
+        # per-row term, not about B0b.  See PER_ROW_TERMS.
+        "B0b": 17.726,
     },
 }
 TOL = 5e-4
@@ -1068,11 +1312,7 @@ def evaluate():
             "per_trial_roi": s_page("per_trial", "cur"),
             "B1": s_page("per_trial", "B1"),
             "B2": s_page("per_trial", "B2"),
-            "B0b_base": s_page("per_trial", "B0b_base"),
-            "B0b_at_1_cyc": page_cycles_expr(
-                lambda pw, ph, tw, th: cycles_b0b(pw, ph, tw, th, 1)),
-            "B0b_at_3_cyc": page_cycles_expr(
-                lambda pw, ph, tw, th: cycles_b0b(pw, ph, tw, th, 3)),
+            "B0b": s_page("per_trial", "B0b"),
         },
     }
 
@@ -1185,6 +1425,96 @@ def parse_board_cases(text):
                                  int(m.group(5)), int(m.group(6))),
                                 float(m.group(7)))
     return rows
+
+
+def b0b_evidence_crosscheck():
+    """Re-read the B0b routed report, if present.
+
+    B0b's routed run VIOLATED its constraint, so this checks the opposite of
+    what B1's and B2's crosschecks check.  That asymmetry is deliberate: a
+    negative result is exactly the kind that decays into "we routed it" if
+    nothing re-reads the report, and the failure is the load-bearing fact --
+    every B0b s/page here is a conversion at a clock this core has no closing
+    build for.
+
+    Returns (failures, checked_count).  An absent report yields ([], 0) --
+    never a pass.
+    """
+    root = Path(__file__).resolve().parents[2]
+    if not (root / "logs").is_dir():          # clean checkout: sw/ is a sibling
+        root = Path(__file__).resolve().parents[1]
+    routed = root / "logs" / "b0b_20260820" / "b0b_post_route_wns.txt"
+    util = root / "logs" / "b0b_20260820" / "b0b_post_route_utilization.rpt"
+    if not routed.exists():
+        return [], 0
+
+    fail, checked = [], 0
+    f = FROZEN["b0b"]
+    txt = routed.read_text(errors="replace")
+
+    for label, key, pat, tol in (
+            ("period", "routed_period_ns",
+             r"constrained period\s*:\s*([0-9.]+)\s*ns", 1e-9),
+            ("WNS", "routed_wns_ns",
+             r"post-route WNS\s*:\s*([0-9.+-]+)\s*ns", 5e-7),
+            ("TNS", "routed_tns_ns",
+             r"post-route TNS\s*:\s*([0-9.+-]+)\s*ns", 5e-7)):
+        m = re.search(pat, txt)
+        if not m:
+            fail.append("B0b routed report: no {} line".format(label))
+            continue
+        checked += 1
+        if abs(float(m.group(1)) - f[key]) > tol:
+            fail.append("B0b routed {}: report says {}, frozen {}".format(
+                label, m.group(1), f[key]))
+
+    # THE VERDICT, read from the `verdict :` LINE rather than by searching the
+    # whole file.  These reports carry a long explanatory tail that quotes the
+    # extractor's "all constraints met" for comparison, so a substring search
+    # over the body finds that phrase in a report whose own verdict is the
+    # opposite.  That is not a hypothetical: it is what the first version of
+    # this check did, and it failed on the very report it was written for.
+    checked += 1
+    m = re.search(r"^\s*verdict\s*:\s*(.+?)\s*$", txt, re.M)
+    if not m:
+        fail.append("B0b routed report: no verdict line")
+    elif m.group(1) != "CONSTRAINTS VIOLATED":
+        fail.append("B0b routed verdict is '{}', frozen as violating -- if this "
+                    "build now closes, FROZEN['b0b']['routed_closes'] and every "
+                    "caveat attached to it are stale".format(m.group(1)))
+    checked += 1
+    if f["routed_closes"] is not False:
+        fail.append("FROZEN['b0b']['routed_closes'] is not False")
+
+    # The binding path is INSIDE correlation_core, which B0b does not edit.
+    # That is what makes this a placement-sensitivity result rather than a
+    # consequence of the source change, so the report settles it rather than
+    # the prose.
+    checked += 1
+    m = re.search(r"binding path.*?\n\s*from:\s*(\S+)", txt, re.S)
+    if not m:
+        fail.append("B0b routed report: no binding path")
+    elif "correlation_core" not in m.group(1):
+        fail.append("B0b binding path is not inside correlation_core: "
+                    + m.group(1))
+
+    if util.exists():
+        u = util.read_text(errors="replace")
+        for label, key, pat in (
+                ("LUT", "routed_luts", r"\|\s*Slice LUTs\s*\|\s*(\d+)"),
+                ("FF", "routed_ffs", r"\|\s*Slice Registers\s*\|\s*(\d+)"),
+                ("BRAM", "routed_bram", r"\|\s*Block RAM Tile\s*\|\s*(\d+)"),
+                ("DSP", "routed_dsp", r"\|\s*DSPs\s*\|\s*(\d+)")):
+            m = re.search(pat, u)
+            if not m:
+                fail.append("B0b utilisation: no {} row".format(label))
+                continue
+            checked += 1
+            if int(m.group(1)) != f[key]:
+                fail.append("B0b routed {}: report says {}, frozen {}".format(
+                    label, m.group(1), f[key]))
+
+    return fail, checked
 
 
 def b2_evidence_crosscheck():
@@ -1636,7 +1966,9 @@ def check(results):
     fail.extend(b1_fail)
     b2_fail, b2_n = b2_evidence_crosscheck()
     fail.extend(b2_fail)
-    results["crosschecks_run"] = log_n + rpt_n + b1_n + b2_n
+    b0b_fail, b0b_n = b0b_evidence_crosscheck()
+    fail.extend(b0b_fail)
+    results["crosschecks_run"] = log_n + rpt_n + b1_n + b2_n + b0b_n
     # Name the sources that were NOT available.  A smaller count is easy to
     # miss; "board transcripts: absent" is not.  Neither is a failure -- the
     # frozen literals still stand alone -- but a clone that checked two values
@@ -1650,6 +1982,12 @@ def check(results):
         # rather than one, reaching T = 52 instead of only T = 6.
         "B2 routed + board, 2 suites (logs/b2_*/)":
             "read" if b2_n else "absent",
+        # B0b has a routed report and NO board transcript, and its routed run
+        # VIOLATED the constraint.  The crosscheck re-reads the failure for the
+        # same reason the others re-read a pass: a negative result that nobody
+        # re-reads is the kind that decays into "we routed it".
+        "B0b routed, DOES NOT CLOSE (logs/b0b_20260820/)":
+            "read" if b0b_n else "absent",
     }
 
     scales, templates, _ = discover_workload()
@@ -1796,16 +2134,75 @@ def check(results):
         if abs(got - want) > TOL:
             fail.append("{}: {:.4f} s/page != frozen {}".format(key, got, want))
 
-    # B0b: assert the derived base and BOTH endpoints individually.  A range
-    # check is what previously let a wrong implementation pass.  The endpoints
-    # are now derived end-to-end, so the tolerance is tight.
-    for key, tol in (("B0b_base", 2e-6), ("B0b_at_1_cyc", 1e-9), ("B0b_at_3_cyc", 1e-9)):
-        got, want = results["s_page"][key], FROZEN["s_per_page_at_125mhz"][key]
-        if abs(got - want) > tol:
-            fail.append("{}: {:.12f} s/page != frozen {}".format(key, got, want))
+    # B0b: the EXACT integer aggregate first, floats derived from it.  Same
+    # rule as B1's and B2's -- TOL on a 36-page average spans 2.25 million
+    # cycles, more than several of the terms this file records.
+    b0b = FROZEN["b0b"]
+    agg = page_cycles(templates, scales, "per_trial", "B0b")
+    if agg != b0b["aggregate_cycles"]:
+        fail.append("B0b aggregate: {} cycles != frozen {}".format(
+            agg, b0b["aggregate_cycles"]))
+    derived = agg / PAGES / TARGET_CLOCK_HZ
+    if abs(derived - b0b["s_per_page"]) > 1e-9:
+        fail.append("B0b s/page: {:.12f} != frozen {}".format(
+            derived, b0b["s_per_page"]))
+    if abs(results["s_page"]["B0b"]
+           - FROZEN["s_per_page_at_125mhz"]["B0b"]) > TOL:
+        fail.append("B0b: {:.4f} s/page != frozen {}".format(
+            results["s_page"]["B0b"], FROZEN["s_per_page_at_125mhz"]["B0b"]))
 
-    # The four per-row sub-terms must account for the whole fitted term, with
-    # nothing left over.  "Unattributed remainder" was a real gap and is closed.
+    # THE WITHDRAWN ENDPOINTS DID NOT BRACKET THE ANSWER, and that is asserted
+    # rather than merely written down.  A future revision that "restores the
+    # range" would be reintroducing exactly the failure mode this file already
+    # records once: a range check cannot separate a correct implementation
+    # from a wrong one that lands inside it.  Here the measurement lands
+    # OUTSIDE, below both, so the range was not even conservative.
+    if not (derived < b0b["withdrawn_at_1_cyc"] < b0b["withdrawn_at_3_cyc"]):
+        fail.append("B0b: the measured {:.12f} is no longer below both "
+                    "withdrawn endpoints {} / {} -- if that changed, the "
+                    "narrative in this file is stale".format(
+                        derived, b0b["withdrawn_at_1_cyc"],
+                        b0b["withdrawn_at_3_cyc"]))
+
+    # The measured B0b term, re-derived from its two measured halves rather
+    # than from cycles() -- so this is a second path to the same number, not a
+    # restatement of the first.
+    for pw, ph, tw, th in ((311, 159, 216, 96), (88, 39, 24, 16), (4, 4, 4, 4)):
+        rw, rh = pw - tw + 1, ph - th + 1
+        S = th + 2 * (rh - 1)
+        want = (cycles(pw, ph, tw, th, "B2")
+                - (rh * th * (tw + rw + b0b["removal_W"])
+                   + b0b["removal_c_per_output_row"] * rh)
+                + S * (pw + b0b["pass_k_per_scan"]) + b0b["pass_m_per_call"])
+        got = cycles(pw, ph, tw, th, "B0b")
+        if got != want:
+            fail.append("B0b term at {}: cycles()={} != halves={}".format(
+                (pw, ph, tw, th), got, want))
+    if cycles(*PHASE_S_GEOMETRY, "B0b") != b0b["phase_s_max_cycles"]:
+        fail.append("B0b phase-s max: {} != frozen {}".format(
+            cycles(*PHASE_S_GEOMETRY, "B0b"), b0b["phase_s_max_cycles"]))
+    if (cycles(*PHASE_S_GEOMETRY, "B0b") - cycles(*PHASE_S_GEOMETRY, "B2")
+            != b0b["phase_s_max_delta_cycles"]):
+        fail.append("B0b phase-s max delta != frozen "
+                    + str(b0b["phase_s_max_delta_cycles"]))
+
+    # B0b LOSES at rh == 1, by exactly 5*th + 2.  Derived, and asserted rather
+    # than described: a single output row has nothing to reuse vertically, and
+    # the hoisted pass still pays its per-scan overhead.  Anyone quoting B0b as
+    # a uniform improvement is wrong, and this is where that gets caught.
+    for tw, th in ((4, 4), (216, 96), (16, 12)):
+        pw, ph = tw + 7, th          # rh == 1 by construction
+        d = cycles(pw, ph, tw, th, "B0b") - cycles(pw, ph, tw, th, "B2")
+        if d != 5 * th + 2:
+            fail.append("B0b at rh=1, tw={} th={}: delta {} != 5*th+2 = {}"
+                        .format(tw, th, d, 5 * th + 2))
+
+    # The per-row sub-terms must still account for the whole fitted term.  What
+    # is NO LONGER asserted is that the non-statistics part is 2*tw + 2*rw + 12
+    # -- the measurement says it is 2*tw + 2*rw + 9, and WHICH of the three
+    # unmeasured shares was over-attributed is not established.  The dictionary
+    # carries an explicit `unattributed_correction` of -3 so the sum still
+    # closes without pretending the -3 has been localised.
     for tw, rw in ((216, 96), (4, 1), (109, 512), (16, 49)):
         parts = {k: f(tw, rw) for k, f in PER_ROW_TERMS.items()}
         if sum(parts.values()) != 3 * tw + 3 * rw + 33:
@@ -1813,9 +2210,13 @@ def check(results):
                         "3*tw+3*rw+33 = {}".format(
                             tw, rw, sum(parts.values()), 3 * tw + 3 * rw + 33))
         survives = sum(v for k, v in parts.items() if k != "window_statistics")
-        if survives != 2 * tw + 2 * rw + 12:
-            fail.append("post-B0b survivor at tw={} rw={}: {} != 2*tw+2*rw+12 = "
-                        "{}".format(tw, rw, survives, 2 * tw + 2 * rw + 12))
+        if survives != 2 * tw + 2 * rw + 9:
+            fail.append("post-B0b survivor at tw={} rw={}: {} != 2*tw+2*rw+9 = "
+                        "{} (this is MEASURED now, not attributed)".format(
+                            tw, rw, survives, 2 * tw + 2 * rw + 9))
+        if parts["window_statistics"] != tw + rw + FROZEN["b0b"]["removal_W"]:
+            fail.append("window_statistics at tw={} rw={} is not the measured "
+                        "tw+rw+{}".format(tw, rw, FROZEN["b0b"]["removal_W"]))
 
     # The count pass itself: both algebraic forms, the maximum Phase-S trial,
     # and the corpus total.  A change to the iteration shape must show up here
@@ -1843,15 +2244,24 @@ def check(results):
             fail.append("count pass @ {} cyc: {:.12f} s/page != frozen {}".format(
                 n, got, cp[key]))
 
-    # The decomposition itself: B2 - window statistics must equal the B0b base.
+    # The decomposition, priced over the whole corpus and re-derived from the
+    # MEASURED halves.  Each half is a separate page_cycles_expr, so the three
+    # numbers are computed independently and their identity is a check rather
+    # than a restatement.
     stats = page_cycles_expr(lambda pw, ph, tw, th: (
-        (ph - th + 1) * th * (tw + (pw - tw + 1) + 21)
+        (ph - th + 1) * th * (tw + (pw - tw + 1) + FROZEN["b0b"]["removal_W"])
+        + FROZEN["b0b"]["removal_c_per_output_row"] * (ph - th + 1)
         if pw - tw + 1 >= 1 and ph - th + 1 >= 1 else 0))
-    lhs = results["s_page"]["B2"] - stats
-    if abs(lhs - results["s_page"]["B0b_base"]) > 1e-9:
-        fail.append("B0b decomposition: B2 - stats = {:.6f} != B0b base {:.6f}".format(
-            lhs, results["s_page"]["B0b_base"]))
+    hoisted = page_cycles_expr(lambda pw, ph, tw, th: (
+        (th + 2 * (ph - th)) * (pw + FROZEN["b0b"]["pass_k_per_scan"])
+        + FROZEN["b0b"]["pass_m_per_call"]
+        if pw - tw + 1 >= 1 and ph - th + 1 >= 1 else 0))
+    lhs = results["s_page"]["B2"] - stats + hoisted
+    if abs(lhs - results["s_page"]["B0b"]) > 1e-9:
+        fail.append("B0b decomposition: B2 - stats + pass = {:.12f} != B0b "
+                    "{:.12f}".format(lhs, results["s_page"]["B0b"]))
     results["b0b_stats_removed"] = stats
+    results["b0b_pass_added"] = hoisted
 
     return fail
 
@@ -1923,7 +2333,13 @@ def main():
     print("-" * 78)
     print("  The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.")
     print("  What is NOT demonstrated is any PAGE, for any variant:")
-    print("  Phase S is a driver change with no RTL; B0b is unimplemented RTL.")
+    print("  Phase S is a driver change with no RTL.")
+    print("  B0b IS implemented: both of its terms cosim-measured against a b2ctl")
+    print("  control and a shadow build, 14/14 exact, correctness checked at")
+    print("  2,911,495 result positions.  BUT ITS ROUTED RUN DOES NOT CLOSE")
+    print("  8.000 ns -- WNS -0.051470 ns at the same default flow that gave B1")
+    print("  +0.135 and B2 +0.012 -- so its 125 MHz column is a conversion at a")
+    print("  clock this core has no closing build for.  Not on silicon.")
     print("  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact,")
     print("  and RUN ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s 7/7 and")
     print("  hw 9/9, reaching T = 52 where the cosim reached only T = 6.")
@@ -1940,9 +2356,7 @@ def main():
         ("per_trial_roi", "Phase S, per-trial ROI", "no RTL; needs driver change"),
         ("B1", "  + B1 runtime segment width", "cosim-validated TERM; page projected"),
         ("B2", "  + B2 overlap reuse", "cosim+board TERM to T=52; page projected"),
-        ("B0b_base", "  + B0b, stats term deleted", "deletion only, no count pass"),
-        ("B0b_at_1_cyc", "  + B0b count pass @ II=1", "iterations derived; II projected"),
-        ("B0b_at_3_cyc", "  + B0b count pass @ II=3", "iterations derived; II projected"),
+        ("B0b", "  + B0b hoisted window statistics", "cosim-measured TERM; DOES NOT CLOSE 8 ns"),
     ]
     for key, name, note in labels:
         v = r["s_page"][key]
@@ -1978,7 +2392,8 @@ def main():
               "clock linearity, workload, Phase S, ROI variants, "
               "B1 EXACT aggregate + phase-s-max delta, "
               "B2 EXACT aggregate + routed WNS, "
-              "B0b decomposition + both endpoints".format(
+              "B0b EXACT aggregate + both measured halves + the rh=1 "
+              "regression + the withdrawn endpoints not bracketing it".format(
                   len(COSIM_TRANSACTIONS), len(BOARD_MEASUREMENTS),
                   len({hz for _, _, hz, _, _ in BOARD_MEASUREMENTS})))
         srcs = r.get("crosscheck_sources", {})

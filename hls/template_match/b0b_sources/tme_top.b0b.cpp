@@ -81,48 +81,12 @@
 //     I = pw * [th + 2*(rh - 1)]  ==  pw * (2*ph - th)
 //
 // iterations, which is what sw/tme_cycle_model.py's
-// b0b_count_pass_iterations derives.
-//
-// WHAT IT COSTS, MEASURED.  Paired RTL co-simulation of THREE solutions over
-// the same fourteen invocations and the same pinned vectors -- a `b2ctl`
-// control byte-identical to B2's build inputs, a `shadow` that adds this pass
-// without removing anything, and this file (sw/tme_b0b_ab.py, 2026-08-20):
-//
-//     pass    = S * (pw + 30) + 5           S = th + 2*(rh - 1)
-//     removal = rh*th*(tw + rw + 24) + 3*rh
-//
-// each exact on 14/14, with the control reproducing B2's published term on all
-// 14 in the same comparison.  Three solutions rather than two because B0b is
-// TWO changes: adding a pass and deleting the loops it replaces would be one
-// indivisible difference against a single control, and csynth confirms the
-// split is clean -- every pipelined leaf loop the solutions share, norm_cols
-// included, has the same II and the same iteration latency in all three.
-//
-// BOTH PROJECTIONS WERE WRONG, AND ONLY ONE OF THEM WAS ABOUT THIS FILE.
-// The model bracketed the pass at N*I for N in [1, 3].  csynth says the II
-// really IS 1 -- scan_init and scan_slide come out at II=1 with iteration
-// latencies 7 and 14, IDENTICAL to the isq_init and isq_slide they replace,
-// which is exactly what keeping the loop shape was for.  The whole 25% miss
-// is the +30 per scan and +5 per call that were not modelled at all.
-//
-// The removal was PRE-REGISTERED as rh*th*(tw + rw + 21) with nothing per
-// output row, straight from the model's four-way split of the fitted per-row
-// cost.  THAT IS REFUTED.  Only the SUM of that split ever had evidence; this
-// is the first of its four terms to be measured, and the other three sum to
-// 2*tw + 2*rw + 9 rather than + 12 -- with WHICH of them over-attributed NOT
-// established.  Note tw + rw = pw + 1, so the measured cost is
-// rh*th*(pw + 25) + 3*rh: it depends on the PATCH WIDTH alone, which is what
-// the deleted loops actually scan.  See tme_cycle_model.PER_ROW_TERMS.
-//
-// Net 17.726036 s/page over the modelled workload, which is BELOW BOTH
-// withdrawn endpoints (17.743731 and 18.035794) -- the two errors point in
-// opposite directions and the removal wins.  That is not a page time: it sums
-// a per-trial term over 20,680 modelled trials.
-//
-// B0b IS NOT A UNIFORM IMPROVEMENT.  At rh == 1 it LOSES, by exactly 5*th + 2
-// cycles: one output row has nothing to reuse vertically and the pass still
-// pays its per-scan overhead.  Derived, asserted in the model, and visible on
-// the 4x4/4x4 direct transaction as +22.
+// b0b_count_pass_iterations derives.  What that model did NOT know is the
+// achieved initiation interval or the per-scan overhead; it bracketed the II
+// at [1, 3] and said so.  The MEASURED cost is recorded in the model and
+// adjudicated by sw/tme_b0b_ab.py against the `b2ctl` and `shadow` reports
+// over the same fourteen invocations.  Read the measured term there, not a
+// projection here.
 //
 // WHY THE SUBTRACT AND ADD ARE SEPARATE SCANS.  Fusing them into one loop
 // over u would cost pw*ph iterations instead of pw*(2*ph - th) — fewer.  But

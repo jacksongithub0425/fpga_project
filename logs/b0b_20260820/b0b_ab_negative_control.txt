@@ -1,0 +1,8 @@
+NEGATIVE CONTROL - perturb the declared model by +7 cycles per
+(output row, template row) and confirm check 5 fails while checks 2
+and 3 still pass.
+------------------------------------------------------------------------------
+  check 2 with the perturbation in place: 14/14 still pass
+  check 3 with the perturbation in place: 14/14 still pass
+  check 5 with the perturbation in place: 0/14 pass
+  INDEPENDENT

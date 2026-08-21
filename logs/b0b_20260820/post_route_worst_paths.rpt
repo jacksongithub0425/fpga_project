@@ -1,0 +1,1138 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Thu Aug 20 19:02:05 2026
+| Host         : DESKTOP-KG9P5J1 running 64-bit major release  (build 9200)
+| Command      : report_timing -delay_type max -sort_by slack -max_paths 20 -nworst 1 -file C:/Users/lychee/tc25/vivado_project/tme_b0b_125/overlay_output/post_route_worst_paths.rpt
+| Design       : tme_bd_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (VIOLATED) :        -0.051ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_965_reg_7002_reg[6]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_48_fu_1424_reg[23]_psdsp_1/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.622ns  (logic 1.592ns (20.888%)  route 6.030ns (79.112%))
+  Logic Levels:           5  (LUT3=1 LUT6=3 MUXF7=1)
+  Clock Path Skew:        -0.072ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.741ns = ( 10.741 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.942ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.648     2.942    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X46Y25         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_965_reg_7002_reg[6]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X46Y25         FDRE (Prop_fdre_C_Q)         0.478     3.420 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_965_reg_7002_reg[6]/Q
+                         net (fo=5, routed)           1.403     4.823    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_89__0_1[6]
+    SLICE_X50Y34         LUT6 (Prop_lut6_I3_O)        0.296     5.119 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_817/O
+                         net (fo=2, routed)           1.174     6.293    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/seg_967_reg_6982_reg[6]
+    SLICE_X60Y37         LUT3 (Prop_lut3_I2_O)        0.150     6.443 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_351/O
+                         net (fo=2, routed)           1.005     7.448    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/x_2_reg_21480_reg[2]_rep__6_3
+    SLICE_X65Y45         LUT6 (Prop_lut6_I5_O)        0.332     7.780 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_33__2/O
+                         net (fo=1, routed)           1.077     8.856    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_33__2_n_2
+    SLICE_X85Y45         LUT6 (Prop_lut6_I1_O)        0.124     8.980 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_11__6/O
+                         net (fo=1, routed)           0.000     8.980    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_11__6_n_2
+    SLICE_X85Y45         MUXF7 (Prop_muxf7_I0_O)      0.212     9.192 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1473/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_2__10/O
+                         net (fo=1, routed)           1.371    10.564    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/p_reg_reg_i_2__10_n_2_alias
+    SLICE_X85Y45         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_48_fu_1424_reg[23]_psdsp_1/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.562    10.741    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X85Y45         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_48_fu_1424_reg[23]_psdsp_1/C
+                         clock pessimism              0.129    10.870    
+                         clock uncertainty           -0.125    10.745    
+    SLICE_X85Y45         FDRE (Setup_fdre_C_D)       -0.233    10.512    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_48_fu_1424_reg[23]_psdsp_1
+  -------------------------------------------------------------------
+                         required time                         10.512    
+                         arrival time                         -10.564    
+  -------------------------------------------------------------------
+                         slack                                 -0.051    
+
+Slack (MET) :             0.012ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_51_fu_1436_reg[23]_psdsp/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.607ns  (logic 1.226ns (16.118%)  route 6.381ns (83.882%))
+  Logic Levels:           5  (LUT3=1 LUT6=3 MUXF7=1)
+  Clock Path Skew:        0.000ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.791ns = ( 10.792 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.021ns
+    Clock Pessimism Removal (CPR):    0.230ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.727     3.021    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X66Y35         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X66Y35         FDRE (Prop_fdre_C_Q)         0.518     3.539 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[1]/Q
+                         net (fo=240, routed)         1.728     5.267    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1480/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_81__8_0
+    SLICE_X55Y49         LUT6 (Prop_lut6_I2_O)        0.124     5.391 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1480/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_246__3/O
+                         net (fo=2, routed)           1.317     6.708    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_25__8_0
+    SLICE_X70Y46         LUT3 (Prop_lut3_I0_O)        0.124     6.832 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_83__7/O
+                         net (fo=2, routed)           1.190     8.022    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/x_2_reg_21480_reg[2]_rep__2_8
+    SLICE_X88Y46         LUT6 (Prop_lut6_I3_O)        0.124     8.146 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_25__12/O
+                         net (fo=1, routed)           1.312     9.458    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_25__12_n_2
+    SLICE_X93Y31         LUT6 (Prop_lut6_I0_O)        0.124     9.582 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_9__12/O
+                         net (fo=1, routed)           0.000     9.582    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_9__12_n_2
+    SLICE_X93Y31         MUXF7 (Prop_muxf7_I0_O)      0.212     9.794 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_1__4/O
+                         net (fo=1, routed)           0.834    10.628    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/p_reg_reg_i_1__4_n_2_alias
+    SLICE_X93Y31         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_51_fu_1436_reg[23]_psdsp/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.612    10.792    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X93Y31         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_51_fu_1436_reg[23]_psdsp/C
+                         clock pessimism              0.230    11.021    
+                         clock uncertainty           -0.125    10.896    
+    SLICE_X93Y31         FDRE (Setup_fdre_C_D)       -0.256    10.640    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_51_fu_1436_reg[23]_psdsp
+  -------------------------------------------------------------------
+                         required time                         10.640    
+                         arrival time                         -10.628    
+  -------------------------------------------------------------------
+                         slack                                  0.012    
+
+Slack (MET) :             0.050ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_templ_VITIS_LOOP_290_2_fu_1311/mac_muladd_15s_8ns_15s_15_4_1_U28/tme_top_mac_muladd_15s_8ns_15s_15_4_1_DSP48_0_U/p_reg_reg/CLK
+                            (rising edge-triggered cell DSP48E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7/ADDRARDADDR[8]
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.100ns  (logic 0.434ns (6.113%)  route 6.666ns (93.887%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.160ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.849ns = ( 10.849 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.138ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.844     3.138    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_templ_VITIS_LOOP_290_2_fu_1311/mac_muladd_15s_8ns_15s_15_4_1_U28/tme_top_mac_muladd_15s_8ns_15s_15_4_1_DSP48_0_U/ap_clk
+    DSP48_X0Y4           DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_templ_VITIS_LOOP_290_2_fu_1311/mac_muladd_15s_8ns_15s_15_4_1_U28/tme_top_mac_muladd_15s_8ns_15s_15_4_1_DSP48_0_U/p_reg_reg/CLK
+  -------------------------------------------------------------------    -------------------
+    DSP48_X0Y4           DSP48E1 (Prop_dsp48e1_CLK_P[8])
+                                                      0.434     3.572 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_templ_VITIS_LOOP_290_2_fu_1311/mac_muladd_15s_8ns_15s_15_4_1_U28/tme_top_mac_muladd_15s_8ns_15s_15_4_1_DSP48_0_U/p_reg_reg/P[8]
+                         net (fo=8, routed)           6.666    10.237    tme_bd_i/tme_top_0/inst/templ_buf_U/P[8]
+    RAMB36_X5Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7/ADDRARDADDR[8]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.670    10.849    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X5Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7/CLKARDCLK
+                         clock pessimism              0.129    10.978    
+                         clock uncertainty           -0.125    10.853    
+    RAMB36_X5Y9          RAMB36E1 (Setup_ramb36e1_CLKARDCLK_ADDRARDADDR[8])
+                                                     -0.566    10.287    tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7
+  -------------------------------------------------------------------
+                         required time                         10.287    
+                         arrival time                         -10.237    
+  -------------------------------------------------------------------
+                         slack                                  0.050    
+
+Slack (MET) :             0.066ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_459_fu_2434_reg[7]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.829ns  (logic 0.580ns (7.408%)  route 7.249ns (92.592%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.012ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.804ns = ( 10.804 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.249    10.636    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X103Y3         LUT6 (Prop_lut6_I4_O)        0.124    10.760 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_459_fu_2434[7]_i_2/O
+                         net (fo=1, routed)           0.000    10.760    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1715
+    SLICE_X103Y3         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_459_fu_2434_reg[7]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.625    10.804    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X103Y3         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_459_fu_2434_reg[7]/C
+                         clock pessimism              0.115    10.919    
+                         clock uncertainty           -0.125    10.794    
+    SLICE_X103Y3         FDRE (Setup_fdre_C_D)        0.032    10.826    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_459_fu_2434_reg[7]
+  -------------------------------------------------------------------
+                         required time                         10.826    
+                         arrival time                         -10.760    
+  -------------------------------------------------------------------
+                         slack                                  0.066    
+
+Slack (MET) :             0.072ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/B[4]
+                            (rising edge-triggered cell DSP48E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.185ns  (logic 1.688ns (23.494%)  route 5.497ns (76.506%))
+  Logic Levels:           5  (LUT5=1 LUT6=1 MUXF7=2 MUXF8=1)
+  Clock Path Skew:        -0.168ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.738ns = ( 10.738 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.021ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.727     3.021    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X63Y37         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X63Y37         FDRE (Prop_fdre_C_Q)         0.456     3.477 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/Q
+                         net (fo=129, routed)         1.624     5.101    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_0[2]
+    SLICE_X81Y50         MUXF7 (Prop_muxf7_S_O)       0.296     5.397 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_612__2/O
+                         net (fo=1, routed)           0.000     5.397    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_612__2_n_2
+    SLICE_X81Y50         MUXF8 (Prop_muxf8_I0_O)      0.104     5.501 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_248__6/O
+                         net (fo=1, routed)           1.512     7.013    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_248__6_n_2
+    SLICE_X63Y47         LUT6 (Prop_lut6_I0_O)        0.316     7.329 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_87__14/O
+                         net (fo=1, routed)           0.000     7.329    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_87__14_n_2
+    SLICE_X63Y47         MUXF7 (Prop_muxf7_I1_O)      0.217     7.546 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_30__14/O
+                         net (fo=1, routed)           0.742     8.288    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_30__14_n_2
+    SLICE_X65Y49         LUT5 (Prop_lut5_I4_O)        0.299     8.587 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_4__14/O
+                         net (fo=16, routed)          1.618    10.206    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/B[4]
+    DSP48_X2Y27          DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/B[4]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.559    10.738    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/ap_clk
+    DSP48_X2Y27          DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/CLK
+                         clock pessimism              0.115    10.853    
+                         clock uncertainty           -0.125    10.728    
+    DSP48_X2Y27          DSP48E1 (Setup_dsp48e1_CLK_B[4])
+                                                     -0.450    10.278    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg
+  -------------------------------------------------------------------
+                         required time                         10.278    
+                         arrival time                         -10.206    
+  -------------------------------------------------------------------
+                         slack                                  0.072    
+
+Slack (MET) :             0.092ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_92_fu_1404_reg[7]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.536ns  (logic 2.454ns (32.566%)  route 5.082ns (67.434%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.185ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.724ns = ( 10.724 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.139ns
+    Clock Pessimism Removal (CPR):    0.230ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.845     3.139    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X5Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X5Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.593 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_7/DOBDO[0]
+                         net (fo=216, routed)         5.082    10.675    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/q0[7]
+    SLICE_X63Y29         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_92_fu_1404_reg[7]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.545    10.724    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/ap_clk
+    SLICE_X63Y29         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_92_fu_1404_reg[7]/C
+                         clock pessimism              0.230    10.954    
+                         clock uncertainty           -0.125    10.829    
+    SLICE_X63Y29         FDRE (Setup_fdre_C_D)       -0.062    10.767    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_92_fu_1404_reg[7]
+  -------------------------------------------------------------------
+                         required time                         10.767    
+                         arrival time                         -10.675    
+  -------------------------------------------------------------------
+                         slack                                  0.092    
+
+Slack (MET) :             0.120ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_991_reg_6742_reg[5]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_49_fu_1428_reg[23]_psdsp_2/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.431ns  (logic 1.164ns (15.664%)  route 6.267ns (84.336%))
+  Logic Levels:           5  (LUT3=1 LUT6=3 MUXF7=1)
+  Clock Path Skew:        -0.091ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.741ns = ( 10.741 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.961ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.667     2.961    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X37Y39         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_991_reg_6742_reg[5]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X37Y39         FDRE (Prop_fdre_C_Q)         0.456     3.417 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_991_reg_6742_reg[5]/Q
+                         net (fo=5, routed)           1.591     5.008    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_94__8_0[5]
+    SLICE_X57Y40         LUT6 (Prop_lut6_I1_O)        0.124     5.132 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_323__0/O
+                         net (fo=2, routed)           1.342     6.474    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/seg_992_reg_6732_reg[5]
+    SLICE_X61Y47         LUT3 (Prop_lut3_I2_O)        0.124     6.598 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_123__5/O
+                         net (fo=2, routed)           0.970     7.568    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1474/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_13__8_2
+    SLICE_X60Y43         LUT6 (Prop_lut6_I0_O)        0.124     7.692 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1474/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_40__13/O
+                         net (fo=1, routed)           1.134     8.826    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1474/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_40__13_n_2
+    SLICE_X78Y43         LUT6 (Prop_lut6_I1_O)        0.124     8.950 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1474/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_13__8/O
+                         net (fo=1, routed)           0.000     8.950    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1474/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_13__8_n_2
+    SLICE_X78Y43         MUXF7 (Prop_muxf7_I0_O)      0.212     9.162 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1474/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_3__3/O
+                         net (fo=1, routed)           1.230    10.392    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/p_reg_reg_i_3__3_n_2_alias
+    SLICE_X80Y43         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_49_fu_1428_reg[23]_psdsp_2/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.562    10.741    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X80Y43         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_49_fu_1428_reg[23]_psdsp_2/C
+                         clock pessimism              0.129    10.870    
+                         clock uncertainty           -0.125    10.745    
+    SLICE_X80Y43         FDRE (Setup_fdre_C_D)       -0.233    10.512    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_49_fu_1428_reg[23]_psdsp_2
+  -------------------------------------------------------------------
+                         required time                         10.512    
+                         arrival time                         -10.392    
+  -------------------------------------------------------------------
+                         slack                                  0.120    
+
+Slack (MET) :             0.136ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/B[5]
+                            (rising edge-triggered cell DSP48E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.121ns  (logic 1.688ns (23.704%)  route 5.433ns (76.296%))
+  Logic Levels:           5  (LUT5=1 LUT6=1 MUXF7=2 MUXF8=1)
+  Clock Path Skew:        -0.168ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.738ns = ( 10.738 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.021ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.727     3.021    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X63Y37         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X63Y37         FDRE (Prop_fdre_C_Q)         0.456     3.477 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/Q
+                         net (fo=129, routed)         1.783     5.260    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_0[2]
+    SLICE_X85Y51         MUXF7 (Prop_muxf7_S_O)       0.296     5.556 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_576__2/O
+                         net (fo=1, routed)           0.000     5.556    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_576__2_n_2
+    SLICE_X85Y51         MUXF8 (Prop_muxf8_I0_O)      0.104     5.660 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_230__6/O
+                         net (fo=1, routed)           1.418     7.078    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_230__6_n_2
+    SLICE_X68Y48         LUT6 (Prop_lut6_I0_O)        0.316     7.394 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_80__14/O
+                         net (fo=1, routed)           0.000     7.394    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_80__14_n_2
+    SLICE_X68Y48         MUXF7 (Prop_muxf7_I1_O)      0.217     7.611 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_27__14/O
+                         net (fo=1, routed)           0.571     8.182    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_27__14_n_2
+    SLICE_X71Y48         LUT5 (Prop_lut5_I4_O)        0.299     8.481 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_3__14/O
+                         net (fo=16, routed)          1.661    10.142    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/B[5]
+    DSP48_X2Y27          DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/B[5]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.559    10.738    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/ap_clk
+    DSP48_X2Y27          DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/CLK
+                         clock pessimism              0.115    10.853    
+                         clock uncertainty           -0.125    10.728    
+    DSP48_X2Y27          DSP48E1 (Setup_dsp48e1_CLK_B[5])
+                                                     -0.450    10.278    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg
+  -------------------------------------------------------------------
+                         required time                         10.278    
+                         arrival time                         -10.142    
+  -------------------------------------------------------------------
+                         slack                                  0.136    
+
+Slack (MET) :             0.152ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/B[0]
+                            (rising edge-triggered cell DSP48E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.105ns  (logic 1.678ns (23.617%)  route 5.427ns (76.383%))
+  Logic Levels:           5  (LUT5=1 LUT6=1 MUXF7=2 MUXF8=1)
+  Clock Path Skew:        -0.168ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.738ns = ( 10.738 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.021ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.727     3.021    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X63Y37         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X63Y37         FDRE (Prop_fdre_C_Q)         0.456     3.477 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[2]/Q
+                         net (fo=129, routed)         1.436     4.913    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_0[2]
+    SLICE_X51Y26         MUXF7 (Prop_muxf7_S_O)       0.296     5.209 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_748/O
+                         net (fo=1, routed)           0.000     5.209    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_748_n_2
+    SLICE_X51Y26         MUXF8 (Prop_muxf8_I0_O)      0.104     5.313 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_316__2/O
+                         net (fo=1, routed)           1.661     6.973    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_316__2_n_2
+    SLICE_X62Y42         LUT6 (Prop_lut6_I0_O)        0.316     7.289 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_114__14/O
+                         net (fo=1, routed)           0.000     7.289    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_114__14_n_2
+    SLICE_X62Y42         MUXF7 (Prop_muxf7_I0_O)      0.209     7.498 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_42__14/O
+                         net (fo=1, routed)           0.759     8.257    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_42__14_n_2
+    SLICE_X65Y46         LUT5 (Prop_lut5_I4_O)        0.297     8.554 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/p_reg_reg_i_8__14/O
+                         net (fo=16, routed)          1.572    10.126    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/B[0]
+    DSP48_X2Y27          DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/B[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.559    10.738    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/ap_clk
+    DSP48_X2Y27          DSP48E1                                      r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg/CLK
+                         clock pessimism              0.115    10.853    
+                         clock uncertainty           -0.125    10.728    
+    DSP48_X2Y27          DSP48E1 (Setup_dsp48e1_CLK_B[0])
+                                                     -0.450    10.278    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1466/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg
+  -------------------------------------------------------------------
+                         required time                         10.278    
+                         arrival time                         -10.126    
+  -------------------------------------------------------------------
+                         slack                                  0.152    
+
+Slack (MET) :             0.178ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[1]_replica/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_43_fu_1404_reg[23]_psdsp/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.465ns  (logic 1.391ns (18.633%)  route 6.074ns (81.367%))
+  Logic Levels:           5  (LUT3=1 LUT6=3 MUXF7=1)
+  Clock Path Skew:        -0.031ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.797ns = ( 10.797 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.957ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.663     2.957    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X49Y37         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[1]_replica/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X49Y37         FDRE (Prop_fdre_C_Q)         0.456     3.413 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/x_2_reg_21480_reg[1]_replica/Q
+                         net (fo=205, routed)         1.449     4.862    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/x_2_reg_21480_reg[1]_0_repN_alias
+    SLICE_X47Y47         LUT6 (Prop_lut6_I2_O)        0.124     4.986 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_249__3/O
+                         net (fo=2, routed)           1.275     6.261    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/seg_1002_reg_6632_reg[7]
+    SLICE_X55Y47         LUT3 (Prop_lut3_I2_O)        0.152     6.413 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1476/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_84__7/O
+                         net (fo=2, routed)           1.485     7.898    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1468/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_9__11_11
+    SLICE_X88Y46         LUT6 (Prop_lut6_I3_O)        0.326     8.224 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1468/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_25__8/O
+                         net (fo=1, routed)           1.240     9.464    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1468/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_25__8_n_2
+    SLICE_X90Y37         LUT6 (Prop_lut6_I0_O)        0.124     9.588 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1468/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_9__11/O
+                         net (fo=1, routed)           0.000     9.588    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1468/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_9__11_n_2
+    SLICE_X90Y37         MUXF7 (Prop_muxf7_I0_O)      0.209     9.797 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1468/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_1__0/O
+                         net (fo=1, routed)           0.625    10.422    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/p_reg_reg_i_1__0_n_2_alias
+    SLICE_X90Y37         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_43_fu_1404_reg[23]_psdsp/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.618    10.797    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X90Y37         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_43_fu_1404_reg[23]_psdsp/C
+                         clock pessimism              0.129    10.926    
+                         clock uncertainty           -0.125    10.801    
+    SLICE_X90Y37         FDRE (Setup_fdre_C_D)       -0.201    10.600    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_43_fu_1404_reg[23]_psdsp
+  -------------------------------------------------------------------
+                         required time                         10.600    
+                         arrival time                         -10.422    
+  -------------------------------------------------------------------
+                         slack                                  0.178    
+
+Slack (MET) :             0.182ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[1]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.648ns  (logic 0.580ns (7.584%)  route 7.068ns (92.416%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.075ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.741ns = ( 10.741 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.068    10.455    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X88Y8          LUT6 (Prop_lut6_I4_O)        0.124    10.579 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_208_fu_2354[1]_i_1/O
+                         net (fo=1, routed)           0.000    10.579    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1561
+    SLICE_X88Y8          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[1]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.562    10.741    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X88Y8          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[1]/C
+                         clock pessimism              0.115    10.856    
+                         clock uncertainty           -0.125    10.731    
+    SLICE_X88Y8          FDRE (Setup_fdre_C_D)        0.029    10.760    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[1]
+  -------------------------------------------------------------------
+                         required time                         10.760    
+                         arrival time                         -10.579    
+  -------------------------------------------------------------------
+                         slack                                  0.182    
+
+Slack (MET) :             0.187ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.645ns  (logic 0.580ns (7.587%)  route 7.065ns (92.413%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.075ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.741ns = ( 10.741 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.065    10.452    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X88Y8          LUT6 (Prop_lut6_I4_O)        0.124    10.576 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_208_fu_2354[3]_i_1/O
+                         net (fo=1, routed)           0.000    10.576    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1559
+    SLICE_X88Y8          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.562    10.741    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X88Y8          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[3]/C
+                         clock pessimism              0.115    10.856    
+                         clock uncertainty           -0.125    10.731    
+    SLICE_X88Y8          FDRE (Setup_fdre_C_D)        0.031    10.762    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_208_fu_2354_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.762    
+                         arrival time                         -10.576    
+  -------------------------------------------------------------------
+                         slack                                  0.187    
+
+Slack (MET) :             0.189ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.641ns  (logic 0.580ns (7.591%)  route 7.061ns (92.409%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.075ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.741ns = ( 10.741 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.061    10.448    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X89Y7          LUT6 (Prop_lut6_I4_O)        0.124    10.572 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_198_fu_2314[2]_i_1/O
+                         net (fo=1, routed)           0.000    10.572    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1480
+    SLICE_X89Y7          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.562    10.741    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X89Y7          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[2]/C
+                         clock pessimism              0.115    10.856    
+                         clock uncertainty           -0.125    10.731    
+    SLICE_X89Y7          FDRE (Setup_fdre_C_D)        0.029    10.760    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.760    
+                         arrival time                         -10.572    
+  -------------------------------------------------------------------
+                         slack                                  0.189    
+
+Slack (MET) :             0.191ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_0/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_189_fu_1016_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.402ns  (logic 2.454ns (33.152%)  route 4.948ns (66.848%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.215ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.740ns = ( 10.740 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.084ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.790     3.084    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y3          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_0/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y3          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.538 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_0/DOBDO[0]
+                         net (fo=216, routed)         4.948    10.487    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/q0[0]
+    SLICE_X87Y40         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_189_fu_1016_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.561    10.740    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/ap_clk
+    SLICE_X87Y40         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_189_fu_1016_reg[0]/C
+                         clock pessimism              0.129    10.869    
+                         clock uncertainty           -0.125    10.744    
+    SLICE_X87Y40         FDRE (Setup_fdre_C_D)       -0.067    10.677    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_366_3_fu_1493/t_row_189_fu_1016_reg[0]
+  -------------------------------------------------------------------
+                         required time                         10.677    
+                         arrival time                         -10.487    
+  -------------------------------------------------------------------
+                         slack                                  0.191    
+
+Slack (MET) :             0.194ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[5]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.638ns  (logic 0.580ns (7.594%)  route 7.058ns (92.406%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.075ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.741ns = ( 10.741 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.058    10.445    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X89Y7          LUT6 (Prop_lut6_I4_O)        0.124    10.569 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_198_fu_2314[5]_i_1/O
+                         net (fo=1, routed)           0.000    10.569    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1477
+    SLICE_X89Y7          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[5]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.562    10.741    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X89Y7          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[5]/C
+                         clock pessimism              0.115    10.856    
+                         clock uncertainty           -0.125    10.731    
+    SLICE_X89Y7          FDRE (Setup_fdre_C_D)        0.031    10.762    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_198_fu_2314_reg[5]
+  -------------------------------------------------------------------
+                         required time                         10.762    
+                         arrival time                         -10.569    
+  -------------------------------------------------------------------
+                         slack                                  0.194    
+
+Slack (MET) :             0.195ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_reg[58]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[0]/CE
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.275ns  (logic 0.518ns (7.121%)  route 6.757ns (92.879%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.201ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.743ns = ( 10.743 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.059ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.765     3.059    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X100Y74        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_reg[58]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X100Y74        FDRE (Prop_fdre_C_Q)         0.518     3.577 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_reg[58]/Q
+                         net (fo=1864, routed)        6.757    10.334    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_state59
+    SLICE_X31Y33         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[0]/CE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.564    10.743    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X31Y33         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[0]/C
+                         clock pessimism              0.115    10.858    
+                         clock uncertainty           -0.125    10.733    
+    SLICE_X31Y33         FDRE (Setup_fdre_C_CE)      -0.205    10.528    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[0]
+  -------------------------------------------------------------------
+                         required time                         10.528    
+                         arrival time                         -10.334    
+  -------------------------------------------------------------------
+                         slack                                  0.195    
+
+Slack (MET) :             0.195ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_reg[58]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[1]/CE
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.275ns  (logic 0.518ns (7.121%)  route 6.757ns (92.879%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.201ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.743ns = ( 10.743 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.059ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.765     3.059    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X100Y74        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_reg[58]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X100Y74        FDRE (Prop_fdre_C_Q)         0.518     3.577 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_reg[58]/Q
+                         net (fo=1864, routed)        6.757    10.334    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_CS_fsm_state59
+    SLICE_X31Y33         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[1]/CE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.564    10.743    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X31Y33         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[1]/C
+                         clock pessimism              0.115    10.858    
+                         clock uncertainty           -0.125    10.733    
+    SLICE_X31Y33         FDRE (Setup_fdre_C_CE)      -0.205    10.528    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_84_fu_1400_reg[1]
+  -------------------------------------------------------------------
+                         required time                         10.528    
+                         arrival time                         -10.334    
+  -------------------------------------------------------------------
+                         slack                                  0.195    
+
+Slack (MET) :             0.203ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_979_reg_6862_reg[1]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_54_fu_1448_reg[23]_psdsp_6/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.431ns  (logic 1.614ns (21.719%)  route 5.817ns (78.281%))
+  Logic Levels:           5  (LUT3=1 LUT6=3 MUXF7=1)
+  Clock Path Skew:        0.014ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.799ns = ( 10.799 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.015ns
+    Clock Pessimism Removal (CPR):    0.230ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.721     3.015    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/ap_clk
+    SLICE_X54Y34         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_979_reg_6862_reg[1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X54Y34         FDRE (Prop_fdre_C_Q)         0.478     3.493 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_979_reg_6862_reg[1]/Q
+                         net (fo=5, routed)           1.308     4.801    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_87_1[1]
+    SLICE_X45Y37         LUT6 (Prop_lut6_I3_O)        0.296     5.097 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_470/O
+                         net (fo=2, routed)           0.774     5.871    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/seg_981_reg_6842_reg[1]
+    SLICE_X46Y37         LUT3 (Prop_lut3_I2_O)        0.150     6.021 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_209__1/O
+                         net (fo=2, routed)           1.189     7.210    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/x_2_reg_21480_reg[2]_rep__3_5
+    SLICE_X61Y38         LUT6 (Prop_lut6_I3_O)        0.328     7.538 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_74/O
+                         net (fo=1, routed)           1.432     8.971    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_74_n_2
+    SLICE_X91Y38         LUT6 (Prop_lut6_I1_O)        0.124     9.095 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_21__2/O
+                         net (fo=1, routed)           0.000     9.095    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_21__2_n_2
+    SLICE_X91Y38         MUXF7 (Prop_muxf7_I0_O)      0.238     9.333 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/mac_muladd_8ns_8ns_24s_24_4_1_U1479/tme_top_mac_muladd_8ns_8ns_24s_24_4_1_DSP48_0_U/p_reg_reg_i_7__7/O
+                         net (fo=1, routed)           1.114    10.446    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/p_reg_reg_i_7__7_n_2_alias
+    SLICE_X91Y39         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_54_fu_1448_reg[23]_psdsp_6/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.620    10.799    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/ap_clk
+    SLICE_X91Y39         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_54_fu_1448_reg[23]_psdsp_6/C
+                         clock pessimism              0.230    11.029    
+                         clock uncertainty           -0.125    10.904    
+    SLICE_X91Y39         FDRE (Setup_fdre_C_D)       -0.255    10.649    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_54_fu_1448_reg[23]_psdsp_6
+  -------------------------------------------------------------------
+                         required time                         10.649    
+                         arrival time                         -10.446    
+  -------------------------------------------------------------------
+                         slack                                  0.203    
+
+Slack (MET) :             0.218ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_14_fu_1578_reg[5]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.607ns  (logic 0.580ns (7.625%)  route 7.027ns (92.375%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.083ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.733ns = ( 10.733 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.027    10.414    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X72Y13         LUT6 (Prop_lut6_I4_O)        0.124    10.538 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_14_fu_1578[5]_i_1/O
+                         net (fo=1, routed)           0.000    10.538    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1989
+    SLICE_X72Y13         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_14_fu_1578_reg[5]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.554    10.733    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X72Y13         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_14_fu_1578_reg[5]/C
+                         clock pessimism              0.115    10.848    
+                         clock uncertainty           -0.125    10.723    
+    SLICE_X72Y13         FDRE (Setup_fdre_C_D)        0.032    10.755    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_14_fu_1578_reg[5]
+  -------------------------------------------------------------------
+                         required time                         10.755    
+                         arrival time                         -10.538    
+  -------------------------------------------------------------------
+                         slack                                  0.218    
+
+Slack (MET) :             0.220ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_209_fu_2358_reg[4]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.718ns  (logic 0.580ns (7.515%)  route 7.138ns (92.485%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        -0.015ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.801ns = ( 10.801 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.931ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.637     2.931    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X51Y59         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X51Y59         FDRE (Prop_fdre_C_Q)         0.456     3.387 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/icmp_ln179_reg_11283_pp0_iter3_reg_reg[0]/Q
+                         net (fo=1848, routed)        7.138    10.525    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/icmp_ln179_reg_11283_pp0_iter3_reg[0]
+    SLICE_X92Y4          LUT6 (Prop_lut6_I4_O)        0.124    10.649 r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U/seg_209_fu_2358[4]_i_1/O
+                         net (fo=1, routed)           0.000    10.649    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/flow_control_loop_pipe_sequential_init_U_n_1566
+    SLICE_X92Y4          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_209_fu_2358_reg[4]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=26079, routed)       1.622    10.802    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/ap_clk
+    SLICE_X92Y4          FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_209_fu_2358_reg[4]/C
+                         clock pessimism              0.115    10.916    
+                         clock uncertainty           -0.125    10.791    
+    SLICE_X92Y4          FDRE (Setup_fdre_C_D)        0.077    10.868    tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_refill_seg_fu_7732/seg_209_fu_2358_reg[4]
+  -------------------------------------------------------------------
+                         required time                         10.868    
+                         arrival time                         -10.649    
+  -------------------------------------------------------------------
+                         slack                                  0.220    
+
+
+
+

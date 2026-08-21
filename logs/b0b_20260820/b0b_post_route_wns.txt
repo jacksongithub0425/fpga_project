@@ -1,0 +1,66 @@
+template_match_core standalone — post-route timing
+generated Thu Aug 20 19:02:06 -0700 2026
+
+  clock              : clk_fpga_0
+  constrained period : 8.000 ns
+  post-route WNS     : -0.051470 ns
+  post-route TNS     : -0.051470 ns
+  post-route WHS     : 0.050437 ns
+  post-route THS     : 0.000000 ns
+  verdict            : CONSTRAINTS VIOLATED
+
+  budget consumed (period - WNS): 8.051 ns
+  worst-path data delay        : 7.622 ns
+    of which logic             : 1.592 ns (20.9%)
+    of which routing           : 6.030 ns (79.1%)
+  logic levels                 : 5
+
+  The two differ by setup time, clock uncertainty and
+  skew.  Use 'budget consumed' to re-time to another
+  period; use 'data delay' to describe where the time
+  goes.  They are not interchangeable.
+
+  binding path -- this is what to fix if the clock
+  is ever raised:
+    from: tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/seg_965_reg_7002_reg[6]/C
+    to  : tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1826/grp_correlation_core_Pipeline_mac_loop_fu_8736/empty_48_fu_1424_reg[23]_psdsp_1/D
+
+  slack at the board's 32.000 ns period: +23.949 ns
+  (32 ns is the recorded board period -- CONFIRM it with
+   Clocks.fclk0_mhz; the bring-up script now prints it.)
+
+READ THIS BEFORE QUOTING THE WNS ABOVE
+
+The constrained period and the period the board runs at are
+different numbers, and the WNS is against the CONSTRAINED one.
+
+THIS IS A CLOCK PROBE, NOT THE SHIPPING IMAGE.  The opened
+design is constrained at 8.000 ns, so the PS7 requested
+125 MHz and
+Vivado constrains the period printed above.  The shipping
+image requests 50 MHz, is constrained at 20.000 ns, and runs
+on the board at 31.25 MHz / 32.000 ns (contract §8) because
+PYNQ applies the PS7's divisor pair to a 1000 MHz PL PLL
+rather than the 1600 MHz Vivado assumed.
+
+So this result says the LOGIC closes at the probed period.
+It does NOT say the board runs there: reaching it needs the
+PS7 FCLK config changed and the achieved rate re-measured
+from Clocks.fclk0_mhz on the board.  Until that measurement
+exists, quote this as 'closes at <period> in implementation',
+never as a board frequency.
+
+The 32 ns slack line above is retained only for continuity
+with the shipping image's report.  It is NOT the operating
+point this build is about.
+
+Do NOT invert the data delay to get a maximum frequency.  This
+build met its constraint with room to spare, at which point
+the router stops trying -- the >90% routing share below is
+partly an artefact of a loose constraint, not a hard floor.
+Re-implement at the target period and read the result.
+
+For comparison, the extractor's standalone image measured
+WNS +10.144 ns against the same 20 ns constraint (budget
+consumed 9.856 ns, data delay 9.073 ns, 45,918 endpoints,
+all constraints met), binding on reset distribution.
