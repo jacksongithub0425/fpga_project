@@ -1,0 +1,7 @@
+@@PROBE4_BEGIN@@
+ROW base-req50                 fbdiv=48  io_pll=1600.000  div=8x4=32  VIVADO=50.0000MHz/20.0000ns BOARD=31.2500MHz fclk1_en=0 clk1_port=0 pins={FCLK_CLK0}
+ROW c-port1                    fbdiv=30  io_pll=1000.000  div=5x2=10  VIVADO=100.0000MHz/10.0000ns BOARD=100.0000MHz fclk1_en=1 clk1_port=1 pins={FCLK_CLK0,FCLK_CLK1}
+ROW c-port0                    fbdiv=48  io_pll=1600.000  div=4x4=16  VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz fclk1_en=0 clk1_port=0 pins={FCLK_CLK0}
+ROW c-freqonly                 fbdiv=48  io_pll=1600.000  div=4x4=16  VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz fclk1_en=0 clk1_port=0 pins={FCLK_CLK0}
+ROW c-fclk1_250                fbdiv=30  io_pll=1000.000  div=5x2=10  VIVADO=100.0000MHz/10.0000ns BOARD=100.0000MHz fclk1_en=1 clk1_port=1 pins={FCLK_CLK0,FCLK_CLK1}
+ROW c-fclk1_200                fbdiv=48  io_pll=1600.000  div=4x4=16  VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz fclk1_en=1 clk1_port=1 pins={FCLK_CLK0,FCLK_CLK1}

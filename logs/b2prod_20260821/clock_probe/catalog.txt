@@ -1,0 +1,11 @@
+@@CATALOG_PROBE_BEGIN@@
+repo OK     C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_provisional/solution1/impl/ip
+repo OK     C:/Users/lychee/Desktop/FPGA/hls/patch_extract/patch_extract_provisional/solution1/impl/ip
+repo OK     C:/Users/lychee/Desktop/FPGA/binarizer-logical-layout/hls/binarize/binarize/solution1/impl/ip
+repo OK     C:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/impl/ip
+vlnv TermCount:hls:tme_top:0.2          -> RESOLVED
+vlnv TermCountB2:hls:tme_top:0.2        -> RESOLVED
+vlnv TermCount:hls:binarize_core:2.0    -> RESOLVED
+vlnv TermCount:hls:patch_extract_core:0.1 -> RESOLVED
+all tme_top ipdefs: TermCount:hls:tme_top:0.2 TermCountB2:hls:tme_top:0.2
+@@CATALOG_PROBE_END@@

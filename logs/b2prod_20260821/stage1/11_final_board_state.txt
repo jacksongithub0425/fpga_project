@@ -1,0 +1,10 @@
+ 20:02:50 up 12 min,  1 user,  load average: 0.61, 0.81, 0.62
+CmaTotal:         229376 kB
+CmaFree:           82372 kB
+fclk0 100.0
+fclk1 125.0
+--- payload ---
+32
+
+
+__EXIT__ 0

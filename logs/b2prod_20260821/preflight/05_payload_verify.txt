@@ -1,0 +1,15 @@
+BUILD_INFO.txt: OK
+board_expect.py: OK
+board_idle_check.py: OK
+board_preflight.py: OK
+inspect_overlay.py: OK
+probe_cma_budget.py: OK
+three_stage_combined.bit: OK
+three_stage_combined.hwh: OK
+tme_driver.py: OK
+tme_standalone_bringup.py: OK
+--- exit 0
+
+
+__EXIT__ 0
+

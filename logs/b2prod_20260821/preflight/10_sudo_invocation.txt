@@ -1,0 +1,8 @@
+--- sudo -E:
+fclk0 100.0
+--- sudo -E env PATH:
+fclk0 100.0
+
+
+__EXIT__ 0
+

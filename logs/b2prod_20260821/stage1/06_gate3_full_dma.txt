@@ -1,0 +1,11 @@
+full-size DMA gate: 9856 x 6400 = 63,078,400 B each way
+  strip size 256 rows (10 MB per int32 temporary)
+  procedural page built in 21.4 s (60.2 MiB resident)
+  teardown protection: ignoring SIGINT, SIGTERM, SIGHUP, SIGQUIT
+  PL round trip (copy-in + 2 x 63,078,400 B DMA + core): 10.74 s
+  DMA envelope: S2MM 63,078,400 B received (measured), MM2S 63,078,400 B programmed, guard 64 B intact, 0 sentinel bytes left
+  verified against the CPU oracle in 38.4 s
+PASS: 63,078,400 B received on S2MM, MM2S programmed to the same, core reported done with both channels idle and no error, guard intact, no unwritten bytes, and the output is bit-exact against the TRUNCATING Gaussian oracle (10.74 s wall for the PL round trip).
+
+
+__EXIT__ 0

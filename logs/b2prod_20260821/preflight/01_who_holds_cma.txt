@@ -1,0 +1,37 @@
+  PID  PPID     ELAPSED   RSS USER     COMMAND
+  396     1    07:48:59 61120 root     /usr/local/share/pynq-venv/bin/python3 /usr/local/share/pynq-venv/bin/jupyter-notebook --no-browser --allow-root
+ 1388   396       00:08 39732 root     /usr/local/share/pynq-venv/bin/python3 -m ipykernel_launcher -f /root/.local/share/jupyter/runtime/kernel-13d03a7b-8d19-481a-be68-c972aa4c47b3.json
+  666     1    07:48:47 17664 root     /usr/sbin/smbd --foreground --no-process-group
+  852     1    07:48:24 16384 root     python3 /usr/local/bin/redirect_server
+  631     1    07:48:49 14464 root     /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+  692   666    07:48:44 14464 root     /usr/lib/arm-linux-gnueabihf/samba/samba-bgqd --ready-signal-fd=46 --parent-watch-fd=-1 --debuglevel=0 -F
+ 1214     1    03:09:55 14080 root     /usr/libexec/packagekitd
+   80     1    07:49:17 13952 root     /lib/systemd/systemd-journald
+  260     1    07:49:10 12288 root     /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+  620     1    07:48:50 10624 root     /usr/sbin/nmbd --foreground --no-process-group
+  678   666    07:48:44 10032 root     /usr/sbin/smbd --foreground --no-process-group
+  143     1    07:49:14  9472 systemd+ /lib/systemd/systemd-resolved
+    1     0    07:50:03  7636 root     /sbin/init earlyprintk
+  658     1    07:48:47  6400 xilinx   /lib/systemd/systemd --user
+  637     1    07:48:48  6272 root     sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+  679   666    07:48:44  5552 root     /usr/sbin/smbd --foreground --no-process-group
+  270     1    07:49:10  4992 root     /lib/systemd/systemd-logind
+ 1219     1    03:09:54  4864 root     /usr/libexec/polkitd --no-debug
+  145     1    07:49:14  4736 systemd+ /lib/systemd/systemd-timesyncd
+  212     1    07:49:11  4288 root     /sbin/dhclient -1 -4 -v -i -pf /run/dhclient.eth0.pid -lf /var/lib/dhcp/dhclient.eth0.leases -I -df /var/lib/dhcp/dhclient6.eth0.leases eth0
+  665   658    07:48:47  3768 xilinx   (sd-pam)
+  129     1    07:49:15  3328 root     /lib/systemd/systemd-udevd
+  269     1    07:49:10  3200 syslog   /usr/sbin/rsyslogd -n -iNONE
+  634     1    07:48:49  3200 root     /bin/login -f
+---KERNELS---
+0
+---UIO---
+crw------- 1 root root 245, 0 Aug 20 07:17 /dev/uio0
+---FUSER---
+---XLNK---
+CmaTotal:         229376 kB
+CmaFree:           30876 kB
+
+
+__EXIT__ 0
+

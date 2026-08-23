@@ -1,0 +1,12 @@
+/usr/local/share/pynq-venv/bin/python3
+Python 3.10.4
+---
+CmaTotal:         229376 kB
+CmaFree:           26952 kB
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'pynq'
+
+__EXIT__ 0
+

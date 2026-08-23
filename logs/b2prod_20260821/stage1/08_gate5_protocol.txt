@@ -1,0 +1,155 @@
+--- fixtures (GATE5_VECTORS.sha256) ---
+  [OK  ] tb_proto_cases.txt         890 B  53348b561ea868399e6e99ee34e6d7c886f2211c9ee6207c05c31e907f912588
+  [OK  ] tb_proto_gray.bin        6,144 B  7f58b921fff52cc283cb12c8f9b0fe606510a9625242f667fe791afab2ff8b8d
+  [OK  ] tb_proto_bin.bin         6,144 B  388e0da5b462f484cf42d6c39abe798baa24095063dbaab150c9259a39e42153
+  [OK  ] tb_proto_patches.bin     2,674 B  8caded60c7a7e7747fa3c691762efac225de721243e2cd3d7fff680a3c9d0b48
+  [OK  ] tb_proto_templs.bin        240 B  c5df84ae39d6ecbd4684caac07d61cc080b736d375d37f872c00a9592a5b3f78
+  5 fixtures verified, 16,092 B total
+board_gate_protocol — overlay three_stage_combined.bit
+page 96x64 threshold 128, 4 descriptors 10x8, patch sizes [950, 650, 722, 352]
+  teardown protection: ignoring SIGINT, SIGTERM, SIGHUP, SIGQUIT
+
+--- phase A: binarize the 96x64 page ---
+  [PASS] binarize_page published transfer stats
+  [PASS] S2MM received 6144 B: 6144 B
+  [PASS] no 0xAA sentinel survives in the page: 0 unwritten bytes
+  [PASS] the 64-byte guard tail is intact: 0 clobbered
+  [PASS] all 6144 binary bytes match the golden
+  6144 B in 0.021 s
+
+--- phase B: the 4-candidate batch ---
+  patch sizes in dispatch order: [950, 650, 722, 352] (down, up, down — a carried-forward receive length cannot survive the increase at candidate 2)
+  [PASS] batch: one record per descriptor: 4
+  [PASS] batch: published status stats
+  [PASS] batch: sts_flags == 0: 0x0
+  [PASS] batch: sts_rejected == 0: 0
+  [PASS] batch: sts_processed == 4: 4
+  [PASS] batch: meta S2MM RECEIVED 64 B (4 x 16) — batch TLAST on the last record: 64 B
+  [PASS] batch: patch S2MM moved [950, 650, 722, 352] B, in order: [950, 650, 722, 352]
+  [PASS] batch[0]: valid == 1: True
+  [PASS] batch[0]: record describes descriptor 0 (interior) — (24, 20, 38, 25): (24, 20, 38, 25)
+  [PASS] batch[0]: all 950 patch bytes match the golden
+  [PASS] batch[1]: valid == 1: True
+  [PASS] batch[1]: record describes descriptor 1 (clip-left) — (0, 20, 26, 25): (0, 20, 26, 25)
+  [PASS] batch[1]: all 650 patch bytes match the golden
+  [PASS] batch[2]: valid == 1: True
+  [PASS] batch[2]: record describes descriptor 2 (clip-top-right) — (56, 0, 38, 19): (56, 0, 38, 19)
+  [PASS] batch[2]: all 722 patch bytes match the golden
+  [PASS] batch[3]: valid == 1: True
+  [PASS] batch[3]: record describes descriptor 3 (clip-bottom-right) — (74, 48, 22, 16): (74, 48, 22, 16)
+  [PASS] batch[3]: all 352 patch bytes match the golden
+  batch: 4 descriptors, 2674 patch bytes, 64 B metadata (measured) in 0.037 s
+
+--- phase C: re-entry after a batch ---
+  [PASS] repeat: one record per descriptor: 4
+  [PASS] repeat: published status stats
+  [PASS] repeat: sts_flags == 0: 0x0
+  [PASS] repeat: sts_rejected == 0: 0
+  [PASS] repeat: sts_processed == 4: 4
+  [PASS] repeat: meta S2MM RECEIVED 64 B (4 x 16) — batch TLAST on the last record: 64 B
+  [PASS] repeat: patch S2MM moved [950, 650, 722, 352] B, in order: [950, 650, 722, 352]
+  [PASS] repeat[0]: valid == 1: True
+  [PASS] repeat[0]: record describes descriptor 0 (interior) — (24, 20, 38, 25): (24, 20, 38, 25)
+  [PASS] repeat[0]: all 950 patch bytes match the golden
+  [PASS] repeat[1]: valid == 1: True
+  [PASS] repeat[1]: record describes descriptor 1 (clip-left) — (0, 20, 26, 25): (0, 20, 26, 25)
+  [PASS] repeat[1]: all 650 patch bytes match the golden
+  [PASS] repeat[2]: valid == 1: True
+  [PASS] repeat[2]: record describes descriptor 2 (clip-top-right) — (56, 0, 38, 19): (56, 0, 38, 19)
+  [PASS] repeat[2]: all 722 patch bytes match the golden
+  [PASS] repeat[3]: valid == 1: True
+  [PASS] repeat[3]: record describes descriptor 3 (clip-bottom-right) — (74, 48, 22, 16): (74, 48, 22, 16)
+  [PASS] repeat[3]: all 352 patch bytes match the golden
+  repeat: 4 descriptors, 2674 patch bytes, 64 B metadata (measured) in 0.016 s
+  [PASS] the identical batch returns identical records and pixels — no state carried out of the first one
+  [PASS] short: one record per descriptor: 1
+  [PASS] short: published status stats
+  [PASS] short: sts_flags == 0: 0x0
+  [PASS] short: sts_rejected == 0: 0
+  [PASS] short: sts_processed == 1: 1
+  [PASS] short: meta S2MM RECEIVED 16 B (1 x 16) — batch TLAST on the last record: 16 B
+  [PASS] short: patch S2MM moved [352] B, in order: [352]
+  [PASS] short[0]: valid == 1: True
+  [PASS] short[0]: record describes descriptor 3 (clip-bottom-right) — (74, 48, 22, 16): (74, 48, 22, 16)
+  [PASS] short[0]: all 352 patch bytes match the golden
+  short: 1 descriptors, 352 patch bytes, 16 B metadata (measured) in 0.007 s
+  [PASS] permuted: one record per descriptor: 2
+  [PASS] permuted: published status stats
+  [PASS] permuted: sts_flags == 0: 0x0
+  [PASS] permuted: sts_rejected == 0: 0
+  [PASS] permuted: sts_processed == 2: 2
+  [PASS] permuted: meta S2MM RECEIVED 32 B (2 x 16) — batch TLAST on the last record: 32 B
+  [PASS] permuted: patch S2MM moved [352, 950] B, in order: [352, 950]
+  [PASS] permuted[0]: valid == 1: True
+  [PASS] permuted[0]: record describes descriptor 3 (clip-bottom-right) — (74, 48, 22, 16): (74, 48, 22, 16)
+  [PASS] permuted[0]: all 352 patch bytes match the golden
+  [PASS] permuted[1]: valid == 1: True
+  [PASS] permuted[1]: record describes descriptor 0 (interior) — (24, 20, 38, 25): (24, 20, 38, 25)
+  [PASS] permuted[1]: all 950 patch bytes match the golden
+  permuted: 2 descriptors, 1302 patch bytes, 32 B metadata (measured) in 0.009 s
+  [PASS] duplicate: one record per descriptor: 2
+  [PASS] duplicate: published status stats
+  [PASS] duplicate: sts_flags == 0: 0x0
+  [PASS] duplicate: sts_rejected == 0: 0
+  [PASS] duplicate: sts_processed == 2: 2
+  [PASS] duplicate: meta S2MM RECEIVED 32 B (2 x 16) — batch TLAST on the last record: 32 B
+  [PASS] duplicate: patch S2MM moved [950, 950] B, in order: [950, 950]
+  [PASS] duplicate[0]: valid == 1: True
+  [PASS] duplicate[0]: record describes descriptor 0 (interior) — (24, 20, 38, 25): (24, 20, 38, 25)
+  [PASS] duplicate[0]: all 950 patch bytes match the golden
+  [PASS] duplicate[1]: valid == 1: True
+  [PASS] duplicate[1]: record describes descriptor 0 (interior) — (24, 20, 38, 25): (24, 20, 38, 25)
+  [PASS] duplicate[1]: all 950 patch bytes match the golden
+  duplicate: 2 descriptors, 1900 patch bytes, 32 B metadata (measured) in 0.008 s
+  [PASS] the duplicated descriptor produced two identical patches
+
+--- phase D: match_candidate (golden) ---
+  [PASS] three trials in the frozen order: 3
+  [PASS] trial order is (('alpha', 0), ('alpha', 1), ('beta', 0)): [('alpha', 0), ('alpha', 1), ('beta', 0)]
+  [PASS] all three templates are legal (§4.6)
+  [PASS] per-kind reduction kept both kinds: ['alpha', 'beta']
+  [PASS] by_kind[alpha] scores +1.000000: +1.000000
+  [PASS] by_kind[alpha] peaks at local (23,9): (23,9)
+  [PASS] by_kind[alpha] is trial 1 (alpha1): 1
+  [PASS] by_kind[alpha] box is absolute page (47, 29, 10, 8): (47, 29, 10, 8)
+  [PASS] by_kind[beta] scores +1.000000: +1.000000
+  [PASS] by_kind[beta] peaks at local (16,16): (16,16)
+  [PASS] by_kind[beta] is trial 2 (beta0): 2
+  [PASS] by_kind[beta] box is absolute page (40, 36, 10, 8): (40, 36, 10, 8)
+  [PASS] the losing alpha trial really does score lower (+0.409634) — the per-kind argmax had a choice: winner +1.000000
+  [PASS] the two winning kinds score identically — a real tie: 1.0 vs 1.0
+  [PASS] the tie goes to the FIRST trial, 1 (strict >, §6.4): templ_id=1
+  [PASS] control: reversing the bank moves the tie to beta: best kind=beta
+  [PASS] control: with the winning alpha trial FIRST the per-kind argmax still returns it — a reduction, not a position: (23,9)
+  [PASS] an empty trial list returns without running anything: {'best': None, 'by_kind': {}}
+
+--- phase E: the chain, on the PL's own patch ---
+  [PASS] the extractor's patch equals the golden patch
+
+--- phase D: match_candidate (chained) ---
+  [PASS] three trials in the frozen order: 3
+  [PASS] trial order is (('alpha', 0), ('alpha', 1), ('beta', 0)): [('alpha', 0), ('alpha', 1), ('beta', 0)]
+  [PASS] all three templates are legal (§4.6)
+  [PASS] per-kind reduction kept both kinds: ['alpha', 'beta']
+  [PASS] by_kind[alpha] scores +1.000000: +1.000000
+  [PASS] by_kind[alpha] peaks at local (23,9): (23,9)
+  [PASS] by_kind[alpha] is trial 1 (alpha1): 1
+  [PASS] by_kind[alpha] box is absolute page (47, 29, 10, 8): (47, 29, 10, 8)
+  [PASS] by_kind[beta] scores +1.000000: +1.000000
+  [PASS] by_kind[beta] peaks at local (16,16): (16,16)
+  [PASS] by_kind[beta] is trial 2 (beta0): 2
+  [PASS] by_kind[beta] box is absolute page (40, 36, 10, 8): (40, 36, 10, 8)
+  [PASS] the losing alpha trial really does score lower (+0.409634) — the per-kind argmax had a choice: winner +1.000000
+  [PASS] the two winning kinds score identically — a real tie: 1.0 vs 1.0
+  [PASS] the tie goes to the FIRST trial, 1 (strict >, §6.4): templ_id=1
+  [PASS] control: reversing the bank moves the tie to beta: best kind=beta
+  [PASS] control: with the winning alpha trial FIRST the per-kind argmax still returns it — a reduction, not a position: (23,9)
+  [PASS] an empty trial list returns without running anything: {'best': None, 'by_kind': {}}
+  [PASS] chained alpha result is identical to the golden-fed run: +1.000000 @(23,9) (47, 29, 10, 8)
+  [PASS] chained beta result is identical to the golden-fed run: +1.000000 @(16,16) (40, 36, 10, 8)
+
+========================================================================
+PROTOCOL GATE PASSED (0 failures, 120 checks): five batches of 4/4/1/2/2 descriptors through patch_extract_core, records in descriptor order, metadata S2MM received exactly n x 16 B every time (measured), patch receives re-armed across sizes [950, 650, 722, 352], and the per-kind argmax verified against two trials of one kind plus two controls.
+
+
+__EXIT__ 0

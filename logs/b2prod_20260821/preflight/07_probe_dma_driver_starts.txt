@@ -1,0 +1,33 @@
+overlay loaded; NO driver objects touched yet
+
+=== RAW MMIO, before any AxiDMA driver exists ===
+  axi_dma_binarize.MM2S  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+  axi_dma_binarize.S2MM  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+  dma_pe_data.MM2S  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+  dma_pe_data.S2MM  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+  dma_pe_meta.S2MM  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+  axi_dma_patch.MM2S  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+  axi_dma_templ.MM2S  DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0
+
+=== now instantiate PYNQ's driver for each DMA ===
+  axi_dma_binarize: pynq.lib.dma.DMA
+  dma_pe_data: pynq.lib.dma.DMA
+  dma_pe_meta: pynq.lib.dma.DMA
+  axi_dma_patch: pynq.lib.dma.DMA
+  axi_dma_templ: pynq.lib.dma.DMA
+
+=== RAW MMIO, AFTER the drivers were constructed ===
+  axi_dma_binarize.MM2S  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+  axi_dma_binarize.S2MM  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+  dma_pe_data.MM2S  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+  dma_pe_data.S2MM  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+  dma_pe_meta.S2MM  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+  axi_dma_patch.MM2S  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+  axi_dma_templ.MM2S  0x00010002/0x00000001 -> 0x00010003/0x00000000   <-- CHANGED
+
+7 of 7 channels changed state purely from constructing the driver.
+VERDICT=PYNQ_DRIVER_STARTS_ENGINES
+
+
+__EXIT__ 0
+

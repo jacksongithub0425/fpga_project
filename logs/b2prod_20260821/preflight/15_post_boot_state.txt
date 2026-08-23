@@ -1,0 +1,16 @@
+491.13 793.60
+ 00:30:21 up 8 min,  1 user,  load average: 0.47, 0.44, 0.31
+---
+MemAvailable:     347724 kB
+CmaTotal:         229376 kB
+CmaFree:           76228 kB
+---
+root=/dev/mmcblk0p2 rw earlyprintk rootfstype=ext4 rootwait devtmpfs.mount=1 uio_pdrv_genirq.of_id=generic-uio clk_ignore_unused cma=224M
+---
+fclk0 100.0 fclk1 142.857143
+---
+payload verify exit 0
+
+
+__EXIT__ 0
+

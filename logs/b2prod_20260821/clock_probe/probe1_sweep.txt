@@ -1,0 +1,6 @@
+@@FCLK_PROBE_BEGIN@@
+FCLK_ROW req=50 clksrc= xtal=33.333333 io_pll=1600.000 arm_pll= ddr_pll= div0=8 div1=4 prod=32 echoed_freqmhz=50 vivado_mhz=50.000000 vivado_ns=20.000000 board_mhz_at_1000=31.250000
+FCLK_ROW req=100 clksrc= xtal=33.333333 io_pll=1600.000 arm_pll= ddr_pll= div0=4 div1=4 prod=16 echoed_freqmhz=100 vivado_mhz=100.000000 vivado_ns=10.000000 board_mhz_at_1000=62.500000
+FCLK_ROW req=125 clksrc= xtal=33.333333 io_pll=1000.000 arm_pll= ddr_pll= div0=4 div1=2 prod=8 echoed_freqmhz=125 vivado_mhz=125.000000 vivado_ns=8.000000 board_mhz_at_1000=125.000000
+FCLK_ROW req=160 clksrc= xtal=33.333333 io_pll=1600.000 arm_pll= ddr_pll= div0=5 div1=2 prod=10 echoed_freqmhz=160 vivado_mhz=160.000000 vivado_ns=6.250000 board_mhz_at_1000=100.000000
+@@FCLK_PROBE_END@@

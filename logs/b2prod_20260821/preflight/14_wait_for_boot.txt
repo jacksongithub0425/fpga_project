@@ -1,0 +1,2 @@
+[   4.3s] board is DOWN (reboot under way)
+TIMED OUT waiting for the board to come back

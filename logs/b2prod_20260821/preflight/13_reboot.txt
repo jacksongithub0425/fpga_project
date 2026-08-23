@@ -1,0 +1,6 @@
+pre-reboot uptime: 30826.20 60987.19
+ 00:21:55 up  8:33,  1 user,  load average: 0.10, 0.04, 0.04
+
+
+__EXIT__ 0
+reboot issued

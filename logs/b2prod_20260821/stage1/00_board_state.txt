@@ -1,0 +1,30 @@
+ 19:53:32 up 2 min,  1 user,  load average: 2.93, 1.49, 0.58
+---
+CmaTotal:         229376 kB
+CmaFree:           31468 kB
+---
+10.0.0.201 192.168.2.99 2601:646:8902:5240:ec9a:b5ff:fe6b:4edf 
+---
+total 1004
+drwxrwxrwx 17 xilinx xilinx   4096 Aug 21 23:42 .
+drwxr-x---  5 xilinx xilinx   4096 Aug 13 05:23 ..
+drwxr-xr-x  3 root   root     4096 Aug 22 00:19 b2prod_preflight
+drwxrwxrwx  9 xilinx xilinx   4096 Sep 24  2025 base
+-rw-r--r--  1 root   root   215575 Aug  9 23:41 binarize_v2_board_bundle.zip
+drwxr-xr-x  4 root   root     4096 Aug 10 00:00 binarize_v2_test
+-rw-r--r--  1 root   root    19548 Aug 13 05:21 board_verification.ipynb
+drwxrwxrwx  3 xilinx xilinx   4096 Sep 24  2025 common
+drwxrwxrwx  3 xilinx xilinx   4096 Sep 24  2025 getting_started
+drwxr-xr-x  2 root   root     4096 Aug 17 04:37 .ipynb_checkpoints
+drwxrwxrwx  3 xilinx xilinx   4096 Sep 24  2025 logictools
+drwxr-xr-x  3 root   root     4096 Aug  4 06:32 patch_extract_test
+drwxr-xr-x 32 root   root     4096 Sep 24  2025 pynq_peripherals
+-rw-r--r--  1 root   root    20485 Aug 13 05:59 random testing.ipynb
+-rw-r--r--  1 root   root    30321 Aug 17 05:21 RUN_GATES_ON_BOARD.ipynb
+-rw-r--r--  1 root   root   655475 Jul 21 06:06 terminal_counter_recovery_2026-07-20.zip
+drwxr-xr-x  7 root   root     4096 Aug  5 04:02 terminal_counter_test
+drwxr-xr-x  2 root   root     4096 Aug 19 05:16 tme_b1
+drwxr-xr-x  2 root   root     4096 Aug 20 05:46 tme_b2
+
+
+__EXIT__ 0
