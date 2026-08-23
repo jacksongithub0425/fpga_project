@@ -212,6 +212,26 @@ logs/b2prod_20260821/stage1/as_run/safe_teardown.py.as_run
 logs/b2prod_20260821/stage1/as_run/tme_driver.py.as_run
 
 # -------------------------------------------------------------------
+# VERIFIED FROM A DETACHED WORKTREE, 2026-08-23
+#
+# A list of tracked paths is a claim about what a CLONE gets, so it was
+# checked from one rather than from the working tree that produced it
+# (`git worktree add --detach`):
+#
+#   * 239 files under logs/ present;
+#   * every excluded category absent -- no *.jsonl, no *_geometry.json,
+#     no baseline_impl1/, no stage2/;
+#   * the 14 `<name>.as_run` snapshots in b2prod_20260821 still match their
+#     PAYLOAD.sha256 lines after checkout (5 preflight, 9 stage 1), which is
+#     what the wholesale `-text` in .gitattributes exists to guarantee;
+#   * the five b2prod_20260823 probe digests READ BACK FROM THE BOARD still
+#     match the checked-out files;
+#   * sw/test_mem_sampler.py and sw/test_pl_backends.py run with ZERO
+#     failures. 33 tests skip, all for one reason: the corpus PDF lives
+#     outside the repository, which is deliberate.
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
 # WHAT MAY NOT BE COMMITTED AT ALL: DRAWING IDENTIFIERS
 #
 # The corpus is 35 confidential drawings.  Their FILENAMES identify them,
