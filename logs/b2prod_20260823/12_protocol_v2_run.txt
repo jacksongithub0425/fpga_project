@@ -1,0 +1,149 @@
+=== FORMAL PyMuPDF PROTOCOL v2 ===
+predictions registered in 11_protocol_v2_PREREGISTERED.md before this run
+utc              2026-08-23T22:47:48Z
+host             pynq  armv7l  6.6.10-xilinx-v2024.1-g916a1f7c7222
+whoami           xilinx  uid=1000
+GATE unprivileged: PASS uid=1000
+GATE running_as_xilinx: PASS xilinx
+
+--- 0. payload digests, read off this board before anything runs
+    7815fe79b33077ff2dece220db04887a014e28752dc83148c0f359f0f4d5cce0  /home/xilinx/jupyter_notebooks/fitz_probe_env.py
+    a6b5c4a27520d93826615ecab9f1bb05413052df470d0d8aa49850206585dc8a  /home/xilinx/jupyter_notebooks/fitz_v2_detector.py
+    658cabd87f7cf35715ed513b5507e8487ea08080a5ab57159c33ea85fd688967  /home/xilinx/jupyter_notebooks/fitz_probe_func.py
+    0396f873692f8a8aff600ffbf613029c9f16283278d6282c7b6f66e5c18e6590  /home/xilinx/jupyter_notebooks/fitz_v2.sh
+--- project modules staged for the detector test
+    36a1d7d8c07cd3828e515fa358d8f8e1c4d5ea4dcde939e0d4145066d2f107d9  ./terminal_counter_endpoint_first.py
+GATE sw_payload_present: PASS 1 module(s)
+
+--- 1. clean baseline (nothing injected)
+    numpy  import=ok  ver=1.21.5
+    cv2  import=ok  ver=4.5.4
+    pynq  import=ok  ver=3.1.1
+    fitz  import=FAILED  ver=
+GATE fitz_absent_before: PASS 
+    interpreter 3.10.4 / armv7l / .cpython-310-arm-linux-gnueabihf.so
+
+--- 2. apt download (NOT apt install)
+root             /home/xilinx/b2prod_fitz_probe.qPrTGSnK
+    Get:1 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf libgumbo1 armhf 0.10.1+dfsg-2.4 [96.4 kB]
+    Get:2 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf libmujs1 armhf 1.1.3-3 [99.0 kB]
+    Get:3 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf python3-fitz armhf 1.19.2+ds1-1ubuntu1 [23.0 MB]
+    Fetched 23.1 MB in 5s (4,989 kB/s)
+GATE three_debs_downloaded: PASS 3
+    libgumbo1_0.10.1+dfsg-2.4_armhf.deb
+      version      0.10.1+dfsg-2.4
+      architecture armhf
+      bytes        96384
+      sha256       850192e2c19dbbf3b95e4fdd5171898d853cc9110fbd06a59f796473a953eaaf
+    libmujs1_1.1.3-3_armhf.deb
+      version      1.1.3-3
+      architecture armhf
+      bytes        98992
+      sha256       74678dd4d4a8a8c4783ca01075d9f9ebf5570c92e2c5dfba3d14fbb92ac88ece
+    python3-fitz_1.19.2+ds1-1ubuntu1_armhf.deb
+      version      1.19.2+ds1-1ubuntu1
+      architecture armhf
+      bytes        22953060
+      sha256       988b90cee5d8feadbccc14f66fad078f33cd639340f6549475b718f8d1eecf39
+GATE deb_arch_usable: PASS all armhf
+
+--- 3. dpkg-deb -x all three into one throwaway root
+GATE all_extracted: PASS 
+PYTHONPATH       /home/xilinx/b2prod_fitz_probe.qPrTGSnK/x/usr/lib/python3/dist-packages
+LD_LIBRARY_PATH  /home/xilinx/b2prod_fitz_probe.qPrTGSnK/x/usr/lib/arm-linux-gnueabihf
+    libgumbo.so.1
+    libgumbo.so.1.0.0
+    libmujs.so.1
+GATE extension_found: PASS _fitz.cpython-310-arm-linux-gnueabihf.so
+GATE abi_tag_matches: PASS vs interpreter .cpython-310-arm-linux-gnueabihf.so
+
+--- 4. ldd with the libraries on the path
+    	libjbig2dec.so.0 => /lib/arm-linux-gnueabihf/libjbig2dec.so.0 (0xb4d10000)
+    	libopenjp2.so.7 => /lib/arm-linux-gnueabihf/libopenjp2.so.7 (0xb4cc0000)
+    	libjpeg.so.8 => /lib/arm-linux-gnueabihf/libjpeg.so.8 (0xb4c70000)
+    	libfreetype.so.6 => /lib/arm-linux-gnueabihf/libfreetype.so.6 (0xb4be0000)
+    	libgumbo.so.1 => /home/xilinx/b2prod_fitz_probe.qPrTGSnK/x/usr/lib/arm-linux-gnueabihf/libgumbo.so.1 (0xb4b80000)
+    	libharfbuzz.so.0 => /lib/arm-linux-gnueabihf/libharfbuzz.so.0 (0xb4ad0000)
+    	libmujs.so.1 => /home/xilinx/b2prod_fitz_probe.qPrTGSnK/x/usr/lib/arm-linux-gnueabihf/libmujs.so.1 (0xb4a90000)
+    	libm.so.6 => /lib/arm-linux-gnueabihf/libm.so.6 (0xb4a30000)
+    	libgcc_s.so.1 => /lib/arm-linux-gnueabihf/libgcc_s.so.1 (0xb4a00000)
+    	libc.so.6 => /lib/arm-linux-gnueabihf/libc.so.6 (0xb48d0000)
+    	/lib/ld-linux-armhf.so.3 (0xb6fad000)
+    	libpng16.so.16 => /lib/arm-linux-gnueabihf/libpng16.so.16 (0xb4890000)
+    	libz.so.1 => /lib/arm-linux-gnueabihf/libz.so.1 (0xb4860000)
+    	libbrotlidec.so.1 => /lib/arm-linux-gnueabihf/libbrotlidec.so.1 (0xb4840000)
+    	libglib-2.0.so.0 => /lib/arm-linux-gnueabihf/libglib-2.0.so.0 (0xb4740000)
+    	libgraphite2.so.3 => /lib/arm-linux-gnueabihf/libgraphite2.so.3 (0xb4710000)
+    	libbrotlicommon.so.1 => /lib/arm-linux-gnueabihf/libbrotlicommon.so.1 (0xb46d0000)
+    	libpcre.so.3 => /lib/arm-linux-gnueabihf/libpcre.so.3 (0xb4660000)
+GATE ldd_complete: PASS 0 unresolved of 17
+
+--- 5. injected environment
+    fitz bind=1.19.2 mupdf=1.19.0
+    fitz.__file__ /home/xilinx/b2prod_fitz_probe.qPrTGSnK/x/usr/lib/python3/dist-packages/fitz/__init__.py
+    hasattr(fitz.Pixmap,'samples_mv') = False   (predicted False)
+GATE fitz_imports: PASS 
+GATE bind_is_1_19_2: PASS 1.19.2
+GATE mupdf_is_1_19_0: PASS 1.19.0
+GATE fitz_from_throwaway_root: PASS 
+GATE numpy_resolution_unchanged: PASS 
+GATE cv2_resolution_unchanged: PASS 
+GATE pynq_resolution_unchanged: PASS 
+
+--- 6. raw fitz: rendering, words, drawings
+    fitz            1.19.2 / mupdf 1.19.0
+    fitz.__file__   /home/xilinx/b2prod_fitz_probe.qPrTGSnK/x/usr/lib/python3/dist-packages/fitz/__init__.py
+    numpy           1.21.5
+    built           /home/xilinx/b2prod_fitz_probe.qPrTGSnK/v2_raw.pdf
+    pixmap          800x600 n=3 stride=2400
+    samples_mv      1440000 bytes, ndarray (600, 800, 3), zero-copy=True
+    render sha256   3e319013f156165c2afc4d24403d190c13f8927b48569d7449c2a81797eaeaa3
+    words           3, first=(20.0, 28.174999237060547, 75.61600494384766, 43.28900146484375, 'TERMINAL')
+    drawings        3 dicts, 3 items, kinds=l,re
+    line item       (10.0,80.0)-(190.0,80.0)
+    FUNC OK
+GATE raw_fitz_functional: PASS rc=0
+
+--- 7. this project's renderer under the injected runtime
+    GATE detector_imports: PASS /home/xilinx/jupyter_notebooks/b2prod_v2_sw/terminal_counter_endpoint_first.py
+    fitz             1.19.2 / mupdf 1.19.0
+    numpy            1.21.5
+    HAVE_SAMPLES_MV_ON_CLASS = False   (expected False on 1.19.2)
+    SAMPLES_MV_PATH before any render = 'not-yet-rendered'
+    
+    GATE rendered_shape_runs: PASS (680, 880, 3)
+    GATE render_page_works: PASS bgr=(680, 880, 3) gray=(680, 880)
+    GATE rendered_shape_agrees: PASS derived (680, 880, 3) vs actual (680, 880, 3)
+    GATE render_took_the_zero_copy_path: PASS SAMPLES_MV_PATH='samples_mv'
+       gray dtype=uint8  bgr dtype=uint8
+    GATE extract_words_runs: PASS 3 word(s)
+    GATE extract_words_nonempty: PASS 3
+       first word: {'text': 'TERMINAL', 'x0': 80.0, 'y0': 112.69999694824219, 'x1': 302.4640197753906, 'y1': 173.156005859375, 'cx': 191.2320098876953, 'cy': 142.9280014038086, 'h': 60.45600891113281}
+    GATE extract_segments_runs: PASS 5 segment(s)
+       get_drawings() directly: 4 dict(s), 4 item(s)
+    GATE get_drawings_is_not_silently_empty: PASS 4 dicts -- an empty result is what a BROKEN get_drawings() also returns, because the extractor swallows its exceptions
+       first segment: Segment(x0=40.0, y0=320.0, x1=840.0, y1=320.0)
+    
+    PROTOCOL V2 DETECTOR: PASS -- this project's renderer runs under PyMuPDF 1.19.2 / MuPDF 1.19.0, zero-copy path taken
+GATE detector_suite_exit: PASS rc=0
+
+--- 8. teardown
+GATE root_removed: PASS /home/xilinx/b2prod_fitz_probe.qPrTGSnK
+GATE no_probe_roots_left: PASS 0 remaining
+GATE fitz_absent_after: PASS 
+GATE nothing_installed_python3-fitz: PASS 
+GATE nothing_installed_libgumbo1: PASS 
+GATE nothing_installed_libmujs1: PASS 
+
+=== VERDICT
+PROTOCOL V2: PASS
+  Reads: this board runs THIS PROJECT'S renderer under a locally
+  staged PyMuPDF 1.19.2 / MuPDF 1.19.0, unprivileged, nothing
+  installed, taking the zero-copy pixmap path.
+  Does NOT read: Stage 2, or any agreement with MuPDF 1.29.
+  The page rendered was synthetic and no parity was compared.
+__PROBE_EXIT__ 0
+
+
+__EXIT__ 0
+

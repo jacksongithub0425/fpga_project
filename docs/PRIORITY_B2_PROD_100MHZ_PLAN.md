@@ -50,16 +50,25 @@ five-minute redesign.
   `libgumbo.so.1` and `libmujs.so.1`, neither is on the board, and the
   dynamic loader does not consult `PYTHONPATH`. A labelled supplementary run
   showed it is ~195 KB of further `.deb` away, not impossible
-  (`09_step2_fitz_1192.md`). The binding is 1.19.2 but its rasteriser is
-  **MuPDF 1.19.0**, against which no parity result on record was produced.
+  (`09_step2_fitz_1192.md`). **Formal protocol v2 then passed**: v1 plus the
+  two libraries in the same throwaway root, 34 gates, 0 failures, predictions
+  registered before the run (`11_protocol_v2_PREREGISTERED.md`,
+  `12_protocol_v2_RESULT.md`). It runs THIS PROJECT'S renderer, not raw
+  `fitz`, and the module the board loaded is byte-identical to the committed
+  one. The binding is 1.19.2 but its rasteriser is **MuPDF 1.19.0**, against
+  which no parity result on record was produced.
 * Board `cv2` is 4.5.4 against dev 5.0.0. `BGR2GRAY` and Otsu are
   bit-identical; `matchTemplate` differs by one float32 ULP (~1.2e-7),
   reaching host refinement only, where it can flip an argmax on a genuine
   tie.
-* B2/100 is not yet a final PASS. The open work is: formal PyMuPDF protocol
-  v2, requalification of MuPDF 1.19 across the 36-page corpus, the OpenCV
-  4.5.4 replay gate, the maximum-page whole-pipeline memory gate, then
-  Stage 2, Stage 3 and Stage 4.
+* B2/100 is not yet a final PASS. The open work is: requalification of
+  MuPDF 1.19 across the 36-page corpus, the OpenCV 4.5.4 replay gate, the
+  maximum-page whole-pipeline memory gate, then Stage 2, Stage 3 and
+  Stage 4. Protocol v2 is discharged.
+* Undecided, and needed before Stage 2: whether the 1.19.2 runtime is staged
+  per run (23.1 MB downloaded and ~36 MB unpacked each time), kept in a
+  persistent root, or installed properly. Protocol v2 proves the staging
+  works; it does not choose the deployment.
 
 ## Phase 0 — preserved input and clock configuration
 

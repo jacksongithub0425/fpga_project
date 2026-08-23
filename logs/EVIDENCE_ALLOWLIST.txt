@@ -87,6 +87,12 @@ logs/b2prod_20260823/09_step2_protocol_probe.txt
 logs/b2prod_20260823/09_step2_supplementary.txt
 logs/b2prod_20260823/10_step1_review_fixes.md
 logs/b2prod_20260823/11_protocol_v2_PREREGISTERED.md
+logs/b2prod_20260823/12_fitz_probe_env.py.as_run
+logs/b2prod_20260823/12_fitz_probe_func.py.as_run
+logs/b2prod_20260823/12_fitz_v2.sh.as_run
+logs/b2prod_20260823/12_fitz_v2_detector.py.as_run
+logs/b2prod_20260823/12_protocol_v2_RESULT.md
+logs/b2prod_20260823/12_protocol_v2_run.txt
 
 # -------------------------------------------------------------------
 # b2prod_20260822 — curated.  Every file is plain text, Python or

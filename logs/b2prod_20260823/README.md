@@ -24,6 +24,8 @@ session deliberately does not add one — see `../EVIDENCE_ALLOWLIST.txt`.
 | `09_step2_supplementary.txt` | the same with two dependency `.deb`s + `LD_LIBRARY_PATH`. **Not a Step 2 pass** |
 | `09_step2_fitz_1192.md` | the narrative for both, and what each may and may not be quoted for |
 | `10_step1_review_fixes.md` | the sampler's four fail-open holes, the alias-chain correction, the rename |
+| `11_protocol_v2_PREREGISTERED.md` | PyMuPDF protocol v2 and ten predictions, committed BEFORE the run |
+| `12_protocol_v2_RESULT.md`, `12_protocol_v2_run.txt` | protocol v2: **PASS**, 34 gates. This project's renderer runs under MuPDF 1.19.0, zero-copy path taken |
 
 ## Provenance of the `.as_run` snapshots — NOT uniform
 
@@ -56,6 +58,12 @@ re-run. It does not weaken `08_samples_mv.txt` itself — that transcript
 prints the interpreter's own answers — but the *script* behind it is
 attested one step less well than the other five, and that is worth knowing
 before either is quoted.
+
+The four `12_*.as_run` helpers ARE read back, and protocol v2 also read
+back the module under test: `terminal_counter_endpoint_first.py` at
+`36a1d7d8c07cd3828e515fa358d8f8e1c4d5ea4dcde939e0d4145066d2f107d9`, which
+is byte-identical to that file in commit `3702b2b`. That run is tied to a
+commit rather than to a working copy.
 
 `.gitattributes` marks this whole tree `-text` so a checkout cannot rewrite
 the bytes these digests describe.

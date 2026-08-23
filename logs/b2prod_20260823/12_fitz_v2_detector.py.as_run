@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""Protocol v2's real question: does THIS PROJECT'S renderer run under 1.19?
+
+v1 called `get_pixmap` / `get_text` / `get_drawings` directly, which answers
+"the library works" and not "our code works".  The gap between those is
+where a rebase bites, so this imports `terminal_counter_endpoint_first` under
+the injected runtime and drives its own entry points.
+
+It asserts FUNCTION, never AGREEMENT.  Segment counts, word boxes and pixel
+bytes may all differ from MuPDF 1.29 and that is not a failure here -- it is
+the requalification, it needs the corpus, and it is a separate exercise.
+
+Prints `GATE <name>: PASS|FAIL`; exits non-zero if any gate failed.
+"""
+import sys
+import traceback
+
+FAILED = []
+
+
+def gate(name, ok, detail=""):
+    print("GATE %s: %s %s" % (name, "PASS" if ok else "FAIL", detail))
+    if not ok:
+        FAILED.append(name)
+
+
+pdf_path = sys.argv[1]
+
+# --- the import itself is prediction 5, and it is genuinely open ---------
+try:
+    import fitz
+    import numpy as np
+    import terminal_counter_endpoint_first as det
+except BaseException as exc:                                 # noqa: BLE001
+    traceback.print_exc()
+    gate("detector_imports", False, "%s: %s" % (type(exc).__name__, exc))
+    print("PROTOCOL V2 DETECTOR: FAIL -- %s" % " ".join(FAILED))
+    raise SystemExit(1)
+
+gate("detector_imports", True, det.__file__)
+print("fitz             %s / mupdf %s" % (fitz.VersionBind, fitz.VersionFitz))
+print("numpy            %s" % np.__version__)
+print("HAVE_SAMPLES_MV_ON_CLASS = %s   (expected False on 1.19.2)"
+      % det.HAVE_SAMPLES_MV_ON_CLASS)
+print("SAMPLES_MV_PATH before any render = %r" % det.SAMPLES_MV_PATH)
+print()
+
+# --- build a small page with the module's own dependencies --------------
+doc = fitz.open()
+page = doc.new_page(width=220, height=170)
+page.insert_text((20, 40), "TERMINAL A1 B2", fontsize=11)
+page.draw_line(fitz.Point(10, 80), fitz.Point(210, 80))
+page.draw_line(fitz.Point(10, 100), fitz.Point(130, 100))
+page.draw_line(fitz.Point(10, 120), fitz.Point(200, 120))
+page.draw_rect(fitz.Rect(30, 130, 90, 160))
+doc.save(pdf_path)
+doc.close()
+
+doc = fitz.open(pdf_path)
+page = doc[0]
+zoom = 4.0
+
+# --- rendered_shape(): geometry, asserted rather than assumed -----------
+try:
+    predicted = det.rendered_shape(page, zoom)
+    gate("rendered_shape_runs", True, str(predicted))
+except BaseException as exc:                                 # noqa: BLE001
+    traceback.print_exc()
+    predicted = None
+    gate("rendered_shape_runs", False, "%s" % (exc,))
+
+# --- render_page(): the 186 MB question ---------------------------------
+try:
+    bgr, gray, _ = det.render_page(page, zoom=zoom, keep_bgr=True)
+    gate("render_page_works", True,
+         "bgr=%s gray=%s" % (getattr(bgr, "shape", None), gray.shape))
+    if predicted is not None:
+        gate("rendered_shape_agrees", tuple(bgr.shape) == tuple(predicted),
+             "derived %s vs actual %s" % (predicted, bgr.shape))
+    # THE gate this protocol exists to run.  The pre-fix code asked the
+    # CLASS, which is False here, and would have taken the `pix.samples`
+    # bytes-copy path: 186,126,336 B on a production page.
+    gate("render_took_the_zero_copy_path",
+         det.SAMPLES_MV_PATH == "samples_mv",
+         "SAMPLES_MV_PATH=%r" % det.SAMPLES_MV_PATH)
+    print("   gray dtype=%s  bgr dtype=%s" % (gray.dtype, bgr.dtype))
+except BaseException as exc:                                 # noqa: BLE001
+    traceback.print_exc()
+    gray = None
+    gate("render_page_works", False, "%s: %s" % (type(exc).__name__, exc))
+    gate("render_took_the_zero_copy_path", False, "render did not complete")
+
+# --- extract_words(): text suppression and labels depend on it ----------
+try:
+    words = det.extract_words(page, zoom)
+    gate("extract_words_runs", True, "%d word(s)" % len(words))
+    gate("extract_words_nonempty", len(words) > 0, "%d" % len(words))
+    if words:
+        w = words[0]
+        print("   first word: %r" % (w,))
+except BaseException as exc:                                 # noqa: BLE001
+    traceback.print_exc()
+    gate("extract_words_runs", False, "%s: %s" % (type(exc).__name__, exc))
+
+# --- extract_horizontal_segments_vector(): get_drawings() path ----------
+#
+# NOTE: `extract_horizontal_segments_vector` swallows every exception from
+# `get_drawings()` and returns [].  So "it ran" is not "it worked" -- an
+# empty list is exactly what a broken get_drawings() looks like.  Both are
+# reported, and get_drawings() is called directly beside it so the two
+# cannot be confused.
+try:
+    img_w = int(gray.shape[1]) if gray is not None else int(220 * zoom)
+    segs = det.extract_horizontal_segments_vector(page, zoom, img_w)
+    gate("extract_segments_runs", True, "%d segment(s)" % len(segs))
+    raw = page.get_drawings()
+    items = sum(len(d.get("items", ())) for d in raw)
+    print("   get_drawings() directly: %d dict(s), %d item(s)"
+          % (len(raw), items))
+    gate("get_drawings_is_not_silently_empty", len(raw) > 0,
+         "%d dicts -- an empty result is what a BROKEN get_drawings() also "
+         "returns, because the extractor swallows its exceptions" % len(raw))
+    if segs:
+        print("   first segment: %r" % (segs[0],))
+except BaseException as exc:                                 # noqa: BLE001
+    traceback.print_exc()
+    gate("extract_segments_runs", False, "%s: %s" % (type(exc).__name__, exc))
+
+doc.close()
+
+print()
+if FAILED:
+    print("PROTOCOL V2 DETECTOR: FAIL -- %s" % " ".join(FAILED))
+    raise SystemExit(1)
+print("PROTOCOL V2 DETECTOR: PASS -- this project's renderer runs under "
+      "PyMuPDF %s / MuPDF %s, zero-copy path taken"
+      % (fitz.VersionBind, fitz.VersionFitz))

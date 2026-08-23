@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""Report how this interpreter resolves the modules that matter.
+
+Run twice by `fitz_probe.sh`: once clean, once with the extracted 1.19.2
+tree on PYTHONPATH.  The two reports are diffed, and anything that moves
+other than `fitz` itself is a FAIL -- the whole claim of the probe is that
+injecting a rasteriser changes nothing else about the runtime.
+
+Prints JSON on stdout and nothing else, so the diff is exact.
+"""
+import json
+import platform
+import sys
+import sysconfig
+
+out = {}
+out["executable"] = sys.executable
+out["python"] = sys.version.split()[0]
+out["implementation"] = sys.implementation.name
+out["machine"] = platform.machine()
+out["ext_suffix"] = sysconfig.get_config_var("EXT_SUFFIX")
+out["maxsize_bits"] = sys.maxsize.bit_length() + 1
+out["pythonpath_env"] = sys.path[0] if sys.path else ""
+
+for mod in ("numpy", "cv2", "pynq", "fitz"):
+    entry = {}
+    try:
+        m = __import__(mod)
+    except BaseException as exc:                             # noqa: BLE001
+        entry["import"] = "FAILED"
+        entry["error"] = "%s: %s" % (type(exc).__name__, exc)
+    else:
+        entry["import"] = "ok"
+        entry["file"] = str(getattr(m, "__file__", ""))
+        entry["version"] = str(getattr(m, "__version__", ""))
+    out[mod] = entry
+
+fitz_extra = {}
+try:
+    import fitz
+    fitz_extra["VersionBind"] = str(fitz.VersionBind)
+    fitz_extra["VersionFitz"] = str(fitz.VersionFitz)
+    fitz_extra["samples_mv"] = bool(hasattr(fitz.Pixmap, "samples_mv"))
+    fitz_extra["file"] = str(fitz.__file__)
+except BaseException as exc:                                 # noqa: BLE001
+    fitz_extra["error"] = "%s: %s" % (type(exc).__name__, exc)
+out["fitz_detail"] = fitz_extra
+
+print(json.dumps(out, sort_keys=True, indent=1))
