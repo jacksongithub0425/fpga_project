@@ -3,7 +3,7 @@
 
 RUN THIS ON THE BOARD, after board_gate_full_dma.py PASSES:
 
-    sudo python3 board_gate_extract.py --overlay three_stage_combined.bit
+    sudo -E python3 board_gate_extract.py --overlay three_stage_combined.bit
 
 Gate 3 validated `binarize_page()` at full size.  This is the gate for
 everything after it.
@@ -725,8 +725,9 @@ def phase_d_match_candidate(pl, g: dict, rep: Report,
 
     # An empty selection must not touch the hardware at all.
     empty = pl.match_candidate(patch, PATCH_X0, PATCH_Y0, [])
-    rep.require(empty == {"best": None, "by_kind": {}},
-                "an empty trial list returns without running anything",
+    rep.require(empty == {"best": None, "by_kind": {}, "trials": 0},
+                "an empty trial list returns without running anything, and "
+                "SAYS it ran nothing",
                 str(empty))
     return out
 

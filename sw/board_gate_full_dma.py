@@ -4,7 +4,7 @@
 RUN THIS ON THE BOARD, after probe_cma_budget.py PASSES and
 inspect_overlay.py PASSES:
 
-    sudo python3 board_gate_full_dma.py --overlay /home/xilinx/three_stage_combined.bit
+    sudo -E python3 board_gate_full_dma.py --overlay /home/xilinx/three_stage_combined.bit
 
 probe_cma_budget.py proves the two ~60.2 MiB buffers can be ALLOCATED (§2.2).
 This script is the separate gate the allocation probe deliberately is not: it

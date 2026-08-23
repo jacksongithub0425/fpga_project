@@ -29,7 +29,7 @@ different question than the driver asks.  Sizes are imported from
 falls back to the two-buffer sequence, and reports a **weaker capacity
 preflight** (exit 2) rather than claiming the §2.2 gate.
 
-    sudo python3 probe_cma_budget.py --overlay /path/to/terminal_counter.bit
+    sudo -E python3 probe_cma_budget.py --overlay /path/to/terminal_counter.bit
 
 Exit status: 0 = both buffers allocated and usable, 1 = the §2.2 gate FAILS
 and tiling becomes a platform requirement (§2.2's stated alternative),

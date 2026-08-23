@@ -939,6 +939,25 @@ class PLPipeline:
         self._transfers_outstanding = False
         return self.binary_view()
 
+    def image_buffers(self) -> dict:
+        """The two full-page CMA buffers, by name, for the memory sampler.
+
+        `None` where one is not allocated yet, which is the state before the
+        first `binarize_page()` of the process — and NOT the state at the
+        start of page 2, because `_ensure_image_bufs` keeps them.
+
+        These are the allocations no host-side array names.  `binary_view()`
+        makes `_bin_buf` reachable through `page_bin`/`clean_bin`, but
+        `_gray_buf` is referenced only from here: 62 MB on a production
+        page, live for the whole page, out of a ~290 MiB userspace budget.
+
+        Returns the buffers themselves, not sizes.  The sampler's
+        `describe_arrays` takes scalars off them and keeps no reference, and
+        handing it the object is what lets it report the ALIASING — that
+        `clean_bin` and `_bin_buf` are one allocation rather than two.
+        """
+        return {"cma_gray": self._gray_buf, "cma_binary": self._bin_buf}
+
     def binary_view(self) -> np.ndarray:
         """Zero-copy (h, w) view of the binary page in DDR.
 
@@ -952,7 +971,8 @@ class PLPipeline:
         return np.frombuffer(self._bin_buf, dtype=np.uint8,
                              count=h * stride).reshape(h, stride)[:, :w]
 
-    def suppress_text(self, words: Sequence[dict]) -> None:
+    def suppress_text(self, words: Sequence[dict],
+                      expand: int = 3) -> None:
         """Zero text bboxes in the shared DDR3 binary image buffer.
 
         Replicates build_text_suppressed_binary() using direct numpy writes
@@ -981,6 +1001,14 @@ class PLPipeline:
         `last_suppress_stats` records how many rectangles were applied and how
         many clipped to nothing (a word wholly off the page — legal, since the
         clip is what it is for, but worth being able to assert on).
+
+        `expand` is a PARAMETER, not the constant it used to be.
+        `detect_page` passes `max(2, round(zoom))` - 4 at the default zoom -
+        so a hardcoded 3 suppressed a one-pixel-thinner box than the CPU
+        around every word of every page. Nothing raises on that: the
+        extractor just sees a little more text than the CPU did, and scores
+        move. The default stays 3, so every existing caller and its tests
+        are unchanged.
         """
         self._require_usable("run suppress_text")
         if self._img_w == 0:
@@ -992,7 +1020,7 @@ class PLPipeline:
             raise RuntimeError("binarize_page() must run before "
                                "suppress_text(); there is no binary page to "
                                "suppress into")
-        expand = 3
+        expand = int(expand)
         h, w = self._img_h, self._img_w
 
         boxes: list[tuple] = []
@@ -1517,10 +1545,19 @@ class PLPipeline:
         baseline's rule (`tw >= patch_w or th >= patch_h` — the baseline skips
         equality even though §4.4 makes it legal on the PL; parity wins here).
 
-        Returns {"best": hit-or-None, "by_kind": {kind: hit}} where each hit
-        carries score, raw_score, match_x/y, kind, templ_id, base_index,
-        scale, and box = (patch_x0 + match_x, patch_y0 + match_y, templ_w,
-        templ_h) in absolute logical-page coordinates (§1/§6.3 decision).
+        Returns {"best": hit-or-None, "by_kind": {kind: hit},
+        "trials": n} where each hit carries score, raw_score, match_x/y,
+        kind, templ_id, base_index, scale, and box = (patch_x0 + match_x,
+        patch_y0 + match_y, templ_w, templ_h) in absolute logical-page
+        coordinates (§1/§6.3 decision).
+
+        `trials` is the number of matcher INVOCATIONS this call dispatched --
+        the length of the selected list, after the legality and fit filters.
+        It is reported rather than left to the caller to infer, because the
+        only thing a caller can see is `by_kind`, which holds at most one
+        winner per class: counting that gave 3 for a candidate that ran 52
+        invocations, and every wall-time-per-trial and cycle-model comparison
+        downstream divides by this number.
         """
         # Explicit, and before the selection loop: the empty-selection early
         # return below skips `_begin_stage`, which is where a poisoned or
@@ -1554,7 +1591,7 @@ class PLPipeline:
         # `_begin_stage`/`_end_stage` window for no reason.  Same shape of
         # answer as a run where nothing scored: best=None, empty by_kind.
         if not selected:
-            return {"best": None, "by_kind": {}}
+            return {"best": None, "by_kind": {}, "trials": 0}
 
         self._begin_stage("run match_candidate")
         self._stage_patch(patch)
@@ -1584,7 +1621,18 @@ class PLPipeline:
                 by_kind[k] = hit
 
         self._end_stage()
-        return {"best": best, "by_kind": by_kind}
+        return {"best": best, "by_kind": by_kind, "trials": len(selected)}
+
+    @property
+    def overlay(self):
+        """The loaded `Overlay`.
+
+        Public so a production runner can gate this build's identity -- the
+        matcher VLNV and the live FCLK0/FCLK1 -- before it processes a page.
+        Read-only: rebinding it would leave every cached IP handle above
+        pointing into a bitstream that is no longer loaded.
+        """
+        return self._ol
 
     # -- teardown --------------------------------------------------------------
 

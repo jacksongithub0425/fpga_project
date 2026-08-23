@@ -370,7 +370,7 @@ def test_empty_selection_touches_no_hardware():
     for label, trials in (("no trials", []), ("all too big", too_big)):
         before = bytes(p._tme_patch_buf[:64])
         out = p.match_candidate(patch, 3, 4, trials)
-        assert out == {"best": None, "by_kind": {}}, f"{label}: {out}"
+        assert out == {"best": None, "by_kind": {}, "trials": 0},             f"{label}: {out}"
         assert p._dma_patch.sendchannel.armed == 0, f"{label}: armed a DMA"
         assert p._tme.started == 0, f"{label}: started the core"
         assert p._staged_patch is None, f"{label}: staged the patch"

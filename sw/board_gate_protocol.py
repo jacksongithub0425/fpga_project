@@ -3,7 +3,7 @@
 
 RUN THIS ON THE BOARD, after board_gate_extract.py (gate 4) PASSES:
 
-    sudo python3 board_gate_protocol.py --overlay three_stage_combined.bit
+    sudo -E python3 board_gate_protocol.py --overlay three_stage_combined.bit
 
 WHY A FIFTH GATE INSTEAD OF MORE PHASES IN GATE 4.  Gate 4's result is pinned
 evidence for the 0.2 build and must not move.  Everything here is new
@@ -664,8 +664,9 @@ def phase_d_reduction(pl, g: dict, rep: Report, patch: np.ndarray,
                 f"({fa['match_x']},{fa['match_y']})")
 
     empty = pl.match_candidate(patch, c0["x0"], c0["y0"], [])
-    rep.require(empty == {"best": None, "by_kind": {}},
-                "an empty trial list returns without running anything",
+    rep.require(empty == {"best": None, "by_kind": {}, "trials": 0},
+                "an empty trial list returns without running anything, and "
+                "SAYS it ran nothing",
                 str(empty))
     return out
 
