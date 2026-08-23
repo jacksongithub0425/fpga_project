@@ -56,6 +56,30 @@ hls/template_match/template_match_b1/b1/impl/ip/*.zip -text
 hls/template_match/template_match_b1_b2/b2/impl/ip/*.zip -text
 hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml -text
 
+# Priority 6's packaged IP, for B2's reason exactly. This is the directory
+# vivado_b0b_125.log names as the IP repository for the 8.000 ns run that did
+# NOT close, so it is that route's input; logs/b0b_20260820/MANIFEST.sha256
+# hashes the ZIP raw (c4df8ee4...a38f5e9) and would not verify from a CRLF
+# checkout at all.
+hls/template_match/template_match_b0b_b0b/b0b/impl/ip/*.zip -text
+hls/template_match/template_match_b0b_b0b/b0b/impl/ip/component.xml -text
+
+# The Vivado build script and the packaging script AS THEY RAN. Same argument
+# as the board runner below: an immutable snapshot is only worth keeping if a
+# fresh clone still holds the bytes that ran. build_tme_standalone.tcl.as_run
+# is pinned at 1f2c9b47... by all three manifests, and the living generator has
+# since moved -- that drift is why these snapshots exist.
+logs/b1_20260818/build_tme_standalone.tcl.as_run -text
+logs/b2_20260819/build_tme_standalone.tcl.as_run -text
+logs/b0b_20260820/build_tme_standalone.tcl.as_run -text
+logs/b0b_20260820/package_b0b.tcl.as_run -text
+
+# The mutant-gate transcripts. RAW TOOL OUTPUT, bound by the B0b manifest and
+# re-scored by `tme_b0b_mutants.py --replay`; the exit statuses beside them are
+# half of every verdict.
+hls/template_match/b0b_sources/mutants/csim_*.log -text
+hls/template_match/b0b_sources/mutants/exit_codes.txt -text
+
 # The board runner AS IT RAN. logs/b1_board_20260818/01_hashes_local.txt,
 # 02_hashes_remote.txt and 03_run.txt all pin it at
 # f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153, taken with
@@ -83,3 +107,28 @@ logs/b2_20260819/** -text
 # The B2 board session's transcripts, same rule: raw tool and shell output,
 # hashed as-is on both the host and the board.
 logs/b2_board_20260819/** -text
+
+# The b2prod evidence sets, and one rule for all of them: an `.as_run`
+# snapshot is a claim about BYTES.  `logs/b2prod_20260821/*/as_run/
+# PAYLOAD.sha256` hashes the whole uploaded payload under the payload's own
+# BARE names (`board_expect.py`), of which the `.as_run` files beside it are
+# a renamed subset -- 5 of 10 for preflight, 9 of 32 for stage 1 -- so
+# `sha256sum -c` in that directory does not run as-is and never did.  What
+# does run is matching each `<name>.as_run` against the manifest line for
+# `<name>`, and all 14 do.  That check is a byte comparison, so an
+# EOL-normalised checkout breaks every one of them and turns the strongest
+# thing these directories carry -- the code exactly as it ran, tied to the
+# transcript by digest -- into something that cannot be verified.  Same
+# rule, and the same reason, as the Priority 4/5/6 `.as_run` entries above.
+# The rule is WHOLESALE over the three b2prod trees, not per file type, and
+# that is the correction: picking out `*.as_run` and `*.txt` left
+# `b2prod_20260822`'s 29 files and `b2prod_20260821/clock_probe`'s 11
+# EOL-normalised while their siblings were not, which is an arbitrary split
+# through one evidence set.  These directories are an ARCHIVE of what ran
+# and what came back; nothing in them is edited after the fact, so there is
+# no case where normalising helps and several where it destroys the only
+# thing a file is good for.
+logs/b2prod_20260821/** -text
+logs/b2prod_20260822/** -text
+logs/b2prod_20260823/** -text
+logs/EVIDENCE_ALLOWLIST.txt -text

@@ -1,0 +1,243 @@
+# Evidence allowlist — the exact files under logs/ that are TRACKED
+# ===================================================================
+#
+# WHY A LIST RATHER THAN A NEGATION.  `.gitignore` line 13 is `logs/*`,
+# and every earlier evidence set was admitted by adding
+# `!logs/<dir>/` + `!logs/<dir>/**` beneath it.  That pattern re-includes
+# EVERYTHING a directory ever comes to hold — which is how
+# `logs/**/__pycache__/` had to be re-excluded afterwards, and it only
+# worked because someone noticed.  These three directories hold evidence
+# mixed with things that must not be committed: per-page geometry JSON
+# derived from confidential drawings, a NOT-A-GATE sampler JSONL that says
+# nothing about the board, Vivado build spill, and debug images.
+#
+# So `logs/*` is UNCHANGED and nothing here is unignored.  Each path below
+# was added with `git add -f`, individually, and this file is the record of
+# which ones and why.  A path that is not on this list is not tracked, and
+# adding one is a deliberate act rather than a side effect of where a tool
+# happened to write.
+#
+# NO DIGEST MANIFEST accompanies this, deliberately.  A manifest answers
+# "were these bytes edited"; this file answers "which files are evidence
+# and which are spill", and that is the question the `logs/*` rule keeps
+# getting wrong.  The evidence sets that DO carry manifests
+# (b1_20260818, b2_20260819, b0b_20260820) keep them.
+#
+# WHAT IS DELIBERATELY EXCLUDED, and where it still lives:
+#
+#   *_geometry.json in b2prod_20260823   per-page detector geometry; the
+#                                        confidential-derived rule at the
+#                                        top of .gitignore covers the kind
+#   *.jsonl in b2prod_20260823           the off-board sampler runs.  Every
+#                                        record in them reads NOT-A-GATE by
+#                                        construction (Windows psapi, not
+#                                        /proc); the numbers that matter are
+#                                        quoted in 06_memory_sampler.md, and
+#                                        the files are regenerable by
+#                                        re-running the sampler
+#   logs/b2prod_20260821/baseline_impl1/ 1.6 MB of Vivado .rpt, cited by no
+#                                        narrative, and a DIFFERENT design
+#                                        point from the one Gate B/C quotes
+#                                        (WNS +4.358 over 110,953 endpoints
+#                                        vs +0.135 over 123,002).  Build
+#                                        output, not a result
+#   logs/b2prod_20260821/gate[AB]/*.jou  Vivado journals — command echo
+#   logs/b2prod_20260821/gate[AB]/*.stdout  semantically redundant with
+#                                        the matching .log: the same
+#                                        run's output through a second
+#                                        capture. NOT byte-identical --
+#                                        this line read "byte-duplicates"
+#                                        until that was checked
+#   logs/b2prod_20260821/stage2/         NOT part of the Gate A–C /
+#                                        preflight / Stage-1 subset this
+#                                        mirror was scoped to.  It is intact
+#                                        in the out-of-repository tree at
+#                                        C:/Users/lychee/Desktop/FPGA/logs/
+#                                        b2prod_20260821/stage2/ and can be
+#                                        added later by extending this list
+#
+# The b2prod_20260821 tree is a MIRROR: the originals live outside the
+# repository at the path above, and nothing here is edited in place.
+#
+# -------------------------------------------------------------------
+# b2prod_20260823 — the current session's records.
+# The seven text/Markdown records that existed at review time, plus
+# the six added by this session's board work and the .as_run snapshots
+# of the scripts that produced them.  All plain text.
+# -------------------------------------------------------------------
+logs/b2prod_20260823/README.md
+logs/b2prod_20260823/01_preflight.txt
+logs/b2prod_20260823/02_gate7_recovery.txt
+logs/b2prod_20260823/03_script_identity.txt
+logs/b2prod_20260823/04_counted_clock.txt
+logs/b2prod_20260823/05_board_environment.md
+logs/b2prod_20260823/06_memory_sampler.md
+logs/b2prod_20260823/06_sampler_offboard_dryrun.txt
+logs/b2prod_20260823/07_pynq_alias_chain.txt
+logs/b2prod_20260823/07_pynq_alias_probe.py.as_run
+logs/b2prod_20260823/08_samples_mv.txt
+logs/b2prod_20260823/08_samples_mv_probe.py.as_run
+logs/b2prod_20260823/08_samples_mv_run.sh.as_run
+logs/b2prod_20260823/09_step2_fitz_1192.md
+logs/b2prod_20260823/09_step2_fitz_probe.sh.as_run
+logs/b2prod_20260823/09_step2_fitz_probe2.sh.as_run
+logs/b2prod_20260823/09_step2_fitz_probe_env.py.as_run
+logs/b2prod_20260823/09_step2_fitz_probe_func.py.as_run
+logs/b2prod_20260823/09_step2_protocol_probe.txt
+logs/b2prod_20260823/09_step2_supplementary.txt
+logs/b2prod_20260823/10_step1_review_fixes.md
+
+# -------------------------------------------------------------------
+# b2prod_20260822 — curated.  Every file is plain text, Python or
+# small JSON, and each .py is the probe that produced the .txt beside
+# it: the reproduction path, not a stray script.  The two corpus JSONs
+# are the DATA their .txt companions summarise, which is why both
+# halves are kept.
+# -------------------------------------------------------------------
+logs/b2prod_20260822/AUDIT_CORRECTIONS.md
+logs/b2prod_20260822/corpus_cpu_oracle_gap.json
+logs/b2prod_20260822/corpus_cpu_oracle_gap.txt
+logs/b2prod_20260822/corpus_parity_offboard.json
+logs/b2prod_20260822/corpus_parity_offboard.txt
+logs/b2prod_20260822/gate7_mutation_control.py
+logs/b2prod_20260822/gate7_mutation_control.txt
+logs/b2prod_20260822/gate7_repro_after_fix.txt
+logs/b2prod_20260822/gate7_repro_before_fix.py
+logs/b2prod_20260822/gray_parity.py
+logs/b2prod_20260822/gray_parity.txt
+logs/b2prod_20260822/otsu_corpus.py
+logs/b2prod_20260822/otsu_corpus.txt
+logs/b2prod_20260822/otsu_exactness.py
+logs/b2prod_20260822/otsu_exactness.txt
+logs/b2prod_20260822/otsu_mutation_control.py
+logs/b2prod_20260822/otsu_mutation_control.txt
+logs/b2prod_20260822/otsu_variants.py
+logs/b2prod_20260822/render_parity.py
+logs/b2prod_20260822/render_parity.txt
+logs/b2prod_20260822/stage3_cycles.py
+logs/b2prod_20260822/stage3_cycles.txt
+logs/b2prod_20260822/stage3_refine.py
+logs/b2prod_20260822/stage3_refine.txt
+logs/b2prod_20260822/stripe_proto.py
+logs/b2prod_20260822/stripe_variants.py
+logs/b2prod_20260822/stripe_variants.txt
+logs/b2prod_20260822/test_board_gate_recovery.txt
+logs/b2prod_20260822/test_pl_backends.txt
+
+# -------------------------------------------------------------------
+# b2prod_20260821 — MIRRORED subset: Gate A, Gate B/C, the preflight
+# session and Stage 1.  Selected by what the three evidence narratives
+# actually cite, plus the two Vivado logs that CARRY the headline
+# numbers (gateA/signoff.log has Gate A's WNS 0.243; gateB/export2.log
+# has Gate B/C's WNS 0.135 and is the run that exported the .bit/.hwh;
+# gateB/signoff_congestion_high_clean_retry.log is the congestion
+# experiment that came out WORSE, and a negative result whose input
+# cannot be recovered is the one people most want to re-examine).
+# gateA/signoff_attempt1.log is kept for the same reason.
+# The as_run/ directories are the scripts exactly as run plus their
+# PAYLOAD.sha256 — without them the transcripts name no code.
+# -------------------------------------------------------------------
+logs/b2prod_20260821/GATE_B_C_EVIDENCE.md
+logs/b2prod_20260821/PHASE0_EVIDENCE.md
+logs/b2prod_20260821/PREFLIGHT_EVIDENCE.md
+logs/b2prod_20260821/clock_probe/PREDICTION.txt
+logs/b2prod_20260821/clock_probe/catalog.txt
+logs/b2prod_20260821/clock_probe/probe1_sweep.txt
+logs/b2prod_20260821/clock_probe/probe3_levers.txt
+logs/b2prod_20260821/clock_probe/probe4_refine.txt
+logs/b2prod_20260821/clock_probe/probe_catalog.tcl
+logs/b2prod_20260821/clock_probe/probe_fclk.tcl
+logs/b2prod_20260821/clock_probe/probe_fclk3.tcl
+logs/b2prod_20260821/clock_probe/probe_fclk4.tcl
+logs/b2prod_20260821/clock_probe/variant_selftest.tcl
+logs/b2prod_20260821/clock_probe/variant_selftest.txt
+logs/b2prod_20260821/gateA/dfx_runtime.txt
+logs/b2prod_20260821/gateA/make_variant.log
+logs/b2prod_20260821/gateA/signoff.log
+logs/b2prod_20260821/gateA/signoff_attempt1.log
+logs/b2prod_20260821/gateB/export2.log
+logs/b2prod_20260821/gateB/probe_boundary_crc.tcl
+logs/b2prod_20260821/gateB/restore_default_strategy.tcl
+logs/b2prod_20260821/gateB/signoff.log
+logs/b2prod_20260821/gateB/signoff_congestion_high_clean_retry.log
+logs/b2prod_20260821/preflight/00_platform.txt
+logs/b2prod_20260821/preflight/01_who_holds_cma.txt
+logs/b2prod_20260821/preflight/02_runtime.txt
+logs/b2prod_20260821/preflight/03_runtime_venv.txt
+logs/b2prod_20260821/preflight/04_clocks_preexisting.txt
+logs/b2prod_20260821/preflight/05_payload_verify.txt
+logs/b2prod_20260821/preflight/06_preflight_run1.txt
+logs/b2prod_20260821/preflight/07_probe_dma_driver_starts.txt
+logs/b2prod_20260821/preflight/08_preflight_run2.txt
+logs/b2prod_20260821/preflight/09_final_board_state.txt
+logs/b2prod_20260821/preflight/10_sudo_invocation.txt
+logs/b2prod_20260821/preflight/11_preflight_run3_final.txt
+logs/b2prod_20260821/preflight/12_final_board_state.txt
+logs/b2prod_20260821/preflight/13_reboot.txt
+logs/b2prod_20260821/preflight/14_wait_for_boot.txt
+logs/b2prod_20260821/preflight/15_post_boot_state.txt
+logs/b2prod_20260821/preflight/16_preflight_freshboot.txt
+logs/b2prod_20260821/preflight/17_final_board_state.txt
+logs/b2prod_20260821/preflight/as_run/HOW_TO_VERIFY.txt
+logs/b2prod_20260821/preflight/as_run/PAYLOAD.sha256
+logs/b2prod_20260821/preflight/as_run/board_expect.py.as_run
+logs/b2prod_20260821/preflight/as_run/board_idle_check.py.as_run
+logs/b2prod_20260821/preflight/as_run/board_preflight.py.as_run
+logs/b2prod_20260821/preflight/as_run/inspect_overlay.py.as_run
+logs/b2prod_20260821/preflight/as_run/probe_cma_budget.py.as_run
+logs/b2prod_20260821/stage1/00_board_state.txt
+logs/b2prod_20260821/stage1/01_who_holds_cma.txt
+logs/b2prod_20260821/stage1/02_upload.txt
+logs/b2prod_20260821/stage1/03_payload_verify.txt
+logs/b2prod_20260821/stage1/04_runtime.txt
+logs/b2prod_20260821/stage1/05_preflight.txt
+logs/b2prod_20260821/stage1/06_gate3_full_dma.txt
+logs/b2prod_20260821/stage1/07_gate4_extract.txt
+logs/b2prod_20260821/stage1/08_gate5_protocol.txt
+logs/b2prod_20260821/stage1/09_gate6_clock.txt
+logs/b2prod_20260821/stage1/10_gate7_recovery.txt
+logs/b2prod_20260821/stage1/11_final_board_state.txt
+logs/b2prod_20260821/stage1/FAILSTOP_FIX.md
+logs/b2prod_20260821/stage1/STAGE1_EVIDENCE.md
+logs/b2prod_20260821/stage1/as_run/HOW_TO_VERIFY.txt
+logs/b2prod_20260821/stage1/as_run/PAYLOAD.sha256
+logs/b2prod_20260821/stage1/as_run/board_expect.py.as_run
+logs/b2prod_20260821/stage1/as_run/board_gate_clock.py.as_run
+logs/b2prod_20260821/stage1/as_run/board_gate_extract.py.as_run
+logs/b2prod_20260821/stage1/as_run/board_gate_full_dma.py.as_run
+logs/b2prod_20260821/stage1/as_run/board_gate_protocol.py.as_run
+logs/b2prod_20260821/stage1/as_run/board_gate_recovery.py.as_run
+logs/b2prod_20260821/stage1/as_run/board_preflight.py.as_run
+logs/b2prod_20260821/stage1/as_run/safe_teardown.py.as_run
+logs/b2prod_20260821/stage1/as_run/tme_driver.py.as_run
+
+# -------------------------------------------------------------------
+# WHAT MAY NOT BE COMMITTED AT ALL: DRAWING IDENTIFIERS
+#
+# The corpus is 35 confidential drawings.  Their FILENAMES identify them,
+# and two tools in this repository had already said so -- the `redact()`
+# in tme_trace_capture.py ("a source DRAWING FILENAME is itself
+# identifying") and page_labels() in tme_full_search_baseline.py ("must
+# not appear in any committable output").  Neither was enforced, and the
+# eight B2-PROD commits carried 35 identifiers into 20 tracked files.
+#
+# THE DECISION, taken before the branch was ever pushed: enforce the rule
+# the repository already stated, rather than scope it down to "aggregate
+# outputs only".  Scoping it down would have meant weakening those two
+# comments and the frozen-detections rule in cpu_baseline_snapshot.py,
+# which is a larger change than fixing the leak.  The eight commits were
+# rewritten; nothing had reached any remote.  See logs/REDACTION_NOTE.md.
+#
+# THE RULE.  Committable output names pages by LABEL:
+#
+#     doc_001 .. doc_035     one per file
+#     page_001 .. page_036   one per page
+#
+# sw/corpus_labels.py owns the label space and carries the gate:
+#
+#     python sw/corpus_labels.py --check <paths>   # non-zero on a leak
+#
+# The gate needs no corpus -- it matches the SHAPE of a drawing number --
+# so it runs from a bare clone and cannot fail open on a machine that
+# happens not to have the drawings.
+# -------------------------------------------------------------------
