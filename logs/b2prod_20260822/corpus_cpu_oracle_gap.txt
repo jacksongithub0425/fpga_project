@@ -1,0 +1,312 @@
+========================================================================
+FAKE FABRIC. Every pl-* number below came from test_pl_backends.FakePL,
+not from silicon. This run cannot qualify a board and must not be quoted
+as a board result.
+========================================================================
+
+=== doc_001 ===
+  cpu           2 page(s), 3.04 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        2 page(s), 8.39 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   2: DIFFERS — 11 class, 19 box, 28 score>|0.005|; max |dscore| 0.204601
+                 counts {'male': 36, 'female': 32, 'ferrule': 0, 'unknown': 4} -> {'male': 36, 'female': 32, 'ferrule': 0, 'unknown': 4}
+    1/2 page(s) identical
+
+=== doc_002 ===
+  cpu           1 page(s), 1.62 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 4.31 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 3 box, 6 score>|0.005|; max |dscore| 0.064609
+                 counts {'male': 20, 'female': 18, 'ferrule': 0, 'unknown': 1} -> {'male': 20, 'female': 18, 'ferrule': 0, 'unknown': 1}
+    0/1 page(s) identical
+
+=== doc_003 ===
+  cpu           1 page(s), 2.48 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 6.78 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 12 box, 14 score>|0.005|; max |dscore| 0.235496
+                 counts {'male': 60, 'female': 6, 'ferrule': 0, 'unknown': 0} -> {'male': 60, 'female': 6, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_004 ===
+  cpu           1 page(s), 0.70 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.89 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_005 ===
+  cpu           1 page(s), 0.34 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.16 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_006 ===
+  cpu           1 page(s), 2.38 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 6.51 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 30 class, 46 box, 47 score>|0.005|; max |dscore| 0.936839
+                 counts {'male': 28, 'female': 3, 'ferrule': 37, 'unknown': 8} -> {'male': 30, 'female': 3, 'ferrule': 31, 'unknown': 12}
+    0/1 page(s) identical
+
+=== doc_007 ===
+  cpu           1 page(s), 0.49 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.53 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 3 box, 5 score>|0.005|; max |dscore| 0.103638
+                 counts {'male': 0, 'female': 8, 'ferrule': 2, 'unknown': 0} -> {'male': 0, 'female': 8, 'ferrule': 2, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_008 ===
+  cpu           1 page(s), 1.04 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.64 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 3 box, 3 score>|0.005|; max |dscore| 0.147901
+                 counts {'male': 17, 'female': 0, 'ferrule': 7, 'unknown': 4} -> {'male': 17, 'female': 0, 'ferrule': 7, 'unknown': 4}
+    0/1 page(s) identical
+
+=== doc_009 ===
+  cpu           1 page(s), 0.47 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.41 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 box, 2 score>|0.005|; max |dscore| 0.066476
+                 counts {'male': 0, 'female': 9, 'ferrule': 0, 'unknown': 0} -> {'male': 0, 'female': 9, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_010 ===
+  cpu           1 page(s), 0.27 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.05 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 1 score>|0.005|; max |dscore| 0.008128
+                 counts {'male': 0, 'female': 2, 'ferrule': 1, 'unknown': 0} -> {'male': 0, 'female': 2, 'ferrule': 1, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_011 ===
+  cpu           1 page(s), 0.34 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.20 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_012 ===
+  cpu           1 page(s), 0.30 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.10 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_013 ===
+  cpu           1 page(s), 0.71 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.92 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 class, 2 box, 3 score>|0.005|; max |dscore| 0.043563
+                 counts {'male': 8, 'female': 8, 'ferrule': 0, 'unknown': 0} -> {'male': 8, 'female': 8, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_014 ===
+  cpu           1 page(s), 1.99 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 5.55 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 class, 8 box, 17 score>|0.005|; max |dscore| 0.109575
+                 counts {'male': 26, 'female': 34, 'ferrule': 0, 'unknown': 1} -> {'male': 26, 'female': 34, 'ferrule': 0, 'unknown': 1}
+    0/1 page(s) identical
+
+=== doc_015 ===
+  cpu           1 page(s), 0.59 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.70 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 1 score>|0.005|; max |dscore| 0.006783
+                 counts {'male': 4, 'female': 8, 'ferrule': 0, 'unknown': 1} -> {'male': 4, 'female': 8, 'ferrule': 0, 'unknown': 1}
+    0/1 page(s) identical
+
+=== doc_016 ===
+  cpu           1 page(s), 0.45 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.38 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 5 box, 3 score>|0.005|; max |dscore| 0.041977
+                 counts {'male': 2, 'female': 0, 'ferrule': 3, 'unknown': 5} -> {'male': 2, 'female': 0, 'ferrule': 3, 'unknown': 5}
+    0/1 page(s) identical
+
+=== doc_017 ===
+  cpu           1 page(s), 0.40 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.26 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 4 class, 8 box, 8 score>|0.005|; max |dscore| 0.411382
+                 counts {'male': 0, 'female': 4, 'ferrule': 0, 'unknown': 4} -> {'male': 0, 'female': 4, 'ferrule': 0, 'unknown': 4}
+    0/1 page(s) identical
+
+=== doc_018 ===
+  cpu           1 page(s), 0.40 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.30 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 1 box, 3 score>|0.005|; max |dscore| 0.084209
+                 counts {'male': 3, 'female': 3, 'ferrule': 0, 'unknown': 0} -> {'male': 3, 'female': 3, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_019 ===
+  cpu           1 page(s), 0.53 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.58 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 4 box, 4 score>|0.005|; max |dscore| 0.118081
+                 counts {'male': 0, 'female': 0, 'ferrule': 14, 'unknown': 0} -> {'male': 0, 'female': 0, 'ferrule': 14, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_020 ===
+  cpu           1 page(s), 0.74 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.04 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 3 class, 6 box, 6 score>|0.005|; max |dscore| 0.688715
+                 counts {'male': 0, 'female': 10, 'ferrule': 6, 'unknown': 4} -> {'male': 0, 'female': 10, 'ferrule': 6, 'unknown': 4}
+    0/1 page(s) identical
+
+=== doc_021 ===
+  cpu           1 page(s), 0.58 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.68 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 1 box, 3 score>|0.005|; max |dscore| 0.136012
+                 counts {'male': 6, 'female': 7, 'ferrule': 0, 'unknown': 0} -> {'male': 6, 'female': 7, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_022 ===
+  cpu           1 page(s), 0.62 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.81 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 6 class, 8 box, 9 score>|0.005|; max |dscore| 0.652742
+                 counts {'male': 8, 'female': 0, 'ferrule': 3, 'unknown': 5} -> {'male': 8, 'female': 0, 'ferrule': 3, 'unknown': 5}
+    0/1 page(s) identical
+
+=== doc_023 ===
+  cpu           1 page(s), 0.62 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.76 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 5 box, 6 score>|0.005|; max |dscore| 0.141220
+                 counts {'male': 12, 'female': 0, 'ferrule': 0, 'unknown': 2} -> {'male': 12, 'female': 0, 'ferrule': 0, 'unknown': 2}
+    0/1 page(s) identical
+
+=== doc_024 ===
+  cpu           1 page(s), 0.73 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.03 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 4 class, 5 box, 5 score>|0.005|; max |dscore| 0.098796
+                 counts {'male': 8, 'female': 12, 'ferrule': 0, 'unknown': 0} -> {'male': 8, 'female': 12, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_025 ===
+  cpu           1 page(s), 0.35 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.18 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_026 ===
+  cpu           1 page(s), 1.05 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.73 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 4 class, 9 box, 14 score>|0.005|; max |dscore| 0.438722
+                 counts {'male': 10, 'female': 14, 'ferrule': 0, 'unknown': 7} -> {'male': 10, 'female': 14, 'ferrule': 0, 'unknown': 7}
+    0/1 page(s) identical
+
+=== doc_027 ===
+  cpu           1 page(s), 0.40 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.32 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 class, 3 box, 3 score>|0.005|; max |dscore| 0.127514
+                 counts {'male': 4, 'female': 4, 'ferrule': 0, 'unknown': 0} -> {'male': 4, 'female': 4, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_028 ===
+  cpu           1 page(s), 0.39 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.31 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 class, 3 box, 3 score>|0.005|; max |dscore| 0.127507
+                 counts {'male': 4, 'female': 4, 'ferrule': 0, 'unknown': 0} -> {'male': 4, 'female': 4, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_029 ===
+  cpu           1 page(s), 1.52 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 4.52 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 13 class, 19 box, 20 score>|0.005|; max |dscore| 0.602854
+                 counts {'male': 15, 'female': 19, 'ferrule': 0, 'unknown': 9} -> {'male': 15, 'female': 19, 'ferrule': 0, 'unknown': 9}
+    0/1 page(s) identical
+
+=== doc_030 ===
+  cpu           1 page(s), 0.36 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.16 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 3 box, 3 score>|0.005|; max |dscore| 0.037984
+                 counts {'male': 2, 'female': 3, 'ferrule': 1, 'unknown': 0} -> {'male': 2, 'female': 3, 'ferrule': 1, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_031 ===
+  cpu           1 page(s), 0.59 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.70 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 class, 3 box, 3 score>|0.005|; max |dscore| 0.102797
+                 counts {'male': 6, 'female': 6, 'ferrule': 0, 'unknown': 0} -> {'male': 6, 'female': 6, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_032 ===
+  cpu           1 page(s), 0.71 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.99 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 2 class, 6 box, 7 score>|0.005|; max |dscore| 0.131570
+                 counts {'male': 4, 'female': 8, 'ferrule': 0, 'unknown': 4} -> {'male': 4, 'female': 8, 'ferrule': 0, 'unknown': 4}
+    0/1 page(s) identical
+
+=== doc_033 ===
+  cpu           1 page(s), 0.46 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.41 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 1 score>|0.005|; max |dscore| 0.005639
+                 counts {'male': 4, 'female': 4, 'ferrule': 0, 'unknown': 0} -> {'male': 4, 'female': 4, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_034 ===
+  cpu           1 page(s), 0.25 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 1.98 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    page   1: DIFFERS — 1 box; max |dscore| 0.000604
+                 counts {'male': 2, 'female': 0, 'ferrule': 0, 'unknown': 0} -> {'male': 2, 'female': 0, 'ferrule': 0, 'unknown': 0}
+    0/1 page(s) identical
+
+=== doc_035 ===
+  cpu           1 page(s), 0.11 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 0.52 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung ?: cpu -> pl-all  (cpu -> pl-all)   [measurement]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+  pl-all: backend=pl-all;organisation=pl_side_bank;binarize=pl;patch=pl;match=pl;refine=cpu (RTL reports no correlation map);binarize_threshold=168;pages=36;classify_calls=738;trials=20680;refine_calls=117
+
+wrote C:/Users/lychee/AppData/Local/Temp/cpu_vs_plall.json

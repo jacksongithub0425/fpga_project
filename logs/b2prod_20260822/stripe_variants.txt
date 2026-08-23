@@ -1,0 +1,33 @@
+  doc_002                            9792x6336
+      A margin=16                  EXACT
+      A margin=64                  EXACT
+      A margin=256                 EXACT
+      B pixmap-scissor             AttributeError: module 'fitz' has no attribute 'Device'
+      C conv-stripe rows=256       EXACT
+      C conv-stripe rows=1024      EXACT
+      D one-step RGB2GRAY          EXACT
+  doc_003                            9792x6336
+      A margin=16                  242 px differ, max 11
+      A margin=64                  2 px differ, max 1
+      A margin=256                 EXACT
+      B pixmap-scissor             AttributeError: module 'fitz' has no attribute 'Device'
+      C conv-stripe rows=256       EXACT
+      C conv-stripe rows=1024      EXACT
+      D one-step RGB2GRAY          EXACT
+  doc_035                            4896x3168
+      A margin=16                  EXACT
+      A margin=64                  EXACT
+      A margin=256                 EXACT
+      B pixmap-scissor             AttributeError: module 'fitz' has no attribute 'Device'
+      C conv-stripe rows=256       EXACT
+      C conv-stripe rows=1024      EXACT
+      D one-step RGB2GRAY          EXACT
+
+summary over the sampled pages:
+  A margin=16                  DIFFERS
+  A margin=64                  DIFFERS
+  A margin=256                 EXACT everywhere
+  B pixmap-scissor             DIFFERS
+  C conv-stripe 256            EXACT everywhere
+  C conv-stripe 1024           EXACT everywhere
+  D one-step RGB2GRAY          EXACT everywhere

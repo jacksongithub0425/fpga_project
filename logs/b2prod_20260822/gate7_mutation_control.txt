@@ -1,0 +1,20 @@
+
+=== revert: r5_guard -- R5's body runs outside any abort handler again
+  [OK  ] test_an_unexpected_r5_result_still_closes_and_reprograms
+         FAILED: AssertionError: R5's pipeline was not closed on the abort (None); its retained pages went with the frame
+  [OK  ] test_no_run_ever_leaves_a_pipeline_holding_unprotected_pages
+         FAILED: AssertionError: wedge_completes: 1 pipeline(s) left neither closed, nor reprogrammed after, nor held (repr
+
+=== revert: r4_guard -- R4 goes back to _discard-in-a-finally
+  [OK  ] test_no_run_ever_leaves_a_pipeline_holding_unprotected_pages
+         FAILED: AssertionError: r4_timeout: 1 pipeline(s) left neither closed, nor reprogrammed after, nor held (reprogram
+
+=== revert: fail_stop_say -- fail_stop() announces itself with print() again
+  [OK  ] test_a_broken_stdout_cannot_skip_the_fail_stop_hold
+         FAILED: AssertionError: the hold was skipped because the log went away: BrokenPipeError: stdout is gone
+
+=== revert: final_reprogram_say -- final_reprogram()'s failure message is a print() again
+  [OK  ] test_a_broken_stdout_cannot_skip_the_final_reprograms_verdict
+         FAILED: AssertionError: final_reprogram raised instead of returning False: BrokenPipeError: stdout is gone
+
+MUTATION CONTROL PASSED: every reverted fix is caught

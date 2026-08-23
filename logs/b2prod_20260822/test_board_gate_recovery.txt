@@ -1,0 +1,1434 @@
+Exception ignored in: <__main__.DeadStdout object at 0x000002147B2736D0>
+Traceback (most recent call last):
+  File "C:\Users\lychee\Desktop\FPGA\.github-upload\sw\test_board_gate_recovery.py", line 569, in flush
+    raise BrokenPipeError("stdout is gone")
+BrokenPipeError: stdout is gone
+Exception ignored in: <__main__.DeadStdout object at 0x000002147B2736D0>
+Traceback (most recent call last):
+  File "C:\Users\lychee\Desktop\FPGA\.github-upload\sw\test_board_gate_recovery.py", line 569, in flush
+    raise BrokenPipeError("stdout is gone")
+BrokenPipeError: stdout is gone
+ok   test_a_broken_stdout_cannot_skip_the_fail_stop_hold
+ok   test_a_broken_stdout_cannot_skip_the_final_reprograms_verdict
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [FAIL] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,302) vs gold +1.000000 @(816,303), 0.078 s
+ok   test_a_defect_that_only_appears_after_recovery_is_still_caught
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [FAIL] reprogramming the PL cleared the wedge: reset_pl returned False
+
+R5 FAILED and the PL could not be reprogrammed: the core is still wedged and this pipeline's CMA pages were retained.
+ok   test_a_failed_reprogram_at_the_wedge_also_fail_stops
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [FAIL] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned False
+
+R3 FAILED and the PL could not be reprogrammed: close() retained this pipeline's CMA pages and the fabric may still hold a command against them.
+ok   test_a_failed_reprogram_fail_stops_instead_of_exiting
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+  [FAIL] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned True
+ok   test_a_gate_failure_still_leaves_the_board_reprogrammed
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [FAIL] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned False
+
+R3 FAILED and the PL could not be reprogrammed: close() retained this pipeline's CMA pages and the fabric may still hold a command against them.
+ok   test_a_hold_that_returns_is_still_refused
+ok   test_a_missing_stall_case_is_a_setup_error
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+ok   test_a_poisoned_pipeline_refuses_every_entry_point
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [FAIL] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core busy (0x00000000)
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+ok   test_an_unexpected_r5_result_still_closes_and_reprograms
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [FAIL] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned False
+
+R3 FAILED and the PL could not be reprogrammed: close() retained this pipeline's CMA pages and the fabric may still hold a command against them.
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [FAIL] reprogramming the PL cleared the wedge: reset_pl returned False
+
+R5 FAILED and the PL could not be reprogrammed: the core is still wedged and this pipeline's CMA pages were retained.
+ok   test_every_hold_carries_the_pipeline_and_its_retained_buffers
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [FAIL] the overrun raises TimeoutError, not a result and not another error: returned
+  [detected] no_timeout               1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 2.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 2.002 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 2.002 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 2.002 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 2.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 2.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 2.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 4.003 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 2.002 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 2.002 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [FAIL] the raise is bounded: within 250 ms of the 0.5 s deadline: 2.002 s
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [detected] late_timeout             1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [FAIL] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a 
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [detected] latch_open               1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+  [FAIL] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned True
+  [detected] close_frees              1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [FAIL] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned False
+
+R3 FAILED and the PL could not be reprogrammed: close() retained this pipeline's CMA pages and the fabric may still hold a command against them.
+  [detected] reset_fails              1 check(s) failed, HeldForever
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [FAIL] reprogramming the PL cleared the wedge: reset_pl returned False
+
+R5 FAILED and the PL could not be reprogrammed: the core is still wedged and this pipeline's CMA pages were retained.
+  [detected] reset_fails_late         1 check(s) failed, HeldForever
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [FAIL] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,302) vs gold +1.000000 @(816,303), 0.078 s
+  [detected] stale_after_reset        1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [FAIL] the core stays busy for 300 ms (1 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000006 after 1 samples (done=True, idle=False)
+  [detected] wedge_completes          1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [FAIL] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): it ran the invocation anyway and returned a result
+  [detected] starts_on_busy           1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+  [FAIL] close() retained the buffers after the wedge too: close() returned True
+  [detected] retain_open_after_wedge  1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [FAIL] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core busy (0x00000000)
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [detected] r5_wrong_error           1 check(s) failed, GateError
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [detected] r4_timeout               0 check(s) failed, TimeoutError
+ok   test_every_injected_defect_fails_the_gate
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [PASS] reprogramming the PL cleared the wedge: reset_pl returned True
+
+--- phase R5-after: correctness after recovery ---
+  [PASS] R5-after [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R5-after [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R5-after [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R5-after [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R5-after [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R5-after [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R5-after [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R5-after [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R5-after [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+ok   test_it_reprograms_the_pl_after_each_deliberate_break
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [PASS] reprogramming the PL cleared the wedge: reset_pl returned True
+
+--- phase R5-after: correctness after recovery ---
+  [PASS] R5-after [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R5-after [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R5-after [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R5-after [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R5-after [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R5-after [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R5-after [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R5-after [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R5-after [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+  [protected] clean run                  5 pipeline(s), 2 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [FAIL] the overrun raises TimeoutError, not a result and not another error: returned
+  [protected] no_timeout                 2 pipeline(s), 1 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 2.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 2.002 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 2.002 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 2.002 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 2.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 2.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 2.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 4.003 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 2.002 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 2.002 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [FAIL] the raise is bounded: within 250 ms of the 0.5 s deadline: 2.002 s
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [protected] late_timeout               2 pipeline(s), 1 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [FAIL] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a 
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [protected] latch_open                 2 pipeline(s), 1 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+  [FAIL] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned True
+  [protected] close_frees                2 pipeline(s), 1 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [FAIL] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned False
+
+R3 FAILED and the PL could not be reprogrammed: close() retained this pipeline's CMA pages and the fabric may still hold a command against them.
+  [protected] reset_fails                2 pipeline(s), 0 reprogram(s), 1 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [FAIL] reprogramming the PL cleared the wedge: reset_pl returned False
+
+R5 FAILED and the PL could not be reprogrammed: the core is still wedged and this pipeline's CMA pages were retained.
+  [protected] reset_fails_late           4 pipeline(s), 1 reprogram(s), 1 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [FAIL] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,302) vs gold +1.000000 @(816,303), 0.078 s
+  [protected] stale_after_reset          3 pipeline(s), 2 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [FAIL] the core stays busy for 300 ms (1 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000006 after 1 samples (done=True, idle=False)
+  [protected] wedge_completes            4 pipeline(s), 2 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [FAIL] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): it ran the invocation anyway and returned a result
+  [protected] starts_on_busy             4 pipeline(s), 2 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+  [FAIL] close() retained the buffers after the wedge too: close() returned True
+  [protected] retain_open_after_wedge    4 pipeline(s), 2 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [FAIL] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core busy (0x00000000)
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [protected] r5_wrong_error             4 pipeline(s), 2 reprogram(s), 0 hold(s)
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [protected] r4_timeout                 3 pipeline(s), 2 reprogram(s), 0 hold(s)
+ok   test_no_run_ever_leaves_a_pipeline_holding_unprotected_pages
+ok   test_the_ap_ctrl_constants_match_the_driver
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+ok   test_the_deadline_cuts_a_running_transaction_short
+ok   test_the_stall_geometry_is_the_maximum_envelope
+
+--- phase R0: baseline, before anything is broken ---
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  raised after 0.500 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000000, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.500 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.500 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+--- phase R5: a genuinely wedged core ---
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (151 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000000 after 151 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000000) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+  [PASS] reprogramming the PL cleared the wedge: reset_pl returned True
+
+--- phase R5-after: correctness after recovery ---
+  [PASS] R5-after [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R5-after [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.006 s
+  [PASS] R5-after [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R5-after [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R5-after [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R5-after [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R5-after [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R5-after [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R5-after [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+ok   test_the_whole_gate_passes_against_healthy_fake_silicon
+
+18/18 passed

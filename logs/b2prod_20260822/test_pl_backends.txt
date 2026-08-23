@@ -1,0 +1,60 @@
+  [raises] binarize  RuntimeError
+  [raises] extract   RuntimeError
+  [raises] match     RuntimeError
+ok   test_a_failing_pl_stage_raises_rather_than_falling_back
+ok   test_a_page_over_the_descriptor_limit_is_chunked_not_truncated
+ok   test_a_pl_backend_without_a_fabric_or_an_overlay_raises
+ok   test_a_reordered_metadata_batch_is_refused
+ok   test_a_short_extractor_batch_raises
+ok   test_an_invalid_record_raises_rather_than_matching_nothing
+ok   test_an_unknown_backend_name_raises
+ok   test_close_reports_a_retained_buffer
+ok   test_decide_kind_is_the_frozen_classify_endpoint_tail
+ok   test_geometry_recorded_at_another_shape_is_refused
+ok   test_native_grayscale_rendering_is_still_not_byte_identical
+ok   test_pl_binarize_keeps_the_per_base_organisation
+ok   test_pl_extract_and_pl_all_agree
+ok   test_pl_extract_uses_the_pl_patch_but_the_host_matcher
+ok   test_require_pl_refine_fails_instead_of_refining_on_the_host
+    rung A: 1,838 of 62,042,112 pixels differ (0.0030%), core threshold 162
+ok   test_rung_a_is_a_real_difference_on_a_real_page
+ok   test_rung_c_by_construction_pl_all_equals_cpu_sidebank
+ok   test_rung_c_inline_is_refused_where_it_would_prove_nothing
+ok   test_striping_the_render_is_still_not_byte_identical
+ok   test_the_anchor_penalty_matches_best_template_match_local
+ok   test_the_batch_is_dispatched_once_per_page_and_chunked
+ok   test_the_binariser_matches_the_cores_own_oracle
+ok   test_the_corpus_is_thirty_five_pdfs_and_thirty_six_pages
+ok   test_the_cpu_backend_counts_what_it_did
+ok   test_the_cpu_backend_reproduces_the_frozen_path_exactly
+    derived shape matched the pixmap on 36 page(s)
+ok   test_the_derived_page_shape_matches_every_rendered_page
+ok   test_the_driver_reports_the_trial_count_it_dispatched
+ok   test_the_extractor_reads_the_SUPPRESSED_page
+Redrew C:\Users\lychee\AppData\Local\Temp\tmpz7__g6a4\redraw.pdf from C:\Users\lychee\AppData\Local\Temp\tmpz7__g6a4\geom.json: male=20, female=18, ferrule=0, unknown=1
+ok   test_the_geometry_json_reproduces_the_annotation_off_board
+ok   test_the_grey_stripe_height_does_not_change_the_bytes
+ok   test_the_inline_rung_c_catches_a_matcher_that_lies
+ok   test_the_inline_rung_c_compares_the_same_patch_and_finds_no_fault
+Backend: backend=fake
+  teardown protection: ignoring SIGINT
+Backend: backend=fake
+ok   test_the_pdf_runner_refuses_a_board_running_the_wrong_build
+Backend: backend=fake
+  teardown protection: ignoring SIGINT
+Backend: backend=fake
+ok   test_the_pdf_runner_tears_down_even_when_a_page_raises
+ok   test_the_production_oracle_binarises_the_way_the_core_does
+    cpu vs cpu-production on the Stage 2 page: 39 vs 39 detections, boxes differ
+ok   test_the_production_oracle_differs_from_cpu_on_a_real_page
+ok   test_the_renderer_is_byte_identical_in_both_modes
+ok   test_the_side_bank_patch_comes_from_the_drivers_predictor
+ok   test_the_streamed_binariser_never_holds_the_whole_int32_blur
+ok   test_the_streamed_otsu_is_the_same_number_as_cv2
+ok   test_the_stripes_reassemble_into_the_whole_page_blur
+ok   test_the_threshold_is_chosen_on_the_blur_the_core_will_threshold
+ok   test_the_trial_order_is_the_cpu_loop_nesting
+ok   test_the_truncating_blur_really_differs_from_opencv
+ok   test_trials_run_counts_matcher_invocations_not_class_winners
+
+45/45 passed

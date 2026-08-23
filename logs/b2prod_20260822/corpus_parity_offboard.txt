@@ -1,0 +1,258 @@
+========================================================================
+FAKE FABRIC. Every pl-* number below came from test_pl_backends.FakePL,
+not from silicon. This run cannot qualify a board and must not be quoted
+as a board result.
+========================================================================
+
+=== doc_001 ===
+  cpu-production 2 page(s), 8.34 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        2 page(s), 8.21 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    2/2 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_002 ===
+  cpu-production 1 page(s), 4.31 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 4.31 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_003 ===
+  cpu-production 1 page(s), 6.67 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 6.64 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_004 ===
+  cpu-production 1 page(s), 2.90 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.91 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_005 ===
+  cpu-production 1 page(s), 2.18 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.22 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_006 ===
+  cpu-production 1 page(s), 6.34 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 6.39 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_007 ===
+  cpu-production 1 page(s), 2.50 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.50 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_008 ===
+  cpu-production 1 page(s), 3.65 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.62 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_009 ===
+  cpu-production 1 page(s), 2.41 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.45 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_010 ===
+  cpu-production 1 page(s), 2.09 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.01 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_011 ===
+  cpu-production 1 page(s), 2.19 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.20 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_012 ===
+  cpu-production 1 page(s), 2.19 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.29 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_013 ===
+  cpu-production 1 page(s), 3.07 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.14 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_014 ===
+  cpu-production 1 page(s), 5.77 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 5.75 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_015 ===
+  cpu-production 1 page(s), 2.80 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.79 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_016 ===
+  cpu-production 1 page(s), 2.56 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.46 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_017 ===
+  cpu-production 1 page(s), 2.51 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.42 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_018 ===
+  cpu-production 1 page(s), 2.40 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.38 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_019 ===
+  cpu-production 1 page(s), 2.79 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.64 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_020 ===
+  cpu-production 1 page(s), 3.11 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.12 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_021 ===
+  cpu-production 1 page(s), 2.84 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.78 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_022 ===
+  cpu-production 1 page(s), 2.87 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.96 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_023 ===
+  cpu-production 1 page(s), 2.89 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.83 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_024 ===
+  cpu-production 1 page(s), 3.17 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.13 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_025 ===
+  cpu-production 1 page(s), 2.27 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.30 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_026 ===
+  cpu-production 1 page(s), 3.88 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.87 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_027 ===
+  cpu-production 1 page(s), 2.45 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.38 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_028 ===
+  cpu-production 1 page(s), 2.31 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.32 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_029 ===
+  cpu-production 1 page(s), 4.57 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 4.73 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_030 ===
+  cpu-production 1 page(s), 2.42 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.38 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_031 ===
+  cpu-production 1 page(s), 2.93 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.88 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_032 ===
+  cpu-production 1 page(s), 3.30 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 3.24 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_033 ===
+  cpu-production 1 page(s), 2.63 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.63 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_034 ===
+  cpu-production 1 page(s), 2.25 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 2.23 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+=== doc_035 ===
+  cpu-production 1 page(s), 0.59 s of page time (WALL, PS-side — not hardware cycles)
+  pl-all        1 page(s), 0.58 s of page time (WALL, PS-side — not hardware cycles)
+
+  rung P: cpu-production -> pl-all  (the fabric, production semantics held)   [MUST MATCH]
+    1/1 page(s) identical — exact (x,y) and |dscore| <= 0.005
+
+  cpu-production: backend=cpu-production;organisation=pl_side_bank;binarize=cpu(core-equivalent);patch=cpu;match=cpu;refine=cpu (RTL reports no correlation map);binarize_threshold=168;pages=36;classify_calls=738;trials=20680;refine_calls=117
+
+  pl-all: backend=pl-all;organisation=pl_side_bank;binarize=pl;patch=pl;match=pl;refine=cpu (RTL reports no correlation map);binarize_threshold=168;pages=36;classify_calls=738;trials=20680;refine_calls=117
+
+wrote C:/Users/lychee/AppData/Local/Temp/corpus_pred.json
+
+MUST-MATCH RUNG(S) PASSED on 36 page(s) across the must-match rung(s).

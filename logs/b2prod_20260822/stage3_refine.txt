@@ -1,0 +1,15 @@
+candidates 68, detections 66
+initial matching   : 148,323,642,023 cycles = 1483.2364 s
+
+production organization:
+host refine calls  : 26
+refine correlations: 208
+
+frozen-trace organization:
+refinement records : 176
+repriced delta     : 13,283,542,750 cycles = 132.8354 s
+mixed diagnostic  : 161,607,184,773 cycles = 1616.0718 s
+
+The production 208 and frozen 176 belong to different organizations.
+No per-correlation quotient is valid across them. Refinement runs on
+the ARM, so neither frozen-trace cycle figure is expected fabric time.

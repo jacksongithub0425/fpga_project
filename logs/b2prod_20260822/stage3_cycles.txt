@@ -1,0 +1,17 @@
+page              : page_004
+candidates        : 68   (chunking: 2 batch(es) of [64, 4])
+classify calls    : 68
+matcher trials    : 2,040
+largest patch     : 622x300
+detections        : 66
+host refine calls : 26
+
+INITIAL matching, modelled at 100 MHz:
+  cycles          : 148,323,642,023
+  seconds         : 1483.2364  (24m43.2s)
+
+vs frozen-trace mixed diagnostic 161,607,184,773  delta -13,283,542,750 (-8.220%)
+vs audit's initial model  148,323,600,000  delta         +42,023 (+0.000%)
+
+frozen-trace mixed diagnostic: 1,616.0718 s = 26.9345 min
+initial acceptance target    : 1,483.236 s = 24.7206 min

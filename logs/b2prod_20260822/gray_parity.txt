@@ -1,0 +1,49 @@
+  page_001                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 175->175
+  page_002                           9504x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 155->155
+  page_003                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 162->162
+  page_004                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 165->165
+  page_005                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_006                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 171->171
+  page_007                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 158->158
+  page_008                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 174->174
+  page_009                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_010                           9792x6336  diff      5,173 px ( 0.008%)  max  17  Otsu 173->173
+  page_011                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_012                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 173->173
+  page_013                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_014                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 167->167
+  page_015                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 161->161
+  page_016                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 175->175
+  page_017                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 167->167
+  page_018                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 175->175
+  page_019                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 172->172
+  page_020                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 173->173
+  page_021                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_022                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 169->169
+  page_023                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 168->168
+  page_024                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_025                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 167->167
+  page_026                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 167->167
+  page_027                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 167->167
+  page_028                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_029                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 170->170
+  page_030                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 164->164
+  page_031                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 175->175
+  page_032                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 173->173
+  page_033                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 171->171
+  page_034                           9792x6336  diff      3,723 px ( 0.006%)  max   2  Otsu 171->171
+  page_035                           9792x6336  diff      3,630 px ( 0.006%)  max   2  Otsu 173->173
+  page_036                           4896x3168  diff     15,289 px ( 0.099%)  max  23  Otsu 168->168
+
+36 page(s)
+samples_mv == samples            : YES on every page
+native gray byte-identical       : 0/36 page(s)
+worst absolute difference        : 23 (page_036)
+pages whose Otsu threshold moves : 0
+
+bytes at 9792x6336:
+  current  : pixmap 186,126,336 + samples copy 186,126,336 + BGR 186,126,336 + gray 62,042,112 = 620,421,120
+  samples_mv only (still RGB+BGR): 434,294,784
+  native gray + samples_mv       : pixmap 62,042,112 + gray copy 62,042,112 = 124,084,224
+
+VERDICT: native grayscale is NOT byte-identical; the striped RGB fallback is required.
