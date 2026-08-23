@@ -1,0 +1,42 @@
+=== samples_mv location probe (MuPDF 1.19.2, throwaway root) ===
+utc              2026-08-23T21:35:22Z
+whoami           xilinx  uid=1000
+root             /home/xilinx/b2prod_fitz_probe.RebAjwEB
+
+fitz             1.19.2 / mupdf 1.19.0
+
+--- the two questions that disagree
+hasattr(fitz.Pixmap, 'samples_mv')   False
+hasattr(pix,         'samples_mv')   True
+type(pix)                            <class 'fitz.fitz.Pixmap'>
+type(pix) is fitz.Pixmap             True
+fitz.Pixmap                          <class 'fitz.fitz.Pixmap'>
+
+--- where the name comes from
+'samples_mv' in dir(fitz.Pixmap)     False
+'samples_mv' in vars(fitz.Pixmap)    False
+'samples_mv' in pix.__dict__         True
+__getattr__ on the class             False
+
+--- does the instance path actually give a zero-copy buffer
+type(pix.samples_mv)                 <class 'memoryview'>
+len(pix.samples_mv)                  96000
+len(pix.samples)                     96000
+readonly                             True
+
+--- the guard the detector uses today, and two alternatives
+  hasattr(fitz.Pixmap, 'samples_mv')     False
+  'samples_mv' in dir(fitz.Pixmap)       False
+  hasattr(<instance>, 'samples_mv')      True
+
+VERDICT: the class-level guard is False and the instance is True
+
+probe rc         0
+roots left       0
+fitz absent again
+nothing installed
+__PROBE_EXIT__ 0
+
+
+__EXIT__ 0
+

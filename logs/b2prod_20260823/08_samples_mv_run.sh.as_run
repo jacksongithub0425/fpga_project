@@ -1,0 +1,37 @@
+#!/bin/bash
+# Re-extract 1.19.2 just long enough to ask where `samples_mv` lives.
+# Same rules as the supplementary probe: unprivileged, download + unpack
+# only, nothing installed, root removed and proved gone.
+set -u
+PYBIN=/usr/local/share/pynq-venv/bin/python3
+HELPERS=/home/xilinx/jupyter_notebooks
+
+echo "=== samples_mv location probe (MuPDF 1.19.2, throwaway root) ==="
+date -u +"utc              %Y-%m-%dT%H:%M:%SZ"
+echo "whoami           $(whoami)  uid=$(id -u)"
+ROOT=$(mktemp -d /home/xilinx/b2prod_fitz_probe.XXXXXXXX) || exit 1
+trap 'rm -rf "$ROOT"' EXIT
+mkdir -p "$ROOT/deb" "$ROOT/x"
+( cd "$ROOT/deb" && apt-get download python3-fitz libgumbo1 libmujs1 ) \
+    >/dev/null 2>&1
+for d in "$ROOT"/deb/*.deb; do dpkg-deb -x "$d" "$ROOT/x"; done
+PKGDIR="$ROOT/x/usr/lib/python3/dist-packages"
+LIBDIR="$ROOT/x/usr/lib/arm-linux-gnueabihf"
+echo "root             $ROOT"
+echo
+
+PYTHONPATH="$PKGDIR" LD_LIBRARY_PATH="$LIBDIR" "$PYBIN" \
+    "$HELPERS/samples_mv_probe.py" 2>&1
+RC=$?
+echo
+echo "probe rc         $RC"
+
+rm -rf "$ROOT"; trap - EXIT
+LEFT=$(ls -d /home/xilinx/b2prod_fitz_probe.* 2>/dev/null | wc -l)
+echo "roots left       $LEFT"
+"$PYBIN" -c "import fitz" 2>/dev/null && echo "fitz STILL PRESENT" \
+    || echo "fitz absent again"
+dpkg -s python3-fitz >/dev/null 2>&1 && echo "INSTALLED (bad)" \
+    || echo "nothing installed"
+echo "__PROBE_EXIT__ $RC"
+exit $RC

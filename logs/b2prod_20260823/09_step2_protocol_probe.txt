@@ -1,0 +1,179 @@
+=== Step 2: PyMuPDF 1.19.2 isolation probe ===
+utc              2026-08-23T21:29:23Z
+host             pynq  armv7l  6.6.10-xilinx-v2024.1-g916a1f7c7222
+
+--- 0. identity
+whoami           xilinx  uid=1000  gid=1000
+GATE unprivileged: PASS uid=1000
+GATE running_as_xilinx: PASS xilinx
+
+--- 1. target interpreter
+GATE interpreter_present: PASS /usr/local/share/pynq-venv/bin/python3
+version          Python 3.10.4
+
+--- 2. baseline (nothing injected)
+{
+ "cv2": {
+  "file": "/usr/lib/python3/dist-packages/cv2.cpython-310-arm-linux-gnueabihf.so",
+  "import": "ok",
+  "version": "4.5.4"
+ },
+ "executable": "/usr/local/share/pynq-venv/bin/python3",
+ "ext_suffix": ".cpython-310-arm-linux-gnueabihf.so",
+ "fitz": {
+  "error": "ModuleNotFoundError: No module named 'fitz'",
+  "import": "FAILED"
+ },
+ "fitz_detail": {
+  "error": "ModuleNotFoundError: No module named 'fitz'"
+ },
+ "implementation": "cpython",
+ "machine": "armv7l",
+ "maxsize_bits": 32,
+ "numpy": {
+  "file": "/usr/lib/python3/dist-packages/numpy/__init__.py",
+  "import": "ok",
+  "version": "1.21.5"
+ },
+ "pynq": {
+  "file": "/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/__init__.py",
+  "import": "ok",
+  "version": "3.1.1"
+ },
+ "python": "3.10.4",
+ "pythonpath_env": "/home/xilinx/jupyter_notebooks"
+}
+GATE fitz_absent_before: PASS import fitz -> FAILED
+machine=armv7l impl=cpython python=3.10.4 ext=.cpython-310-arm-linux-gnueabihf.so
+GATE host_is_armv7l: PASS armv7l
+GATE host_is_cpython: PASS cpython
+
+--- 3. extraction root
+root             /home/xilinx/b2prod_fitz_probe.DCGpShJ0
+owner            xilinx:xilinx 700
+
+--- 4. apt download python3-fitz
+    Get:1 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf python3-fitz armhf 1.19.2+ds1-1ubuntu1 [23.0 MB]
+    Fetched 23.0 MB in 5s (4,575 kB/s)
+GATE deb_downloaded: PASS /home/xilinx/b2prod_fitz_probe.DCGpShJ0/deb/python3-fitz_1.19.2+ds1-1ubuntu1_armhf.deb
+deb              python3-fitz_1.19.2+ds1-1ubuntu1_armhf.deb  22953060 B
+sha256           988b90cee5d8feadbccc14f66fad078f33cd639340f6549475b718f8d1eecf39
+version          1.19.2+ds1-1ubuntu1
+architecture     armhf
+depends          libc6 (>= 2.35), libfreetype6 (>= 2.6), libgcc-s1 (>= 3.5), libgumbo1 (>= 0.9.2), libharfbuzz0b (>= 0.9.11), libjbig2dec0 (>= 0.16+20190905), libjpeg8 (>= 8c), libmujs1 (>= 1.0.7), libopenjp2-7 (>= 2.0.0), python3 (<< 3.11), python3 (>= 3.10~), python3:any
+GATE deb_arch_usable: PASS armhf
+GATE deb_is_1_19_2: PASS 1.19.2+ds1-1ubuntu1
+
+--- 5. dpkg-deb -x into the throwaway root
+GATE deb_extracted: PASS 
+dist-packages    /home/xilinx/b2prod_fitz_probe.DCGpShJ0/x/usr/lib/python3/dist-packages
+GATE fitz_package_found: PASS /home/xilinx/b2prod_fitz_probe.DCGpShJ0/x/usr/lib/python3/dist-packages/fitz
+extracted files  11
+extracted bytes  36527842
+
+--- 6. extension module
+GATE extension_found: PASS /home/xilinx/b2prod_fitz_probe.DCGpShJ0/x/usr/lib/python3/dist-packages/fitz/_fitz.cpython-310-arm-linux-gnueabihf.so
+so               /home/xilinx/b2prod_fitz_probe.DCGpShJ0/x/usr/lib/python3/dist-packages/fitz/_fitz.cpython-310-arm-linux-gnueabihf.so  35891796 B
+GATE abi_tag_matches: PASS _fitz.cpython-310-arm-linux-gnueabihf.so vs interpreter .cpython-310-arm-linux-gnueabihf.so
+elf              magic+e_machine = 7f454c46 40   (40 = EM_ARM)
+GATE elf_is_arm: PASS EM_ARM
+--- ldd
+    	libjbig2dec.so.0 => /lib/arm-linux-gnueabihf/libjbig2dec.so.0 (0xb4c90000)
+    	libopenjp2.so.7 => /lib/arm-linux-gnueabihf/libopenjp2.so.7 (0xb4c40000)
+    	libjpeg.so.8 => /lib/arm-linux-gnueabihf/libjpeg.so.8 (0xb4bf0000)
+    	libfreetype.so.6 => /lib/arm-linux-gnueabihf/libfreetype.so.6 (0xb4b60000)
+    	libgumbo.so.1 => not found
+    	libharfbuzz.so.0 => /lib/arm-linux-gnueabihf/libharfbuzz.so.0 (0xb4ab0000)
+    	libmujs.so.1 => not found
+    	libm.so.6 => /lib/arm-linux-gnueabihf/libm.so.6 (0xb4a50000)
+    	libgcc_s.so.1 => /lib/arm-linux-gnueabihf/libgcc_s.so.1 (0xb4a20000)
+    	libc.so.6 => /lib/arm-linux-gnueabihf/libc.so.6 (0xb48f0000)
+    	/lib/ld-linux-armhf.so.3 (0xb6f27000)
+    	libpng16.so.16 => /lib/arm-linux-gnueabihf/libpng16.so.16 (0xb48b0000)
+    	libz.so.1 => /lib/arm-linux-gnueabihf/libz.so.1 (0xb4880000)
+    	libbrotlidec.so.1 => /lib/arm-linux-gnueabihf/libbrotlidec.so.1 (0xb4860000)
+    	libglib-2.0.so.0 => /lib/arm-linux-gnueabihf/libglib-2.0.so.0 (0xb4760000)
+    	libgraphite2.so.3 => /lib/arm-linux-gnueabihf/libgraphite2.so.3 (0xb4730000)
+    	libbrotlicommon.so.1 => /lib/arm-linux-gnueabihf/libbrotlicommon.so.1 (0xb46f0000)
+    	libpcre.so.3 => /lib/arm-linux-gnueabihf/libpcre.so.3 (0xb4680000)
+GATE ldd_complete: FAIL 2 unresolved
+
+--- 7. injected environment (PYTHONPATH only)
+{
+ "cv2": {
+  "file": "/usr/lib/python3/dist-packages/cv2.cpython-310-arm-linux-gnueabihf.so",
+  "import": "ok",
+  "version": "4.5.4"
+ },
+ "executable": "/usr/local/share/pynq-venv/bin/python3",
+ "ext_suffix": ".cpython-310-arm-linux-gnueabihf.so",
+ "fitz": {
+  "error": "ImportError: libgumbo.so.1: cannot open shared object file: No such file or directory",
+  "import": "FAILED"
+ },
+ "fitz_detail": {
+  "error": "ImportError: libgumbo.so.1: cannot open shared object file: No such file or directory"
+ },
+ "implementation": "cpython",
+ "machine": "armv7l",
+ "maxsize_bits": 32,
+ "numpy": {
+  "file": "/usr/lib/python3/dist-packages/numpy/__init__.py",
+  "import": "ok",
+  "version": "1.21.5"
+ },
+ "pynq": {
+  "file": "/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/__init__.py",
+  "import": "ok",
+  "version": "3.1.1"
+ },
+ "python": "3.10.4",
+ "pythonpath_env": "/home/xilinx/jupyter_notebooks"
+}
+fitz             import=FAILED bind= mupdf=
+fitz.__file__    
+samples_mv       
+GATE fitz_imports_injected: FAIL import=FAILED
+GATE fitz_from_throwaway_root: FAIL none
+GATE fitz_bind_is_1_19_2: FAIL none
+GATE samples_mv_present: FAIL samples_mv=
+
+--- 8. cv2 / numpy / pynq resolution unchanged
+    numpy.import  base=[ok]  inj=[ok]
+    numpy.file  base=[/usr/lib/python3/dist-packages/numpy/__init__.py]  inj=[/usr/lib/python3/dist-packages/numpy/__init__.py]
+    numpy.version  base=[1.21.5]  inj=[1.21.5]
+GATE numpy_resolution_unchanged: PASS 
+    cv2.import  base=[ok]  inj=[ok]
+    cv2.file  base=[/usr/lib/python3/dist-packages/cv2.cpython-310-arm-linux-gnueabihf.so]  inj=[/usr/lib/python3/dist-packages/cv2.cpython-310-arm-linux-gnueabihf.so]
+    cv2.version  base=[4.5.4]  inj=[4.5.4]
+GATE cv2_resolution_unchanged: PASS 
+    pynq.import  base=[ok]  inj=[ok]
+    pynq.file  base=[/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/__init__.py]  inj=[/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/__init__.py]
+    pynq.version  base=[3.1.1]  inj=[3.1.1]
+GATE pynq_resolution_unchanged: PASS 
+
+--- 9. functional: rendering, words, drawings
+    Traceback (most recent call last):
+      File "/home/xilinx/jupyter_notebooks/fitz_probe_func.py", line 27, in <module>
+        import fitz
+      File "/home/xilinx/b2prod_fitz_probe.DCGpShJ0/x/usr/lib/python3/dist-packages/fitz/__init__.py", line 10, in <module>
+        import fitz.fitz as fitz
+      File "/home/xilinx/b2prod_fitz_probe.DCGpShJ0/x/usr/lib/python3/dist-packages/fitz/fitz.py", line 17, in <module>
+        from . import _fitz
+    ImportError: libgumbo.so.1: cannot open shared object file: No such file or directory
+GATE functional_smallpage: FAIL rc=1
+
+--- 10. teardown
+GATE root_removed: PASS /home/xilinx/b2prod_fitz_probe.DCGpShJ0
+GATE no_probe_roots_left: PASS 0 remaining
+GATE fitz_absent_after: PASS rc=1
+after            Traceback (most recent call last):   File "<string>", line 1, in <module> ModuleNotFoundError: No module named 'fitz' 
+GATE nothing_installed: PASS dpkg -s -> rc=1
+
+=== VERDICT
+STEP2 FEASIBILITY: FAIL -- ldd_complete fitz_imports_injected fitz_from_throwaway_root fitz_bind_is_1_19_2 samples_mv_present functional_smallpage
+__PROBE_EXIT__ 1
+
+
+__EXIT__ 1
+

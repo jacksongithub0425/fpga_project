@@ -1,0 +1,256 @@
+#!/bin/bash
+# ===========================================================================
+# Step 2: can PyMuPDF 1.19.2 RUN on this board, in isolation, with nothing
+# installed?
+#
+# WHAT A PASS HERE MEANS, AND ONLY THIS: the armhf `python3-fitz` package
+# unpacks into a throwaway directory, the PYNQ interpreter imports it off
+# PYTHONPATH, its extension module resolves every shared library it needs,
+# `Pixmap.samples_mv` exists, and rendering / words / drawings all work.
+#
+# WHAT IT DOES NOT MEAN: nothing about Stage 2, and nothing about the
+# semantic rebase.  Every renderer-parity result on record was produced
+# against MuPDF 1.29; a different rasteriser is a different grey page, and
+# the grey page is the input to the blur, Otsu, the binary, the patches and
+# every score.  This probe deliberately does not touch a corpus page.
+#
+# CONSTRAINTS, all of them deliberate:
+#   * runs as `xilinx`, never root;
+#   * `apt download` + `dpkg-deb -x`, never `apt install` / `dpkg -i`;
+#   * injected through PYTHONPATH ONLY -- no LD_LIBRARY_PATH, no sitecustomize,
+#     no .pth file, nothing that outlives the process;
+#   * the extracted root is removed and its absence is proved.
+#
+# Fails closed: any gate that does not pass sets FAILED, and the script
+# exits non-zero with the failing gates named.
+# ===========================================================================
+set -u
+
+PYBIN=/usr/local/share/pynq-venv/bin/python3
+HELPERS=${HELPERS:-/home/xilinx/jupyter_notebooks}
+FAILED=0
+FAILED_GATES=""
+
+gate() {            # gate <name> <0|1 ok> [detail]
+    local name=$1 ok=$2
+    shift 2
+    if [ "$ok" -eq 0 ]; then
+        echo "GATE $name: PASS $*"
+    else
+        echo "GATE $name: FAIL $*"
+        FAILED=1
+        FAILED_GATES="$FAILED_GATES $name"
+    fi
+}
+
+# Read one dotted key out of a JSON file, using the interpreter under test.
+# sed over JSON was the alternative and it is not worth the ambiguity.
+jget() {
+    "$PYBIN" -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+for k in sys.argv[2].split("."):
+    d = d[k]
+print(d)' "$1" "$2" 2>/dev/null
+}
+
+echo "=== Step 2: PyMuPDF 1.19.2 isolation probe ==="
+date -u +"utc              %Y-%m-%dT%H:%M:%SZ"
+echo "host             $(hostname)  $(uname -m)  $(uname -r)"
+echo
+
+# --- 0. unprivileged ---------------------------------------------------
+echo "--- 0. identity"
+echo "whoami           $(whoami)  uid=$(id -u)  gid=$(id -g)"
+[ "$(id -u)" -ne 0 ]; gate unprivileged $? "uid=$(id -u)"
+[ "$(whoami)" = "xilinx" ]; gate running_as_xilinx $? "$(whoami)"
+echo
+
+# --- 1. the exact interpreter -----------------------------------------
+echo "--- 1. target interpreter"
+if [ ! -x "$PYBIN" ]; then
+    gate interpreter_present 1 "$PYBIN not executable"
+    echo "ABORT: no interpreter to probe"
+    exit 1
+fi
+gate interpreter_present 0 "$PYBIN"
+echo "version          $("$PYBIN" -V 2>&1)"
+echo
+
+# --- 2. baseline: fitz must be ABSENT before we start ------------------
+echo "--- 2. baseline (nothing injected)"
+BASE_JSON=/tmp/fitz_probe_baseline.json
+"$PYBIN" "$HELPERS/fitz_probe_env.py" > "$BASE_JSON" 2>/tmp/fitz_probe_base.err
+cat "$BASE_JSON"
+sed 's/^/    stderr: /' /tmp/fitz_probe_base.err
+
+BASE_FITZ=$(jget "$BASE_JSON" fitz.import)
+[ "$BASE_FITZ" = "FAILED" ]
+gate fitz_absent_before $? "import fitz -> $BASE_FITZ"
+
+BASE_MACHINE=$(jget "$BASE_JSON" machine)
+BASE_IMPL=$(jget "$BASE_JSON" implementation)
+BASE_EXTSUF=$(jget "$BASE_JSON" ext_suffix)
+BASE_PY=$(jget "$BASE_JSON" python)
+echo "machine=$BASE_MACHINE impl=$BASE_IMPL python=$BASE_PY ext=$BASE_EXTSUF"
+[ "$BASE_MACHINE" = "armv7l" ]; gate host_is_armv7l $? "$BASE_MACHINE"
+[ "$BASE_IMPL" = "cpython" ]; gate host_is_cpython $? "$BASE_IMPL"
+echo
+
+# --- 3. a throwaway root, owned by us ----------------------------------
+echo "--- 3. extraction root"
+ROOT=$(mktemp -d /home/xilinx/b2prod_fitz_probe.XXXXXXXX) || exit 1
+# Safety net only; the script removes it explicitly and then proves it.
+trap 'rm -rf "$ROOT"' EXIT
+echo "root             $ROOT"
+echo "owner            $(stat -c '%U:%G %a' "$ROOT")"
+mkdir -p "$ROOT/deb" "$ROOT/x"
+echo
+
+# --- 4. apt download (NOT apt install) ---------------------------------
+echo "--- 4. apt download python3-fitz"
+( cd "$ROOT/deb" && apt-get download python3-fitz ) 2>&1 | sed 's/^/    /'
+DEB=$(ls "$ROOT"/deb/*.deb 2>/dev/null | head -1)
+[ -n "$DEB" ]; gate deb_downloaded $? "${DEB:-none}"
+if [ -z "$DEB" ]; then
+    echo "ABORT: nothing downloaded; removing the root"
+    rm -rf "$ROOT"; trap - EXIT
+    echo "=== VERDICT"
+    echo "STEP2 FEASIBILITY: FAIL -- deb_downloaded"
+    exit 1
+fi
+echo "deb              $(basename "$DEB")  $(stat -c %s "$DEB") B"
+echo "sha256           $(sha256sum "$DEB" | cut -d' ' -f1)"
+DEB_VER=$(dpkg-deb -f "$DEB" Version)
+DEB_ARCH=$(dpkg-deb -f "$DEB" Architecture)
+echo "version          $DEB_VER"
+echo "architecture     $DEB_ARCH"
+echo "depends          $(dpkg-deb -f "$DEB" Depends)"
+case "$DEB_ARCH" in armhf|all) gate deb_arch_usable 0 "$DEB_ARCH";;
+                    *)         gate deb_arch_usable 1 "$DEB_ARCH";; esac
+case "$DEB_VER" in 1.19.2*) gate deb_is_1_19_2 0 "$DEB_VER";;
+                   *)       gate deb_is_1_19_2 1 "$DEB_VER";; esac
+echo
+
+# --- 5. dpkg-deb -x (NOT dpkg -i) --------------------------------------
+echo "--- 5. dpkg-deb -x into the throwaway root"
+dpkg-deb -x "$DEB" "$ROOT/x"
+gate deb_extracted $?
+FITZDIR=$(find "$ROOT/x" -type d -name fitz -print -quit)
+PKGDIR=$(dirname "$FITZDIR")
+echo "dist-packages    $PKGDIR"
+[ -d "$FITZDIR" ]; gate fitz_package_found $? "${FITZDIR:-none}"
+echo "extracted files  $(find "$ROOT/x" -type f | wc -l)"
+echo "extracted bytes  $(du -sb "$ROOT/x" | cut -f1)"
+echo
+
+# --- 6. the extension module: ABI tag and a COMPLETE ldd ---------------
+echo "--- 6. extension module"
+SO=$(find "$ROOT/x" -name '_fitz*.so' -print -quit)
+[ -n "$SO" ]; gate extension_found $? "${SO:-none}"
+if [ -n "$SO" ]; then
+    echo "so               $SO  $(stat -c %s "$SO") B"
+    # armhf + the interpreter's own ABI tag.  A cpython-39 or aarch64 build
+    # would import-error, but late and confusingly; check it up front.
+    SONAME=$(basename "$SO")
+    case "$SONAME" in
+        *cpython-310*arm-linux-gnueabihf*)
+            gate abi_tag_matches 0 "$SONAME vs interpreter $BASE_EXTSUF";;
+        *)  gate abi_tag_matches 1 "$SONAME vs interpreter $BASE_EXTSUF";;
+    esac
+    # ELF e_machine, read directly: `file` is not guaranteed to be here and
+    # the answer must not depend on a package this probe did not check for.
+    EMACH=$("$PYBIN" -c 'import struct,sys
+b = open(sys.argv[1], "rb").read(20)
+print("%s %d" % (b[:4].hex(), struct.unpack_from("<H", b, 18)[0]))' "$SO")
+    echo "elf              magic+e_machine = $EMACH   (40 = EM_ARM)"
+    case "$EMACH" in *" 40") gate elf_is_arm 0 "EM_ARM";;
+                     *)      gate elf_is_arm 1 "$EMACH";; esac
+    echo "--- ldd"
+    ldd "$SO" 2>&1 | sed 's/^/    /'
+    MISSING=$(ldd "$SO" 2>&1 | grep -c "not found")
+    [ "$MISSING" -eq 0 ]; gate ldd_complete $? "$MISSING unresolved"
+fi
+echo
+
+# --- 7. injection, PYTHONPATH only -------------------------------------
+echo "--- 7. injected environment (PYTHONPATH only)"
+INJ_JSON=/tmp/fitz_probe_injected.json
+PYTHONPATH="$PKGDIR" "$PYBIN" "$HELPERS/fitz_probe_env.py" > "$INJ_JSON" \
+    2>/tmp/fitz_probe_inj.err
+cat "$INJ_JSON"
+sed 's/^/    stderr: /' /tmp/fitz_probe_inj.err
+
+INJ_FITZ=$(jget "$INJ_JSON" fitz.import)
+INJ_FILE=$(jget "$INJ_JSON" fitz_detail.file)
+INJ_BIND=$(jget "$INJ_JSON" fitz_detail.VersionBind)
+INJ_MUPDF=$(jget "$INJ_JSON" fitz_detail.VersionFitz)
+INJ_SMV=$(jget "$INJ_JSON" fitz_detail.samples_mv)
+echo "fitz             import=$INJ_FITZ bind=$INJ_BIND mupdf=$INJ_MUPDF"
+echo "fitz.__file__    $INJ_FILE"
+echo "samples_mv       $INJ_SMV"
+[ "$INJ_FITZ" = "ok" ]; gate fitz_imports_injected $? "import=$INJ_FITZ"
+case "$INJ_FILE" in "$ROOT"/*) gate fitz_from_throwaway_root 0 "$INJ_FILE";;
+                    *) gate fitz_from_throwaway_root 1 "${INJ_FILE:-none}";; esac
+case "$INJ_BIND" in 1.19.2*) gate fitz_bind_is_1_19_2 0 "$INJ_BIND";;
+                    *)       gate fitz_bind_is_1_19_2 1 "${INJ_BIND:-none}";; esac
+[ "$INJ_SMV" = "True" ]; gate samples_mv_present $? "samples_mv=$INJ_SMV"
+echo
+
+# --- 8. nothing ELSE moved --------------------------------------------
+echo "--- 8. cv2 / numpy / pynq resolution unchanged"
+for mod in numpy cv2 pynq; do
+    ok=0
+    for field in import file version error; do
+        b=$(jget "$BASE_JSON" "$mod.$field")
+        i=$(jget "$INJ_JSON" "$mod.$field")
+        [ "$b" = "$i" ] || ok=1
+        [ -n "$b$i" ] && echo "    $mod.$field  base=[$b]  inj=[$i]"
+    done
+    gate "${mod}_resolution_unchanged" $ok
+done
+echo
+
+# --- 9. does it actually render / read words / read drawings -----------
+echo "--- 9. functional: rendering, words, drawings"
+PYTHONPATH="$PKGDIR" "$PYBIN" "$HELPERS/fitz_probe_func.py" \
+    "$ROOT/probe_small.pdf" > /tmp/fitz_probe_func.out 2>&1
+FUNC_RC=$?
+sed 's/^/    /' /tmp/fitz_probe_func.out
+[ "$FUNC_RC" -eq 0 ]; gate functional_smallpage $? "rc=$FUNC_RC"
+echo
+
+# --- 10. remove it, and prove it is gone -------------------------------
+echo "--- 10. teardown"
+rm -rf "$ROOT"
+trap - EXIT
+[ ! -e "$ROOT" ]; gate root_removed $? "$ROOT"
+LEFT=$(ls -d /home/xilinx/b2prod_fitz_probe.* 2>/dev/null | wc -l)
+[ "$LEFT" -eq 0 ]; gate no_probe_roots_left $? "$LEFT remaining"
+
+# fitz absent again, with no PYTHONPATH in play.
+"$PYBIN" -c "import fitz" 2>/tmp/fitz_after.err
+AFTER_RC=$?
+[ "$AFTER_RC" -ne 0 ]; gate fitz_absent_after $? "rc=$AFTER_RC"
+echo "after            $(head -c 160 /tmp/fitz_after.err | tr '\n' ' ')"
+
+# and nothing was installed: dpkg must still not know the package.
+dpkg -s python3-fitz >/dev/null 2>&1
+DPKG_RC=$?
+[ "$DPKG_RC" -ne 0 ]; gate nothing_installed $? "dpkg -s -> rc=$DPKG_RC"
+rm -f /tmp/fitz_probe_baseline.json /tmp/fitz_probe_injected.json \
+      /tmp/fitz_probe_base.err /tmp/fitz_probe_inj.err \
+      /tmp/fitz_probe_func.out /tmp/fitz_after.err
+echo
+
+# --- verdict -----------------------------------------------------------
+echo "=== VERDICT"
+if [ "$FAILED" -eq 0 ]; then
+    echo "STEP2 FEASIBILITY: PASS"
+    echo "  Reads: PyMuPDF 1.19.2 RUNS on this board in isolation."
+    echo "  Does NOT read: Stage 2 pass, or semantic-rebase pass.  No corpus"
+    echo "  page was rendered and no parity was compared."
+else
+    echo "STEP2 FEASIBILITY: FAIL --$FAILED_GATES"
+fi
+echo "__PROBE_EXIT__ $FAILED"
+exit $FAILED

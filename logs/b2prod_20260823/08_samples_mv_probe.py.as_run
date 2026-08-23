@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""Where does `samples_mv` live on MuPDF 1.19.2's Pixmap, and why does the
+class-level `hasattr` disagree with the instance?
+
+This matters far beyond a tidy-up.  `terminal_counter_endpoint_first` decides
+the render path ONCE, at import:
+
+    HAVE_SAMPLES_MV = hasattr(fitz.Pixmap, "samples_mv")
+    buf = pix.samples_mv if HAVE_SAMPLES_MV else pix.samples
+
+`pix.samples` builds a `bytes` COPY of the whole pixmap -- 186,126,336 B on a
+production page -- so a False here costs 186 MB on a board with ~290 MiB of
+userspace, for a buffer that is read once.
+"""
+import sys
+
+import fitz
+
+print("fitz             %s / mupdf %s" % (fitz.VersionBind, fitz.VersionFitz))
+print()
+
+doc = fitz.open()
+page = doc.new_page(width=100, height=80)
+page.draw_line(fitz.Point(5, 5), fitz.Point(95, 75))
+pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+
+print("--- the two questions that disagree")
+print("hasattr(fitz.Pixmap, 'samples_mv')   %s"
+      % hasattr(fitz.Pixmap, "samples_mv"))
+print("hasattr(pix,         'samples_mv')   %s"
+      % hasattr(pix, "samples_mv"))
+print("type(pix)                            %s" % type(pix))
+print("type(pix) is fitz.Pixmap             %s" % (type(pix) is fitz.Pixmap,))
+print("fitz.Pixmap                          %r" % (fitz.Pixmap,))
+print()
+
+print("--- where the name comes from")
+print("'samples_mv' in dir(fitz.Pixmap)     %s"
+      % ("samples_mv" in dir(fitz.Pixmap)))
+print("'samples_mv' in vars(fitz.Pixmap)    %s"
+      % ("samples_mv" in vars(fitz.Pixmap)))
+print("'samples_mv' in pix.__dict__         %s"
+      % ("samples_mv" in getattr(pix, "__dict__", {})))
+for klass in type(pix).__mro__:
+    if "samples_mv" in vars(klass):
+        print("found on                             %s -> %r"
+              % (klass, vars(klass)["samples_mv"]))
+print("__getattr__ on the class             %s"
+      % hasattr(type(pix), "__getattr__"))
+print()
+
+print("--- does the instance path actually give a zero-copy buffer")
+mv = pix.samples_mv
+print("type(pix.samples_mv)                 %s" % type(mv))
+print("len(pix.samples_mv)                  %d" % len(mv))
+print("len(pix.samples)                     %d" % len(pix.samples))
+print("readonly                             %s"
+      % getattr(mv, "readonly", "-"))
+print()
+
+print("--- the guard the detector uses today, and two alternatives")
+guards = {
+    "hasattr(fitz.Pixmap, 'samples_mv')": hasattr(fitz.Pixmap, "samples_mv"),
+    "'samples_mv' in dir(fitz.Pixmap)": "samples_mv" in dir(fitz.Pixmap),
+    "hasattr(<instance>, 'samples_mv')": hasattr(pix, "samples_mv"),
+}
+for k, v in guards.items():
+    print("  %-38s %s" % (k, v))
+doc.close()
+
+print()
+print("VERDICT: the class-level guard is %s and the instance is %s"
+      % (hasattr(fitz.Pixmap, "samples_mv"), hasattr(pix, "samples_mv")))
+sys.exit(0)

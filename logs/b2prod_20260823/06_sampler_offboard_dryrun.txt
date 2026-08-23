@@ -1,0 +1,72 @@
+== ../logs/b2prod_20260823/06_sampler_offboard_dryrun.jsonl
+   Windows-11-10.0.26200-SP0  python 3.13.14  machine AMD64
+   numpy 2.5.1  cv2 5.0.0  pymupdf 1.28.0 / mupdf 1.29.0  samples_mv=True
+
+   HWM column: running peak since process start -- a phase after the render is bounded only from above
+   checkpoint            RSS MiB  HWM MiB  swap kB  avail MiB cmafree MiB  arrays MiB       t s
+   pipeline_ready           73.6     73.6        -          -           -           -     0.065
+   render_complete         136.7    321.0        -          -           -        59.2     0.159
+   preprocess_complete     255.2    321.0        -          -           -       177.5     0.229
+   segments_complete       260.3    321.0        -          -           -           -     0.246
+   extraction_complete     260.3    321.0        -          -           -       177.5     0.277
+   match_complete          262.0    321.0        -          -           -       177.5     1.567
+   page_complete           261.2    321.0        -          -           -       177.5     1.660
+   geometry_flushed         83.0    321.0        -          -           -           -     1.667
+   teardown_complete        83.0    321.0        -          -           -           -     1.668
+
+   peak VmHWM         321.0 MiB
+   min MemAvailable       - MiB
+   min CmaFree            - MiB
+   sequence         ok over 1 page block(s)
+   accounting       source(s) psapi; MISSING REQUIRED VmSwap_kB, sys.SwapTotal_kB, sys.SwapFree_kB
+   run outcome      failed=False teardown_status=0
+   VERDICT NOT-A-GATE: memory accounting source is 'psapi', not /proc throughout; an off-board reading -- or a run whose /proc reads stopped working part way -- cannot close a board memory gate
+
+== ../logs/b2prod_20260823/06_sampler_offboard_dense.jsonl
+   Windows-11-10.0.26200-SP0  python 3.13.14  machine AMD64
+   numpy 2.5.1  cv2 5.0.0  pymupdf 1.28.0 / mupdf 1.29.0  samples_mv=True
+
+   HWM column: running peak since process start -- a phase after the render is bounded only from above
+   checkpoint            RSS MiB  HWM MiB  swap kB  avail MiB cmafree MiB  arrays MiB       t s
+   pipeline_ready           73.7     73.7        -          -           -           -     0.060
+   render_complete         137.1    321.4        -          -           -        59.2     0.154
+   preprocess_complete     255.5    321.4        -          -           -       177.5     0.224
+   segments_complete       261.1    321.4        -          -           -           -     0.242
+   extraction_complete     261.2    321.4        -          -           -       177.5     0.305
+   match_complete          262.6    321.4        -          -           -       177.5     2.733
+   page_complete           261.6    321.4        -          -           -       177.5     2.812
+   geometry_flushed         84.2    321.4        -          -           -           -     2.820
+   teardown_complete        84.2    321.4        -          -           -           -     2.821
+
+   peak VmHWM         321.4 MiB
+   min MemAvailable       - MiB
+   min CmaFree            - MiB
+   sequence         ok over 1 page block(s)
+   accounting       source(s) psapi; MISSING REQUIRED VmSwap_kB, sys.SwapTotal_kB, sys.SwapFree_kB
+   run outcome      failed=False teardown_status=0
+   VERDICT NOT-A-GATE: memory accounting source is 'psapi', not /proc throughout; an off-board reading -- or a run whose /proc reads stopped working part way -- cannot close a board memory gate
+
+== ../logs/b2prod_20260823/06_sampler_offboard_smallpage.jsonl
+   Windows-11-10.0.26200-SP0  python 3.13.14  machine AMD64
+   numpy 2.5.1  cv2 5.0.0  pymupdf 1.28.0 / mupdf 1.29.0  samples_mv=True
+
+   HWM column: running peak since process start -- a phase after the render is bounded only from above
+   checkpoint            RSS MiB  HWM MiB  swap kB  avail MiB cmafree MiB  arrays MiB       t s
+   pipeline_ready           73.4     73.4        -          -           -           -     0.063
+   render_complete          90.8    141.7        -          -           -        14.8     0.114
+   preprocess_complete     120.6    141.7        -          -           -        44.4     0.137
+   segments_complete       130.2    141.7        -          -           -           -     0.177
+   extraction_complete     130.2    141.7        -          -           -        44.4     0.179
+   match_complete          130.2    141.7        -          -           -        44.4     0.180
+   page_complete           130.2    141.7        -          -           -        44.4     0.183
+   geometry_flushed         85.9    141.7        -          -           -           -     0.186
+   teardown_complete        85.9    141.7        -          -           -           -     0.188
+
+   peak VmHWM         141.7 MiB
+   min MemAvailable       - MiB
+   min CmaFree            - MiB
+   sequence         ok over 1 page block(s)
+   accounting       source(s) psapi; MISSING REQUIRED VmSwap_kB, sys.SwapTotal_kB, sys.SwapFree_kB
+   run outcome      failed=False teardown_status=0
+   VERDICT NOT-A-GATE: memory accounting source is 'psapi', not /proc throughout; an off-board reading -- or a run whose /proc reads stopped working part way -- cannot close a board memory gate
+

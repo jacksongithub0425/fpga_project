@@ -1,0 +1,173 @@
+#!/bin/bash
+# ===========================================================================
+# SUPPLEMENTARY, AND OUTSIDE THE AGREED STEP 2 PROTOCOL.
+#
+# Step 2 was specified as PYTHONPATH-only injection, and it FAILED: the
+# extension module wants `libgumbo.so.1` and `libmujs.so.1`, neither of
+# which is on this board, and PYTHONPATH cannot resolve a SHARED LIBRARY --
+# no arrangement of it ever could.
+#
+# That failure on its own is ambiguous in the way that matters for
+# planning: it does not distinguish "two more debs away" from "cannot work
+# on this board".  This run answers only that question, by adding the two
+# dependency packages and one more process-scoped variable,
+# LD_LIBRARY_PATH.
+#
+# IT IS NOT A STEP 2 PASS AND MUST NOT BE QUOTED AS ONE.  It breaks the
+# stated injection rule.  What it keeps is the part that was about safety
+# rather than about method: unprivileged, `apt download` + `dpkg-deb -x`
+# only, nothing installed, everything removed and its absence proved.
+# ===========================================================================
+set -u
+
+PYBIN=/usr/local/share/pynq-venv/bin/python3
+HELPERS=${HELPERS:-/home/xilinx/jupyter_notebooks}
+FAILED=0
+FAILED_GATES=""
+
+gate() {
+    local name=$1 ok=$2
+    shift 2
+    if [ "$ok" -eq 0 ]; then
+        echo "GATE $name: PASS $*"
+    else
+        echo "GATE $name: FAIL $*"
+        FAILED=1
+        FAILED_GATES="$FAILED_GATES $name"
+    fi
+}
+
+jget() {
+    "$PYBIN" -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+for k in sys.argv[2].split("."):
+    d = d[k]
+print(d)' "$1" "$2" 2>/dev/null
+}
+
+echo "=== SUPPLEMENTARY: 1.19.2 + its two missing shared libraries ==="
+echo "=== NOT a Step 2 result: this adds LD_LIBRARY_PATH, which the ==="
+echo "=== agreed protocol excludes.  Nothing is installed.          ==="
+date -u +"utc              %Y-%m-%dT%H:%M:%SZ"
+echo "whoami           $(whoami)  uid=$(id -u)"
+[ "$(id -u)" -ne 0 ]; gate unprivileged $? "uid=$(id -u)"
+echo
+
+echo "--- are they really absent system-wide"
+for lib in libgumbo.so.1 libmujs.so.1; do
+    hits=$(ldconfig -p 2>/dev/null | grep -c "$lib")
+    echo "ldconfig -p      $lib -> $hits entr(y|ies)"
+done
+dpkg -l libgumbo1 libmujs1 2>&1 | tail -3 | sed 's/^/    /'
+echo
+
+echo "--- clean baseline, for the resolution comparison"
+"$PYBIN" "$HELPERS/fitz_probe_env.py" > /tmp/fitz_probe_baseline2.json 2>/dev/null
+for mod in numpy cv2 pynq; do
+    echo "    $mod  $(jget /tmp/fitz_probe_baseline2.json "$mod.version")  $(jget /tmp/fitz_probe_baseline2.json "$mod.file")"
+done
+echo
+
+ROOT=$(mktemp -d /home/xilinx/b2prod_fitz_probe.XXXXXXXX) || exit 1
+trap 'rm -rf "$ROOT"' EXIT
+echo "root             $ROOT"
+mkdir -p "$ROOT/deb" "$ROOT/x"
+
+echo
+echo "--- apt download: the binding plus the two libraries"
+( cd "$ROOT/deb" && apt-get download python3-fitz libgumbo1 libmujs1 ) 2>&1 |
+    sed 's/^/    /'
+ls -1 "$ROOT"/deb/*.deb 2>/dev/null | while read -r d; do
+    echo "    $(basename "$d")  $(stat -c %s "$d") B  $(sha256sum "$d" | cut -c1-16)"
+done
+N=$(ls -1 "$ROOT"/deb/*.deb 2>/dev/null | wc -l)
+[ "$N" -eq 3 ]; gate three_debs_downloaded $? "$N"
+if [ "$N" -ne 3 ]; then
+    rm -rf "$ROOT"; trap - EXIT
+    echo "=== VERDICT"; echo "SUPPLEMENTARY: FAIL -- three_debs_downloaded"
+    echo "__PROBE_EXIT__ 1"; exit 1
+fi
+
+echo
+echo "--- dpkg-deb -x all three into one root"
+for d in "$ROOT"/deb/*.deb; do dpkg-deb -x "$d" "$ROOT/x" || FAILED=1; done
+gate all_extracted $FAILED
+PKGDIR=$(dirname "$(find "$ROOT/x" -type d -name fitz -print -quit)")
+LIBDIR="$ROOT/x/usr/lib/arm-linux-gnueabihf"
+echo "PYTHONPATH       $PKGDIR"
+echo "LD_LIBRARY_PATH  $LIBDIR"
+ls -1 "$LIBDIR" 2>/dev/null | sed 's/^/    /'
+echo
+
+echo "--- ldd with the libraries on the path"
+LD_LIBRARY_PATH="$LIBDIR" ldd "$PKGDIR/fitz/_fitz.cpython-310-arm-linux-gnueabihf.so" 2>&1 |
+    sed 's/^/    /'
+MISSING=$(LD_LIBRARY_PATH="$LIBDIR" ldd \
+    "$PKGDIR/fitz/_fitz.cpython-310-arm-linux-gnueabihf.so" 2>&1 |
+    grep -c "not found")
+[ "$MISSING" -eq 0 ]; gate ldd_complete_with_libdir $? "$MISSING unresolved"
+echo
+
+echo "--- injected environment"
+INJ=/tmp/fitz_probe2_injected.json
+PYTHONPATH="$PKGDIR" LD_LIBRARY_PATH="$LIBDIR" "$PYBIN" \
+    "$HELPERS/fitz_probe_env.py" > "$INJ" 2>/tmp/fitz_probe2.err
+cat "$INJ"
+sed 's/^/    stderr: /' /tmp/fitz_probe2.err
+IMP=$(jget "$INJ" fitz.import)
+BIND=$(jget "$INJ" fitz_detail.VersionBind)
+MUPDF=$(jget "$INJ" fitz_detail.VersionFitz)
+SMV=$(jget "$INJ" fitz_detail.samples_mv)
+FILE=$(jget "$INJ" fitz_detail.file)
+echo "fitz             import=$IMP bind=$BIND mupdf=$MUPDF samples_mv=$SMV"
+[ "$IMP" = "ok" ]; gate fitz_imports $? "$IMP"
+case "$BIND" in 1.19.2*) gate bind_is_1_19_2 0 "$BIND";;
+                *) gate bind_is_1_19_2 1 "${BIND:-none}";; esac
+case "$FILE" in "$ROOT"/*) gate fitz_from_throwaway_root 0 "$FILE";;
+                *) gate fitz_from_throwaway_root 1 "${FILE:-none}";; esac
+[ "$SMV" = "True" ]; gate samples_mv_present $? "$SMV"
+for mod in numpy cv2 pynq; do
+    ok=0
+    for field in import file version; do
+        b=$(jget /tmp/fitz_probe_baseline2.json "$mod.$field")
+        i=$(jget "$INJ" "$mod.$field")
+        [ "$b" = "$i" ] || ok=1
+    done
+    gate "${mod}_resolution_unchanged" $ok
+done
+echo
+
+echo "--- functional: rendering, words, drawings"
+PYTHONPATH="$PKGDIR" LD_LIBRARY_PATH="$LIBDIR" "$PYBIN" \
+    "$HELPERS/fitz_probe_func.py" "$ROOT/probe_small.pdf" \
+    > /tmp/fitz_probe2_func.out 2>&1
+RC=$?
+sed 's/^/    /' /tmp/fitz_probe2_func.out
+[ "$RC" -eq 0 ]; gate functional_smallpage $? "rc=$RC"
+echo
+
+echo "--- teardown"
+rm -rf "$ROOT"; trap - EXIT
+[ ! -e "$ROOT" ]; gate root_removed $? "$ROOT"
+LEFT=$(ls -d /home/xilinx/b2prod_fitz_probe.* 2>/dev/null | wc -l)
+[ "$LEFT" -eq 0 ]; gate no_probe_roots_left $? "$LEFT remaining"
+"$PYBIN" -c "import fitz" 2>/dev/null; [ $? -ne 0 ]
+gate fitz_absent_after $?
+for p in python3-fitz libgumbo1 libmujs1; do
+    dpkg -s "$p" >/dev/null 2>&1; [ $? -ne 0 ]
+    gate "nothing_installed_$p" $?
+done
+rm -f /tmp/fitz_probe2_injected.json /tmp/fitz_probe2.err \
+      /tmp/fitz_probe2_func.out /tmp/fitz_probe_baseline2.json
+echo
+
+echo "=== VERDICT"
+if [ "$FAILED" -eq 0 ]; then
+    echo "SUPPLEMENTARY: PASS -- 1.19.2 runs once its two shared libraries"
+    echo "  are unpacked beside it and reached through LD_LIBRARY_PATH."
+    echo "  This is NOT the Step 2 protocol and is NOT a Step 2 pass."
+else
+    echo "SUPPLEMENTARY: FAIL --$FAILED_GATES"
+fi
+echo "__PROBE_EXIT__ $FAILED"
+exit $FAILED

@@ -1,0 +1,133 @@
+=== SUPPLEMENTARY: 1.19.2 + its two missing shared libraries ===
+=== NOT a Step 2 result: this adds LD_LIBRARY_PATH, which the ===
+=== agreed protocol excludes.  Nothing is installed.          ===
+utc              2026-08-23T21:32:53Z
+whoami           xilinx  uid=1000
+GATE unprivileged: PASS uid=1000
+
+--- are they really absent system-wide
+ldconfig -p      libgumbo.so.1 -> 0 entr(y|ies)
+ldconfig -p      libmujs.so.1 -> 0 entr(y|ies)
+    dpkg-query: no packages found matching libgumbo1
+    dpkg-query: no packages found matching libmujs1
+
+--- clean baseline, for the resolution comparison
+    numpy  1.21.5  /usr/lib/python3/dist-packages/numpy/__init__.py
+    cv2  4.5.4  /usr/lib/python3/dist-packages/cv2.cpython-310-arm-linux-gnueabihf.so
+    pynq  3.1.1  /usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/__init__.py
+
+root             /home/xilinx/b2prod_fitz_probe.lB30GDcV
+
+--- apt download: the binding plus the two libraries
+    Get:1 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf libgumbo1 armhf 0.10.1+dfsg-2.4 [96.4 kB]
+    Get:2 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf libmujs1 armhf 1.1.3-3 [99.0 kB]
+    Get:3 http://ports.ubuntu.com/ubuntu-ports jammy/universe armhf python3-fitz armhf 1.19.2+ds1-1ubuntu1 [23.0 MB]
+    Fetched 23.1 MB in 5s (4,660 kB/s)
+    libgumbo1_0.10.1+dfsg-2.4_armhf.deb  96384 B  850192e2c19dbbf3
+    libmujs1_1.1.3-3_armhf.deb  98992 B  74678dd4d4a8a8c4
+    python3-fitz_1.19.2+ds1-1ubuntu1_armhf.deb  22953060 B  988b90cee5d8fead
+GATE three_debs_downloaded: PASS 3
+
+--- dpkg-deb -x all three into one root
+GATE all_extracted: PASS 
+PYTHONPATH       /home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/python3/dist-packages
+LD_LIBRARY_PATH  /home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/arm-linux-gnueabihf
+    libgumbo.so.1
+    libgumbo.so.1.0.0
+    libmujs.so.1
+
+--- ldd with the libraries on the path
+    	libjbig2dec.so.0 => /lib/arm-linux-gnueabihf/libjbig2dec.so.0 (0xb4c80000)
+    	libopenjp2.so.7 => /lib/arm-linux-gnueabihf/libopenjp2.so.7 (0xb4c30000)
+    	libjpeg.so.8 => /lib/arm-linux-gnueabihf/libjpeg.so.8 (0xb4be0000)
+    	libfreetype.so.6 => /lib/arm-linux-gnueabihf/libfreetype.so.6 (0xb4b50000)
+    	libgumbo.so.1 => /home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/arm-linux-gnueabihf/libgumbo.so.1 (0xb4af0000)
+    	libharfbuzz.so.0 => /lib/arm-linux-gnueabihf/libharfbuzz.so.0 (0xb4a40000)
+    	libmujs.so.1 => /home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/arm-linux-gnueabihf/libmujs.so.1 (0xb4a00000)
+    	libm.so.6 => /lib/arm-linux-gnueabihf/libm.so.6 (0xb49a0000)
+    	libgcc_s.so.1 => /lib/arm-linux-gnueabihf/libgcc_s.so.1 (0xb4970000)
+    	libc.so.6 => /lib/arm-linux-gnueabihf/libc.so.6 (0xb4840000)
+    	/lib/ld-linux-armhf.so.3 (0xb6f16000)
+    	libpng16.so.16 => /lib/arm-linux-gnueabihf/libpng16.so.16 (0xb4800000)
+    	libz.so.1 => /lib/arm-linux-gnueabihf/libz.so.1 (0xb47d0000)
+    	libbrotlidec.so.1 => /lib/arm-linux-gnueabihf/libbrotlidec.so.1 (0xb47b0000)
+    	libglib-2.0.so.0 => /lib/arm-linux-gnueabihf/libglib-2.0.so.0 (0xb46b0000)
+    	libgraphite2.so.3 => /lib/arm-linux-gnueabihf/libgraphite2.so.3 (0xb4680000)
+    	libbrotlicommon.so.1 => /lib/arm-linux-gnueabihf/libbrotlicommon.so.1 (0xb4640000)
+    	libpcre.so.3 => /lib/arm-linux-gnueabihf/libpcre.so.3 (0xb45d0000)
+GATE ldd_complete_with_libdir: PASS 0 unresolved
+
+--- injected environment
+{
+ "cv2": {
+  "file": "/usr/lib/python3/dist-packages/cv2.cpython-310-arm-linux-gnueabihf.so",
+  "import": "ok",
+  "version": "4.5.4"
+ },
+ "executable": "/usr/local/share/pynq-venv/bin/python3",
+ "ext_suffix": ".cpython-310-arm-linux-gnueabihf.so",
+ "fitz": {
+  "file": "/home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/python3/dist-packages/fitz/__init__.py",
+  "import": "ok",
+  "version": ""
+ },
+ "fitz_detail": {
+  "VersionBind": "1.19.2",
+  "VersionFitz": "1.19.0",
+  "file": "/home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/python3/dist-packages/fitz/__init__.py",
+  "samples_mv": false
+ },
+ "implementation": "cpython",
+ "machine": "armv7l",
+ "maxsize_bits": 32,
+ "numpy": {
+  "file": "/usr/lib/python3/dist-packages/numpy/__init__.py",
+  "import": "ok",
+  "version": "1.21.5"
+ },
+ "pynq": {
+  "file": "/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/__init__.py",
+  "import": "ok",
+  "version": "3.1.1"
+ },
+ "python": "3.10.4",
+ "pythonpath_env": "/home/xilinx/jupyter_notebooks"
+}
+fitz             import=ok bind=1.19.2 mupdf=1.19.0 samples_mv=False
+GATE fitz_imports: PASS ok
+GATE bind_is_1_19_2: PASS 1.19.2
+GATE fitz_from_throwaway_root: PASS /home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/python3/dist-packages/fitz/__init__.py
+GATE samples_mv_present: FAIL False
+GATE numpy_resolution_unchanged: PASS 
+GATE cv2_resolution_unchanged: PASS 
+GATE pynq_resolution_unchanged: PASS 
+
+--- functional: rendering, words, drawings
+    fitz            1.19.2 / mupdf 1.19.0
+    fitz.__file__   /home/xilinx/b2prod_fitz_probe.lB30GDcV/x/usr/lib/python3/dist-packages/fitz/__init__.py
+    numpy           1.21.5
+    built           /home/xilinx/b2prod_fitz_probe.lB30GDcV/probe_small.pdf
+    pixmap          800x600 n=3 stride=2400
+    samples_mv      1440000 bytes, ndarray (600, 800, 3), zero-copy=True
+    render sha256   3e319013f156165c2afc4d24403d190c13f8927b48569d7449c2a81797eaeaa3
+    words           3, first=(20.0, 28.174999237060547, 75.61600494384766, 43.28900146484375, 'TERMINAL')
+    drawings        3 dicts, 3 items, kinds=l,re
+    line item       (10.0,80.0)-(190.0,80.0)
+    FUNC OK
+GATE functional_smallpage: PASS rc=0
+
+--- teardown
+GATE root_removed: PASS /home/xilinx/b2prod_fitz_probe.lB30GDcV
+GATE no_probe_roots_left: PASS 0 remaining
+GATE fitz_absent_after: PASS 
+GATE nothing_installed_python3-fitz: PASS 
+GATE nothing_installed_libgumbo1: PASS 
+GATE nothing_installed_libmujs1: PASS 
+
+=== VERDICT
+SUPPLEMENTARY: FAIL -- samples_mv_present
+__PROBE_EXIT__ 1
+
+
+__EXIT__ 1
+

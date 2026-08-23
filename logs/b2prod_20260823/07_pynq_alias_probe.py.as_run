@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""What does a REAL PynqBuffer do to `mem_sampler`'s backing-chain walk?
+
+`distinct_bytes` is the number the memory sampler offers as the prediction
+for RSS, and it is computed by walking `.base` from a view down to the
+allocation that keeps it alive.  Everything asserted about that walk so far
+was asserted against `FakePL`, which kept a plain owning `np.ndarray` --
+a case the board never presents.  The article is
+
+    PLPipeline.binary_view()
+      = np.frombuffer(self._bin_buf, …).reshape(h, stride)[:, :w]
+
+over a `pynq.allocate()` buffer, and how deep that chain goes and what sits
+at the bottom of it is a property of PYNQ and numpy on THIS board, not
+something a dev box can be asked.
+
+Read-only with respect to the fabric: no overlay is loaded, no DMA object
+is constructed, nothing is started.  It allocates two small CMA buffers,
+walks them, and frees them.
+
+Exits non-zero if the sampler charges anything other than the buffer.
+"""
+import sys
+
+sys.path.insert(0, "/home/xilinx/jupyter_notebooks")
+
+import numpy as np
+import mem_sampler as MS
+from pynq import allocate
+
+FAILED = []
+
+
+def gate(name, ok, detail=""):
+    print("GATE %s: %s %s" % (name, "PASS" if ok else "FAIL", detail))
+    if not ok:
+        FAILED.append(name)
+
+
+def chain_of(a):
+    return " -> ".join(
+        "%s(nbytes=%s,len=%s)" % (type(o).__name__,
+                                  getattr(o, "nbytes", "-"),
+                                  _len(o))
+        for o in MS._base_chain(a))
+
+
+def _len(o):
+    try:
+        return len(o)
+    except Exception:                                        # noqa: BLE001
+        return "-"
+
+
+print("numpy            %s" % np.__version__)
+import pynq
+print("pynq             %s" % pynq.__version__)
+print()
+
+# The driver's own geometry, scaled down: a page-shaped buffer plus the
+# guard tail `_ensure_image_bufs` allocates past the visible page.
+H, W, GUARD = 64, 96, 4096
+n = H * W
+
+gray = allocate(shape=(n,), dtype=np.uint8)
+binary = allocate(shape=(n + GUARD,), dtype=np.uint8)
+try:
+    print("--- the raw buffers")
+    for name, buf in (("cma_gray", gray), ("cma_binary", binary)):
+        print("%-16s type=%s nbytes=%d physical=0x%x"
+              % (name, type(buf).__name__, buf.nbytes,
+                 getattr(buf, "physical_address", 0)))
+        print("%-16s chain: %s" % ("", chain_of(buf)))
+    print()
+
+    # `binary_view()`, expression for expression.
+    view = np.frombuffer(binary, dtype=np.uint8,
+                         count=H * W).reshape(H, W)[:, :W]
+    print("--- binary_view()")
+    print("view             shape=%s nbytes=%d" % (view.shape, view.nbytes))
+    print("view chain:      %s" % chain_of(view))
+    print()
+
+    print("--- what mem_sampler charges")
+    root = MS._root_object(view)
+    print("root             %s nbytes=%s"
+          % (type(root).__name__, getattr(root, "nbytes", "-")))
+    print("provider         %r" % (MS._provider(view),))
+    print("distinct_bytes   %d" % MS.distinct_backing_bytes([view]))
+    print()
+
+    gate("root_is_the_pynq_buffer", root is binary,
+         "%s" % type(root).__name__)
+    gate("charges_the_whole_buffer_not_the_window",
+         MS.distinct_backing_bytes([view]) == binary.nbytes,
+         "%d vs buffer %d, window %d"
+         % (MS.distinct_backing_bytes([view]), binary.nbytes, view.nbytes))
+
+    # The two buffers must be two allocations, and a view must not make a
+    # third.  This is the shape the record's `alias_groups` reports.
+    d = MS.describe_arrays({"cma_gray": gray, "cma_binary": binary,
+                            "clean_bin": view, "page_bin": view})
+    print("--- describe_arrays over the driver's own set")
+    for k, v in sorted(d["names"].items()):
+        print("  %-11s group=%s bytes=%s group_bytes=%s depth=%s provider=%s"
+              % (k, v["group"], v["bytes"], v["group_bytes"], v["depth"],
+                 v["provider"]))
+    print("  alias_groups   %s" % (d["alias_groups"],))
+    print("  view_bytes     %d" % d["view_bytes"])
+    print("  distinct_bytes %d" % d["distinct_bytes"])
+    print("  distinct_unknown %d" % d["distinct_unknown"])
+    print()
+
+    names = d["names"]
+    gate("view_aliases_its_buffer",
+         names["clean_bin"]["group"] == names["cma_binary"]["group"],
+         "clean_bin group %s, cma_binary group %s"
+         % (names["clean_bin"]["group"], names["cma_binary"]["group"]))
+    gate("gray_is_its_own_allocation",
+         names["cma_gray"]["group"] != names["cma_binary"]["group"])
+    gate("no_unknown_sizes", d["distinct_unknown"] == 0,
+         "%d unknown" % d["distinct_unknown"])
+    gate("distinct_is_the_two_buffers",
+         d["distinct_bytes"] == gray.nbytes + binary.nbytes,
+         "%d vs %d" % (d["distinct_bytes"], gray.nbytes + binary.nbytes))
+
+    # And the instrument must not keep the pages alive.
+    import weakref
+    ref = weakref.ref(view)
+    del view, d, root
+    import gc
+    gc.collect()
+    gate("sampler_kept_no_reference_to_the_view", ref() is None,
+         "" if ref() is None else repr(ref()))
+finally:
+    gray.freebuffer()
+    binary.freebuffer()
+    print("buffers freed")
+
+print()
+if FAILED:
+    print("PYNQ ALIAS PROBE: FAIL -- %s" % " ".join(FAILED))
+    sys.exit(1)
+print("PYNQ ALIAS PROBE: PASS -- mem_sampler charges the PynqBuffer, "
+      "not the window and not the mapping")

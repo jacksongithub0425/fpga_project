@@ -1,0 +1,16 @@
+Gate 7 runtime module closure, as it exists ON THE BOARD that produced
+the 2026-08-23 PASS. The main script alone is not the attribution: a
+change in any of these five would move the behaviour just as much.
+
+host   : pynq
+dir    : /home/xilinx/jupyter_notebooks/b2prod_gate7_20260823
+uptime : 2211 s  (same boot as 01_preflight and 02_gate7_recovery)
+utc    : 2026-08-23T06:16:01Z
+
+95e1b53d5103d798b4e0b377a0f81dd67fcbd653322aee4affd12da08ead438d  board_gate_recovery.py
+2038cb612e30eb38ce9c03df80cbf9af2f63e8009c4bab79e2a0b9bbaeafa98d  safe_teardown.py
+ea16a96e9f237f2dd7ca1824cf457ccd83d4cb8216be205e62924b752d074f38  board_gate_extract.py
+4ca5bd5fef024884d812986367e5bd0ebc5fb1357188a6ff6d84468b2f5443ef  tme_driver.py
+ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  tme_standalone_bringup.py
+
+gate7 exit code recorded this boot: 0
