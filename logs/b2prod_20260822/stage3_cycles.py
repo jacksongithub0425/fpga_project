@@ -82,7 +82,10 @@ init_s = init_cycles / (MHZ * 1e6)
 pw_max = max(p[0] for p in pl.patch_shapes) if pl.patch_shapes else 0
 ph_max = max(p[1] for p in pl.patch_shapes) if pl.patch_shapes else 0
 
-print(f"page              : {PDF.name} p1")
+# The LABEL. This line is the first line of stage3_cycles.txt, which is
+# committed, so it is the one print in this file that must not name a
+# drawing -- and it was still doing so after the rest was converted.
+print(f"page              : {CL.labels().page(PDF.name, 1)}")
 print(f"candidates        : {len(cands)}   "
       f"(chunking: {len(pl.batches)} batch(es) of {pl.batches})")
 print(f"classify calls    : {backend._matcher.calls}")

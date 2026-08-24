@@ -198,6 +198,28 @@ PUBLIC_NOTE = (
 )
 
 
+def rung_c_lines(cc: dict, private: bool) -> List[str]:
+    """What the inline rung-C mismatches may say on STDOUT.
+
+    A mismatch record is per-detection geometry -- the same thing
+    `public_view()` strips out of the JSON. It was printed unconditionally,
+    which put it straight back on stdout, and stdout is what gets captured
+    into a committed transcript: the public path was emitting exactly what
+    the public record withholds.
+
+    Gated on the operator having asked for a private record, because that is
+    the same decision made once. The COUNT is always printed -- withholding
+    the exemplar must not hide that there was one.
+    """
+    if not cc.get("mismatches"):
+        return []
+    if private:
+        return ["      %s" % m for m in cc["mismatches"][:5]]
+    return ["      (%d mismatch(es); detail withheld -- it is per-detection "
+            "geometry. Re-run with --private-json to see it locally.)"
+            % len(cc["mismatches"])]
+
+
 def public_view(record: dict) -> dict:
     """The committable projection of a run record.
 
@@ -474,8 +496,8 @@ def main() -> int:
                       f"max |dscore| {cc['max_score_delta']:.6f}")
                 if cc["mismatches"]:
                     rung_c_failed = True
-                    for m in cc["mismatches"][:5]:
-                        print(f"      {m}")
+                    for line in rung_c_lines(cc, bool(args.private_json)):
+                        print(line)
     if failure is not None:
         raise failure
 

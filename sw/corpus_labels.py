@@ -63,11 +63,15 @@ DIAGNOSTICS DO NOT REPEAT THE SECRET
 ------------------------------------
 A gate that prints what it found writes the identifier into whatever captured
 its output -- a CI log, an evidence file, a terminal transcript.  So a finding
-names the input by LABEL if it is a corpus document and by ORDINAL otherwise
-(its position in the argument list), plus a count and offsets.  Never the
-matched text, and never the path: a path ends in a filename, and the filename
-is the identifier.  No digest either -- a hash of a secret is a token for the
-secret, and the labels already give a stable name.
+names the input by a SCRUBBED path when that path verifies clean after
+scrubbing, and by ORDINAL when it does not -- a path ends in a filename, and a
+filename can be the identifier.  Plus a count and offsets, never the matched
+text.  No digest either: a hash of a secret is a token for the secret, and the
+labels already give a stable name.
+
+Printing a scrubbed-and-rechecked path is what keeps a finding ACTIONABLE.
+"Something under logs/ leaks" is not something anyone can act on, and a gate
+nobody can act on gets bypassed.
 
 USING IT
 --------
@@ -414,20 +418,35 @@ def scrub_obj(obj, corpus_dir: Optional[Path] = None):
 # ---------------------------------------------------------------------------
 # decoding
 # ---------------------------------------------------------------------------
-def decode(data: bytes) -> Tuple[str, str]:
-    """Bytes -> (text, encoding name).  Never uses `errors="replace"`.
+def views(data: bytes) -> List[Tuple[str, str, str]]:
+    """EVERY plausible textual reading of these bytes: (encoding, text, basis).
 
-    Replacement characters would turn an undecodable byte into a legal one and
-    quietly change what the scanner sees, which is the wrong failure for a
-    gate.  The order is: honour a BOM, then UTF-8, then explicit BOM-less
-    UTF-16, then CP1252 (this project's Windows transcripts carry a 0x97
-    em-dash and are NOT valid UTF-8), then `binary`.
+    Not one reading -- all of them, de-duplicated by the hits they produce.
 
-    `binary` is a real answer, not a failure: an ASCII drawing number embedded
-    in a bitstream or a pickle is still a leak, and the caller scans the raw
-    bytes.  Only a file that DECLARES an encoding and then violates it raises
-    `UnsupportedEncoding` -- there is nothing safe to guess at that point.
+    WHY NOT A SINGLE DECODING.  Picking one makes that choice a
+    security boundary, and it has a hole: a file that is mostly CJK with one
+    ASCII drawing number in it scores below any "does this look like text"
+    threshold, falls through to `binary`, and its UTF-16 identifier is then
+    NUL-split and invisible in the raw bytes.  Mixed-script UTF-16 without a
+    BOM is a real evasion, not a hypothetical one.
+
+    So the score now chooses the LABEL and never decides whether to look.  The
+    raw `bytes` view is always included, because an ASCII identifier inside a
+    bitstream is still a leak; the UTF-16 views are included whenever they
+    decode at all, because that is the only reading in which a wide-character
+    identifier is contiguous.
+
+    A violated BOM still raises: a file that declares an encoding and then
+    breaks it is the one case where there is nothing safe to assume.
     """
+    out: List[Tuple[str, str, str]] = []
+    seen = set()
+
+    def add(enc: str, text: str, basis: str) -> None:
+        if text and text not in seen:
+            seen.add(text)
+            out.append((enc, text, basis))
+
     for bom, enc in ((codecs.BOM_UTF8, "utf-8-sig"),
                      (codecs.BOM_UTF32_LE, "utf-32-le"),
                      (codecs.BOM_UTF32_BE, "utf-32-be"),
@@ -435,52 +454,51 @@ def decode(data: bytes) -> Tuple[str, str]:
                      (codecs.BOM_UTF16_BE, "utf-16-be")):
         if data.startswith(bom):
             try:
-                return data[len(bom):].decode(enc), enc
+                add(enc, data[len(bom):].decode(enc), "character")
             except UnicodeDecodeError as exc:
                 raise UnsupportedEncoding(
                     "file starts with a %s BOM and then does not decode as "
                     "%s (%s)" % (enc, enc, exc.reason)) from None
+            break
 
-    # NUL FIRST, before UTF-8.  UTF-8 accepts a NUL byte as U+0000, so
-    # BOM-less UTF-16 of ASCII text ("h\\x00e\\x00a\\x00d\\x00...") decodes as
-    # UTF-8 *successfully* -- into a string whose identifiers are split by NULs
-    # and which the scanner therefore cannot see.  Trying UTF-8 first is how a
-    # UTF-16 file silently passes a gate.  A real UTF-8 text file does not
-    # contain NUL.
+    # A NUL byte means this is not ordinary text, so the RAW view goes first
+    # and wins the de-duplication -- reporting an embedded ASCII identifier as
+    # a "cp1252 character offset" would name a reading nobody applies to a
+    # bitstream.  The UTF-16 views still run and still report, because their
+    # hits are at different offsets and so survive the dedup on their own.
     if b"\x00" in data:
-        best, best_enc, best_score = None, None, 0.0
-        for enc in ("utf-16-le", "utf-16-be"):
-            try:
-                text = data.decode(enc)
-            except UnicodeDecodeError:
-                continue
-            score = _ascii_text_score(text)
-            if score > best_score:
-                best, best_enc, best_score = text, enc, score
-        # Endianness is chosen by which decoding yields more ASCII, not by
-        # trying LE first: byte-swapped ASCII lands in CJK, which "looks like
-        # text" to any printability test and would win by accident.
-        if best is not None and best_score >= 0.90:
-            return best, best_enc
-        return "", "binary"
+        add("bytes", data.decode("latin-1"), "byte")
 
-    try:
-        return data.decode("utf-8"), "utf-8"
-    except UnicodeDecodeError:
-        pass
+    for enc in ("utf-8", "cp1252", "utf-16-le", "utf-16-be"):
+        try:
+            add(enc, data.decode(enc), "character")
+        except (UnicodeDecodeError, LookupError):
+            pass
 
-    try:
-        return data.decode("cp1252"), "cp1252"
-    except UnicodeDecodeError:
-        return "", "binary"
+    add("bytes", data.decode("latin-1"), "byte")
+    return out
 
 
-def _ascii_text_score(text: str) -> float:
-    """Fraction of characters that are ordinary ASCII text."""
-    if not text:
-        return 0.0
-    good = sum(1 for c in text if c in "\t\n\r" or 0x20 <= ord(c) < 0x7F)
-    return good / len(text)
+def scan_bytes(data: bytes, frags: Optional[Sequence[str]] = None
+               ) -> List[Tuple[str, str, List[Hit]]]:
+    """Scan every view; return (encoding, basis, hits) for the ones that hit.
+
+    Views whose hits are identical collapse to one entry -- a pure-ASCII file
+    reads the same through UTF-8 and through raw bytes, and reporting it twice
+    would train the reader to skim.
+    """
+    found: List[Tuple[str, str, List[Hit]]] = []
+    signatures = set()
+    for enc, text, basis in views(data):
+        hits = scan(text, frags)
+        if not hits:
+            continue
+        sig = tuple((h.kind, h.offset) for h in hits)
+        if sig in signatures:
+            continue
+        signatures.add(sig)
+        found.append((enc, basis, hits))
+    return found
 
 
 # ---------------------------------------------------------------------------
@@ -644,21 +662,16 @@ def check_inputs(paths: Sequence[str], frags: Optional[Sequence[str]],
             continue
 
         try:
-            text, enc = decode(data)
+            found = scan_bytes(data, frags)
         except UnsupportedEncoding as exc:
             bad += 1
             print("UNSUPPORTED  %s: %s" % (who, exc), file=out)
             continue
 
-        if enc == "binary":
-            hits = scan(data.decode("latin-1"), frags)
-            basis = "byte"
-        else:
-            hits = scan(text, frags)
-            basis = "character"
-        if hits:
+        if found:
             bad += 1
-            report(who, "content (%s)" % enc, hits, basis)
+            for enc, basis, hits in found:
+                report(who, "content (%s)" % enc, hits, basis)
 
     return bad
 

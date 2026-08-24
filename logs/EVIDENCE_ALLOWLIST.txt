@@ -297,14 +297,21 @@ logs/b2prod_20260821/stage1/as_run/tme_driver.py.as_run
 # the range. `python sw/pre_push_scan.py --range A..B` is the same scan by
 # hand.
 #
-# NEVER COMMITTABLE, and the gate cannot catch it:
+# NEVER COMMITTABLE, and no CONTENT scan can catch it:
 #
 #     *.private.json
 #
 # `tme_backend_parity.py --private-json` writes per-detection geometry --
 # boxes and scores read off the drawings. It is already label-keyed, so
 # nothing in it is shaped like a drawing number and no scan will flag it.
-# The suffix is the only guard, which is why the tool refuses any other
-# name. It is not in .gitignore yet: that file carries unrelated
-# uncommitted work. Add `*.private.json` to it when that work lands.
+# The NAME is the only signal, so it is enforced in two places: the tool
+# refuses any other name, and pre_push_scan.py refuses a push whose
+# history contains one. It is not in .gitignore yet -- that file carries
+# unrelated uncommitted work -- and ignoring it locally would say nothing
+# about what a commit already holds, which is why the pre-push check is
+# the load-bearing one. Add `*.private.json` to .gitignore anyway when
+# that work lands.
+#
+# The scan covers ref NAMES too, local and remote: a branch is published
+# as surely as a blob, and nothing stops one being named after a drawing.
 # -------------------------------------------------------------------

@@ -66,7 +66,12 @@ def git_text(*args: str) -> str:
 
 
 def ranges_from_stdin(lines):
-    """Commit lists, one per pushed ref."""
+    """Commit lists, one per pushed ref, plus the ref NAMES themselves.
+
+    A branch name is published exactly as surely as a blob is, and nothing
+    stops one being called after a drawing. Both names are returned so the
+    caller can scan them, and neither is echoed raw anywhere.
+    """
     out = []
     for line in lines:
         parts = line.split()
@@ -81,7 +86,7 @@ def ranges_from_stdin(lines):
         else:
             revs = git_text("rev-list", "%s..%s" % (remote_sha, local_sha))
             how = "%s..%s" % (remote_sha[:7], local_sha[:7])
-        out.append((local_ref, how, revs.split()))
+        out.append((local_ref, remote_ref, how, revs.split()))
     return out
 
 
@@ -110,10 +115,25 @@ def collect(commits):
     return blobs, paths, messages
 
 
+#: Never publishable, and no content scan can tell.  `--private-json`
+#: records carry per-detection geometry that is already label-keyed, so
+#: nothing in them is shaped like a drawing number.  The NAME is the only
+#: signal, which is why it is checked here and not left to .gitignore --
+#: ignoring a file locally says nothing about what a commit already holds.
+FORBIDDEN_SUFFIXES = (".private.json",)
+
+
 def scan_all(blobs, paths, messages, frags, lb, out=sys.stdout) -> int:
     bad = 0
 
     for i, path in enumerate(sorted(paths), 1):
+        if path.endswith(FORBIDDEN_SUFFIXES):
+            bad += 1
+            safe = CL.safe_name(path, frags, lb)
+            print("FORBIDDEN  %s: a private record is in the history being "
+                  "published. Content scanning cannot catch this -- remove it "
+                  "from the commits." % (safe or "path #%d (withheld)" % i),
+                  file=out)
         hits = CL.scan(path, frags)
         if hits:
             bad += 1
@@ -125,35 +145,42 @@ def scan_all(blobs, paths, messages, frags, lb, out=sys.stdout) -> int:
     for i, (sha, path) in enumerate(sorted(blobs.items()), 1):
         data = git("cat-file", "blob", sha)
         try:
-            text, enc = CL.decode(data)
+            found = CL.scan_bytes(data, frags)
         except CL.UnsupportedEncoding as exc:
             bad += 1
             safe = CL.safe_name(path, frags, lb)
             print("UNSUPPORTED  blob in %s: %s"
                   % (safe or "blob #%d" % i, exc), file=out)
             continue
-        if enc == "binary":
-            hits = CL.scan(data.decode("latin-1"), frags)
-            basis = "byte"
-        else:
-            hits = CL.scan(text, frags)
-            basis = "character"
-        if hits:
+        if found:
             bad += 1
             safe = CL.safe_name(path, frags, lb)
             who = safe if safe else "blob #%d (path withheld)" % i
-            kinds = sorted({h.kind for h in hits})
-            offs = ",".join(str(h.offset) for h in hits[:12])
-            print("LEAK  content: %s (%s), %s, %d occurrence(s), %s offset(s) %s"
-                  % (who, enc, "+".join(kinds), len(hits), basis, offs),
-                  file=out)
+            for enc, basis, hits in found:
+                kinds = sorted({h.kind for h in hits})
+                offs = ",".join(str(h.offset) for h in hits[:12])
+                print("LEAK  content: %s (%s), %s, %d occurrence(s), "
+                      "%s offset(s) %s"
+                      % (who, enc, "+".join(kinds), len(hits), basis, offs),
+                      file=out)
 
+    # Messages went through `decode(..., "replace")` here, which is the one
+    # thing the decoder exists to avoid: a replacement character turns an
+    # undecodable byte into a legal one and changes what the scanner sees. A
+    # commit message is bytes like anything else.
     for c, msg in messages:
-        hits = CL.scan(msg.decode("utf-8", "replace"), frags)
-        if hits:
+        try:
+            found = CL.scan_bytes(msg, frags)
+        except CL.UnsupportedEncoding as exc:
             bad += 1
-            print("LEAK  commit message: %s, %d occurrence(s), offset(s) %s"
-                  % (c[:12], len(hits),
+            print("UNSUPPORTED  commit message %s: %s" % (c[:12], exc),
+                  file=out)
+            continue
+        for enc, basis, hits in found:
+            bad += 1
+            print("LEAK  commit message: %s (%s), %d occurrence(s), "
+                  "%s offset(s) %s"
+                  % (c[:12], enc, len(hits), basis,
                      ",".join(str(h.offset) for h in hits[:12])), file=out)
 
     return bad
@@ -188,7 +215,7 @@ def main(argv=None) -> int:
         frags = lb.fragments
 
     if args.range:
-        work = [("(--range)", args.range,
+        work = [("(--range)", "(--range)", args.range,
                  git_text("rev-list", args.range).split())]
     else:
         work = ranges_from_stdin(sys.stdin.read().splitlines())
@@ -198,14 +225,25 @@ def main(argv=None) -> int:
         return 0
 
     total_bad = 0
-    for ref, how, commits in work:
+    for n, (local_ref, remote_ref, how, commits) in enumerate(work, 1):
+        # The ref names travel with the push, and the local one used to be
+        # printed verbatim in every line below -- so a branch named after a
+        # drawing was both published AND echoed into whatever captured this.
+        shown = CL.safe_name(local_ref, frags, lb) or "ref #%d (name withheld)" % n
+        for which, name in (("local", local_ref), ("remote", remote_ref)):
+            if CL.scan(name, frags):
+                total_bad += 1
+                print("LEAK  %s ref name for %s: %d occurrence(s)"
+                      % (which, shown if which == "remote" else
+                         "ref #%d" % n, len(CL.scan(name, frags))))
+
         if not commits:
-            print("pre-push: %s -- 0 commit(s) to publish." % ref)
+            print("pre-push: %s -- 0 commit(s) to publish." % shown)
             continue
         blobs, paths, messages = collect(commits)
         print("pre-push: %s -- %d commit(s) [%s], %d unique blob(s), "
               "%d unique path(s)"
-              % (ref, len(commits), how, len(blobs), len(paths)))
+              % (shown, len(commits), how, len(blobs), len(paths)))
         total_bad += scan_all(blobs, paths, messages, frags, lb)
 
     if total_bad:

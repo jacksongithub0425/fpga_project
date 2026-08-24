@@ -194,6 +194,29 @@ def test_utf16_without_a_bom_is_decoded_either_way_round():
         assert full not in out
 
 
+def test_mixed_script_utf16_without_a_bom_cannot_evade():
+    """The hole a single-decoding scanner has.
+
+    Mostly CJK with one ASCII drawing number in it. Any "does this look like
+    text" score falls below threshold, so a scanner that picks ONE reading
+    calls the file binary -- and in the raw bytes the identifier is NUL-split
+    and invisible. Scanning every view is what closes it; the score now only
+    chooses the label.
+    """
+    full, _, _, _ = planted()
+    body = ("漢字" * 200) + full + ("カタ" * 200)
+    for enc in ("utf-16-le", "utf-16-be"):
+        with tempfile.TemporaryDirectory() as d:
+            p = write(Path(d), "cjk_%s.txt" % enc[-2:], body.encode(enc))
+            rc, out = run_check(["--check", str(p)])
+        assert rc == 1, (enc, rc, out)
+        assert full not in out
+    # And the premise: the raw bytes really do hide it.
+    raw = body.encode("utf-16-le").decode("latin-1")
+    assert CL.find_identifiers(raw) == [], \
+        "the byte view was expected to be blind to a wide-character identifier"
+
+
 def test_cp1252_content_is_decoded():
     """This project's Windows transcripts carry a 0x97 that is not UTF-8."""
     full, _, _, _ = planted()
@@ -403,6 +426,124 @@ def test_a_head_only_scan_misses_what_a_range_scan_catches():
                                    r.stderr.decode("utf-8", "replace"))
         assert "PUSH REFUSED" in text, text
         assert fragment not in text, "the scanner repeated the fragment"
+
+
+def _scan_repo(repo, args, git_env):
+    """Run pre_push_scan.py inside `repo`; return (rc, stdout)."""
+    import subprocess
+    r = subprocess.run(
+        [sys.executable, str(HERE / "pre_push_scan.py"),
+         "--corpus", str(SAMPLES)] + args,
+        capture_output=True, cwd=str(repo), env=git_env)
+    return r.returncode, r.stdout.decode("utf-8", "replace")
+
+
+def _tiny_repo(d, files, git_env, branch=None):
+    """A one-commit repo, optionally on a named branch."""
+    import subprocess
+    repo = Path(d)
+
+    def g(*a):
+        r = subprocess.run(["git", "-C", str(repo)] + list(a),
+                           capture_output=True, env=git_env)
+        assert r.returncode == 0, r.stderr.decode("utf-8", "replace")
+
+    g("init", "-q")
+    if branch:
+        g("checkout", "-q", "-b", branch)
+    for name, body in files.items():
+        (repo / name).write_text(body, encoding="utf-8")
+        g("add", name)
+    g("commit", "-q", "-m", "c")
+    return repo, g
+
+
+def test_a_private_json_in_history_is_refused_by_name():
+    """No content scan can catch one; the NAME is the only signal.
+
+    A `--private-json` record is already label-keyed, so nothing inside it is
+    shaped like a drawing number -- and it is full of the detection geometry
+    the public projection exists to withhold.
+    """
+    git_env = dict(os.environ)
+    git_env.update(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@e",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@e")
+    with tempfile.TemporaryDirectory() as d:
+        repo, _ = _tiny_repo(
+            d, {"run.private.json": '{"first_diff": {"x": 1, "y": 2}}\n'},
+            git_env)
+        rc, out = _scan_repo(repo, ["--range", "HEAD"], git_env)
+    assert rc == 1, (rc, out)
+    assert "FORBIDDEN" in out, out
+    assert "PUSH REFUSED" in out, out
+
+
+def test_a_ref_name_is_scanned_and_never_echoed():
+    """A branch name travels with the push, and used to be printed verbatim."""
+    full, _, _, lb = planted()
+    git_env = dict(os.environ)
+    git_env.update(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@e",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@e")
+    branch = "work/%s" % full
+    with tempfile.TemporaryDirectory() as d:
+        repo, _ = _tiny_repo(d, {"a.txt": "clean\n"}, git_env, branch=branch)
+        import subprocess
+        head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                              capture_output=True).stdout.decode().strip()
+        stdin = "refs/heads/%s %s refs/heads/%s %s\n" % (
+            branch, head, branch, "0" * 40)
+        r = subprocess.run(
+            [sys.executable, str(HERE / "pre_push_scan.py"),
+             "--corpus", str(SAMPLES)],
+            input=stdin.encode(), capture_output=True, cwd=str(repo),
+            env=git_env)
+        out = r.stdout.decode("utf-8", "replace")
+    assert r.returncode == 1, (r.returncode, out)
+    assert "ref name" in out, out
+    assert full not in out, "the scanner echoed the ref name"
+    assert CL.scan(out, lb.fragments) == [], \
+        "the scanner's output would not survive its own gate"
+
+
+def test_a_commit_message_is_decoded_not_replaced():
+    """Messages are bytes too, and went through errors="replace"."""
+    full, _, _, _ = planted()
+    git_env = dict(os.environ)
+    git_env.update(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@e",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@e")
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        repo, g = _tiny_repo(d, {"a.txt": "clean\n"}, git_env)
+        # A cp1252 message: the 0x97 em-dash this project's transcripts carry.
+        msg = b"touch \x97 " + full.encode("ascii") + b"\n"
+        (repo / "m.txt").write_bytes(msg)
+        r = subprocess.run(
+            ["git", "-C", str(repo), "commit", "-q", "--allow-empty",
+             "-F", str(repo / "m.txt")],
+            capture_output=True, env=git_env)
+        assert r.returncode == 0, r.stderr.decode("utf-8", "replace")
+        rc, out = _scan_repo(repo, ["--range", "HEAD"], git_env)
+    assert rc == 1, (rc, out)
+    assert "commit message" in out, out
+    assert full not in out
+
+
+def test_the_rung_c_mismatch_detail_is_withheld_on_the_public_path():
+    """stdout becomes a committed transcript; the public path must not leak.
+
+    `public_view()` strips per-detection geometry out of the JSON. Printing
+    the same records unconditionally put them straight back.
+    """
+    import tme_backend_parity as P
+    cc = {"mismatches": [{"id": "M1", "x": 5758, "y": 512, "score": 0.58},
+                         {"id": "M2", "x": 1, "y": 2}],
+          "candidates": 3, "trials": 9, "max_score_delta": 0.2}
+    public = "".join(P.rung_c_lines(cc, private=False))
+    private = "".join(P.rung_c_lines(cc, private=True))
+    assert "5758" not in public, "the public path printed detection geometry"
+    assert "2 mismatch" in public, "withholding hid that there WAS a mismatch"
+    assert "5758" in private, "the private path lost its diagnostics"
+    assert P.rung_c_lines({"mismatches": []}, False) == []
 
 
 def test_assert_clean_reports_without_quoting():
