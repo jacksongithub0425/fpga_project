@@ -1,0 +1,5 @@
+randomised images   : 400
+histogram cases     : 306
+production page     : 9792x6336, threshold 162 (cv2 162), stripe 214 rows = 8.0 MB
+
+EXACT: the streamed Otsu matched cv2.threshold(THRESH_OTSU) on every case.

@@ -1,0 +1,655 @@
+#!/usr/bin/env python3
+"""Capture the per-trial matcher workload trace over the page corpus.
+
+Priority 0 artifact, second half.  `tme_cycle_model.py` freezes what a trial
+COSTS; this freezes which trials actually run, in what order, and what each one
+scored.  Priority 1 (scale-policy validation) is an offline study over the
+output of this tool, so the corpus is rendered and matched exactly once.
+
+    python tme_trace_capture.py "../../sample/*"  --out ../../trace_20260817
+    python tme_trace_capture.py "../../sample/*"  --out ... --limit 1   # smoke test
+
+Run it with the HLS venv python:
+
+    C:/Users/lychee/Desktop/FPGA/hls/.venv/Scripts/python.exe tme_trace_capture.py ...
+
+Quote the glob.  It is expanded here, not by the shell (PowerShell does not
+expand wildcards for native programs), matching is case-insensitive, and a
+pattern that matches nothing is an error.
+
+WHAT IS RECORDED
+----------------
+One record per cv2.matchTemplate call the detector makes, in the exact global
+order it makes them, carrying:
+
+    global_index            order across the whole page, ties resolve on this
+    call_kind               "initial" (20,680) or "refinement" (808)
+    side, kind, templ_index which template bank entry this is
+    scale, tw, th           the resized template actually correlated
+    pw, ph, rw, rh          patch and result-map geometry
+    raw_score, raw_loc      cv2.minMaxLoc of the result map
+    adj_score, adj_loc      location-penalised argmax, for refinement calls
+    cycles_*                modelled matcher cost under each architecture
+
+`adj_*` is what `prefer_local_alignment` selects, and it is recorded because a
+scalar-output PL core cannot reproduce it: it is the argmax of
+`result - 0.12 * norm_dist` over the WHOLE map, not of `result`.  Priority 8
+needs this column to decide whether refinement stays on the PS.
+
+CONFIDENTIALITY SPLIT (same rule as the CPU baseline snapshot)
+--------------------------------------------------------------
+The per-page JSONL carries endpoint coordinates and scores lifted off
+confidential drawings, so `--out` is LOCAL and must not be committed.  The
+summary CSV written beside it is anonymized (example_NN.pdf ids, geometry and
+counts only, no coordinates) and is the committable artifact.
+"""
+
+from __future__ import annotations
+
+import argparse
+import glob as globmod
+import hashlib
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+import cv2
+import fitz
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+
+import terminal_counter_endpoint_first as det          # noqa: E402
+import tme_cycle_model as model                        # noqa: E402
+
+# Baseline detector settings.  These must match baseline_provenance.json or the
+# trace describes a different workload than the frozen figures.
+ZOOM = 4.0
+SCORE_THRESH = 0.33
+FERRULE_SCORE_THRESH = 0.24
+SCORE_MARGIN = 0.03
+ANCHOR_WEIGHT = 0.12          # best_template_match_local default
+
+KINDS = ("male", "female", "ferrule")
+
+
+# ---------------------------------------------------------------------------
+# instrumentation
+# ---------------------------------------------------------------------------
+class Tracer:
+    """Wraps the detector's two hot functions and records every trial."""
+
+    def __init__(self):
+        self.records = []
+        self.ctx = None
+        self._orig_btml = None
+        self._orig_mt = None
+        self._counter = 0
+        self._bank_index = {}
+
+    def index_templates(self, side_templates):
+        """Map id(template array) -> (side, kind, position in bank)."""
+        for side, kinds in side_templates.items():
+            for kind, bank in kinds.items():
+                for i, t in enumerate(bank):
+                    self._bank_index[id(t)] = (side, kind, i)
+
+    # -- the wrapped scale loop ---------------------------------------------
+    def _btml(self, page_bin, template_bin, endpoint_xy, side, scales,
+              anchor_distance_weight=ANCHOR_WEIGHT, prefer_local_alignment=False):
+        img_h, img_w = page_bin.shape[:2]
+
+        # Mirror the detector's own geometry exactly, including the int()
+        # truncation on max scale (Priority 3 flags this as a defect: the
+        # resized template uses round(), the patch envelope uses int()).
+        max_tw = int(template_bin.shape[1] * max(scales))
+        max_th = int(template_bin.shape[0] * max(scales))
+        px0, py0, px1, py1 = det.build_endpoint_patch(
+            endpoint_xy[0], endpoint_xy[1], side, img_w, img_h, max_tw, max_th)
+        pw, ph = px1 - px0, py1 - py0
+
+        # Which scales survive the detector's skip test, in order.  The k-th
+        # matchTemplate call inside this invocation is the k-th survivor.
+        plan = []
+        for sc in scales:
+            tw = max(4, int(round(template_bin.shape[1] * sc)))
+            th = max(4, int(round(template_bin.shape[0] * sc)))
+            if tw >= pw or th >= ph:
+                continue
+            plan.append((sc, tw, th))
+
+        anchor = det.side_template_anchor(template_bin, side)
+        self.ctx = {
+            "plan": plan, "i": 0,
+            "side": side, "endpoint": (float(endpoint_xy[0]), float(endpoint_xy[1])),
+            "px0": px0, "py0": py0, "pw": pw, "ph": ph,
+            "max_tw_int": max_tw, "max_th_int": max_th,
+            "max_tw_round": int(round(template_bin.shape[1] * max(scales))),
+            "max_th_round": int(round(template_bin.shape[0] * max(scales))),
+            "anchor": anchor,
+            "weight": anchor_distance_weight,
+            "prefer": bool(prefer_local_alignment),
+            "templ_id": self._bank_index.get(id(template_bin), (side, "?", -1)),
+            "base_wh": (int(template_bin.shape[1]), int(template_bin.shape[0])),
+        }
+        try:
+            return self._orig_btml(
+                page_bin, template_bin, endpoint_xy, side, scales,
+                anchor_distance_weight=anchor_distance_weight,
+                prefer_local_alignment=prefer_local_alignment)
+        finally:
+            self.ctx = None
+
+    # -- the wrapped correlation --------------------------------------------
+    def _mt(self, patch, templ, method):
+        result = self._orig_mt(patch, templ, method)
+        c = self.ctx
+        if c is None or c["i"] >= len(c["plan"]):
+            return result
+        sc, tw, th = c["plan"][c["i"]]
+        c["i"] += 1
+
+        _, raw_max, _, raw_loc = cv2.minMaxLoc(result)
+        rh, rw = result.shape[:2]
+
+        adj_score = adj_loc = adj_raw = None
+        if c["prefer"]:
+            # Exactly the detector's location-adjusted argmax (lines 566-576).
+            rows = np.arange(rh, dtype=np.float32)[:, None]
+            cols = np.arange(rw, dtype=np.float32)[None, :]
+            ax = (c["px0"] + cols) + c["anchor"][0] * sc
+            ay = (c["py0"] + rows) + c["anchor"][1] * sc
+            nd = np.hypot(ax - c["endpoint"][0], ay - c["endpoint"][1]) / max(8.0, 0.5 * (tw + th))
+            adjusted = result.astype(np.float32) - (c["weight"] * nd.astype(np.float32))
+            bl = np.unravel_index(int(np.argmax(adjusted)), adjusted.shape)
+            adj_loc = [int(bl[1]), int(bl[0])]
+            adj_score = float(adjusted[bl])
+            adj_raw = float(result[bl])
+
+        side, kind, ti = c["templ_id"]
+        self.records.append({
+            "global_index": self._counter,
+            "call_kind": "refinement" if c["prefer"] else "initial",
+            "side": side, "kind": kind, "templ_index": ti,
+            "base_w": c["base_wh"][0], "base_h": c["base_wh"][1],
+            "scale": sc, "tw": tw, "th": th,
+            "pw": c["pw"], "ph": c["ph"], "rw": rw, "rh": rh,
+            "px0": c["px0"], "py0": c["py0"],
+            "endpoint": c["endpoint"],
+            "raw_score": round(float(raw_max), 6),
+            "raw_loc": [int(raw_loc[0]), int(raw_loc[1])],
+            "adj_score": None if adj_score is None else round(adj_score, 6),
+            "adj_raw_score": None if adj_raw is None else round(adj_raw, 6),
+            "adj_loc": adj_loc,
+            "max_tw_int": c["max_tw_int"], "max_tw_round": c["max_tw_round"],
+            "max_th_int": c["max_th_int"], "max_th_round": c["max_th_round"],
+            "cycles_current": model.cycles(c["pw"], c["ph"], tw, th),
+            "cycles_S": model.cycles(tw + 95, th + 63, tw, th),
+            "cycles_S_B1": model.cycles(tw + 95, th + 63, tw, th, "B1"),
+            "cycles_S_B2": model.cycles(tw + 95, th + 63, tw, th, "B2"),
+            # B0b, MEASURED since 2026-08-20 -- both the hoisted pass and the
+            # removal it pays for, by three-solution paired co-simulation.  It
+            # is one column now.
+            #
+            # It used to be captured as cycles_S_B0b_base (the DELETION only)
+            # plus count_pass_iterations, deliberately leaving the
+            # iterations-to-cycles multiplication to the model because the II
+            # was projected.  Both halves of that arrangement are superseded:
+            # the II is 1 but the pass carries per-scan overhead the
+            # multiplication never had, and the removal was under-attributed.
+            # ANY TRACE CAPTURED BEFORE 2026-08-20 CARRIES A cycles_S_B0b_base
+            # COMPUTED FROM THE WITHDRAWN tw + rw + 21; see
+            # trace_20260818b/B0b_COLUMN_STALE.md.
+            "cycles_S_B0b": model.cycles(tw + 95, th + 63, tw, th, "B0b"),
+            # Kept because the sub-term is still meaningful, but READ THE NAME
+            # CAREFULLY: this is B2 minus the MEASURED DIFFERENCE `b0b -
+            # shadow`, not B2 minus the deletion.  The shadow build carries a
+            # comparator worth 2 cycles per output row and that difference is
+            # short by it, so the column is 2*rh below "B2 with the statistics
+            # gone".  The ownership claim was withdrawn on 2026-08-20; see
+            # tme_cycle_model's B0b section.  The VALUE is unchanged -- it is
+            # the same measured difference it always was.
+            "cycles_S_B0b_base": model.cycles(tw + 95, th + 63, tw, th, "B0b_base"),
+            "count_pass_iterations": model.b0b_count_pass_iterations(
+                tw + 95, th + 63, tw, th),
+        })
+        self._counter += 1
+        return result
+
+    def __enter__(self):
+        self._orig_btml = det.best_template_match_local
+        self._orig_mt = cv2.matchTemplate
+        det.best_template_match_local = self._btml
+        cv2.matchTemplate = self._mt
+        return self
+
+    def __exit__(self, *exc):
+        det.best_template_match_local = self._orig_btml
+        cv2.matchTemplate = self._orig_mt
+        return False
+
+
+# ---------------------------------------------------------------------------
+# driver
+# ---------------------------------------------------------------------------
+def load_side_templates():
+    banks = {}
+    for side in ("left", "right"):
+        banks[side] = {}
+        for kind in KINDS:
+            key = kind + "_" + side
+            path = HERE / det.STANDARD_TEMPLATE_DIRS[key] / (key + ".png")
+            banks[side][kind] = det.load_template_bank(str(path))
+    return banks
+
+
+def expand(patterns):
+    out = []
+    for pat in patterns:
+        hits = [p for p in globmod.glob(pat)
+                if os.path.isfile(p) and p.lower().endswith((".pdf",))]
+        if not hits:
+            raise SystemExit("pattern matched no PDF: " + pat)
+        out.extend(hits)
+    return sorted(set(out), key=lambda p: os.path.basename(p).lower())
+
+
+def sha256_file(path):
+    """SHA-256 of the bytes on disk, for data files we write ourselves."""
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def sha256_source(path):
+    """SHA-256 of a source file with line endings normalised to LF.
+
+    Source is hashed EOL-INDEPENDENTLY on purpose.  git's core.autocrlf=true is
+    set on the capture machine, so a file stored as LF is checked out as CRLF
+    here and as LF on Linux -- hashing raw bytes would make "was this the same
+    code?" answerable only on the platform that captured it.  Normalising means
+    the answer is the same everywhere, which is the question provenance is
+    actually asking.  Data files keep their raw-byte digest, because for those
+    the bytes ARE the artifact.
+    """
+    b = Path(path).read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(b).hexdigest()
+
+
+def summary_rows_unique(summary_rows):
+    """One row per source document, in the order `inputs` was built."""
+    seen, out = set(), []
+    for r in summary_rows:
+        if r["anon_id"] not in seen:
+            seen.add(r["anon_id"])
+            out.append(r)
+    return out
+
+
+def redact(prov, anon_by_filename):
+    """A committable copy: no absolute paths, no source document filenames.
+
+    The capture-side manifest names real drawings and local directories, so it
+    stays local beside the confidential JSONL.  This copy keeps every hash --
+    which is what makes the record checkable -- and replaces the identifying
+    parts.  Digests are NOT redacted: a sha256 of a document is not a filename,
+    and dropping it would defeat the point of the manifest.
+    """
+    pub = json.loads(json.dumps(prov))
+    pub["redacted"] = ("source document filenames replaced with anon_ids and "
+                       "absolute paths removed; all digests retained verbatim")
+    pub["inputs"] = [
+        {"anon_id": anon_by_filename.get(Path(r["path"]).name, "unknown"),
+         "sha256": r["sha256"]}
+        for r in prov["inputs"]
+    ]
+
+    # Per-page JSONL files are named after the source drawing, so the OUTPUT
+    # keys leak the same identifiers the inputs do.  Rewrite the stems.
+    stem_map = {Path(k).stem: Path(v).stem for k, v in anon_by_filename.items()}
+    renamed = {}
+    for name, meta in prov["outputs_sha256"].items():
+        for real, anon in stem_map.items():
+            if real in name:
+                name = name.replace(real, anon)
+        renamed[name] = meta
+    pub["outputs_sha256"] = renamed
+    # argv carries the input patterns, and a source DRAWING FILENAME is itself
+    # identifying -- reducing a path to its basename does not redact it.  Any
+    # argument that names a PDF or contains a path separator becomes a
+    # placeholder; the flags and their non-path values survive so the command
+    # shape stays readable.
+    cmd = pub["command"]
+    redacted_argv = []
+    for i, a in enumerate(cmd["argv"]):
+        low = a.lower()
+        if i == 0:
+            redacted_argv.append(Path(a).name)
+        elif low.endswith(".pdf") or "*" in a:
+            redacted_argv.append("<input-pattern>")
+        elif "/" in a or "\\" in a:
+            redacted_argv.append("<path>")
+        else:
+            redacted_argv.append(a)
+    cmd["argv"] = redacted_argv
+    cmd["cwd"] = "<repo>/sw"
+    cmd["interpreter"] = Path(cmd["interpreter"]).name
+    return pub
+
+
+def trace_derived(pages_done, cyc_totals, cp_iters):
+    """s/page aggregates summed from THIS run's records, plus the comparison."""
+    hz, out = model.TARGET_CLOCK_HZ, {}
+    for key, frozen_key in (("S", "per_trial_roi"), ("S_B1", "B1"),
+                            ("S_B2", "B2"), ("S_B0b", "B0b")):
+        got = cyc_totals[key] / pages_done / hz
+        want = model.FROZEN["s_per_page_at_125mhz"][frozen_key]
+        out[frozen_key] = {"trace": got, "frozen": want,
+                           "matches_frozen": abs(got - want) <= 5e-3}
+    out["count_pass_iterations_initial"] = {
+        "trace": cp_iters["initial"],
+        "frozen": model.FROZEN["b0b_count_pass"]["corpus_iterations"],
+        "matches_frozen": (cp_iters["initial"]
+                           == model.FROZEN["b0b_count_pass"]["corpus_iterations"]),
+    }
+    out["count_pass_iterations_refinement"] = {"trace": cp_iters["refine"]}
+    # The II=1 / II=3 endpoints this used to derive here are WITHDRAWN.  They
+    # were `deletion + n * iterations`, and both inputs were wrong: the pass
+    # carries per-scan overhead that no multiple of the iteration count can
+    # express, and the deletion was computed from the withdrawn tw + rw + 21.
+    # The measured B0b is summed above like any other variant.
+    return out
+
+
+def git_revision(path):
+    """Commit, branch and dirty state of the checkout the code came from.
+
+    A trace pins the code by hash, but a hash alone does not say WHICH commit
+    the reader should check out to get it.  `dirty` matters more than the sha:
+    a capture taken with uncommitted edits is tied to bytes that exist only on
+    one machine.
+    """
+    import subprocess
+
+    def run(*a):
+        try:
+            r = subprocess.run(["git", "-C", str(path)] + list(a),
+                               capture_output=True, text=True, timeout=30)
+            return r.stdout.strip() if r.returncode == 0 else None
+        except Exception:                                      # noqa: BLE001
+            return None
+
+    rev = run("rev-parse", "HEAD")
+    if rev is None:
+        return {"available": False}
+    status = run("status", "--porcelain") or ""
+    tracked = ("sw/tme_cycle_model.py", "sw/tme_trace_capture.py")
+    return {
+        "available": True,
+        "commit": rev,
+        "branch": run("rev-parse", "--abbrev-ref", "HEAD"),
+        "describe": run("describe", "--always", "--dirty"),
+        "worktree_dirty": bool(status),
+        "capture_tools_dirty": [
+            f for f in tracked
+            if any(line[3:].strip() == f for line in status.splitlines())
+        ],
+    }
+
+
+def write_provenance(outdir, args, pdfs, t_start, pages_done, totals,
+                     summary_rows, cyc_totals, cp_iters):
+    """Record everything needed to re-run this capture and detect drift.
+
+    A correct number in a directory nobody can regenerate is not a freeze.  This
+    pins the command, the interpreter, the code that ran (by hash, including the
+    detector the workload is imported from), the inputs, and the outputs.  The
+    input digests are the same values the summary's `input_sha256` column
+    carries, so a summary row cannot be paired with a different source PDF.
+    """
+    import platform
+
+    here = Path(__file__).resolve().parent
+    code = {}
+    for name in ("tme_trace_capture.py", "tme_cycle_model.py"):
+        f = here / name
+        if f.exists():
+            code[name] = sha256_source(f)
+    det_file = Path(det.__file__).resolve()
+    code[det_file.name] = sha256_source(det_file)
+
+    versions = {"python": sys.version.split()[0], "platform": platform.platform()}
+    for mod, label in ((cv2, "opencv"), (np, "numpy"), (fitz, "pymupdf")):
+        versions[label] = getattr(mod, "__version__", None) or getattr(
+            mod, "version", ("unknown",))[0]
+
+    outputs = {}
+    for f in sorted(outdir.iterdir()):
+        if f.is_file() and f.name != "provenance.json":
+            outputs[f.name] = {"bytes": f.stat().st_size, "sha256": sha256_file(f)}
+
+    prov = {
+        "captured_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "wall_seconds": round(time.time() - t_start, 1),
+        "command": {
+            "argv": sys.argv,
+            "cwd": os.getcwd(),
+            "interpreter": sys.executable,
+        },
+        "versions": versions,
+        "code_sha256": code,
+        "inputs": [{"path": str(f), "sha256": sha256_file(f)} for f in pdfs],
+        "outputs_sha256": outputs,
+        "workload": {
+            "pages": pages_done,
+            "initial_trials": totals["initial"],
+            "refinement_calls": totals["refinement"],
+            "candidates_left": totals["left"],
+            "candidates_right": totals["right"],
+        },
+        "git": git_revision(here),
+        "templates_sha256": [
+            {"name": "/".join(Path(t).parts[-2:]), "sha256": sha256_file(t)}
+            for t in model.template_files()
+        ],
+        # RECOMPUTED FROM THIS TRACE, not copied out of model.FROZEN.  Copying
+        # the frozen dict would make the manifest agree with the model by
+        # construction and prove nothing; these are summed from the rows this
+        # run actually produced, and `matches_frozen` is the comparison.
+        "trace_derived": trace_derived(pages_done, cyc_totals, cp_iters),
+        "note": ("trials JSONL is LOCAL AND CONFIDENTIAL (endpoint coordinates); "
+                 "trace_summary.csv and this file are committable.  Verify with "
+                 "sha256sum against outputs_sha256."),
+    }
+    (outdir / "provenance.json").write_text(
+        json.dumps(prov, indent=2), encoding="utf-8")
+    print("wrote {}".format(outdir / "provenance.json"))
+
+    anon = {Path(r["path"]).name: a for r, a in zip(
+        prov["inputs"], [row["anon_id"] for row in summary_rows_unique(summary_rows)])}
+    pub = redact(prov, anon)
+    (outdir / "provenance_public.json").write_text(
+        json.dumps(pub, indent=2), encoding="utf-8")
+    print("wrote {}  (committable)".format(outdir / "provenance_public.json"))
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("patterns", nargs="+", help="quoted glob(s) over the source PDFs")
+    ap.add_argument("--out", required=True, help="LOCAL output dir (not committable)")
+    ap.add_argument("--limit", type=int, default=0, help="stop after N pages (smoke test)")
+    ap.add_argument("--scales", default="",
+                    help="comma-separated scale ladder to capture instead of the "
+                         "detector's own MATCH_SCALES (algorithm experiment)")
+    ap.add_argument("--pin-envelope", action="store_true",
+                    help="hold the patch envelope at the 1.50 geometry while the "
+                         "ladder changes, so scale choice and geometry stay separable")
+    args = ap.parse_args()
+
+    pdfs = expand(args.patterns)
+    outdir = Path(args.out)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    # A re-centred ladder is an ALGORITHM EXPERIMENT, not an acceleration: it
+    # changes which templates the detector ever sees, so its output is not
+    # comparable to the canonical baseline by digest.  Keeping the envelope
+    # pinned at 1.50 is what makes the scale question separable from the
+    # geometry question -- without it, changing the ladder also moves every
+    # patch and the two effects cannot be told apart.
+    orig_scales = det.MATCH_SCALES
+    orig_bep = det.build_endpoint_patch
+    if args.scales:
+        det.MATCH_SCALES = tuple(float(s) for s in args.scales.split(","))
+        print("ladder override: {}".format(
+            ", ".join("{:.2f}".format(s) for s in det.MATCH_SCALES)))
+    if args.pin_envelope:
+        ratio = 1.50 / max(det.MATCH_SCALES)
+
+        def pinned(ex, ey, side, img_w, img_h, max_tw, max_th):
+            return orig_bep(ex, ey, side, img_w, img_h,
+                            int(max_tw * ratio), int(max_th * ratio))
+        det.build_endpoint_patch = pinned
+        print("envelope pinned at the 1.50 geometry (ratio {:.4f})".format(ratio))
+
+    side_templates = load_side_templates()
+    summary_rows = []
+    totals = {"initial": 0, "refinement": 0, "left": 0, "right": 0}
+    cyc_totals = {k: 0 for k in ("current", "S", "S_B1", "S_B2", "S_B0b",
+                                 "S_B0b_base")}
+    cp_iters = {"initial": 0, "refine": 0}
+    cyc_refine = {}
+    pages_done = 0
+    t_start = time.time()
+
+    for n_pdf, pdf in enumerate(pdfs, 1):
+        anon = "example_{:02d}.pdf".format(n_pdf)
+        sha = hashlib.sha256(Path(pdf).read_bytes()).hexdigest()
+        doc = fitz.open(pdf)
+        for pno in range(doc.page_count):
+            if args.limit and pages_done >= args.limit:
+                break
+            t0 = time.time()
+            tracer = Tracer()
+            tracer.index_templates(side_templates)
+            with tracer:
+                det.detect_page(doc[pno], side_templates, ZOOM,
+                                SCORE_THRESH, FERRULE_SCORE_THRESH, SCORE_MARGIN)
+            dt = time.time() - t0
+
+            recs = tracer.records
+            init = [r for r in recs if r["call_kind"] == "initial"]
+            refi = [r for r in recs if r["call_kind"] == "refinement"]
+            # One candidate = one classify_endpoint pass = 4 (left) or 3 (right)
+            # best_template_match_local calls, i.e. 32 / 24 initial trials.
+            cl = len({(r["endpoint"][0], r["endpoint"][1]) for r in init if r["side"] == "left"})
+            cr = len({(r["endpoint"][0], r["endpoint"][1]) for r in init if r["side"] == "right"})
+
+            stem = Path(pdf).stem + "_p{}".format(pno)
+            # Per-record terminator, not a separator: a page with no candidates
+            # must produce an empty file, not a file containing one blank line.
+            (outdir / (stem + "_trials.jsonl")).write_text(
+                "".join(json.dumps(r, separators=(",", ":")) + "\n" for r in recs),
+                encoding="utf-8")
+
+            totals["initial"] += len(init)
+            totals["refinement"] += len(refi)
+            totals["left"] += cl
+            totals["right"] += cr
+            # Initial trials only: the frozen s/page figures exclude refinement,
+            # so summing over `recs` here would compare unlike quantities.
+            for k, col in (("current", "cycles_current"), ("S", "cycles_S"),
+                           ("S_B1", "cycles_S_B1"), ("S_B2", "cycles_S_B2"),
+                           ("S_B0b", "cycles_S_B0b"),
+                           ("S_B0b_base", "cycles_S_B0b_base")):
+                cyc_totals[k] += sum(r[col] for r in init)
+                cyc_refine[k] = cyc_refine.get(k, 0) + sum(r[col] for r in refi)
+            cp_iters["initial"] += sum(r["count_pass_iterations"] for r in init)
+            cp_iters["refine"] += sum(r["count_pass_iterations"] for r in refi)
+
+            summary_rows.append({
+                "anon_id": anon, "page": pno, "input_sha256": sha,
+                "initial_trials": len(init), "refinement_trials": len(refi),
+                "candidates_left": cl, "candidates_right": cr,
+                "cycles_current": sum(r["cycles_current"] for r in recs),
+                "cycles_S": sum(r["cycles_S"] for r in recs),
+                "cycles_S_B1": sum(r["cycles_S_B1"] for r in recs),
+                "cycles_S_B2": sum(r["cycles_S_B2"] for r in recs),
+                "cycles_S_B0b": sum(r["cycles_S_B0b"] for r in recs),
+                "cycles_S_B0b_base": sum(r["cycles_S_B0b_base"] for r in recs),
+                "count_pass_iterations": sum(r["count_pass_iterations"] for r in recs),
+                "wall_seconds": round(dt, 3),
+            })
+            pages_done += 1
+            print("  {:<16} p{}  {:5d} initial  {:4d} refine  {:5.1f}s".format(
+                anon, pno, len(init), len(refi), dt), flush=True)
+        doc.close()
+        if args.limit and pages_done >= args.limit:
+            break
+
+    det.MATCH_SCALES = orig_scales
+    det.build_endpoint_patch = orig_bep
+
+    import csv
+    with (outdir / "trace_summary.csv").open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(summary_rows[0].keys()))
+        w.writeheader()
+        w.writerows(summary_rows)
+
+    write_provenance(outdir, args, pdfs, t_start, pages_done, totals,
+                     summary_rows, cyc_totals, cp_iters)
+
+    print()
+    print("pages            {}".format(pages_done))
+    print("initial trials   {}".format(totals["initial"]))
+    print("refinement calls {}".format(totals["refinement"]))
+    print("candidates       {} left + {} right = {}".format(
+        totals["left"], totals["right"], totals["left"] + totals["right"]))
+    print("wall             {:.1f} s".format(time.time() - t_start))
+    if pages_done:
+        print()
+        print("measured trace vs frozen model, INITIAL TRIALS ONLY, s/page @ 125 MHz:")
+        for k, frozen_key in (("S", "per_trial_roi"), ("S_B1", "B1"), ("S_B2", "B2"),
+                              ("S_B0b", "B0b")):
+            got = cyc_totals[k] / pages_done / model.TARGET_CLOCK_HZ
+            want = model.FROZEN["s_per_page_at_125mhz"][frozen_key]
+            flag = "OK" if abs(got - want) <= 5e-3 else "DRIFT"
+            print("  {:<8} {:8.3f}   frozen {:<8} {:8.3f}   {}".format(
+                k, got, frozen_key, want, flag))
+        print()
+        print("refinement adds, s/page @ 125 MHz:")
+        for k in ("S", "S_B1", "S_B2", "S_B0b"):
+            print("  {:<12} {:8.3f}".format(k, cyc_refine.get(k, 0) / pages_done / model.TARGET_CLOCK_HZ))
+        print()
+        cp = model.FROZEN["b0b_count_pass"]
+        print()
+        print("B0b count pass, I = pw*(th + 2*(rh-1)), summed from this trace:")
+        print("  initial trials   {:>15,} iterations   frozen {:>15,}   {}".format(
+            cp_iters["initial"], cp["corpus_iterations"],
+            "OK" if cp_iters["initial"] == cp["corpus_iterations"] else "DRIFT"))
+        print("  refinement       {:>15,} iterations".format(cp_iters["refine"]))
+        print()
+        print("The II=1 / II=3 ENDPOINTS this used to print here are WITHDRAWN.")
+        print("B0b was measured on 2026-08-20 by three-solution paired RTL")
+        print("co-simulation, and BOTH of the inputs those endpoints rested on")
+        print("were wrong: the hoisted pass carries per-scan overhead that no")
+        print("multiple of the iteration count can express (though the II itself")
+        print("really is 1), and the removal was computed from an attribution")
+        print("that was 3 too small per (output row, template row).  The measured")
+        print("B0b is in the table above.")
+        print()
+        print("The ITERATION COUNT above is unaffected and still checks out: it is")
+        print("derived per invocation and summed from this trace independently of")
+        print("the model's own total.  cycles_S_B0b_base is the measured REMOVAL")
+        print("only, not a runnable variant.")
+    print()
+    print("trials JSONL is LOCAL AND CONFIDENTIAL; trace_summary.csv is committable.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

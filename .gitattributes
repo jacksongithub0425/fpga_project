@@ -1,0 +1,156 @@
+# Board artifacts must survive checkout byte-for-byte: BUILD_INFO.txt records
+# their SHA-256, and an EOL-normalised .hwh would no longer match it.
+*.bit -text
+*.hwh -text
+*.dcp -text
+vivado/three_stage_combined/board_bundle/** -text
+
+# Gate 4's fixtures, for the same reason: sw/GATE4_VECTORS.sha256 records
+# their SHA-256 and board_gate_extract.py refuses to run on a mismatch, so an
+# EOL-normalised manifest would fail the gate on Windows checkouts. The .txt
+# files are covered too — they are vectors, not prose.
+hls/integration/tb_bpe_tme_* -text
+hls/template_match/tb_tme_*_hw.* -text
+
+# Gate 5's fixtures, same reason: sw/GATE5_VECTORS.sha256 records their
+# SHA-256 and board_gate_protocol.py refuses to run on a mismatch.
+hls/integration/tb_proto_* -text
+
+# Priority 4's pinned source snapshots, for the same reason again:
+# run_hls_b1.tcl verifies each one with `sha256sum` over RAW bytes before it
+# will compile it, and MANIFEST.sha256 records them too.  A CRLF checkout would
+# change every digest and the A/B build would refuse to run on a fresh clone --
+# which is the opposite of the reproducibility the snapshots exist for.
+hls/template_match/b1_sources/*.cpp -text
+
+# Priority 6's pinned tme_top snapshots, for exactly the same reason:
+# run_hls_b0b.tcl verifies each with `sha256sum` over RAW bytes before it will
+# compile it, and a CRLF checkout would change every digest.
+hls/template_match/b0b_sources/*.cpp -text
+
+# The Priority 0 evidence tools, for the same reason again: every trace
+# directory's provenance.json records their SHA-256 under `code_sha256`, so a
+# result can be tied to the code that produced it. core.autocrlf=true is set on
+# this machine, which would hand a fresh checkout CRLF copies and break that
+# binding on the first clone. Pin them byte-for-byte.
+sw/tme_cycle_model.py -text
+sw/tme_trace_capture.py -text
+
+# Trace evidence, same reason: the run's provenance records the summary's
+# SHA-256, so an EOL-normalised checkout would break the binding.
+sw/trace_*_summary.csv -text
+sw/trace_*_provenance.json -text
+
+# Priority 4 (B1) evidence, all for the same reason as the rules above: the
+# artifact IS its bytes, and logs/b1_20260818/MANIFEST.sha256 hashes these raw
+# rather than EOL-normalised. A CRLF checkout would change every digest.
+hls/template_match/tb_tme_*_phase_s.* -text
+hls/template_match/template_match_b1/b1/impl/ip/*.zip -text
+
+# Priority 5's packaged IP. The ZIP is binary; component.xml is TEXT that
+# ships with LF endings, and logs/b2_20260819/MANIFEST.sha256 pins it at
+# ea0d8a05...f9f771f4 -- a digest that is only reproducible from the bytes AMD
+# emitted. A CRLF checkout would still verify (the manifest normalises .xml),
+# but it would no longer be the packaged artifact, and the point of keeping it
+# is that it IS the packaged artifact.
+hls/template_match/template_match_b1_b2/b2/impl/ip/*.zip -text
+hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml -text
+
+# Priority 6's packaged IP, for B2's reason exactly. This is the directory
+# vivado_b0b_125.log names as the IP repository for the 8.000 ns run that did
+# NOT close, so it is that route's input; logs/b0b_20260820/MANIFEST.sha256
+# hashes the ZIP raw (c4df8ee4...a38f5e9) and would not verify from a CRLF
+# checkout at all.
+hls/template_match/template_match_b0b_b0b/b0b/impl/ip/*.zip -text
+hls/template_match/template_match_b0b_b0b/b0b/impl/ip/component.xml -text
+
+# The Vivado build script and the packaging script AS THEY RAN. Same argument
+# as the board runner below: an immutable snapshot is only worth keeping if a
+# fresh clone still holds the bytes that ran. build_tme_standalone.tcl.as_run
+# is pinned at 1f2c9b47... by all three manifests, and the living generator has
+# since moved -- that drift is why these snapshots exist.
+logs/b1_20260818/build_tme_standalone.tcl.as_run -text
+logs/b2_20260819/build_tme_standalone.tcl.as_run -text
+logs/b0b_20260820/build_tme_standalone.tcl.as_run -text
+logs/b0b_20260820/package_b0b.tcl.as_run -text
+
+# The mutant-gate transcripts. RAW TOOL OUTPUT, bound by the B0b manifest and
+# re-scored by `tme_b0b_mutants.py --replay`; the exit statuses beside them are
+# half of every verdict.
+hls/template_match/b0b_sources/mutants/csim_*.log -text
+hls/template_match/b0b_sources/mutants/exit_codes.txt -text
+
+# The board runner AS IT RAN. logs/b1_board_20260818/01_hashes_local.txt,
+# 02_hashes_remote.txt and 03_run.txt all pin it at
+# f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153, taken with
+# sha256sum over raw bytes on both the host and the board. The snapshot is only
+# worth keeping if it still hashes to that on a fresh clone. The working copy
+# is pinned too: it is what the next session will hash before loading.
+logs/b1_board_20260818/tme_standalone_bringup.py.as_run -text
+sw/tme_standalone_bringup.py -text
+
+# Priority 4's retained transcripts.  These are RAW TOOL OUTPUT -- Vitis emits
+# trailing whitespace and Vivado emits its own line endings, and `git diff
+# --check` complains about both.  Do not clean them: MANIFEST.sha256 binds them,
+# and a transcript edited for tidiness is no longer the thing that was produced.
+# Pinned -text so a checkout reproduces the bytes rather than the tool's
+# platform conventions being re-imposed by git.
+logs/b1_20260818/** -text
+logs/b1_board_20260818/** -text
+logs/b1_rerun_20260818/** -text
+
+# Priority 5 (B2), same rule and same reason: logs/b2_20260819/MANIFEST.sha256
+# binds these, and the Vitis/Vivado transcripts in there are raw tool output
+# whose trailing whitespace and line endings are part of what was produced.
+logs/b2_20260819/** -text
+
+# The B2 board session's transcripts, same rule: raw tool and shell output,
+# hashed as-is on both the host and the board.
+logs/b2_board_20260819/** -text
+
+# The b2prod evidence sets, and one rule for all of them: an `.as_run`
+# snapshot is a claim about BYTES.  `logs/b2prod_20260821/*/as_run/
+# PAYLOAD.sha256` hashes the whole uploaded payload under the payload's own
+# BARE names (`board_expect.py`), of which the `.as_run` files beside it are
+# a renamed subset -- 5 of 10 for preflight, 9 of 32 for stage 1 -- so
+# `sha256sum -c` in that directory does not run as-is and never did.  What
+# does run is matching each `<name>.as_run` against the manifest line for
+# `<name>`, and all 14 do.  That check is a byte comparison, so an
+# EOL-normalised checkout breaks every one of them and turns the strongest
+# thing these directories carry -- the code exactly as it ran, tied to the
+# transcript by digest -- into something that cannot be verified.  Same
+# rule, and the same reason, as the Priority 4/5/6 `.as_run` entries above.
+# The rule is WHOLESALE over the three b2prod trees, not per file type, and
+# that is the correction: picking out `*.as_run` and `*.txt` left
+# `b2prod_20260822`'s 29 files and `b2prod_20260821/clock_probe`'s 11
+# EOL-normalised while their siblings were not, which is an arbitrary split
+# through one evidence set.  These directories are an ARCHIVE of what ran
+# and what came back; nothing in them is edited after the fact, so there is
+# no case where normalising helps and several where it destroys the only
+# thing a file is good for.
+logs/b2prod_20260821/** -text
+logs/b2prod_20260822/** -text
+logs/b2prod_20260823/** -text
+logs/EVIDENCE_ALLOWLIST.txt -text
+
+# The sw/ modules whose sha256 is RECORDED AS AN IDENTITY, pinned for the same
+# reason tme_standalone_bringup.py above already was.
+#
+# logs/b2prod_20260823/03_script_identity.txt records five module digests taken
+# on the board with sha256sum over raw bytes, and 12_protocol_v2_RESULT.md
+# records a sixth for the module protocol v2 loaded. Those digests are the
+# recorded identity of a silicon run -- but only tme_standalone_bringup.py was
+# `-text`, so with core.autocrlf=true a Windows checkout produced CRLF copies
+# and FOUR of the six hashed to something else. The blobs were always right;
+# it was the checkout that diverged, which is the harder failure to notice
+# because `git status` stays clean throughout.
+#
+# Checked from a detached worktree, not assumed: before this stanza,
+# board_gate_recovery.py, safe_teardown.py, board_gate_extract.py and
+# terminal_counter_endpoint_first.py all mismatched their recorded digest on
+# checkout and matched it as blobs.
+sw/board_gate_extract.py -text
+sw/board_gate_recovery.py -text
+sw/safe_teardown.py -text
+sw/terminal_counter_endpoint_first.py -text
+sw/tme_driver.py -text

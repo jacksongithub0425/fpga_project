@@ -1,0 +1,121 @@
+--- fixtures (GATE4_VECTORS.sha256) ---
+  [OK  ] tb_bpe_tme_cases.txt           141 B  ed90565eec56a4aa816d7ba12f64a146cabb95b58548254f304d65ba111a740b
+  [OK  ] tb_bpe_tme_gray.bin            480 B  ede44a0efa7757102f18bd583983d4b262a6e5f7141bd5a13302d8be555573b3
+  [OK  ] tb_bpe_tme_bin.bin             480 B  118ac39fb5cfed72a7e024cddee9045ae43157710600e0772f91fe50bd829a57
+  [OK  ] tb_bpe_tme_patch.bin           168 B  3a97be1698cea0fc1805683ccba6f2e62b4ed1742196023b561e7b9e5ba47c0d
+  [OK  ] tb_bpe_tme_templs.bin           16 B  f00dc88ec2407e1e83e7a0c43949506f46f526b586c2bcc7c2990c35b5d24f8f
+  [OK  ] tb_tme_cases_hw.txt            683 B  378d4d6e3559b4afb1d1f22f7e618d3eb011c49f0b523226588a6ed7b6f6ad6e
+  [OK  ] tb_tme_patches_hw.bin      524,520 B  5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53
+  [OK  ] tb_tme_templs_hw.bin        30,648 B  026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350
+  8 fixtures verified, 557,136 B total
+board_gate_recovery — overlay three_stage_combined.bit
+9 hw cases; stall geometry 820x307/216x96, modelled 2.5715 s; R1 deadline 0.5 s
+This gate DELIBERATELY breaks things. Every phase leaves the PL reprogrammed behind it.
+  [overlay load 1] PLPipeline(timeout_s=120)
+  teardown protection: ignoring SIGINT, SIGTERM, SIGHUP, SIGQUIT
+
+--- phase R0: baseline, before anything is broken ---
+  [overlay load 2] PLPipeline(timeout_s=120)
+  [PASS] R0 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R0 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.005 s
+  [PASS] R0 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R0 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R0 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R0 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R0 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R0 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R0 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.077 s
+  [overlay load 3] PLPipeline(timeout_s=0.5)
+
+--- phase R1: the 0.5 s deadline is enforced ---
+  running 820x307 / 216x96 — modelled 2.571 s of fabric time — with timeout_s=0.5
+  [PASS] the overrun raises TimeoutError, not a result and not another error: TimeoutError: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000001, seen_busy=True)
+  raised after 0.539 s: tme_top: ap_done never rose within 0.5 s (AP_CTRL=0x00000001, seen_busy=True)
+  [PASS] the raise is bounded: within 250 ms of the 0.5 s deadline: 0.539 s
+  [PASS] the deadline cut a RUNNING transaction short (not one that had already finished): 0.539 s vs 2.571 s modelled
+
+--- phase R2: the poison latch holds ---
+  [PASS] the pipeline is marked in-flight after the failed run: True
+  [PASS] match_template() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run match_template: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs 
+  [PASS] binarize_page() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run binarize_page: a previous stage left a transfer outstanding, so the PL is mid-transaction and its DMAs m
+  [PASS] extract_candidates() refuses with a RuntimeError naming the outstanding transfer: RuntimeError: refusing to run extract_candidates: a previous stage left a transfer outstanding, so the PL is mid-transaction and its D
+
+--- phase R3: retention, then reset ---
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() REFUSED to free the buffers (a True here would hand CMA pages back with a DMA command possibly still against them): close() returned False
+  [PASS] close() is idempotent and repeats its verdict: second close() disagreed with the first
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+UNSAFE TEARDOWN: a DMA could not be proved halted, or a buffer would not free.
+The retained references live only as long as THIS process, so resetting the PL is done
+here rather than left to the caller — by the time the caller sees the exit code, the
+pages are already back in the pool.
+
+PL reset: reloaded three_stage_combined.bit. The DMA engines and cores are back in their power-on state,
+so the retained pages are no longer targeted by any command and are safe to release.
+The gate still FAILS — an unsafe teardown is a failure — but the board is recoverable.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  [PASS] reprogramming the PL succeeded, so the retained pages are no longer targeted by any command: reset_pl returned True
+
+--- phase R4: correctness after recovery ---
+  [overlay load 4] PLPipeline(timeout_s=120)
+  [PASS] R4 [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R4 [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.005 s
+  [PASS] R4 [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R4 [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R4 [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R4 [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R4 [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R4 [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R4 [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.077 s
+
+--- phase R5: a genuinely wedged core ---
+  [overlay load 5] PLPipeline(timeout_s=120)
+  [PASS] the matcher is idle before the wedge is induced: AP_CTRL=0x00000004
+  starting tme_top at 820x307 / 216x96 with NO MM2S armed — it needs 251,740 beats that will never arrive
+  [PASS] the core stays busy for 300 ms (141 samples): ap_done never rose and ap_idle never returned: AP_CTRL=0x00000001 after 141 samples (done=False, idle=False)
+  [PASS] PLPipeline refuses to start a new invocation on a busy core (the ap_ctrl_hs pending-start corruption guard): RuntimeError: tme_top: core is not idle before start (AP_CTRL=0x00000001) — a previous invocation is still running or left beats in a stream. Starting now
+[tme_driver] NOT freeing 5 DMA buffers (a transfer was left outstanding by a failed run). They are retained for the life of this process; reload the overlay (construct a new PLPipeline) before running again.
+  [PASS] close() retained the buffers after the wedge too: close() returned False
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+UNSAFE TEARDOWN: a DMA could not be proved halted, or a buffer would not free.
+The retained references live only as long as THIS process, so resetting the PL is done
+here rather than left to the caller — by the time the caller sees the exit code, the
+pages are already back in the pool.
+
+PL reset: reloaded three_stage_combined.bit. The DMA engines and cores are back in their power-on state,
+so the retained pages are no longer targeted by any command and are safe to release.
+The gate still FAILS — an unsafe teardown is a failure — but the board is recoverable.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  [PASS] reprogramming the PL cleared the wedge: reset_pl returned True
+
+--- phase R5-after: correctness after recovery ---
+  [overlay load 6] PLPipeline(timeout_s=120)
+  [PASS] R5-after [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] R5-after [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.005 s
+  [PASS] R5-after [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] R5-after [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] R5-after [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] R5-after [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] R5-after [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] R5-after [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] R5-after [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.078 s
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+UNSAFE TEARDOWN: a DMA could not be proved halted, or a buffer would not free.
+The retained references live only as long as THIS process, so resetting the PL is done
+here rather than left to the caller — by the time the caller sees the exit code, the
+pages are already back in the pool.
+
+PL reset: reloaded three_stage_combined.bit. The DMA engines and cores are back in their power-on state,
+so the retained pages are no longer targeted by any command and are safe to release.
+The gate still FAILS — an unsafe teardown is a failure — but the board is recoverable.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+========================================================================
+RECOVERY GATE PASSED (0 failures, 42 checks): a 0.5 s deadline interrupts a running transaction and raises TimeoutError; every entry point then refuses; close() retains the CMA pages rather than freeing them; reprogramming the PL recovers, and a fresh pipeline returns 9/9 golden results. The same holds from a genuinely wedged core, whose busy state the driver's ap_ctrl_hs guard refuses to start on top of.
+Two stall shapes only — a deadline on a healthy transaction and a starved input stream. DMA error interrupts, AXI decode errors and a failed reprogram are NOT exercised.
+
+
+__EXIT__ 0

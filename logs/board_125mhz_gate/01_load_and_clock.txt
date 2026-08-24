@@ -1,0 +1,9 @@
+fclk0 BEFORE = 100.0
+downloaded  = /home/xilinx/jupyter_notebooks/tme_probe125/tme_probe125.bit
+fclk0 AFTER  = 125.0
+fclk1        = 100.0
+ip_dict      = ['axi_dma_patch', 'axi_dma_templ', 'processing_system7_0', 'tme_top_0']
+
+
+__EXIT__ 0
+

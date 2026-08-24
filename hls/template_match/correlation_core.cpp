@@ -3,23 +3,54 @@
 // Tiled 16-lane MAC correlation.
 //
 // For each tile of PAR_COLS output columns:
-//   1. Load a contiguous segment of patch_line into fully-partitioned
-//      registers (seg[PAR_COLS + MAX_TEMPL_W - 1]).  One sequential read
-//      per cycle — no memory-port conflict.
+//   1. Make seg[] hold the contiguous patch segment this tile needs, in
+//      fully-partitioned registers (seg[PAR_COLS + tw - 1]).  The FIRST tile
+//      loads it outright; every later tile SHIFTS the PAR_COLS-overlapped
+//      remainder down and refills only the PAR_COLS pixels that are new.
+//      See the B2 note below.
 //   2. Pipeline the template-column (x) loop at II=1:
-//        lane p accumulates: patch_line[u0+p+x] * (templ_row[x]-128)
+//        lane p accumulates: patch_line[u0+p+x] * templ_row[x]
 //      seg is in registers so all 16 reads per cycle are free.
 //   3. Write back PAR_COLS partial sums into acc[] (also partitioned).
 //
-// Resource cost: PAR_COLS DSP48E1 (16) + adder tree ≈ 40 DSPs total.
-// Throughput: ~(SEG_W + MAX_TEMPL_W) * n_tiles cycles per template row.
+// Template pixels are RAW uint8 — the product is unsigned 8×8 and the
+// accumulated quantity is ΣTI, exact by construction.  Mean subtraction
+// happens algebraically in tme_top's normalisation (N·ΣTI − ΣT·ΣI), not
+// per-pixel here.  Per-tile bound: 216 products of ≤ 255² keeps lane_acc
+// under 2^24; acc[] accumulates ≤ 96 tiles of that, under 2^31 (sumsq_t).
+//
+// Throughput history, per (output row, template row), all MEASURED by paired
+// RTL co-simulation on the same fourteen invocations:
+//
+//     cur   T*(tw + 257)               constant 232-pixel load, every tile
+//     B1    T*(2*tw + 41) + 1          load shortened to the runtime seg_len
+//     B2    T*(tw + 44) + tw - 2       later tiles reuse the overlap
+//
+// The workload projections that follow from those terms live in
+// sw/tme_cycle_model.py; none of them is a measured page time.
 
-static const int SEG_W = PAR_COLS + MAX_TEMPL_W;  // 16+216 = 232
+// The MAC reads seg[p + x] for p < PAR_COLS and x < tw, so the highest index
+// a tile can touch is (PAR_COLS - 1) + (tw - 1) = tw + PAR_COLS - 2, and a
+// segment of tw + PAR_COLS - 1 pixels is exactly sufficient.  ONE SHORTER AND
+// LANE 15 READS AN ELEMENT NO TILE EVER WROTE — a defect that is invisible to
+// a score-tolerance assert and to any suite whose peaks avoid lane 15.  The
+// case that detects it is build_lane15 in tme_generate_production.py: a PAIR
+// of lane-15 windows whose ordering the mutation reverses for all 256 UNIFORM
+// stale fills swept (every register set to the same byte), since no single
+// window is safe against every one.  That sweep is over fill VALUES, not over
+// the 256^231 arbitrary register states; see tme_b2_mutants.py for what the
+// distinction does and does not buy.
+//
+// SEG_W is the compile-time BOUND on that quantity, reached at tw =
+// MAX_TEMPL_W.  seg_len below is the per-invocation value.  Keeping each
+// loop's static bound at a compile-time constant and stopping on the runtime
+// value means no write can leave the array however the scalars are programmed.
+static const int SEG_W = PAR_COLS + MAX_TEMPL_W - 1;  // 16+216-1 = 231
 
 void correlation_core(
     ap_uint<8>   patch_line[MAX_PATCH_W],
     ap_uint<8>   templ_row[MAX_TEMPL_W],
-    acc_t        acc[MAX_RESULT_W],
+    sumsq_t      acc[MAX_RESULT_W],
     ap_uint<16>  patch_w,
     ap_uint<16>  templ_w)
 {
@@ -28,14 +59,137 @@ void correlation_core(
 
     int pw = (int)patch_w;
     int tw = (int)templ_w;
-    int rw = pw - tw;
+    // Full valid-correlation width — must match rw in tme_top.cpp exactly.
+    // This guard bounds the tile break, the shift and the writeback; if it
+    // lags tme_top's rw by one, the last output column is never written but is
+    // still read by norm_cols (contract §4.4, option 1).
+    int rw = pw - tw + 1;
+    // B1: the segment is loaded to the width THIS INVOCATION needs, rather
+    // than the compiled 232.  Measured cost T*(2*tw + 41) + 1 per (output row,
+    // template row), against a projected T*(2*tw + 40) — the projection was
+    // optimistic by T + 1, in the direction that flattered the change.  The
+    // shape of that overhead is measured; its MECHANISM is not, and the one
+    // obvious guess is ruled out: solution `b1b` removed the per-iteration
+    // `i >= seg_len` predicate entirely and produced a byte-identical
+    // transaction report.  Do not quote a cause.  See
+    // hls/template_match/b1_sources/README.md and sw/tme_b1_ab.py.
+    int seg_len = tw + PAR_COLS - 1;
+
+    // ------------------------------------------------------------------
+    // B2: HORIZONTAL OVERLAP REUSE
+    // ------------------------------------------------------------------
+    // Consecutive tiles start PAR_COLS apart and each needs seg_len pixels,
+    // so tile t's segment and tile t-1's OVERLAP in seg_len - PAR_COLS =
+    // tw - 1 pixels.  B1 re-read all seg_len from patch_line every tile; B2
+    // re-reads only the PAR_COLS that are actually new:
+    //
+    //     tile 0     load seg[0 .. seg_len-1]            from patch_line
+    //     tile t>0   seg[i] = seg[i + PAR_COLS]          shift, i < tw-1
+    //                seg[tw-1 .. tw+14]                  from patch_line
+    //
+    // WHY THE SHIFT IS THE RIGHT FORM.  The alternative — leaving the pixels
+    // where they are and rotating the READ index — would turn every one of the
+    // 16 lanes' seg[p + x] into a runtime rotation over 231 registers.  The
+    // shift instead puts the variable part on the WRITE side, where seg
+    // already has a decoder because load_seg indexes it by a loop counter, and
+    // leaves the MAC's read addressing bit-for-bit what B1 had.  That is also
+    // what keeps the paired co-simulation attributable: the only thing that
+    // moved is how seg gets its contents.
+    //
+    // ZERO-PADDING SURVIVES THE SHIFT, and it has to be checked rather than
+    // assumed, because the shift is the one place a tile inherits state from
+    // its predecessor.  Tile t-1 wrote seg[j] = (u0 - PAR_COLS + j < pw) ?
+    // patch_line[...] : 0.  Reading that at j = i + PAR_COLS gives exactly
+    // (u0 + i < pw) ? patch_line[u0 + i] : 0 — the same value B1's load would
+    // have produced at seg[i].  The out-of-patch zeros therefore propagate
+    // correctly into the final, partially-masked tile instead of being
+    // recomputed there.
+    //
+    // WHAT IT COSTS, MEASURED.  Paired RTL co-simulation against the `b1`
+    // solution -- the same fourteen invocations, the same pinned vectors, only
+    // this file changed (sw/tme_b2_ab.py, 2026-08-19) -- gives
+    //
+    //     tile = T * (tw + 44) + tw - 2
+    //
+    // exactly, on 14/14 transactions spanning T in {1,2,3,5,6} and tw in
+    // {4,16,20,24,100,216}.  The `b1` control reproduced its own published term
+    // on all 14 in the same comparison, which is what makes the difference
+    // attributable to the reuse rather than to the harness.
+    //
+    // THE PROJECTION WAS OPTIMISTIC AGAIN, AND B1'S OVERHEAD IS PART OF WHY.
+    // Two candidate terms are on record (`tme_b2_ab.py --predict`, which reads
+    // the retained pre-measurement copy of the model and no b2 report at all):
+    // the pre-RTL projection T*(tw+41)+(tw-1) -- committed 2026-08-17 in
+    // e762cbf, two days before this rewrite existed -- and B1's measured term
+    // minus the naive reuse saving, T*(tw+42)+tw.  THE RTL MATCHED NEITHER.
+    // Against the pre-RTL projection, which is the analogue of the projection
+    // B1 withdrew, the miss is
+    //
+    //     3T - 1  =  (T + 1)  +  2 * (T - 1)     per (output row, template row)
+    //
+    // and READ BOTH TERMS.  The (T + 1) is B1's own correction, and it RECURS
+    // here exactly: at T = 1 the second term vanishes and the whole miss IS
+    // B1's (T + 1) -- confirmed on all five single-tile transactions.  What is
+    // new is the ADDITIONAL 2 * (T - 1), which is the miss against the
+    // control-naive baseline, i.e. against a projection that already carries
+    // B1's correction.  Quote 2*(T-1) only with that baseline named.
+    //
+    // So B1's overhead did not merely recur, it recurred AND was compounded --
+    // which is the reason the term had to be measured rather than adjusted for
+    // by B1's amount.  Do not carry either correction forward to B0b as a
+    // prediction; carry forward only that a naive projection has now been
+    // optimistic twice, in two different shapes.
+    //
+    // THE SHAPE IS MEASURED; THE MECHANISM IS NOT.  Two cycles per tile beyond
+    // the pixels, minus two per call, is what the fourteen transactions pin.
+    // Whether that is the shift's own state, the `t == 0` branch, or the extra
+    // loop region is NOT established: no experiment here separates them, just
+    // as none separated B1's T + 1.  Do not quote a cause.
+    //
+    // WORTH KNOWING BEFORE READING A TRACE: the saving over B1 is
+    // (T - 1) * (tw - 3) per (output row, template row).  That is ZERO at
+    // T = 1 -- a single-tile invocation has nothing to reuse, and the
+    // measurement confirms an exact tie on all five such transactions -- and
+    // positive for every legal geometry with more than one tile, since
+    // contract 4.1 puts tw >= 4.  Unlike B1, which LOSES at tw = 216, B2 is
+    // never a regression: `phase-s-max` goes 23,482,881 -> 16,939,521 cycles.
+    //
+    // NOTHING HERE IS CARRIED ACROSS INVOCATIONS.  seg is a local automatic
+    // array and tile 0 always takes the full-load branch, so the registers a
+    // previous correlation_core call left behind are overwritten before any
+    // lane reads them.  Every reuse is WITHIN one call, between tiles.  That
+    // is the property an overlap-reuse rewrite is most likely to break, and it
+    // is NOT tested by a new vector suite: sw/tme_b2_mutants.py shows that the
+    // already-pinned b1 suite breaks on the `skip_first_full` mutant -- reuse
+    // carried across tile 0, hence across template rows, output rows and calls
+    // -- on eight of its twelve cases, for all 256 UNIFORM stale fills it
+    // sweeps.  READ THAT BOUND EXACTLY: the sweep sets every register to the
+    // same byte and walks that byte 0..255.  It is not a sweep over arbitrary
+    // register states, of which there are 256^231, and it does not claim to
+    // be.  What makes the result more than anecdote is that the shift is
+    // SELF-HEALING -- the inherited prefix shrinks by PAR_COLS per tile -- so
+    // any damage this mutant can do is CONFINED to output columns u < tw - 1.
+    // That containment is derived; it is an upper bound on where a difference
+    // may appear, and it does NOT establish that every such column does
+    // differ.  The eight detections are observed, not predicted.
+    // Keeping the stimulus identical to B1's is also what makes the
+    // paired co-simulation a comparison rather than two separate runs.
+    //
+    // The number of pixels carried over is tw - 1, which is ZERO at tw = 1.
+    // The shift then copies nothing and the refill writes seg[0 .. 15], i.e.
+    // the whole segment — so the degenerate template is the ordinary path with
+    // an empty overlap, not a special case.  (tw >= 4 by contract §4.1; the
+    // bound is noted because the loops must stay correct at it, not because a
+    // 1-wide template is legal.)
+    int overlap = seg_len - PAR_COLS;      // = tw - 1, the reused pixels
+    int refill0 = overlap;                 // first index the refill writes
 
     // Segment register file: fully partitioned so 16 reads are free each cycle.
     ap_uint<8> seg[SEG_W];
 #pragma HLS ARRAY_PARTITION variable=seg complete dim=1
 
     // Per-lane accumulators for the current tile.
-    acc_t lane_acc[PAR_COLS];
+    ap_uint<25> lane_acc[PAR_COLS];
 #pragma HLS ARRAY_PARTITION variable=lane_acc complete dim=1
 
     tile_loop: for (int t = 0; t * PAR_COLS < MAX_RESULT_W; t++) {
@@ -44,11 +198,41 @@ void correlation_core(
         int u0 = t * PAR_COLS;
         if (u0 >= rw) break;
 
-        // --- Phase 1: load patch segment into registers (sequential BRAM read) ---
-        load_seg: for (int i = 0; i < SEG_W; i++) {
+        // --- Phase 1: make seg[] hold patch_line[u0 .. u0+seg_len-1] -------
+        if (t == 0) {
+            // First tile: nothing to reuse.  Identical to B1's load.
+            load_seg: for (int i = 0; i < SEG_W; i++) {
 #pragma HLS PIPELINE II=1
-            int idx = u0 + i;
-            seg[i] = (idx < pw) ? patch_line[idx] : (ap_uint<8>)0;
+#pragma HLS LOOP_TRIPCOUNT min=19 max=231 avg=95
+                if (i >= seg_len) break;
+                int idx = u0 + i;
+                seg[i] = (idx < pw) ? patch_line[idx] : (ap_uint<8>)0;
+            }
+        } else {
+            // Later tiles: slide the overlap down by PAR_COLS, then refill.
+            //
+            // The guard is not decoration.  Without it the unrolled copy would
+            // read seg[i + PAR_COLS] for i up to SEG_W - PAR_COLS - 1, i.e.
+            // past seg_len - 1, which for tw < MAX_TEMPL_W is a register no
+            // load has ever written.  The values would never reach a lane, but
+            // "reads uninitialised storage and the result happens to be
+            // discarded" is not a property worth relying on in either C
+            // simulation or RTL.  In hardware it is a clock enable per
+            // register, on a mux the shift needs anyway.
+            shift_seg: for (int i = 0; i < SEG_W - PAR_COLS; i++) {
+#pragma HLS UNROLL
+                if (i < overlap) seg[i] = seg[i + PAR_COLS];
+            }
+
+            // Exactly PAR_COLS new pixels, at a COMPILE-TIME trip count: this
+            // loop has no runtime bound and no exit test.  refill0 is loop
+            // invariant, so the address is a constant offset plus the counter.
+            refill_seg: for (int k = 0; k < PAR_COLS; k++) {
+#pragma HLS PIPELINE II=1
+                int j   = refill0 + k;
+                int idx = u0 + j;
+                seg[j] = (idx < pw) ? patch_line[idx] : (ap_uint<8>)0;
+            }
         }
 
         // --- Phase 2: reset lane accumulators ---
@@ -59,15 +243,15 @@ void correlation_core(
 
         // --- Phase 3: pipelined MAC over template columns ---
         // For x fixed per cycle: seg[p+x] is a register read (free for all p).
-        // templ_row[x] is one BRAM read, broadcast to all 16 lanes.
+        // templ_row[x] is one register read, broadcast to all 16 lanes.
         mac_loop: for (int x = 0; x < MAX_TEMPL_W; x++) {
 #pragma HLS PIPELINE II=1
 #pragma HLS LOOP_TRIPCOUNT min=4 max=216 avg=80
             if (x >= tw) break;
-            ap_int<9> tv = (ap_int<9>)templ_row[x] - 128;
+            ap_uint<8> tv = templ_row[x];
             for (int p = 0; p < PAR_COLS; p++) {
 #pragma HLS UNROLL
-                lane_acc[p] += (acc_t)((ap_int<9>)seg[p + x] * tv);
+                lane_acc[p] += (ap_uint<16>)(seg[p + x] * tv);
             }
         }
 

@@ -1,0 +1,37 @@
+PHASE S PROTOTYPE   crop ON   envelope round() [fixed]   ROI 192x160
+==============================================================================
+
+PER-TRIAL  (oracle = full patch, Phase S = 192x160 crop)
+------------------------------------------------------------------------------
+  initial     trials 20680   crop bit-exact 499     (  2.41%)
+              oracle argmax in ROI 15526  ( 75.08%)   same loc 14693  ( 71.05%)   same score  36.03%
+
+  max |cropped - full| over every trial   1.724e-06   worst at tw=98 th=23 pw=622 ph=124
+  A nonzero value is OpenCV switching between spatial and DFT
+  correlation with the array size, not a crop-placement error; the
+  exact-integer HLS core has no such term.
+
+MODELLED MATCHER TIME  s/page @ 125 MHz  (this run's own geometry;
+  initial trials only - no DMA, no PS work, no refinement)
+------------------------------------------------------------------------------
+  full-patch search                              335.384
+  Phase S                                        157.841     2.12x
+  Phase S + B1                                   109.404     3.07x
+  Phase S + B2                                    79.442     4.22x
+  refinement, at Phase S geometry                  0.000
+
+PAGE PARITY vs baseline_cpu_20260811
+------------------------------------------------------------------------------
+  pages compared             36
+  byte-identical detections  5 (13.9%)
+  differing detections       31
+  of which counts changed    6
+  net count delta            {'male': -1, 'female': 1, 'ferrule': -2, 'unknown': -1}
+    example_01.pdf               p1  {'female': 32, 'unknown': 4} -> {'female': 36, 'unknown': 0}
+    example_02.pdf               p0  {'female': 18} -> {'female': 17}
+    example_06.pdf               p0  {'ferrule': 37, 'unknown': 8} -> {'ferrule': 35, 'unknown': 10}
+    example_09.pdf               p0  {'female': 9} -> {'female': 8}
+    example_21.pdf               p0  {'female': 7} -> {'female': 6}
+    example_29.pdf               p0  {'male': 15, 'unknown': 9} -> {'male': 14, 'unknown': 10}
+
+  GATE: Phase S is selectable only once this accuracy result is accepted.

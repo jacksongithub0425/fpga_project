@@ -1,0 +1,41 @@
+HAVE_SAMPLES_MV = True, GRAY_STRIPE_BYTES = 8,388,608
+  page_001                           9792x6336 thr 175 ALL EXACT
+  page_002                           9504x6336 thr 155 ALL EXACT
+  page_003                           9792x6336 thr 162 ALL EXACT
+  page_004                           9792x6336 thr 165 ALL EXACT
+  page_005                           9792x6336 thr 170 ALL EXACT
+  page_006                           9792x6336 thr 171 ALL EXACT
+  page_007                           9792x6336 thr 158 ALL EXACT
+  page_008                           9792x6336 thr 174 ALL EXACT
+  page_009                           9792x6336 thr 170 ALL EXACT
+  page_010                           9792x6336 thr 173 ALL EXACT
+  page_011                           9792x6336 thr 170 ALL EXACT
+  page_012                           9792x6336 thr 173 ALL EXACT
+  page_013                           9792x6336 thr 170 ALL EXACT
+  page_014                           9792x6336 thr 167 ALL EXACT
+  page_015                           9792x6336 thr 161 ALL EXACT
+  page_016                           9792x6336 thr 175 ALL EXACT
+  page_017                           9792x6336 thr 167 ALL EXACT
+  page_018                           9792x6336 thr 175 ALL EXACT
+  page_019                           9792x6336 thr 172 ALL EXACT
+  page_020                           9792x6336 thr 173 ALL EXACT
+  page_021                           9792x6336 thr 170 ALL EXACT
+  page_022                           9792x6336 thr 169 ALL EXACT
+  page_023                           9792x6336 thr 168 ALL EXACT
+  page_024                           9792x6336 thr 170 ALL EXACT
+  page_025                           9792x6336 thr 167 ALL EXACT
+  page_026                           9792x6336 thr 167 ALL EXACT
+  page_027                           9792x6336 thr 167 ALL EXACT
+  page_028                           9792x6336 thr 170 ALL EXACT
+  page_029                           9792x6336 thr 170 ALL EXACT
+  page_030                           9792x6336 thr 164 ALL EXACT
+  page_031                           9792x6336 thr 175 ALL EXACT
+  page_032                           9792x6336 thr 173 ALL EXACT
+  page_033                           9792x6336 thr 171 ALL EXACT
+  page_034                           9792x6336 thr 171 ALL EXACT
+  page_035                           9792x6336 thr 173 ALL EXACT
+  page_036                           4896x3168 thr 168 ALL EXACT
+
+36 page(s), 0 with a difference
+
+RENDERER PARITY: the new render_page is byte-identical to the old one in both modes.

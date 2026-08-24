@@ -1,0 +1,11 @@
+﻿=== LOCAL HASHES, taken immediately before the board load ===
+host time UTC: 2026-08-19T02:02:46Z
+fdebaf75597a4e43e2a3bc590e2d7395e4fd03584962f90ac4e047e3a126c6c1    4045690 B  tme_standalone.bit
+614a8bb7580f368cdef1489a7e8c67411c4e13d328cef9cf78a5881fdd8a06f9     395091 B  tme_standalone.hwh
+f7b00b0e7cdff74fc0940b46a5b01cb06b0f3fd61955c0ec41319340a8720153      85540 B  tme_standalone_bringup.py
+9970f100beb5abd7184c43dee7b388868b097ec9a2aaddebd84f7edbd1f1a44f        555 B  tb_tme_cases_phase_s.txt
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72     178423 B  tb_tme_patches_phase_s.bin
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd      53424 B  tb_tme_templs_phase_s.bin
+
+bit/hwh must equal logs/board_125mhz_gate/PROBE125_ARTIFACTS.sha256
+vectors must equal .github-upload/hls/template_match/tb_tme_phase_s.sha256

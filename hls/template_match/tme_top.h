@@ -10,32 +10,81 @@
 //   Patch: outward_w = 212×2.4 = 509, inward_w = 212×1.4 = 297 → width = 806
 //          patch_h   = 87×3.2  = 278
 // -----------------------------------------------------------------------
-static const int MAX_PATCH_W  = 816;    // max search width (~806), rounded to 16-lane bank boundary
-static const int MAX_PATCH_H  = 320;    // rows in search region
+// MAX_PATCH is the EXACT reachable envelope, not a round number.  Contract
+// §4.1 caps max_tw at 216 and max_th at 96, and patch_extract_core's integer
+// geometry then bounds a patch at exactly:
+//     w = (2*216 + floor(2*216/5)) + (216 + floor(2*216/5)) = 518 + 302 = 820
+//     h =  3*96  + floor(96/5)                              = 288 +  19 = 307
+// Every column past 820 and row past 307 is storage the extractor cannot
+// address.  This is not a micro-optimisation: patch_buf is 16 cyclic banks
+// (PAR_COLS), and 820x307 puts each bank at ~15,964 words, just under the
+// 16,384 power-of-two depth step.  At the previous 1024x320 each bank held
+// 20,480 words, rounded up to 32,768, costing 16 BRAM18K per bank instead of
+// 8 — 352 BRAM18K total against 280 available on the xc7z020, i.e. not
+// implementable at all.  At 820x307 the design uses 224 (80%).
+// The saving is a cliff, not a slope: any intermediate value still above
+// 16,384 words per bank saves nothing.  Do not "round these up for safety" —
+// see hls/template_match/ab_bram/ for the retained A/B synthesis.
+static const int MAX_PATCH_W  = 820;    // row width of search region
+static const int MAX_PATCH_H  = 307;    // rows in search region
 static const int MAX_TEMPL_W  = 216;    // template width (post-scale)
 static const int MAX_TEMPL_H  = 96;     // template height (post-scale)
-static const int MAX_RESULT_W = MAX_PATCH_W - 4;   // worst-case result cols
-static const int MAX_RESULT_H = MAX_PATCH_H - 4;   // worst-case result rows
+// Worst-case result map: full valid correlation is (pw - tw + 1) columns by
+// (ph - th + 1) rows, and the smallest legal template is 4x4 (contract §4.1).
+static const int MAX_RESULT_W = MAX_PATCH_W - 4 + 1;   // 817
+static const int MAX_RESULT_H = MAX_PATCH_H - 4 + 1;   // 304
 
 // Parallelism: inner x-loop unroll factor inside the pipelined u-loop.
 // 16 parallel MACs per cycle; effective II ≈ ceil(MAX_TEMPL_W/16) = 14.
-// DSP budget: 16 MACs + adder tree ≈ 40 DSPs total — well within 220.
 static const int PAR_COLS = 16;
 
-// Integer accumulator width. The worst-case sum-of-squares window is
-// 216*96*255^2 = ~1.35e9, and numerator magnitudes are smaller than that.
-// 48 bits leaves margin for larger templates without overflowing the score path.
-typedef ap_int<48> acc_t;
+// -----------------------------------------------------------------------
+// Integer sum types.  All sums are over one template-sized window, so the
+// bounds come from the 216×96 = 20,736-pixel envelope with 8-bit pixels:
+//
+//   sum_t    Σ px           ≤ 20736·255  =      5,287,680  → 23 bits
+//   sumsq_t  Σ px², Σ T·I   ≤ 20736·255² =  1,348,358,400  → 31 bits
+//   wide_t   N·sumsq, sum²  ≤ 20736·1.349e9 ≈    2.797e13  → 45 bits
+//
+// num = N·ΣTI − ΣT·ΣI is a signed difference of two wide_t values.
+//
+// 48 BITS IS A PRESERVATION POLICY, NOT THE CORRECTNESS MINIMUM (§4.6).  The
+// variance term dt = N·ΣT² − (ΣT)² needs only 43 bits (max 6,989,889,945,600),
+// and |num| ≤ √(dt·di) ≤ that same bound by Cauchy–Schwarz.  Both are
+// differences of 45-bit quantities that are EQUAL at the extreme (an all-255
+// template gives N·ΣT² = (ΣT)² = 27,959,559,782,400 and dt = 0) — but equal
+// truncation of both operands still cancels, because fixed-width subtraction
+// is modular: (A mod 2^W − B mod 2^W) mod 2^W = (A − B) mod 2^W.  What must
+// fit is the RESULT, so the JOINT minimum is (wide_t, num_t) = (44u, 44s),
+// verified against Vitis 2025.2's ap_int.h.  48/48 is kept because it holds
+// each intermediate outright, which makes the modular argument unnecessary
+// rather than merely satisfied; narrowing would buy a resynthesis and nothing.
+//
+// THE TWO WIDTHS ARE ONE DECISION, NOT TWO BUDGETS.  `num` casts
+// (num_t)(wide_t)(...), so the inner truncation happens BEFORE the subtraction
+// and cancels only if the result is reduced by the same modulus.  Do not read
+// the minimum as "each ≥ 44" and widen one of them:
+//     (44u, 44s)  ok — equal modular widths
+//     (43u, 44s)  WRONG — reduced mod 2^43, zero-extended into 44-bit signed
+//     (44u, 45s)  WRONG — reduced mod 2^44, result never reduced back
+//     (48u, 48s)  ok — operands preserved outright, no wrap to cancel
+// The rule: equal widths ≥ 44, or preserve the 45-bit operands (≥45u / ≥46s).
+// tme_tb.cpp's bound_case() runs the extremes and BOTH wrong pairs as
+// executable witnesses — the (44,45) one on an ordinary legal input.
+//
+// The previous types here were ap_fixed<48,24> accumulators and a Q16.16
+// normalisation path; both WRAP at these magnitudes (8.4e6 and 32768
+// integer ceilings respectively).  They only ever passed csim because the
+// sole golden case was an all-zero patch.  Integer sums are exact by
+// construction; float enters once, at the final sqrt/divide.
+// -----------------------------------------------------------------------
+typedef ap_uint<24> sum_t;
+typedef ap_uint<32> sumsq_t;
+typedef ap_uint<48> wide_t;
+typedef ap_int<48>  num_t;
 
 // AXI4-Stream pixel type (8-bit, no sideband data needed for image streams)
 typedef ap_axiu<8, 1, 1, 1>  pix_stream_t;
-
-// Result struct returned per candidate (packed into 96 bits for AXI transport)
-struct tme_result_t {
-    float    score;     // best TM_CCOEFF_NORMED score in [0,1]
-    ap_uint<16> loc_x;  // column of best match in patch
-    ap_uint<16> loc_y;  // row    of best match in patch
-};
 
 // -----------------------------------------------------------------------
 // Top-level function declarations
@@ -44,16 +93,14 @@ struct tme_result_t {
 void correlation_core(
     ap_uint<8> patch_line[MAX_PATCH_W],
     ap_uint<8> templ_row[MAX_TEMPL_W],
-    acc_t      acc[MAX_RESULT_W],
+    sumsq_t    acc[MAX_RESULT_W],
     ap_uint<16> patch_w,
     ap_uint<16> templ_w
 );
 
-float norm_rsqrt(float x);
-
 void tme_top(
     hls::stream<pix_stream_t>& patch_stream,   // image patch, row by row
-    hls::stream<pix_stream_t>& templ_stream,   // scaled template, row by row
+    hls::stream<pix_stream_t>& templ_stream,   // RAW template pixels, row by row
     ap_uint<16> patch_w,
     ap_uint<16> patch_h,
     ap_uint<16> templ_w,

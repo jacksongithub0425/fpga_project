@@ -1,0 +1,27 @@
+# SHA-256 of gate 5's fixtures — the five deterministic vectors
+# sw/board_gate_protocol.py runs against.  16,092 bytes total.
+#
+# WHY THESE ARE COMMITTED AND HASHED.  Same discipline as GATE4_VECTORS.sha256
+# and for the same reason: a board result means nothing unless it can be tied
+# to the exact bytes that produced it, and these vectors are GENERATED, so
+# regenerating them on the board would let the gate agree with whatever it had
+# just made.  The gate refuses to run if the copies it finds do not match.
+#
+# tb_proto_cases.txt additionally carries a SHA256 row for each of the four
+# blobs.  That is not redundant with this file: this record ties the payload to
+# the commit, while those rows tie the blobs to THAT manifest, so a manifest
+# and a blob from different regenerations cannot be silently combined.
+#
+# The generator is deterministic and self-checking.  Regenerate with:
+#     cd hls/integration && python3 proto_generate_golden.py
+# and verify with:
+#     sha256sum -c sw/GATE5_VECTORS.sha256      (from the repository root)
+#
+# Gate 5 is the multi-candidate STREAM PROTOCOL gate: batch TLAST framing,
+# per-patch receive re-arming across four different patch sizes, record order,
+# extractor re-entry, and the per-kind argmax gate 4's phase D could not test.
+53348b561ea868399e6e99ee34e6d7c886f2211c9ee6207c05c31e907f912588  hls/integration/tb_proto_cases.txt
+7f58b921fff52cc283cb12c8f9b0fe606510a9625242f667fe791afab2ff8b8d  hls/integration/tb_proto_gray.bin
+388e0da5b462f484cf42d6c39abe798baa24095063dbaab150c9259a39e42153  hls/integration/tb_proto_bin.bin
+8caded60c7a7e7747fa3c691762efac225de721243e2cd3d7fff680a3c9d0b48  hls/integration/tb_proto_patches.bin
+c5df84ae39d6ecbd4684caac07d61cc080b736d375d37f872c00a9592a5b3f78  hls/integration/tb_proto_templs.bin

@@ -1,0 +1,64 @@
+Using: matcher=tme_top_0  patch DMA=axi_dma_patch  templ DMA=axi_dma_templ
+DMA single-transfer bound: 262,143 B (contract §3.1 assumes 262,143)
+Buffers: patch 251,740 B @ 0xF880000, template 20,736 B @ 0xF850000
+
+--- preflight ---
+  ap_idle after reset: True  (AP_CTRL=0x00000004)
+  register_map:
+RegisterMap {
+  CTRL = Register(AP_START=0, AP_DONE=0, AP_IDLE=1, AP_READY=0, RESERVED_1=0, AUTO_RESTART=0, RESERVED_2=0, INTERRUPT=0, RESERVED_3=0),
+  GIER = Register(Enable=0, RESERVED=0),
+  IP_IER = Register(CHAN0_INT_EN=0, CHAN1_INT_EN=0, RESERVED_0=0),
+  IP_ISR = Register(CHAN0_INT_ST=0, CHAN1_INT_ST=0, RESERVED_0=0),
+  patch_w = Register(patch_w=write-only, RESERVED=write-only),
+  patch_h = Register(patch_h=write-only, RESERVED=write-only),
+  templ_w = Register(templ_w=write-only, RESERVED=write-only),
+  templ_h = Register(templ_h=write-only, RESERVED=write-only),
+  result_score = Register(result_score=0),
+  result_score_ctrl = Register(result_score_ap_vld=0, RESERVED=0),
+  result_x = Register(result_x=0, RESERVED=0),
+  result_x_ctrl = Register(result_x_ap_vld=0, RESERVED=0),
+  result_y = Register(result_y=0, RESERVED=0),
+  result_y_ctrl = Register(result_y_ap_vld=0, RESERVED=0)
+}
+  PASS: patch_w @0x10 round-trips 16 bits
+  PASS: patch_h @0x18 round-trips 16 bits
+  PASS: templ_w @0x20 round-trips 16 bits
+  PASS: templ_h @0x28 round-trips 16 bits
+  PASS: the four geometry registers are independent
+  PASS: still idle after the register writes
+
+--- validation (§4.1 / §3.1 geometry, §4.6 template content; before any DMA or ap_start) ---
+  [OK    ] cosim-eq-identical       patch 64x48 (3,072 B)  templ 64x48
+  [OK    ] cosim-final-corner       patch 80x56 (4,480 B)  templ 20x14
+  [OK    ] cosim-interior           patch 64x48 (3,072 B)  templ 16x12
+  [OK    ] cosim-blank              patch 64x48 (3,072 B)  templ 16x12
+  [OK    ] cosim-min-4x4            patch 40x30 (1,200 B)  templ 4x4
+  [OK    ] equality-different       patch 64x48 (3,072 B)  templ 64x48
+  [OK    ] equality-negative        patch 64x48 (3,072 B)  templ 64x48
+  [OK    ] stress-max-envelope      patch 820x307 (251,740 B)  templ 216x96
+  [OK    ] stress-max-result        patch 820x307 (251,740 B)  templ 4x4
+
+--- cases ---
+[0] cosim-eq-identical       equality    patch   64x48  templ  64x48  gold +1.0000 @(  0,  0)  dut +1.0000 @(  0,  0)   0.003 s (1.21 MB/s in)  PASS
+[1] cosim-final-corner       peak        patch   80x56  templ  20x14  gold +1.0000 @( 60, 42)  dut +1.0000 @( 60, 42)   0.008 s (0.54 MB/s in)  PASS
+[2] cosim-interior           peak        patch   64x48  templ  16x12  gold +1.0000 @( 23, 17)  dut +1.0000 @( 23, 17)   0.006 s (0.51 MB/s in)  PASS
+[3] cosim-blank              degenerate  patch   64x48  templ  16x12  gold +0.0000 @(  0,  0)  dut +0.0000 @(  0,  0)   0.006 s (0.51 MB/s in)  PASS
+[4] cosim-min-4x4            edge        patch   40x30  templ   4x4   gold +1.0000 @( 17,  9)  dut +1.0000 @( 17,  9)   0.002 s (0.50 MB/s in)  PASS
+[5] equality-different       equality    patch   64x48  templ  64x48  gold +0.0096 @(  0,  0)  dut +0.0096 @(  0,  0)   0.002 s (1.28 MB/s in)  PASS
+[6] equality-negative        equality    patch   64x48  templ  64x48  gold -0.7324 @(  0,  0)  dut -0.7324 @(  0,  0)   0.002 s (1.28 MB/s in)  PASS
+[7] stress-max-envelope      stress      patch  820x307 templ 216x96  gold +1.0000 @(604,211)  dut +1.0000 @(604,211)   3.342 s (0.08 MB/s in)  PASS
+[8] stress-max-result        stress      patch  820x307 templ   4x4   gold +1.0000 @(816,303)  dut +1.0000 @(816,303)   0.171 s (1.47 MB/s in)  PASS
+
+--- re-invocation after the largest case ---
+  cosim-eq-identical re-run after 251,740 B: dut +1.0000 @(0,0) vs gold +1.0000 @(0,0)  PASS
+
+========================================================================
+§3.1 EXERCISED: stress-max-envelope moved 251,740 B in one transfer (10,403 B under the 262,143 B bound) in 3.342 s
+9/9 cases passed
+re-invocation check: PASS
+Reminder: this says nothing about timing. Post-route WNS comes from the implementation report — see §8 and vivado/tme_standalone/post_route_wns.txt.
+
+
+__EXIT__ 0
+

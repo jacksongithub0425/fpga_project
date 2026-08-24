@@ -1,0 +1,52 @@
+--- fixtures (GATE4_VECTORS.sha256) ---
+  [OK  ] tb_bpe_tme_cases.txt           141 B  ed90565eec56a4aa816d7ba12f64a146cabb95b58548254f304d65ba111a740b
+  [OK  ] tb_bpe_tme_gray.bin            480 B  ede44a0efa7757102f18bd583983d4b262a6e5f7141bd5a13302d8be555573b3
+  [OK  ] tb_bpe_tme_bin.bin             480 B  118ac39fb5cfed72a7e024cddee9045ae43157710600e0772f91fe50bd829a57
+  [OK  ] tb_bpe_tme_patch.bin           168 B  3a97be1698cea0fc1805683ccba6f2e62b4ed1742196023b561e7b9e5ba47c0d
+  [OK  ] tb_bpe_tme_templs.bin           16 B  f00dc88ec2407e1e83e7a0c43949506f46f526b586c2bcc7c2990c35b5d24f8f
+  [OK  ] tb_tme_cases_hw.txt            683 B  378d4d6e3559b4afb1d1f22f7e618d3eb011c49f0b523226588a6ed7b6f6ad6e
+  [OK  ] tb_tme_patches_hw.bin      524,520 B  5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53
+  [OK  ] tb_tme_templs_hw.bin        30,648 B  026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350
+  8 fixtures verified, 557,136 B total
+board_gate_clock — overlay three_stage_combined.bit, variant combined_b2_100
+expecting 100.0 MHz (1000/10), matcher TermCountB2:hls:tme_top:0.2 -> B2 cycle law
+  teardown protection: ignoring SIGINT, SIGTERM, SIGHUP, SIGQUIT
+  [PASS] both probes program the same 251,740 B patch MM2S: 251,740 / 251,740 B
+
+--- modelled cycles (B2 law) ---
+  long   820x307/216x96    257,145,732 cyc -> 2.5715 s at 100.0 MHz
+  short  820x307/4x4        7,596,404 cyc -> 0.0760 s at 100.0 MHz
+  diff                           249,549,328 cyc -> 2.4955 s at 100.0 MHz
+  MODELLED cycles, from the co-simulated cycle law — the RTL has no cycle counter.
+
+--- measuring (5 reps each) ---
+  [PASS] long  rep 1/5 computed the golden result: dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.5733 s
+  [PASS] long  rep 2/5 computed the golden result: dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.5732 s
+  [PASS] long  rep 3/5 computed the golden result: dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.5729 s
+  [PASS] long  rep 4/5 computed the golden result: dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.5731 s
+  [PASS] long  rep 5/5 computed the golden result: dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.5734 s
+  long : min 2.5729 s, max 2.5734 s, spread 0.43 ms over 5 reps
+  [PASS] short rep 1/5 computed the golden result: dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.0773 s
+  [PASS] short rep 2/5 computed the golden result: dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.0773 s
+  [PASS] short rep 3/5 computed the golden result: dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.0774 s
+  [PASS] short rep 4/5 computed the golden result: dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.0773 s
+  [PASS] short rep 5/5 computed the golden result: dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.0773 s
+  short: min 0.0773 s, max 0.0774 s, spread 0.17 ms over 5 reps
+
+--- absolute ---
+  measured 2.5729 s, modelled 2.5715 s, residual +1.47 ms (band -0.5 .. +10.0 ms)
+  [PASS] the long probe's wall time matches 100.0 MHz (one-sided: per-invocation overhead is additive): +1.47 ms
+  [PASS] the long probe took longer than the short one: +2495.67 ms
+
+--- differential (per-invocation overhead cancels) ---
+  dt 2.4957 s over 249,549,328 cyc -> implied 99.9929 MHz vs expected 100.0 MHz (-0.007%)
+  [PASS] the implied fabric clock is within 0.5% of 100.0 MHz: 99.9929 MHz (-0.007%)
+  nearest divisor rung: 1000/10 = 100.0000 MHz
+  [PASS] the nearest 1000/d rung to the implied clock is 100.0 MHz: 1000/10 = 100.0000 MHz
+
+========================================================================
+CLOCK GATE PASSED (15 checks): the differential probe implies 99.9929 MHz against an expected 100.0 MHz (1000/10), absolute residual +1.47 ms.
+This is an INDEPENDENT check on the fabric clock: the preflight's Clocks.fclk0_mhz is a divisor read-back, whereas this is wall time against a co-simulated cycle count. The cycle totals are MODELLED — the RTL has no cycle counter — and what was measured is PS-side wall time.
+
+
+__EXIT__ 0

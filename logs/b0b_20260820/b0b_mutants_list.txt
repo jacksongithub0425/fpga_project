@@ -1,0 +1,31 @@
+none               must PASS    the unmutated shadow — the positive control
+sub_off_by_one     must detect  subtract row v instead of the row leaving the window, v-1
+    - window_row_scan(patch_buf[v - 1], sii_shadow, si_shadow,
+    + window_row_scan(patch_buf[v], sii_shadow, si_shadow,
+add_off_by_one     must detect  add row v+th instead of the row entering the window, v+th-1
+    - window_row_scan(patch_buf[v + th - 1], sii_shadow, si_shadow,
+    + window_row_scan(patch_buf[v + th], sii_shadow, si_shadow,
+no_set             must detect  never SET, so each invocation accumulates onto the previous one's leftovers — the cross-invocation defect
+    - tw, rw, dy == 0 ? B0B_SET : B0B_ADD);
+    + tw, rw, B0B_ADD);
+sub_becomes_add    must detect  add the outgoing row instead of subtracting it
+    - window_row_scan(patch_buf[v - 1], sii_shadow, si_shadow,
+    -                             tw, rw, B0B_SUB);
+    + window_row_scan(patch_buf[v - 1], sii_shadow, si_shadow,
+    +                             tw, rw, B0B_ADD);
+short_slide        must detect  stop the scan one column short, leaving the last output column stale
+    - #pragma HLS LOOP_TRIPCOUNT min=1 max=816 avg=400
+    -         if (u >= rw) break;
+    + #pragma HLS LOOP_TRIPCOUNT min=1 max=816 avg=400
+    +         if (u >= rw - 1) break;
+swap_sub_add       must PASS    CONTROL, must NOT be detected: add before subtract is correct, it only makes the intermediate a th+1-row sum instead of a th-1-row one
+    - window_row_scan(patch_buf[v - 1], sii_shadow, si_shadow,
+    -                             tw, rw, B0B_SUB);
+    -             window_row_scan(patch_buf[v + th - 1], sii_shadow, si_shadow,
+    -                             tw, rw, B0B_ADD);
+    + window_row_scan(patch_buf[v + th - 1], sii_shadow, si_shadow,
+    +                             tw, rw, B0B_ADD);
+    +             window_row_scan(patch_buf[v - 1], sii_shadow, si_shadow,
+    +                             tw, rw, B0B_SUB);
+
+every anchor matched exactly once in tme_top.shadow.cpp

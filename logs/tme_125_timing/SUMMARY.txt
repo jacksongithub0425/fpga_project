@@ -1,0 +1,18 @@
+125 MHz clock probe - Priority 2 evidence
+generated Mon Aug 17 23:40:03 -0700 2026 from the ROUTED CHECKPOINT
+source: C:/Users/lychee/tc25/vivado_project/tme_standalone_125/tme_standalone.runs/impl_1/tme_bd_wrapper_routed.dcp
+
+clock              : clk_fpga_0
+constrained period : 8.0 ns
+WNS                : 0.064 ns
+TNS                : 0.0 ns
+WHS                : 0.015 ns
+THS                : 0.0 ns
+
+critical path
+  from        : tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_0/CLKBWRCLK
+  to          : tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_150_3_fu_1446/t_row_81_fu_1448_reg[0]/D
+  logic levels: 0
+  data delay  : 7.642 ns
+  of which logic  : 2.454 ns
+  of which routing: 5.188 ns

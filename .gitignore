@@ -5,7 +5,12 @@ __pycache__/
 
 # Generated HLS/Vivado output
 hls/*/*/solution1/
-logs/
+# `logs/*` rather than `logs/`: git will not descend into an excluded
+# DIRECTORY, so a later `!logs/<name>/` negation on a plain `logs/` rule can
+# never take effect.  Excluding the contents instead leaves the directory
+# traversable, which is what makes the Priority 4 exceptions at the bottom of
+# this file work.
+logs/*
 *.rpt
 *.jou
 
@@ -15,3 +20,166 @@ batch_out*/
 # Binary/generated archives and test vectors
 *.bin
 *.zip
+
+# Vitis HLS/XSim transient output
+hls/**/*.log
+hls/**/*.pb
+hls/**/*.wdb
+hls/**/xsim.dir/
+hls/**/dfx_runtime.txt
+hls/integration/pe_tme_seam/
+
+# Deterministic integration manifests
+hls/integration/tb_*_tme_cases.txt
+
+# EXCEPTION: gate 4's eight fixtures ARE committed (~0.56 MB total).
+# board_gate_extract.py is the extractor's board gate and it is worthless
+# without the exact bytes it was written against: regenerating them on the
+# board would make the gate agree with whatever it had just produced, and a
+# result that cannot be tied to specific bytes is not a result. They are
+# deterministic (the generators self-check against pinned SHA-256) and
+# derived from nothing confidential. Their hashes live in
+# sw/GATE4_VECTORS.sha256 and the gate refuses to run on a mismatch.
+# Everything else generated stays ignored.
+!hls/integration/tb_bpe_tme_cases.txt
+!hls/integration/tb_bpe_tme_gray.bin
+!hls/integration/tb_bpe_tme_bin.bin
+!hls/integration/tb_bpe_tme_patch.bin
+!hls/integration/tb_bpe_tme_templs.bin
+!hls/template_match/tb_tme_cases_hw.txt
+!hls/template_match/tb_tme_patches_hw.bin
+!hls/template_match/tb_tme_templs_hw.bin
+
+# EXCEPTION: gate 5's five fixtures, on the same argument and at 16 KB.
+# board_gate_protocol.py is the multi-candidate stream-protocol gate and it is
+# equally worthless without the exact bytes. Hashes in sw/GATE5_VECTORS.sha256.
+!hls/integration/tb_proto_cases.txt
+!hls/integration/tb_proto_gray.bin
+!hls/integration/tb_proto_bin.bin
+!hls/integration/tb_proto_patches.bin
+!hls/integration/tb_proto_templs.bin
+
+# NOT an exception: the production-geometry vector package is ~1.6 MB and
+# stays out. It is fully determined by the pinned seeds in
+# tme_generate_production.py, so `sha256sum -c tb_tme_prod.sha256` after a
+# regeneration is stronger evidence than a committed copy would be — it proves
+# the generator still produces the vectors that were verified, rather than
+# proving a file was not edited. The RECORD is committed; the payload is not.
+hls/template_match/tb_tme_cases_prod.txt
+hls/template_match/tb_tme_counts_prod.txt
+!hls/template_match/tb_tme_prod.sha256
+
+# Same treatment for the Priority 4 (B1) banking-boundary suite, and for the
+# same reason: it is fully determined by the pinned seeds in
+# tme_generate_production.py, so `sha256sum -c tb_tme_b1.sha256` after
+# `--suite b1` proves the generator still makes the vectors that were verified.
+# Committing 44 KB of payload would only prove a file was not edited.
+hls/template_match/tb_tme_cases_b1.txt
+!hls/template_match/tb_tme_b1.sha256
+
+# Confidential-derived detector output. The per-page detection dumps carry
+# pin labels read off the drawings; only the aggregate manifest and its
+# provenance file may be committed (see sw/cpu_baseline_snapshot.py, which
+# also refuses to write dumps inside the repo).
+*_detections.json
+baseline_cpu_*/
+
+# EXCEPTION: the Priority 4 (B1) evidence set, ~7.1 MB, listed artifact by
+# artifact in logs/b1_20260818/MANIFEST.sha256 and verified by
+# `python sw/tme_b1_manifest.py --verify`.
+#
+# The rules above ignore `logs/`, `*.rpt` and `*.zip`, which is right for build
+# noise and wrong for this: a manifest over files a clean checkout does not
+# contain is a local checksum, not evidence. Commit 0373859 carried none of it.
+# The general policy — commit the RECORD, regenerate the payload — does not
+# apply either, because these artifacts are NOT regenerable. The bitstream is
+# built from a Vivado block design that lives outside this repository
+# (C:/Users/lychee/tc25/vivado_project/), the board transcripts record a session
+# that happened once, and a co-simulation report cannot be re-derived from
+# anything committed here in under half an hour of tool time.
+#
+# `sw/tme_b1_manifest.py --mirror` is what copies these in from the build tree;
+# nothing here is edited in place.
+!logs/b1_20260818/
+!logs/b1_20260818/**
+!logs/b1_board_20260818/
+!logs/b1_board_20260818/**
+!logs/b1_rerun_20260818/
+!logs/b1_rerun_20260818/**
+!logs/scale_policy_20260818/
+!logs/scale_policy_20260818/**
+
+# The Priority 5 (B2) evidence set, on exactly the same argument: it is bound by
+# logs/b2_20260819/MANIFEST.sha256 and verified by
+# `python sw/tme_b2_manifest.py --verify`, and a manifest over files a clean
+# checkout does not contain is a local checksum rather than evidence. It also
+# carries tme_cycle_model.py.pre_b2, WITHOUT WHICH `tme_b2_ab.py --predict`
+# cannot run at all: that mode reads the pre-measurement model deliberately, so
+# that the withdrawn projection cannot be quietly replaced by the answer.
+!logs/b2_20260819/
+!logs/b2_20260819/**
+
+# The Priority 2 and Priority 3 transcripts, 145 KB, on a narrower argument:
+# sw/tme_cycle_model.py --assert RE-READS them to corroborate its frozen
+# literals, and in a checkout that lacks them it reports
+# "board transcripts (logs/board_125mhz_gate/) ABSENT" and re-derives 2 of 6
+# values instead of 6.  A Priority 0 evidence tool that cannot re-prove itself
+# from a clone is not doing the job it exists for.
+!logs/board_125mhz_gate/
+!logs/board_125mhz_gate/**
+!logs/tme_125_timing/
+!logs/tme_125_timing/**
+!logs/phase_s_20260818/
+!logs/phase_s_20260818/**
+!logs/phase_s_board_20260818/
+!logs/phase_s_board_20260818/**
+
+# The B2 board session. Plan and predictions are retained in commit ancestry
+# before any later result commit. This records repository ordering only: an
+# unsigned, unpushed commit is not an external timestamp. Transcripts land here
+# afterwards.
+!logs/b2_board_20260819/
+!logs/b2_board_20260819/**
+!hls/template_match/template_match_b1*/**/*.rpt
+
+# Priority 6's three A/B projects, on the same argument as Priority 4's: the
+# transaction reports ARE the measurement, and a manifest over files a clean
+# checkout does not contain is a local checksum rather than evidence.
+!hls/template_match/template_match_b0b_*/**/*.rpt
+!hls/template_match/template_match_b1/SUPERSEDED.md
+!hls/template_match/template_match_b1/b1/impl/ip/component.xml
+!hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip
+
+# Priority 5's packaged IP, and NOT for the same reason as B1's above. B1's is
+# a re-export that post-dates its bitstream. B2's is the directory
+# vivado_b2_125.log names as its IP repository, exported at 19:16:09 and read
+# by a synthesis run launched at 19:17:10 -- the actual input to
+# logs/b2_20260819/tme_standalone.bit, which has never run on a board. If a
+# later `package_b2.tcl` overwrites the working copy, the committed one here is
+# the only thing that still says what was routed. 792 KB, and worth it.
+!hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml
+!hls/template_match/template_match_b1_b2/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip
+
+# The Priority 6 (B0b) evidence set, on the same argument as B1's and B2's.
+# It also carries PREDICTION.txt, which is committed BEFORE the first build
+# runs -- that is the whole point of it, and a prediction a clean checkout does
+# not contain cannot be checked against the result it predicted.
+!logs/b0b_20260820/
+!logs/b0b_20260820/**
+
+# The `!logs/<dir>/**` negations above re-include EVERYTHING under those paths,
+# including bytecode. `tme_b2_ab.py --predict` imports the retained
+# tme_cycle_model.py.pre_b2 snapshot, which makes CPython drop a .pyc beside it
+# in logs/b2_20260819/__pycache__/. That is build output of a specific
+# interpreter version, not evidence, and re-ignoring it here is narrower than
+# weakening the negation.
+logs/**/__pycache__/
+
+# The phase_s board vectors, on the same argument as gate 4's and gate 5's: the
+# B1 board session's entire claim to being a CONTROLLED comparison is that the
+# runner and these three files did not change between it and the Priority 3
+# session. That claim is uncheckable from a clone that does not carry them.
+!hls/template_match/tb_tme_cases_phase_s.txt
+!hls/template_match/tb_tme_patches_phase_s.bin
+!hls/template_match/tb_tme_templs_phase_s.bin
+!hls/template_match/tb_tme_phase_s.sha256

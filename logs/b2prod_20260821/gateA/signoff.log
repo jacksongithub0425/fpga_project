@@ -1,0 +1,1627 @@
+#-----------------------------------------------------------
+# Vivado v2025.2 (64-bit)
+# SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+# IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+# SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+# Start of session at: Fri Aug 21 11:27:23 2026
+# Process ID         : 15628
+# Current directory  : C:/Users/lychee/Desktop/FPGA/logs/b2prod_20260821/gateA
+# Command line       : vivado.exe -mode batch -notrace -source C:/Users/lychee/Desktop/FPGA/three_stage_combined/scripts/run_postextract_signoff.tcl -log signoff.log -journal signoff.jou
+# Log file           : C:/Users/lychee/Desktop/FPGA/logs/b2prod_20260821/gateA/signoff.log
+# Journal file       : C:/Users/lychee/Desktop/FPGA/logs/b2prod_20260821/gateA\signoff.jou
+# Running On         : DESKTOP-KG9P5J1
+# Platform           : Windows Server 2016 or Windows 10
+# Operating System   : 26200
+# Processor Detail   : 13th Gen Intel(R) Core(TM) i7-13700K
+# CPU Frequency      : 3418 MHz
+# CPU Physical cores : 16
+# CPU Logical cores  : 24
+# Host memory        : 34098 MB
+# Swap memory        : 18253 MB
+# Total Virtual      : 52351 MB
+# Available Virtual  : 15791 MB
+#-----------------------------------------------------------
+source C:/Users/lychee/Desktop/FPGA/three_stage_combined/scripts/run_postextract_signoff.tcl -notrace
+Scanning sources...
+Finished scanning sources
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:ac701:part0:1.4 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\ac701\1.4\board.xml as part xc7a200tfbg676-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:emb-plus-vpr-4616:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\emb-plus-vpr-4616\1.0\board.xml as part xcve2302-sfva784-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:emb-plus-vpr-4616:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\emb-plus-vpr-4616\1.1\board.xml as part xcve2302-sfva784-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kc705:part0:1.6 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kc705\1.6\board.xml as part xc7k325tffg900-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kc705:part0:1.7 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kc705\1.7\board.xml as part xc7k325tffg900-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kcu105:part0:1.6 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kcu105\1.6\board.xml as part xcku040-ffva1156-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kcu105:part0:1.7 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kcu105\1.7\board.xml as part xcku040-ffva1156-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kcu116:part0:1.4 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kcu116\1.4\board.xml as part xcku5p-ffvb676-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kcu116:part0:1.5 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kcu116\1.5\board.xml as part xcku5p-ffvb676-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:kcu1500:part0:1.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\kcu1500\1.2\board.xml as part xcku115-flvb2104-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:scu35:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\scu35\1.0\board.xml as part xcsu35p-sbvb625-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:sp701:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\sp701\1.0\board.xml as part xc7s100fgga676-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:sp701:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\sp701\1.1\board.xml as part xc7s100fgga676-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:v80:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\v80\1.0\board.xml as part xcv80-lsva4737-2mhp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vc707:part0:1.4 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vc707\1.4\board.xml as part xc7vx485tffg1761-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vc707:part0:1.5 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vc707\1.5\board.xml as part xc7vx485tffg1761-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vc709:part0:1.8 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vc709\1.8\board.xml as part xc7vx690tffg1761-2 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190:part0:2.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190\production\2.2\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190:part0:3.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190\production\3.0\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190:part0:3.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190\production\3.1\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190:part0:3.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190\production\3.2\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190:part0:3.3 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190\production\3.3\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190:part0:3.4 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190\production\3.4\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190_newl:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190_newl\production\1.0\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190_newl:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190_newl\production\1.1\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190_newl:part0:1.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190_newl\production\1.2\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vck190_newl:part0:1.3 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vck190_newl\production\1.3\board.xml as part xcvc1902-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu108:part0:1.6 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu108\1.6\board.xml as part xcvu095-ffva2104-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu108:part0:1.7 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu108\1.7\board.xml as part xcvu095-ffva2104-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu110:part0:1.4 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu110\1.4\board.xml as part xcvu190-flgc2104-2-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu118:part0:2.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu118\2.0\board.xml as part xcvu9p-flga2104-2l-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu118:part0:2.3 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu118\2.3\board.xml as part xcvu9p-flga2104-2l-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu118:part0:2.4 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu118\2.4\board.xml as part xcvu9p-flga2104-2l-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu128:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu128\production\1.0\board.xml as part xcvu37p-fsvh2892-2l-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu129:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu129\production\1.0\board.xml as part xcvu29p-fsga2577-2l-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vcu1525:part0:1.3 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vcu1525\1.3\board.xml as part xcvu9p-fsgd2104-2l-e specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vek280:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vek280\production\1.0\board.xml as part xcve2802-vsvh1760-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vek280:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vek280\production\1.1\board.xml as part xcve2802-vsvh1760-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vek280:part0:1.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vek280\production\1.2\board.xml as part xcve2802-vsvh1760-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vek385:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vek385\1.0\board.xml as part xc2ve3858-ssva2112-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vek385:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vek385\1.1\board.xml as part xc2ve3858-ssva2112-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vek385_1:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vek385_2\1.0\board.xml as part xc2ve3858-ssva2112-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vhk158:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vhk158\production\1.0\board.xml as part xcvh1582-vsva3697-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vhk158:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vhk158\production\1.1\board.xml as part xcvh1582-vsva3697-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vhk158:part0:1.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vhk158\production\1.2\board.xml as part xcvh1582-vsva3697-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180:part0:2.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180\production\2.2\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180:part0:3.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180\production\3.0\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180:part0:3.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180\production\3.1\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180:part0:3.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180\production\3.2\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180:part0:3.3 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180\production\3.3\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180_newl:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180_newl\production\1.0\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vmk180_newl:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vmk180_newl\production\1.1\board.xml as part xcvm1802-vsva2197-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vpk120:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vpk120\production\1.0\board.xml as part xcvp1202-vsva2785-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vpk120:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vpk120\production\1.1\board.xml as part xcvp1202-vsva2785-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vpk120:part0:1.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vpk120\production\1.2\board.xml as part xcvp1202-vsva2785-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vpk180:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vpk180\production\1.0\board.xml as part xcvp1802-lsvc4072-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vpk180:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vpk180\production\1.1\board.xml as part xcvp1802-lsvc4072-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vpk180:part0:1.2 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vpk180\production\1.2\board.xml as part xcvp1802-lsvc4072-2mp-e-s specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vrk160:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vrk160\1.0\board.xml as part xcvr1602-vsva2488-2mp-e-s-es1 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:vrk160:part0:1.1 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\vrk160\1.1\board.xml as part xcvr1602-vsva2488-2mp-e-s-es1 specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:zcu208ld:part0:2.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\zcu208ld\production\2.0\board.xml as part xczu58dr-fsvg1517-2-i specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:zcu216ld:part0:2.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\zcu216ld\production\2.0\board.xml as part xczu59dr-ffvf1760-2-i specified in board_part file is either invalid or not available
+WARNING: [Board 49-26] cannot add Board Part xilinx.com:zcu670ld:part0:1.0 available at C:/AMDDesignTools/2025.2/data/xhub/boards\XilinxBoardStore\boards\Xilinx\zcu670ld\1.0\board.xml as part xczu57dr-fsve1156-2-i specified in board_part file is either invalid or not available
+WARNING: [Project 1-5713] Board part '' set for the project  is not found. BoardPart property will be unset. Please select board from latest repo build 
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_provisional/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/patch_extract/patch_extract_provisional/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/binarizer-logical-layout/hls/binarize/binarize/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'C:/AMDDesignTools/2025.2/Vivado/data/ip'.
+open_project: Time (s): cpu = 00:00:22 ; elapsed = 00:00:22 . Memory (MB): peak = 639.652 ; gain = 322.285
+@@POSTEXTRACT_SIGNOFF_BEGIN@@
+Reading block design file <C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.srcs/sources_1/bd/tme_bd/tme_bd.bd>...
+Adding component instance block -- xilinx.com:ip:processing_system7:5.5 - processing_system7_0
+Adding component instance block -- xilinx.com:ip:proc_sys_reset:5.0 - proc_sys_reset_0
+Adding component instance block -- TermCount:hls:tme_top:0.2 - tme_top_0
+Adding component instance block -- xilinx.com:ip:axi_dma:7.1 - axi_dma_patch
+Adding component instance block -- xilinx.com:ip:axi_dma:7.1 - axi_dma_templ
+Adding component instance block -- xilinx.com:ip:smartconnect:1.0 - smartconnect_lite
+Adding component instance block -- xilinx.com:ip:smartconnect:1.0 - smartconnect_mem
+Adding component instance block -- TermCount:hls:binarize_core:2.0 - binarize_core_0
+Adding component instance block -- xilinx.com:ip:axi_dma:7.1 - axi_dma_binarize
+Adding component instance block -- xilinx.com:ip:smartconnect:1.0 - smartconnect_bin_mem
+Adding component instance block -- TermCount:hls:patch_extract_core:0.1 - patch_extract_core_0
+Adding component instance block -- xilinx.com:ip:axi_dma:7.1 - dma_pe_data
+Adding component instance block -- xilinx.com:ip:axi_dma:7.1 - dma_pe_meta
+Adding component instance block -- xilinx.com:ip:smartconnect:1.0 - smartconnect_pe_mem
+Successfully read diagram <tme_bd> from block design file <C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.srcs/sources_1/bd/tme_bd/tme_bd.bd>
+PREFLIGHT_FCLK1=mhz:125;div0:4;div1:2;product:8;bd_sinks:0
+PREFLIGHT_CLOCK=variant:combined_current_100;io_pll_mhz:1000.000;div0:5;div1:2;product:10;vivado_mhz:100.0000;predicted_board_mhz:100.0000
+INFO: [BD 5-320] Validate design is not run, since the design is already validated.
+WARNING: [BD 41-2937] The design that will be created by this Tcl script contains the following user IPs:
+/tme_top_0, /binarize_core_0, /patch_extract_core_0
+Please add the following user repository(s):
+c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_provisional/solution1/impl/ip
+c:/Users/lychee/Desktop/FPGA/binarizer-logical-layout/hls/binarize/binarize/solution1/impl/ip
+c:/Users/lychee/Desktop/FPGA/hls/patch_extract/patch_extract_provisional/solution1/impl/ip
+before sourcing this Tcl script or use write_project_tcl.
+INFO: [BD 5-148] Tcl file written out <C:/Users/lychee/Desktop/FPGA/combined_current_100/snapshots/tme_bd_post_patch_extract_pre_synth_20260821_112750.tcl>.
+
+INFO: [BD 41-1637] Generated targets are already up-to-date for block design 'tme_bd' - hence not re-generating.
+POSTEXTRACT_SAVED_SIGNATURE=BD:tme_bd;TME:0.2;BIN:2.0;PE:0.1;DMA:5;CTRL_MI:8;HP0:64;HP1:64;HP2:64;BIN_DMA_LEN:26;PE_DMA_LEN:18
+POSTEXTRACT_BD_SNAPSHOT=C:/Users/lychee/Desktop/FPGA/combined_current_100/snapshots/tme_bd_post_patch_extract_pre_synth_20260821_112750.tcl
+@@POSTEXTRACT_SAVED_STATE_PASS@@
+WARNING: [Vivado 12-7122] Auto Incremental Compile:: No reference checkpoint was found in run synth_1. Auto-incremental flow will not be run, the standard flow will be run instead.
+[Fri Aug 21 11:28:01 2026] Launched tme_bd_axi_dma_patch_0_synth_1, tme_bd_smartconnect_mem_0_synth_1, tme_bd_patch_extract_core_0_0_synth_1, tme_bd_smartconnect_lite_0_synth_1, tme_bd_smartconnect_bin_mem_0_synth_1, tme_bd_processing_system7_0_0_synth_1, tme_bd_axi_dma_binarize_0_synth_1, tme_bd_proc_sys_reset_0_0_synth_1, tme_bd_tme_top_0_0_synth_1, tme_bd_axi_dma_templ_0_synth_1, tme_bd_binarize_core_0_0_synth_1, tme_bd_dma_pe_data_0_synth_1, tme_bd_dma_pe_meta_0_synth_1, tme_bd_smartconnect_pe_mem_0_synth_1...
+Run output will be captured here:
+tme_bd_axi_dma_patch_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_axi_dma_patch_0_synth_1/runme.log
+tme_bd_smartconnect_mem_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_smartconnect_mem_0_synth_1/runme.log
+tme_bd_patch_extract_core_0_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_patch_extract_core_0_0_synth_1/runme.log
+tme_bd_smartconnect_lite_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_smartconnect_lite_0_synth_1/runme.log
+tme_bd_smartconnect_bin_mem_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_smartconnect_bin_mem_0_synth_1/runme.log
+tme_bd_processing_system7_0_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_processing_system7_0_0_synth_1/runme.log
+tme_bd_axi_dma_binarize_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_axi_dma_binarize_0_synth_1/runme.log
+tme_bd_proc_sys_reset_0_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_proc_sys_reset_0_0_synth_1/runme.log
+tme_bd_tme_top_0_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_tme_top_0_0_synth_1/runme.log
+tme_bd_axi_dma_templ_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_axi_dma_templ_0_synth_1/runme.log
+tme_bd_binarize_core_0_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_binarize_core_0_0_synth_1/runme.log
+tme_bd_dma_pe_data_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_dma_pe_data_0_synth_1/runme.log
+tme_bd_dma_pe_meta_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_dma_pe_meta_0_synth_1/runme.log
+tme_bd_smartconnect_pe_mem_0_synth_1: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/tme_bd_smartconnect_pe_mem_0_synth_1/runme.log
+[Fri Aug 21 11:28:01 2026] Launched synth_1...
+Run output will be captured here: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/runme.log
+[Fri Aug 21 11:28:01 2026] Waiting for synth_1 to finish...
+
+*** Running vivado
+    with args -log tme_bd_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source tme_bd_wrapper.tcl
+
+
+
+****** Vivado v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Fri Aug 21 11:33:33 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source tme_bd_wrapper.tcl -notrace
+create_project: Time (s): cpu = 00:00:08 ; elapsed = 00:00:06 . Memory (MB): peak = 541.898 ; gain = 221.164
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_provisional/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/patch_extract/patch_extract_provisional/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/binarizer-logical-layout/hls/binarize/binarize/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'C:/AMDDesignTools/2025.2/Vivado/data/ip'.
+add_files: Time (s): cpu = 00:00:15 ; elapsed = 00:00:17 . Memory (MB): peak = 637.867 ; gain = 91.996
+Command: synth_design -top tme_bd_wrapper -part xc7z020clg400-1
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z020'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z020'
+INFO: [Device 21-403] Loading part xc7z020clg400-1
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 2 processes.
+INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
+INFO: [Synth 8-7075] Helper process launched with PID 34560
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 1431.945 ; gain = 539.824
+---------------------------------------------------------------------------------
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_wrapper' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/hdl/tme_bd_wrapper.v:13]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:13]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_axi_dma_binarize_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_axi_dma_binarize_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_axi_dma_binarize_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_axi_dma_binarize_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'mm2s_prmry_reset_out_n' of module 'tme_bd_axi_dma_binarize_0' is unconnected for instance 'axi_dma_binarize' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:485]
+WARNING: [Synth 8-7071] port 's2mm_prmry_reset_out_n' of module 'tme_bd_axi_dma_binarize_0' is unconnected for instance 'axi_dma_binarize' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:485]
+WARNING: [Synth 8-7071] port 'mm2s_introut' of module 'tme_bd_axi_dma_binarize_0' is unconnected for instance 'axi_dma_binarize' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:485]
+WARNING: [Synth 8-7071] port 's2mm_introut' of module 'tme_bd_axi_dma_binarize_0' is unconnected for instance 'axi_dma_binarize' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:485]
+WARNING: [Synth 8-7071] port 'axi_dma_tstvec' of module 'tme_bd_axi_dma_binarize_0' is unconnected for instance 'axi_dma_binarize' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:485]
+WARNING: [Synth 8-7023] instance 'axi_dma_binarize' of module 'tme_bd_axi_dma_binarize_0' has 64 connections declared, but only 59 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:485]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_axi_dma_patch_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_axi_dma_patch_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_axi_dma_patch_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_axi_dma_patch_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'mm2s_prmry_reset_out_n' of module 'tme_bd_axi_dma_patch_0' is unconnected for instance 'axi_dma_patch' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:545]
+WARNING: [Synth 8-7071] port 'mm2s_introut' of module 'tme_bd_axi_dma_patch_0' is unconnected for instance 'axi_dma_patch' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:545]
+WARNING: [Synth 8-7071] port 'axi_dma_tstvec' of module 'tme_bd_axi_dma_patch_0' is unconnected for instance 'axi_dma_patch' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:545]
+WARNING: [Synth 8-7023] instance 'axi_dma_patch' of module 'tme_bd_axi_dma_patch_0' has 40 connections declared, but only 37 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:545]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_axi_dma_templ_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_axi_dma_templ_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_axi_dma_templ_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_axi_dma_templ_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'mm2s_prmry_reset_out_n' of module 'tme_bd_axi_dma_templ_0' is unconnected for instance 'axi_dma_templ' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:583]
+WARNING: [Synth 8-7071] port 'mm2s_introut' of module 'tme_bd_axi_dma_templ_0' is unconnected for instance 'axi_dma_templ' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:583]
+WARNING: [Synth 8-7071] port 'axi_dma_tstvec' of module 'tme_bd_axi_dma_templ_0' is unconnected for instance 'axi_dma_templ' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:583]
+WARNING: [Synth 8-7023] instance 'axi_dma_templ' of module 'tme_bd_axi_dma_templ_0' has 40 connections declared, but only 37 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:583]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_binarize_core_0_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_binarize_core_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_binarize_core_0_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_binarize_core_0_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'interrupt' of module 'tme_bd_binarize_core_0_0' is unconnected for instance 'binarize_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:621]
+WARNING: [Synth 8-7071] port 'bin_out_TDEST' of module 'tme_bd_binarize_core_0_0' is unconnected for instance 'binarize_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:621]
+WARNING: [Synth 8-7071] port 'bin_out_TID' of module 'tme_bd_binarize_core_0_0' is unconnected for instance 'binarize_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:621]
+WARNING: [Synth 8-7071] port 'bin_out_TSTRB' of module 'tme_bd_binarize_core_0_0' is unconnected for instance 'binarize_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:621]
+WARNING: [Synth 8-7071] port 'bin_out_TUSER' of module 'tme_bd_binarize_core_0_0' is unconnected for instance 'binarize_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:621]
+WARNING: [Synth 8-7023] instance 'binarize_core_0' of module 'tme_bd_binarize_core_0_0' has 38 connections declared, but only 33 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:621]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_dma_pe_data_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_dma_pe_data_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_dma_pe_data_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_dma_pe_data_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'mm2s_prmry_reset_out_n' of module 'tme_bd_dma_pe_data_0' is unconnected for instance 'dma_pe_data' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:655]
+WARNING: [Synth 8-7071] port 's2mm_prmry_reset_out_n' of module 'tme_bd_dma_pe_data_0' is unconnected for instance 'dma_pe_data' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:655]
+WARNING: [Synth 8-7071] port 'mm2s_introut' of module 'tme_bd_dma_pe_data_0' is unconnected for instance 'dma_pe_data' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:655]
+WARNING: [Synth 8-7071] port 's2mm_introut' of module 'tme_bd_dma_pe_data_0' is unconnected for instance 'dma_pe_data' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:655]
+WARNING: [Synth 8-7071] port 'axi_dma_tstvec' of module 'tme_bd_dma_pe_data_0' is unconnected for instance 'dma_pe_data' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:655]
+WARNING: [Synth 8-7023] instance 'dma_pe_data' of module 'tme_bd_dma_pe_data_0' has 64 connections declared, but only 59 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:655]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_dma_pe_meta_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_dma_pe_meta_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_dma_pe_meta_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_dma_pe_meta_0_stub.v:6]
+WARNING: [Synth 8-7071] port 's2mm_prmry_reset_out_n' of module 'tme_bd_dma_pe_meta_0' is unconnected for instance 'dma_pe_meta' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:715]
+WARNING: [Synth 8-7071] port 's2mm_introut' of module 'tme_bd_dma_pe_meta_0' is unconnected for instance 'dma_pe_meta' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:715]
+WARNING: [Synth 8-7071] port 'axi_dma_tstvec' of module 'tme_bd_dma_pe_meta_0' is unconnected for instance 'dma_pe_meta' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:715]
+WARNING: [Synth 8-7023] instance 'dma_pe_meta' of module 'tme_bd_dma_pe_meta_0' has 43 connections declared, but only 40 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:715]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_patch_extract_core_0_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_patch_extract_core_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_patch_extract_core_0_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_patch_extract_core_0_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'interrupt' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_ARREGION' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWADDR' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWBURST' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWCACHE' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWID' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWLEN' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWLOCK' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWPROT' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWQOS' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWREGION' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWSIZE' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_AWVALID' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_BREADY' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_WDATA' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_WID' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_WLAST' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_WSTRB' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'm_axi_BIN_IMG_WVALID' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'patch_out_TDEST' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'patch_out_TID' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'patch_out_TSTRB' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'patch_out_TUSER' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'meta_out_TDEST' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'meta_out_TID' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'meta_out_TSTRB' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7071] port 'meta_out_TUSER' of module 'tme_bd_patch_extract_core_0_0' is unconnected for instance 'patch_extract_core_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+WARNING: [Synth 8-7023] instance 'patch_extract_core_0' of module 'tme_bd_patch_extract_core_0_0' has 87 connections declared, but only 60 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:756]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_proc_sys_reset_0_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_proc_sys_reset_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_proc_sys_reset_0_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_proc_sys_reset_0_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'mb_reset' of module 'tme_bd_proc_sys_reset_0_0' is unconnected for instance 'proc_sys_reset_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:817]
+WARNING: [Synth 8-7071] port 'bus_struct_reset' of module 'tme_bd_proc_sys_reset_0_0' is unconnected for instance 'proc_sys_reset_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:817]
+WARNING: [Synth 8-7071] port 'peripheral_reset' of module 'tme_bd_proc_sys_reset_0_0' is unconnected for instance 'proc_sys_reset_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:817]
+WARNING: [Synth 8-7071] port 'interconnect_aresetn' of module 'tme_bd_proc_sys_reset_0_0' is unconnected for instance 'proc_sys_reset_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:817]
+WARNING: [Synth 8-7023] instance 'proc_sys_reset_0' of module 'tme_bd_proc_sys_reset_0_0' has 10 connections declared, but only 6 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:817]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_processing_system7_0_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_processing_system7_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_processing_system7_0_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_processing_system7_0_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_AWREADY' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_BVALID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_WREADY' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_BRESP' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_BID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_RID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_RCOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_WCOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_RACOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP0_WACOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP1_BID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP1_RID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP1_RCOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP1_WCOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP1_RACOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP1_WACOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP2_BID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP2_RID' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP2_RCOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP2_WCOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP2_RACOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'S_AXI_HP2_WACOUNT' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7071] port 'FCLK_CLK1' of module 'tme_bd_processing_system7_0_0' is unconnected for instance 'processing_system7_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+WARNING: [Synth 8-7023] instance 'processing_system7_0' of module 'tme_bd_processing_system7_0_0' has 198 connections declared, but only 175 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:824]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_smartconnect_bin_mem_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_bin_mem_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_smartconnect_bin_mem_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_bin_mem_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_smartconnect_lite_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_lite_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_smartconnect_lite_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_lite_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'M00_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M00_AXI_wstrb' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M00_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M01_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M01_AXI_wstrb' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M01_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M02_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M02_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M03_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M03_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M04_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M04_AXI_wstrb' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M04_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M05_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M05_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M06_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M06_AXI_wstrb' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M06_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M07_AXI_awprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M07_AXI_wstrb' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7071] port 'M07_AXI_arprot' of module 'tme_bd_smartconnect_lite_0' is unconnected for instance 'smartconnect_lite' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+WARNING: [Synth 8-7023] instance 'smartconnect_lite' of module 'tme_bd_smartconnect_lite_0' has 192 connections declared, but only 171 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1069]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_smartconnect_mem_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_mem_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_smartconnect_mem_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_mem_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_smartconnect_pe_mem_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_pe_mem_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_smartconnect_pe_mem_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_smartconnect_pe_mem_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'tme_bd_tme_top_0_0' [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_tme_top_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_tme_top_0_0' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/.Xil/Vivado-14572-DESKTOP-KG9P5J1/realtime/tme_bd_tme_top_0_0_stub.v:6]
+WARNING: [Synth 8-7071] port 'interrupt' of module 'tme_bd_tme_top_0_0' is unconnected for instance 'tme_top_0' [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1393]
+INFO: [Common 17-14] Message 'Synth 8-7071' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+WARNING: [Synth 8-7023] instance 'tme_top_0' of module 'tme_bd_tme_top_0_0' has 38 connections declared, but only 37 given [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:1393]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd' (0#1) [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/synth/tme_bd.v:13]
+INFO: [Synth 8-6155] done synthesizing module 'tme_bd_wrapper' (0#1) [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/hdl/tme_bd_wrapper.v:13]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.019 . Memory (MB): peak = 1567.406 ; gain = 0.000
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0_in_context.xdc] for cell 'tme_bd_i/processing_system7_0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0_in_context.xdc] for cell 'tme_bd_i/processing_system7_0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0_in_context.xdc] for cell 'tme_bd_i/proc_sys_reset_0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0_in_context.xdc] for cell 'tme_bd_i/proc_sys_reset_0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_tme_top_0_0/tme_bd_tme_top_0_0/tme_bd_tme_top_0_0_in_context.xdc] for cell 'tme_bd_i/tme_top_0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_tme_top_0_0/tme_bd_tme_top_0_0/tme_bd_tme_top_0_0_in_context.xdc] for cell 'tme_bd_i/tme_top_0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0_in_context.xdc] for cell 'tme_bd_i/axi_dma_patch'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0_in_context.xdc] for cell 'tme_bd_i/axi_dma_patch'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_patch_0_in_context.xdc] for cell 'tme_bd_i/axi_dma_templ'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_patch_0_in_context.xdc] for cell 'tme_bd_i/axi_dma_templ'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/tme_bd_smartconnect_lite_0/tme_bd_smartconnect_lite_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_lite'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/tme_bd_smartconnect_lite_0/tme_bd_smartconnect_lite_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_lite'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/tme_bd_smartconnect_mem_0/tme_bd_smartconnect_mem_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_mem'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/tme_bd_smartconnect_mem_0/tme_bd_smartconnect_mem_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_mem'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_binarize_core_0_0/tme_bd_binarize_core_0_0/tme_bd_binarize_core_0_0_in_context.xdc] for cell 'tme_bd_i/binarize_core_0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_binarize_core_0_0/tme_bd_binarize_core_0_0/tme_bd_binarize_core_0_0_in_context.xdc] for cell 'tme_bd_i/binarize_core_0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0_in_context.xdc] for cell 'tme_bd_i/axi_dma_binarize'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0_in_context.xdc] for cell 'tme_bd_i/axi_dma_binarize'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/tme_bd_smartconnect_bin_mem_0/tme_bd_smartconnect_bin_mem_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_bin_mem'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/tme_bd_smartconnect_bin_mem_0/tme_bd_smartconnect_bin_mem_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_bin_mem'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_patch_extract_core_0_0/tme_bd_patch_extract_core_0_0/tme_bd_patch_extract_core_0_0_in_context.xdc] for cell 'tme_bd_i/patch_extract_core_0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_patch_extract_core_0_0/tme_bd_patch_extract_core_0_0/tme_bd_patch_extract_core_0_0_in_context.xdc] for cell 'tme_bd_i/patch_extract_core_0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0_in_context.xdc] for cell 'tme_bd_i/dma_pe_data'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0_in_context.xdc] for cell 'tme_bd_i/dma_pe_data'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0_in_context.xdc] for cell 'tme_bd_i/dma_pe_meta'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0_in_context.xdc] for cell 'tme_bd_i/dma_pe_meta'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/tme_bd_smartconnect_pe_mem_0/tme_bd_smartconnect_pe_mem_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_pe_mem'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/tme_bd_smartconnect_pe_mem_0/tme_bd_smartconnect_pe_mem_0_in_context.xdc] for cell 'tme_bd_i/smartconnect_pe_mem'
+Parsing XDC File [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/dont_touch.xdc]
+Finished Parsing XDC File [C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/dont_touch.xdc]
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1567.406 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.013 . Memory (MB): peak = 1567.406 ; gain = 0.000
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z020clg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 1567.406 ; gain = 675.285
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 220 (col length:60)
+BRAMs: 280 (col length: RAMB18 60 RAMB36 30)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:15 ; elapsed = 00:00:17 . Memory (MB): peak = 1570.945 ; gain = 678.824
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:19 ; elapsed = 00:00:21 . Memory (MB): peak = 1735.238 ; gain = 843.117
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:19 ; elapsed = 00:00:21 . Memory (MB): peak = 1736.570 ; gain = 844.449
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:19 ; elapsed = 00:00:21 . Memory (MB): peak = 1747.727 ; gain = 855.605
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++------+------------------------------+----------+
+|      |BlackBox name                 |Instances |
++------+------------------------------+----------+
+|1     |tme_bd_axi_dma_binarize_0     |         1|
+|2     |tme_bd_axi_dma_patch_0        |         1|
+|3     |tme_bd_axi_dma_templ_0        |         1|
+|4     |tme_bd_binarize_core_0_0      |         1|
+|5     |tme_bd_dma_pe_data_0          |         1|
+|6     |tme_bd_dma_pe_meta_0          |         1|
+|7     |tme_bd_patch_extract_core_0_0 |         1|
+|8     |tme_bd_proc_sys_reset_0_0     |         1|
+|9     |tme_bd_processing_system7_0_0 |         1|
+|10    |tme_bd_smartconnect_bin_mem_0 |         1|
+|11    |tme_bd_smartconnect_lite_0    |         1|
+|12    |tme_bd_smartconnect_mem_0     |         1|
+|13    |tme_bd_smartconnect_pe_mem_0  |         1|
+|14    |tme_bd_tme_top_0_0            |         1|
++------+------------------------------+----------+
+
+Report Cell Usage: 
++------+----------------------------+------+
+|      |Cell                        |Count |
++------+----------------------------+------+
+|1     |tme_bd_axi_dma_binarize     |     1|
+|2     |tme_bd_axi_dma_patch        |     1|
+|3     |tme_bd_axi_dma_templ        |     1|
+|4     |tme_bd_binarize_core_0      |     1|
+|5     |tme_bd_dma_pe_data          |     1|
+|6     |tme_bd_dma_pe_meta          |     1|
+|7     |tme_bd_patch_extract_core_0 |     1|
+|8     |tme_bd_proc_sys_reset_0     |     1|
+|9     |tme_bd_processing_system7_0 |     1|
+|10    |tme_bd_smartconnect_bin_mem |     1|
+|11    |tme_bd_smartconnect_lite    |     1|
+|12    |tme_bd_smartconnect_mem     |     1|
+|13    |tme_bd_smartconnect_pe_mem  |     1|
+|14    |tme_bd_tme_top_0            |     1|
++------+----------------------------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:12 ; elapsed = 00:00:21 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+Synthesis Optimization Complete : Time (s): cpu = 00:00:22 ; elapsed = 00:00:23 . Memory (MB): peak = 1995.805 ; gain = 1103.684
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.019 . Memory (MB): peak = 1995.805 ; gain = 0.000
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2008.590 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Synth Design complete | Checksum: 42df7e4c
+INFO: [Common 17-83] Releasing license: Synthesis
+51 Infos, 111 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:25 ; elapsed = 00:00:30 . Memory (MB): peak = 2012.574 ; gain = 1374.707
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/synth_1/tme_bd_wrapper.dcp' has been generated.
+INFO: [Vivado 12-24828] Executing command : report_utilization -file tme_bd_wrapper_utilization_synth.rpt -pb tme_bd_wrapper_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Fri Aug 21 11:34:32 2026...
+[Fri Aug 21 11:34:34 2026] synth_1 finished
+wait_on_runs: Time (s): cpu = 00:00:01 ; elapsed = 00:06:33 . Memory (MB): peak = 783.078 ; gain = 0.000
+SYNTH_PROGRESS=100%
+SYNTH_STATUS=synth_design Complete!
+Design is defaulting to impl run constrset: constrs_1
+Design is defaulting to synth run part: xc7z020clg400-1
+INFO: [Device 21-403] Loading part xc7z020clg400-1
+INFO: [Project 1-5699] Read binary netlist with skipMacroContent - 1
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0.dcp' for cell 'tme_bd_i/axi_dma_binarize'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0.dcp' for cell 'tme_bd_i/axi_dma_patch'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0.dcp' for cell 'tme_bd_i/axi_dma_templ'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_binarize_core_0_0/tme_bd_binarize_core_0_0.dcp' for cell 'tme_bd_i/binarize_core_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0.dcp' for cell 'tme_bd_i/dma_pe_data'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0.dcp' for cell 'tme_bd_i/dma_pe_meta'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_patch_extract_core_0_0/tme_bd_patch_extract_core_0_0.dcp' for cell 'tme_bd_i/patch_extract_core_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0.dcp' for cell 'tme_bd_i/proc_sys_reset_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0.dcp' for cell 'tme_bd_i/processing_system7_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/tme_bd_smartconnect_bin_mem_0.dcp' for cell 'tme_bd_i/smartconnect_bin_mem'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/tme_bd_smartconnect_lite_0.dcp' for cell 'tme_bd_i/smartconnect_lite'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/tme_bd_smartconnect_mem_0.dcp' for cell 'tme_bd_i/smartconnect_mem'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/tme_bd_smartconnect_pe_mem_0.dcp' for cell 'tme_bd_i/smartconnect_pe_mem'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_tme_top_0_0/tme_bd_tme_top_0_0.dcp' for cell 'tme_bd_i/tme_top_0'
+Netlist sorting complete. Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 1230.855 ; gain = 0.000
+INFO: [Netlist 29-17] Analyzing 3304 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 2 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2025.2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0.xdc] for cell 'tme_bd_i/processing_system7_0/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0.xdc] for cell 'tme_bd_i/processing_system7_0/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0_board.xdc] for cell 'tme_bd_i/proc_sys_reset_0/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0_board.xdc] for cell 'tme_bd_i/proc_sys_reset_0/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/bd_0/ip/ip_1/bd_ec5b_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_lite/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/bd_0/ip/ip_1/bd_ec5b_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_lite/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_lite/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_lite/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/bd_0/ip/ip_1/bd_01e3_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_mem/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/bd_0/ip/ip_1/bd_01e3_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_mem/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_mem/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_mem/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/bd_0/ip/ip_1/bd_d94f_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/bd_0/ip/ip_1/bd_d94f_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/bd_0/ip/ip_1/bd_d0b4_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/bd_0/ip/ip_1/bd_d0b4_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+INFO: [Project 1-1714] 273 XPM XDC files have been applied to the design.
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.062 . Memory (MB): peak = 2050.051 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 442 instances were transformed.
+  RAM16X1D => RAM32X1D (RAMD32(x2)): 3 instances
+  RAM32M => RAM32M (RAMD32(x6), RAMS32(x2)): 408 instances
+  RAM32X1D => RAM32X1D (RAMD32(x2)): 31 instances
+
+open_run: Time (s): cpu = 00:00:46 ; elapsed = 00:00:47 . Memory (MB): peak = 2050.051 ; gain = 1266.973
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+report_timing_summary: Time (s): cpu = 00:00:36 ; elapsed = 00:00:23 . Memory (MB): peak = 2276.820 ; gain = 226.770
+Command: report_drc -no_waivers -file C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_synth_reports_20260821_113523/postextract_synth_drc.rpt
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 2-168] The results of DRC are in file C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_synth_reports_20260821_113523/postextract_synth_drc.rpt.
+report_drc completed successfully
+report_drc: Time (s): cpu = 00:00:08 ; elapsed = 00:00:06 . Memory (MB): peak = 2276.820 ; gain = 0.000
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.120 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Write ShapeDB Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.141 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Wrote PlaceStorage: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.015 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Wrote Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.003 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Wrote Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.016 . Memory (MB): peak = 2276.820 ; gain = 0.000
+Write Physdb Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.172 . Memory (MB): peak = 2276.820 ; gain = 0.000
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_synth_reports_20260821_113523/postextract_synth.dcp' has been generated.
+write_checkpoint: Time (s): cpu = 00:00:14 ; elapsed = 00:00:10 . Memory (MB): peak = 2314.492 ; gain = 37.672
+POSTSYNTH_TIMING=WNS:2.240;TNS:0.000;WHS:0.045;THS:0.000;WPWS:3.750;TPWS:0.000
+POSTSYNTH_BRAM=RAMB36E1:120;FIFO36E1:0;RAMB18E1:21;FIFO18E1:0;BRAM18_EQ:261/280;TILES:130.5/140.0
+POSTSYNTH_REPORT_DIR=C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_synth_reports_20260821_113523
+POSTSYNTH_DCP=C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_synth_reports_20260821_113523/postextract_synth.dcp
+@@POSTEXTRACT_SYNTH_SIGNOFF_PASS@@
+[Fri Aug 21 11:36:11 2026] Launched impl_1...
+Run output will be captured here: C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/runme.log
+IMPLEMENTATION_TARGET=route_design
+BITSTREAM_REQUESTED=0
+[Fri Aug 21 11:36:11 2026] Waiting for impl_1 to finish...
+
+*** Running vivado
+    with args -log tme_bd_wrapper.vdi -applog -m64 -product Vivado -messageDb vivado.pb -mode batch -source tme_bd_wrapper.tcl -notrace
+
+
+
+****** Vivado v2025.2 (64-bit)
+  **** SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+  **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+  **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+  **** Start of session at: Fri Aug 21 11:36:17 2026
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source tme_bd_wrapper.tcl -notrace
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_provisional/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/patch_extract/patch_extract_provisional/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/binarizer-logical-layout/hls/binarize/binarize/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/lychee/Desktop/FPGA/hls/template_match/template_match_b1_b2/b2/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'C:/AMDDesignTools/2025.2/Vivado/data/ip'.
+add_files: Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 666.793 ; gain = 121.570
+Command: link_design -top tme_bd_wrapper -part xc7z020clg400-1
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+INFO: [Device 21-403] Loading part xc7z020clg400-1
+INFO: [Project 1-5699] Read binary netlist with skipMacroContent - 1
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0.dcp' for cell 'tme_bd_i/axi_dma_binarize'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0.dcp' for cell 'tme_bd_i/axi_dma_patch'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0.dcp' for cell 'tme_bd_i/axi_dma_templ'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_binarize_core_0_0/tme_bd_binarize_core_0_0.dcp' for cell 'tme_bd_i/binarize_core_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0.dcp' for cell 'tme_bd_i/dma_pe_data'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0.dcp' for cell 'tme_bd_i/dma_pe_meta'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_patch_extract_core_0_0/tme_bd_patch_extract_core_0_0.dcp' for cell 'tme_bd_i/patch_extract_core_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0.dcp' for cell 'tme_bd_i/proc_sys_reset_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0.dcp' for cell 'tme_bd_i/processing_system7_0'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/tme_bd_smartconnect_bin_mem_0.dcp' for cell 'tme_bd_i/smartconnect_bin_mem'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/tme_bd_smartconnect_lite_0.dcp' for cell 'tme_bd_i/smartconnect_lite'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/tme_bd_smartconnect_mem_0.dcp' for cell 'tme_bd_i/smartconnect_mem'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/tme_bd_smartconnect_pe_mem_0.dcp' for cell 'tme_bd_i/smartconnect_pe_mem'
+INFO: [Project 1-454] Reading design checkpoint 'c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_tme_top_0_0/tme_bd_tme_top_0_0.dcp' for cell 'tme_bd_i/tme_top_0'
+Netlist sorting complete. Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 1145.582 ; gain = 0.000
+INFO: [Netlist 29-17] Analyzing 3304 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2025.2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0.xdc] for cell 'tme_bd_i/processing_system7_0/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_processing_system7_0_0/tme_bd_processing_system7_0_0.xdc] for cell 'tme_bd_i/processing_system7_0/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0_board.xdc] for cell 'tme_bd_i/proc_sys_reset_0/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_proc_sys_reset_0_0/tme_bd_proc_sys_reset_0_0_board.xdc] for cell 'tme_bd_i/proc_sys_reset_0/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/bd_0/ip/ip_1/bd_ec5b_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_lite/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/bd_0/ip/ip_1/bd_ec5b_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_lite/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_lite/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_lite_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_lite/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/bd_0/ip/ip_1/bd_01e3_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_mem/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/bd_0/ip/ip_1/bd_01e3_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_mem/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_mem/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_mem/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/bd_0/ip/ip_1/bd_d94f_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/bd_0/ip/ip_1/bd_d94f_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_bin_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_bin_mem/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/bd_0/ip/ip_1/bd_d0b4_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst/clk_map/psr_aclk/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/bd_0/ip/ip_1/bd_d0b4_psr_aclk_0_board.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst/clk_map/psr_aclk/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_smartconnect_pe_mem_0/smartconnect.xdc] for cell 'tme_bd_i/smartconnect_pe_mem/inst'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_patch_0/tme_bd_axi_dma_patch_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_patch/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_templ_0/tme_bd_axi_dma_templ_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_templ/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_axi_dma_binarize_0/tme_bd_axi_dma_binarize_0_clocks.xdc] for cell 'tme_bd_i/axi_dma_binarize/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_data_0/tme_bd_dma_pe_data_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_data/U0'
+Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+Finished Parsing XDC File [c:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.gen/sources_1/bd/tme_bd/ip/tme_bd_dma_pe_meta_0/tme_bd_dma_pe_meta_0_clocks.xdc] for cell 'tme_bd_i/dma_pe_meta/U0'
+INFO: [Project 1-1714] 273 XPM XDC files have been applied to the design.
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.066 . Memory (MB): peak = 1965.504 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 442 instances were transformed.
+  RAM16X1D => RAM32X1D (RAMD32(x2)): 3 instances
+  RAM32M => RAM32M (RAMD32(x6), RAMS32(x2)): 408 instances
+  RAM32X1D => RAM32X1D (RAMD32(x2)): 31 instances
+
+29 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+link_design completed successfully
+link_design: Time (s): cpu = 00:00:29 ; elapsed = 00:00:29 . Memory (MB): peak = 1965.504 ; gain = 1298.711
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z020'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z020'
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.961 . Memory (MB): peak = 1965.504 ; gain = 0.000
+
+Starting Cache Timing Information Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Cache Timing Information Task | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:05 . Memory (MB): peak = 1965.504 ; gain = 0.000
+
+Starting Logic Optimization Task
+
+Phase 1 Initialization
+
+Phase 1.1 Core Generation And Design Setup
+Phase 1.1 Core Generation And Design Setup | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.100 . Memory (MB): peak = 2404.742 ; gain = 0.000
+
+Phase 1.2 Setup Constraints And Sort Netlist
+Phase 1.2 Setup Constraints And Sort Netlist | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.198 . Memory (MB): peak = 2404.742 ; gain = 0.000
+Phase 1 Initialization | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.207 . Memory (MB): peak = 2404.742 ; gain = 0.000
+
+Phase 2 Timer Update And Timing Data Collection
+
+Phase 2.1 Detect if minReqCache needed
+Phase 2.1 Detect if minReqCache needed | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.362 . Memory (MB): peak = 2416.988 ; gain = 12.246
+
+Phase 2.2 Timer Update
+Phase 2.2 Timer Update | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:02 . Memory (MB): peak = 2416.988 ; gain = 12.246
+
+Phase 2.3 Timing Data Collection
+Phase 2.3 Timing Data Collection | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:02 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Phase 2 Timer Update And Timing Data Collection | Checksum: 11f0f6015
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:02 . Memory (MB): peak = 2416.988 ; gain = 12.246
+
+Phase 3 Retarget
+INFO: [Opt 31-1851] Number of loadless carry chains removed were: 0
+INFO: [Opt 31-1834] Total Chains To Be Transformed Were: 0 AND Number of Transformed insts Created are: 0
+INFO: [Opt 31-1566] Pulled 5 inverters resulting in an inversion of 70 pins
+INFO: [Opt 31-138] Pushed 55 inverter(s) to 279 load pin(s).
+INFO: [Opt 31-49] Retargeted 0 cell(s).
+Phase 3 Retarget | Checksum: 1cd31f107
+
+Time (s): cpu = 00:00:05 ; elapsed = 00:00:04 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Retarget | Checksum: 1cd31f107
+INFO: [Opt 31-389] Phase Retarget created 215 cells and removed 403 cells
+INFO: [Opt 31-1021] In phase Retarget, 325 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 4 Constant propagation
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Phase 4 Constant propagation | Checksum: 154407c98
+
+Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Constant propagation | Checksum: 154407c98
+INFO: [Opt 31-389] Phase Constant propagation created 272 cells and removed 1517 cells
+INFO: [Opt 31-1021] In phase Constant propagation, 325 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 5 Sweep
+INFO: [Constraints 18-11670] Building netlist checker database with flags, 0x8
+Done building netlist checker database: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.080 . Memory (MB): peak = 2416.988 ; gain = 0.000
+INFO: [Constraints 18-11670] Building netlist checker database with flags, 0x8
+Done building netlist checker database: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.068 . Memory (MB): peak = 2416.988 ; gain = 0.000
+Phase 5 Sweep | Checksum: 1ab871aac
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:14 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Sweep | Checksum: 1ab871aac
+INFO: [Opt 31-389] Phase Sweep created 0 cells and removed 1292 cells
+INFO: [Opt 31-1021] In phase Sweep, 412 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 6 BUFG optimization
+Phase 6 BUFG optimization | Checksum: 1ab871aac
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:16 . Memory (MB): peak = 2416.988 ; gain = 12.246
+BUFG optimization | Checksum: 1ab871aac
+INFO: [Opt 31-662] Phase BUFG optimization created 0 cells of which 0 are BUFGs and removed 0 cells.
+
+Phase 7 Shift Register Optimization
+INFO: [Opt 31-1064] SRL Remap converted 0 SRLs to 0 registers and converted 0 registers of register chains to 0 SRLs
+Phase 7 Shift Register Optimization | Checksum: 14c81c2fd
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:16 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Shift Register Optimization | Checksum: 14c81c2fd
+INFO: [Opt 31-389] Phase Shift Register Optimization created 2 cells and removed 0 cells
+
+Phase 8 Post Processing Netlist
+INFO: [Opt 31-1566] Pulled 2 inverters resulting in an inversion of 2 pins
+Phase 8 Post Processing Netlist | Checksum: 1714971af
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:16 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Post Processing Netlist | Checksum: 1714971af
+INFO: [Opt 31-389] Phase Post Processing Netlist created 0 cells and removed 2 cells
+INFO: [Opt 31-1021] In phase Post Processing Netlist, 370 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+
+Phase 9 Finalization
+
+Phase 9.1 Finalizing Design Cores and Updating Shapes
+Phase 9.1 Finalizing Design Cores and Updating Shapes | Checksum: f041dcba
+
+Time (s): cpu = 00:00:19 ; elapsed = 00:00:19 . Memory (MB): peak = 2416.988 ; gain = 12.246
+
+Phase 9.2 Verifying Netlist Connectivity
+
+Starting Connectivity Check Task
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.193 . Memory (MB): peak = 2416.988 ; gain = 0.000
+Phase 9.2 Verifying Netlist Connectivity | Checksum: f041dcba
+
+Time (s): cpu = 00:00:19 ; elapsed = 00:00:19 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Phase 9 Finalization | Checksum: f041dcba
+
+Time (s): cpu = 00:00:19 ; elapsed = 00:00:19 . Memory (MB): peak = 2416.988 ; gain = 12.246
+Opt_design Change Summary
+=========================
+
+
+-------------------------------------------------------------------------------------------------------------------------
+|  Phase                        |  #Cells created  |  #Cells Removed  |  #Constrained objects preventing optimizations  |
+-------------------------------------------------------------------------------------------------------------------------
+|  Retarget                     |             215  |             403  |                                            325  |
+|  Constant propagation         |             272  |            1517  |                                            325  |
+|  Sweep                        |               0  |            1292  |                                            412  |
+|  BUFG optimization            |               0  |               0  |                                              0  |
+|  Shift Register Optimization  |               2  |               0  |                                              0  |
+|  Post Processing Netlist      |               0  |               2  |                                            370  |
+-------------------------------------------------------------------------------------------------------------------------
+
+
+Ending Logic Optimization Task | Checksum: f041dcba
+
+Time (s): cpu = 00:00:19 ; elapsed = 00:00:19 . Memory (MB): peak = 2416.988 ; gain = 12.246
+
+Starting Power Optimization Task
+INFO: [Pwropt 34-132] Skipping clock gating for clocks with a period < 2.00 ns.
+INFO: [Pwropt 34-9] Applying IDT optimizations ...
+INFO: [Pwropt 34-10] Applying ODC optimizations ...
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Running Vector-less Activity Propagation...
+
+Finished Running Vector-less Activity Propagation
+
+
+Starting PowerOpt Patch Enables Task
+INFO: [Pwropt 34-162] WRITE_MODE attribute of 0 BRAM(s) out of a total of 141 has been updated to save power. Run report_power_opt to get a complete listing of the BRAMs updated.
+INFO: [Pwropt 34-201] Structural ODC has moved 4 WE to EN ports
+Number of BRAM Ports augmented: 67 newly gated: 5 Total Ports: 282
+Ending PowerOpt Patch Enables Task | Checksum: 17534e047
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.943 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Ending Power Optimization Task | Checksum: 17534e047
+
+Time (s): cpu = 00:00:38 ; elapsed = 00:00:23 . Memory (MB): peak = 2706.969 ; gain = 289.980
+
+Starting Final Cleanup Task
+
+Starting Logic Optimization Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Logic Optimization Task | Checksum: f1f5593e
+
+Time (s): cpu = 00:00:11 ; elapsed = 00:00:09 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Ending Final Cleanup Task | Checksum: f1f5593e
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:13 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.062 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Common 17-83] Releasing license: Implementation
+62 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:01:25 ; elapsed = 00:01:06 . Memory (MB): peak = 2706.969 ; gain = 741.465
+INFO: [Vivado 12-24828] Executing command : report_drc -file tme_bd_wrapper_drc_opted.rpt -pb tme_bd_wrapper_drc_opted.pb -rpx tme_bd_wrapper_drc_opted.rpx
+Command: report_drc -file tme_bd_wrapper_drc_opted.rpt -pb tme_bd_wrapper_drc_opted.pb -rpx tme_bd_wrapper_drc_opted.rpx
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 2-168] The results of DRC are in file C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_drc_opted.rpt.
+report_drc completed successfully
+report_drc: Time (s): cpu = 00:00:08 ; elapsed = 00:00:06 . Memory (MB): peak = 2706.969 ; gain = 0.000
+generate_parallel_reports: Time (s): cpu = 00:00:08 ; elapsed = 00:00:06 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.120 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Write ShapeDB Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.140 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote PlaceStorage: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.016 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.002 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.013 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Write Physdb Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.167 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_opt.dcp' has been generated.
+write_checkpoint: Time (s): cpu = 00:00:12 ; elapsed = 00:00:09 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Command: place_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z020'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z020'
+INFO: [Common 17-83] Releasing license: Implementation
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Running DRC as a precondition to command place_design
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+INFO: [Place 30-611] Multithreading enabled for place_design using a maximum of 2 CPUs
+
+Starting Placer Task
+
+Phase 1 Placer Initialization
+
+Phase 1.1 Placer Initialization Netlist Sorting
+Netlist sorting complete. Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.066 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 1.1 Placer Initialization Netlist Sorting | Checksum: e6e48f46
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.084 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.064 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device | Checksum: 106fa8245
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:07 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 1.3 Build Placer Netlist Model
+Phase 1.3 Build Placer Netlist Model | Checksum: d69cf93c
+
+Time (s): cpu = 00:00:41 ; elapsed = 00:00:32 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 1.4 Constrain Clocks/Macros
+Phase 1.4 Constrain Clocks/Macros | Checksum: d69cf93c
+
+Time (s): cpu = 00:00:41 ; elapsed = 00:00:32 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 1 Placer Initialization | Checksum: d69cf93c
+
+Time (s): cpu = 00:00:42 ; elapsed = 00:00:32 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2 Global Placement
+
+Phase 2.1 Floorplanning
+Phase 2.1 Floorplanning | Checksum: 1245bff69
+
+Time (s): cpu = 00:00:59 ; elapsed = 00:00:42 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2.2 Update Timing before SLR Path Opt
+Phase 2.2 Update Timing before SLR Path Opt | Checksum: 143fad38a
+
+Time (s): cpu = 00:01:14 ; elapsed = 00:00:51 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2.3 Post-Processing in Floorplanning
+Phase 2.3 Post-Processing in Floorplanning | Checksum: 143fad38a
+
+Time (s): cpu = 00:01:14 ; elapsed = 00:00:51 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2.4 Global Place Phase1
+Phase 2.4 Global Place Phase1 | Checksum: 18e4b3f8b
+
+Time (s): cpu = 00:01:54 ; elapsed = 00:01:16 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2.5 Global Place Phase2
+
+Phase 2.5.1 UpdateTiming Before Physical Synthesis
+Phase 2.5.1 UpdateTiming Before Physical Synthesis | Checksum: 1066db567
+
+Time (s): cpu = 00:02:01 ; elapsed = 00:01:20 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2.5.2 Physical Synthesis In Placer
+INFO: [Physopt 32-1035] Found 1 LUTNM shape to break, 3414 LUT instances to create LUTNM shape
+INFO: [Physopt 32-1044] Break lutnm for timing: one critical 1, two critical 0, total 1, new lutff created 0
+INFO: [Physopt 32-1138] End 1 Pass. Optimized 1514 nets or LUTs. Breaked 1 LUT, combined 1513 existing LUTs and moved 0 existing LUT
+INFO: [Physopt 32-1408] Pass 1. Identified 2 candidate nets for high-fanout optimization.
+INFO: [Physopt 32-81] Processed net tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/grp_correlation_core_Pipeline_mac_loop_fu_4536/x_2_reg_21480_reg[7]_0[0]. Replicated 14 times.
+INFO: [Physopt 32-81] Processed net tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/grp_correlation_core_Pipeline_mac_loop_fu_4536/x_2_reg_21480_reg[7]_0[1]. Replicated 14 times.
+INFO: [Physopt 32-232] Optimized 2 nets. Created 28 new instances.
+INFO: [Physopt 32-775] End 1 Pass. Optimized 2 nets or cells. Created 28 new cells, deleted 0 existing cell and moved 0 existing cell
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.093 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Physopt 32-456] No candidate cells for DSP register optimization found in the design.
+INFO: [Physopt 32-775] End 2 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-1123] No candidate cells found for Shift Register to Pipeline optimization
+INFO: [Physopt 32-775] End 2 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-1401] No candidate cells found for Shift Register optimization.
+INFO: [Physopt 32-677] No candidate cells for Shift Register optimization found in the design
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-526] No candidate cells for BRAM register optimization found in the design
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-846] No candidate cells for URAM register optimization found in the design
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-846] No candidate cells for URAM register optimization found in the design
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-949] No candidate nets found for dynamic/static region interface net replication
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.024 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Summary of Physical Synthesis Optimizations
+============================================
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+|  Optimization                                     |  Added Cells  |  Removed Cells  |  Optimized Cells/Nets  |  Dont Touch  |  Iterations  |  Elapsed   |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+|  LUT Combining                                    |            1  |           1513  |                  1514  |           0  |           1  |  00:00:01  |
+|  Retime                                           |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Very High Fanout                                 |           28  |              0  |                     2  |           0  |           1  |  00:00:01  |
+|  DSP Register                                     |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Shift Register to Pipeline                       |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Shift Register                                   |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  BRAM Register                                    |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  URAM Register                                    |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Dynamic/Static Region Interface Net Replication  |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Total                                            |           29  |           1513  |                  1516  |           0  |           9  |  00:00:02  |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Phase 2.5.2 Physical Synthesis In Placer | Checksum: 1d1d0b347
+
+Time (s): cpu = 00:02:09 ; elapsed = 00:01:26 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 2.5 Global Place Phase2 | Checksum: 1ce4f05d0
+
+Time (s): cpu = 00:02:14 ; elapsed = 00:01:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 2 Global Placement | Checksum: 1ce4f05d0
+
+Time (s): cpu = 00:02:14 ; elapsed = 00:01:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3 Detail Placement
+
+Phase 3.1 Commit Multi Column Macros
+Phase 3.1 Commit Multi Column Macros | Checksum: 1403cb48e
+
+Time (s): cpu = 00:02:20 ; elapsed = 00:01:33 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3.2 Commit Most Macros & LUTRAMs
+Phase 3.2 Commit Most Macros & LUTRAMs | Checksum: 2431e7d10
+
+Time (s): cpu = 00:02:33 ; elapsed = 00:01:41 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3.3 Area Swap Optimization
+Phase 3.3 Area Swap Optimization | Checksum: 1b1bd65bf
+
+Time (s): cpu = 00:02:34 ; elapsed = 00:01:41 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3.4 Pipeline Register Optimization
+Phase 3.4 Pipeline Register Optimization | Checksum: 213e6d902
+
+Time (s): cpu = 00:02:34 ; elapsed = 00:01:42 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3.5 Small Shape Detail Placement
+Phase 3.5 Small Shape Detail Placement | Checksum: 242f8e4dd
+
+Time (s): cpu = 00:03:00 ; elapsed = 00:02:14 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3.6 Re-assign LUT pins
+Phase 3.6 Re-assign LUT pins | Checksum: 1d03029bd
+
+Time (s): cpu = 00:03:03 ; elapsed = 00:02:17 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 3.7 Pipeline Register Optimization
+Phase 3.7 Pipeline Register Optimization | Checksum: 1130163f3
+
+Time (s): cpu = 00:03:03 ; elapsed = 00:02:18 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 3 Detail Placement | Checksum: 1130163f3
+
+Time (s): cpu = 00:03:03 ; elapsed = 00:02:18 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 4 Post Placement Optimization and Clean-Up
+
+Phase 4.1 Post Commit Optimization
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+
+Phase 4.1.1 Post Placement Optimization
+Post Placement Optimization Initialization | Checksum: feda1141
+
+Phase 4.1.1.1 BUFG Insertion
+
+Starting Physical Synthesis Task
+
+Phase 1 Physical Synthesis Initialization
+INFO: [Physopt 32-721] Multithreading enabled for phys_opt_design using a maximum of 2 CPUs
+INFO: [Physopt 32-619] Estimated Timing Summary | WNS=0.544 | TNS=0.000 |
+Phase 1 Physical Synthesis Initialization | Checksum: 176061240
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.592 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Place 46-33] Processed net tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/ap_CS_fsm_state55, BUFG insertion was skipped due to placement/routing conflicts.
+INFO: [Place 46-56] BUFG insertion identified 1 candidate nets. Inserted BUFG: 0, Replicated BUFG Driver: 0, Skipped due to Placement/Routing Conflicts: 1, Skipped due to Timing Degradation: 0, Skipped due to netlist editing failed: 0.
+Ending Physical Synthesis Task | Checksum: 1ca654114
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.928 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 4.1.1.1 BUFG Insertion | Checksum: feda1141
+
+Time (s): cpu = 00:03:19 ; elapsed = 00:02:28 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 4.1.1.2 Post Placement Timing Optimization
+INFO: [Place 30-746] Post Placement Timing Summary WNS=0.544. For the most accurate timing information please run report_timing.
+Phase 4.1.1.2 Post Placement Timing Optimization | Checksum: f089c264
+
+Time (s): cpu = 00:03:19 ; elapsed = 00:02:28 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Time (s): cpu = 00:03:19 ; elapsed = 00:02:28 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 4.1 Post Commit Optimization | Checksum: f089c264
+
+Time (s): cpu = 00:03:19 ; elapsed = 00:02:28 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 4.2 Post Placement Cleanup
+Phase 4.2 Post Placement Cleanup | Checksum: f089c264
+
+Time (s): cpu = 00:03:20 ; elapsed = 00:02:28 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 4.3 Placer Reporting
+
+Phase 4.3.1 Print Estimated Congestion
+INFO: [Place 30-612] Post-Placement Estimated Congestion 
+ ____________________________________________________
+|           | Global Congestion | Short Congestion  |
+| Direction | Region Size       | Region Size       |
+|___________|___________________|___________________|
+|      North|                1x1|                4x4|
+|___________|___________________|___________________|
+|      South|                1x1|                4x4|
+|___________|___________________|___________________|
+|       East|                4x4|                4x4|
+|___________|___________________|___________________|
+|       West|                1x1|                1x1|
+|___________|___________________|___________________|
+
+Phase 4.3.1 Print Estimated Congestion | Checksum: f089c264
+
+Time (s): cpu = 00:03:20 ; elapsed = 00:02:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 4.3 Placer Reporting | Checksum: f089c264
+
+Time (s): cpu = 00:03:20 ; elapsed = 00:02:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 4.4 Final Placement Cleanup
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.031 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Time (s): cpu = 00:03:20 ; elapsed = 00:02:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Phase 4 Post Placement Optimization and Clean-Up | Checksum: a7e6020b
+
+Time (s): cpu = 00:03:20 ; elapsed = 00:02:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Ending Placer Task | Checksum: 852978a8
+
+Time (s): cpu = 00:03:21 ; elapsed = 00:02:29 . Memory (MB): peak = 2706.969 ; gain = 0.000
+108 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+place_design completed successfully
+place_design: Time (s): cpu = 00:03:32 ; elapsed = 00:02:38 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Vivado 12-24838] Running report commands "report_control_sets, report_io, report_utilization" in parallel.
+Running report generation with 2 threads.
+INFO: [Vivado 12-24828] Executing command : report_io -file tme_bd_wrapper_io_placed.rpt
+report_io: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.067 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Vivado 12-24828] Executing command : report_control_sets -verbose -file tme_bd_wrapper_control_sets_placed.rpt
+report_control_sets: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.177 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Vivado 12-24828] Executing command : report_utilization -file tme_bd_wrapper_utilization_placed.rpt -pb tme_bd_wrapper_utilization_placed.pb
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.069 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.119 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote PlaceStorage: Time (s): cpu = 00:00:06 ; elapsed = 00:00:02 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.059 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.009 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Write Physdb Complete: Time (s): cpu = 00:00:06 ; elapsed = 00:00:02 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_placed.dcp' has been generated.
+Command: phys_opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z020'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z020'
+
+Starting Initial Update Timing Task
+
+Time (s): cpu = 00:00:11 ; elapsed = 00:00:06 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Vivado_Tcl 4-2279] Estimated Timing Summary | WNS= 0.544 | TNS= 0.000 | 
+INFO: [Vivado_Tcl 4-383] Design worst setup slack (WNS) is greater than or equal to 0.000 ns. All physical synthesis setup optimizations will be skipped.
+INFO: [Vivado_Tcl 4-232] No setup violation found. The netlist was not modified.
+INFO: [Common 17-83] Releasing license: Implementation
+119 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+phys_opt_design completed successfully
+phys_opt_design: Time (s): cpu = 00:00:11 ; elapsed = 00:00:06 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.066 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Write ShapeDB Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.120 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote PlaceStorage: Time (s): cpu = 00:00:06 ; elapsed = 00:00:02 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.054 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Wrote Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.009 . Memory (MB): peak = 2706.969 ; gain = 0.000
+Write Physdb Complete: Time (s): cpu = 00:00:06 ; elapsed = 00:00:02 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_physopt.dcp' has been generated.
+Command: route_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z020'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z020'
+
+
+Starting Routing Task
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 2 CPUs
+
+Phase 1 Build RT Design
+Checksum: PlaceDB: ba1b001 ConstDB: 0 ShapeSum: 638e55b7 RouteDB: 15f972f0
+Post Restoration Checksum: NetGraph: dff45bf2 | NumContArr: d190147e | Constraints: c2a8fa9d | Timing: c2a8fa9d
+Phase 1 Build RT Design | Checksum: 336d665aa
+
+Time (s): cpu = 00:00:47 ; elapsed = 00:00:33 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2 Router Initialization
+
+Phase 2.1 Fix Topology Constraints
+Phase 2.1 Fix Topology Constraints | Checksum: 336d665aa
+
+Time (s): cpu = 00:00:47 ; elapsed = 00:00:34 . Memory (MB): peak = 2706.969 ; gain = 0.000
+
+Phase 2.2 Pre Route Cleanup
+Phase 2.2 Pre Route Cleanup | Checksum: 336d665aa
+
+Time (s): cpu = 00:00:48 ; elapsed = 00:00:34 . Memory (MB): peak = 2706.969 ; gain = 0.000
+ Number of Nodes with overlaps = 0
+
+Phase 2.3 Update Timing
+Phase 2.3 Update Timing | Checksum: 16630896f
+
+Time (s): cpu = 00:01:26 ; elapsed = 00:00:59 . Memory (MB): peak = 2706.969 ; gain = 0.000
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.673  | TNS=0.000  | WHS=-0.361 | THS=-1159.065|
+
+
+Phase 2.4 Soft Constraint Pins - Fast Budgeting
+Phase 2.4 Soft Constraint Pins - Fast Budgeting | Checksum: 2453969d2
+
+Time (s): cpu = 00:01:39 ; elapsed = 00:01:07 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 0 %
+  Global Horizontal Routing Utilization  = 0 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 56050
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 56050
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Phase 2 Router Initialization | Checksum: 1ec6b7466
+
+Time (s): cpu = 00:01:40 ; elapsed = 00:01:08 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 3 Global Routing
+Phase 3 Global Routing | Checksum: 1ec6b7466
+
+Time (s): cpu = 00:01:40 ; elapsed = 00:01:08 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 4 Initial Routing
+
+Phase 4.1 Initial Net Routing Pass
+Phase 4.1 Initial Net Routing Pass | Checksum: 1bedf04d1
+
+Time (s): cpu = 00:02:06 ; elapsed = 00:01:23 . Memory (MB): peak = 2983.543 ; gain = 276.574
+Phase 4 Initial Routing | Checksum: 1bedf04d1
+
+Time (s): cpu = 00:02:06 ; elapsed = 00:01:23 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 5 Rip-up And Reroute
+
+Phase 5.1 Global Iteration 0
+ Number of Nodes with overlaps = 10165
+ Number of Nodes with overlaps = 3426
+ Number of Nodes with overlaps = 1441
+ Number of Nodes with overlaps = 520
+ Number of Nodes with overlaps = 260
+ Number of Nodes with overlaps = 77
+ Number of Nodes with overlaps = 10
+ Number of Nodes with overlaps = 2
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.243  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 5.1 Global Iteration 0 | Checksum: 1d52ef33c
+
+Time (s): cpu = 00:03:49 ; elapsed = 00:02:52 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 5.2 Global Iteration 1
+ Number of Nodes with overlaps = 7
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.243  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 5.2 Global Iteration 1 | Checksum: 220e0b39b
+
+Time (s): cpu = 00:03:51 ; elapsed = 00:02:53 . Memory (MB): peak = 2983.543 ; gain = 276.574
+Phase 5 Rip-up And Reroute | Checksum: 220e0b39b
+
+Time (s): cpu = 00:03:51 ; elapsed = 00:02:53 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 6 Delay and Skew Optimization
+
+Phase 6.1 Delay CleanUp
+
+Phase 6.1.1 Update Timing
+Phase 6.1.1 Update Timing | Checksum: 261215f26
+
+Time (s): cpu = 00:03:53 ; elapsed = 00:02:54 . Memory (MB): peak = 2983.543 ; gain = 276.574
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.243  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 6.1 Delay CleanUp | Checksum: 261215f26
+
+Time (s): cpu = 00:03:53 ; elapsed = 00:02:54 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 6.2 Clock Skew Optimization
+Phase 6.2 Clock Skew Optimization | Checksum: 261215f26
+
+Time (s): cpu = 00:03:54 ; elapsed = 00:02:55 . Memory (MB): peak = 2983.543 ; gain = 276.574
+Phase 6 Delay and Skew Optimization | Checksum: 261215f26
+
+Time (s): cpu = 00:03:54 ; elapsed = 00:02:55 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 7 Post Hold Fix
+
+Phase 7.1 Hold Fix Iter
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.243  | TNS=0.000  | WHS=0.016  | THS=0.000  |
+
+Phase 7.1 Hold Fix Iter | Checksum: 300eeade4
+
+Time (s): cpu = 00:03:55 ; elapsed = 00:02:56 . Memory (MB): peak = 2983.543 ; gain = 276.574
+Phase 7 Post Hold Fix | Checksum: 300eeade4
+
+Time (s): cpu = 00:03:56 ; elapsed = 00:02:56 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 8 Route finalize
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 16.8764 %
+  Global Horizontal Routing Utilization  = 20.806 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 0
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 0
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Phase 8 Route finalize | Checksum: 300eeade4
+
+Time (s): cpu = 00:03:56 ; elapsed = 00:02:56 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 9 Verifying routed nets
+
+ Verification completed successfully
+Phase 9 Verifying routed nets | Checksum: 300eeade4
+
+Time (s): cpu = 00:03:56 ; elapsed = 00:02:56 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 10 Depositing Routes
+Phase 10 Depositing Routes | Checksum: 32fa42ac4
+
+Time (s): cpu = 00:04:01 ; elapsed = 00:03:00 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 11 Post Process Routing
+Phase 11 Post Process Routing | Checksum: 32fa42ac4
+
+Time (s): cpu = 00:04:01 ; elapsed = 00:03:00 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Phase 12 Post Router Timing
+INFO: [Route 35-57] Estimated Timing Summary | WNS=0.243  | TNS=0.000  | WHS=0.016  | THS=0.000  |
+
+INFO: [Route 35-327] The final timing numbers are based on the router estimated timing analysis. For a complete and accurate timing signoff, please run report_timing_summary.
+Phase 12 Post Router Timing | Checksum: 32fa42ac4
+
+Time (s): cpu = 00:04:01 ; elapsed = 00:03:01 . Memory (MB): peak = 2983.543 ; gain = 276.574
+Total Elapsed time in route_design: 180.508 secs
+
+Phase 13 Post-Route Event Processing
+Phase 13 Post-Route Event Processing | Checksum: 1f29cea6c
+
+Time (s): cpu = 00:04:01 ; elapsed = 00:03:01 . Memory (MB): peak = 2983.543 ; gain = 276.574
+INFO: [Route 35-16] Router Completed Successfully
+Ending Routing Task | Checksum: 1f29cea6c
+
+Time (s): cpu = 00:04:01 ; elapsed = 00:03:01 . Memory (MB): peak = 2983.543 ; gain = 276.574
+
+Routing Is Done.
+INFO: [Common 17-83] Releasing license: Implementation
+132 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+route_design completed successfully
+route_design: Time (s): cpu = 00:04:02 ; elapsed = 00:03:01 . Memory (MB): peak = 2983.543 ; gain = 276.574
+INFO: [Vivado 12-24828] Executing command : report_drc -file tme_bd_wrapper_drc_routed.rpt -pb tme_bd_wrapper_drc_routed.pb -rpx tme_bd_wrapper_drc_routed.rpx
+Command: report_drc -file tme_bd_wrapper_drc_routed.rpt -pb tme_bd_wrapper_drc_routed.pb -rpx tme_bd_wrapper_drc_routed.rpx
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 2-168] The results of DRC are in file C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_drc_routed.rpt.
+report_drc completed successfully
+report_drc: Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 2983.543 ; gain = 0.000
+INFO: [Vivado 12-24828] Executing command : report_methodology -file tme_bd_wrapper_methodology_drc_routed.rpt -pb tme_bd_wrapper_methodology_drc_routed.pb -rpx tme_bd_wrapper_methodology_drc_routed.rpx
+Command: report_methodology -file tme_bd_wrapper_methodology_drc_routed.rpt -pb tme_bd_wrapper_methodology_drc_routed.pb -rpx tme_bd_wrapper_methodology_drc_routed.rpx
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [DRC 23-133] Running Methodology with 2 threads
+INFO: [Vivado_Tcl 2-1520] The results of Report Methodology are in file C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_methodology_drc_routed.rpt.
+report_methodology completed successfully
+report_drc: Time (s): cpu = 00:01:06 ; elapsed = 00:00:37 . Memory (MB): peak = 2983.543 ; gain = 0.000
+INFO: [Vivado 12-24828] Executing command : report_timing_summary -max_paths 10 -routable_nets -report_unconstrained -file tme_bd_wrapper_timing_summary_routed.rpt -pb tme_bd_wrapper_timing_summary_routed.pb -rpx tme_bd_wrapper_timing_summary_routed.rpx -warn_on_violation 
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+report_timing_summary: Time (s): cpu = 00:00:17 ; elapsed = 00:00:12 . Memory (MB): peak = 2983.543 ; gain = 0.000
+INFO: [Vivado 12-24838] Running report commands "report_incremental_reuse, report_route_status" in parallel.
+Running report generation with 2 threads.
+INFO: [Vivado 12-24828] Executing command : report_incremental_reuse -file tme_bd_wrapper_incremental_reuse_routed.rpt
+INFO: [Vivado_Tcl 4-1062] Incremental flow is disabled. No incremental reuse Info to report.
+INFO: [Vivado 12-24828] Executing command : report_route_status -file tme_bd_wrapper_route_status.rpt -pb tme_bd_wrapper_route_status.pb
+INFO: [Vivado 12-24828] Executing command : report_power -file tme_bd_wrapper_power_routed.rpt -pb tme_bd_wrapper_power_summary_routed.pb -rpx tme_bd_wrapper_power_routed.rpx
+Command: report_power -file tme_bd_wrapper_power_routed.rpt -pb tme_bd_wrapper_power_summary_routed.pb -rpx tme_bd_wrapper_power_routed.rpx
+Running Vector-less Activity Propagation...
+
+Finished Running Vector-less Activity Propagation
+WARNING: [Power 33-332] Found switching activity that implies high-fanout reset nets being asserted for excessive periods of time which may result in inaccurate power analysis.
+Resolution: To review and fix problems, please run Power Constraints Advisor in the GUI from Tools > Power Constraints Advisor or run report_power with the -advisory option to generate a text report.
+149 Infos, 1 Warnings, 0 Critical Warnings and 0 Errors encountered.
+report_power completed successfully
+report_power: Time (s): cpu = 00:00:18 ; elapsed = 00:00:14 . Memory (MB): peak = 2983.543 ; gain = 0.000
+INFO: [Vivado 12-24828] Executing command : report_clock_utilization -file tme_bd_wrapper_clock_utilization_routed.rpt
+INFO: [Vivado 12-24828] Executing command : report_bus_skew -warn_on_violation -file tme_bd_wrapper_bus_skew_routed.rpt -pb tme_bd_wrapper_bus_skew_routed.pb -rpx tme_bd_wrapper_bus_skew_routed.rpx
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+generate_parallel_reports: Time (s): cpu = 00:02:00 ; elapsed = 00:01:16 . Memory (MB): peak = 2983.543 ; gain = 0.000
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.113 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.412 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Wrote PlaceStorage: Time (s): cpu = 00:00:05 ; elapsed = 00:00:02 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Wrote Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.053 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Wrote Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.009 . Memory (MB): peak = 2983.543 ; gain = 0.000
+Write Physdb Complete: Time (s): cpu = 00:00:06 ; elapsed = 00:00:02 . Memory (MB): peak = 2983.543 ; gain = 0.000
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/three_stage_combined.runs/impl_1/tme_bd_wrapper_routed.dcp' has been generated.
+INFO: [Common 17-206] Exiting Vivado at Fri Aug 21 11:45:39 2026...
+[Fri Aug 21 11:45:41 2026] impl_1 finished
+wait_on_runs: Time (s): cpu = 00:00:02 ; elapsed = 00:09:30 . Memory (MB): peak = 2314.492 ; gain = 0.000
+IMPL_PROGRESS=100%
+IMPL_STATUS=route_design Complete!
+Netlist sorting complete. Time (s): cpu = 00:00:01 ; elapsed = 00:00:01 . Memory (MB): peak = 2314.492 ; gain = 0.000
+INFO: [Netlist 29-17] Analyzing 3282 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 1 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2025.2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Read ShapeDB Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.151 . Memory (MB): peak = 2314.492 ; gain = 0.000
+INFO: [Timing 38-478] Restoring timing data from binary archive.
+INFO: [Timing 38-479] Binary timing data restore complete.
+INFO: [Project 1-856] Restoring constraints from binary archive.
+INFO: [Project 1-853] Binary constraint restore complete.
+INFO: [Designutils 20-5722] Start Reading Physical Databases.
+Reading placement.
+Read Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.038 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Reading placer database...
+Read Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.013 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Read PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Read placeStorage: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.985 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Read PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Reading routing.
+Read RouteStorage: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.379 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Read Physdb Files: Time (s): cpu = 00:00:02 ; elapsed = 00:00:01 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Restored from archive | CPU: 2.000000 secs | Memory: 0.000000 MB |
+Finished XDEF File Restore: Time (s): cpu = 00:00:02 ; elapsed = 00:00:01 . Memory (MB): peak = 2314.492 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.022 . Memory (MB): peak = 2314.492 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 441 instances were transformed.
+  RAM16X1D => RAM32X1D (RAMD32(x2)): 3 instances
+  RAM32M => RAM32M (RAMD32(x6), RAMS32(x2)): 408 instances
+  RAM32X1D => RAM32X1D (RAMD32(x2)): 30 instances
+
+open_run: Time (s): cpu = 00:00:16 ; elapsed = 00:00:17 . Memory (MB): peak = 2314.492 ; gain = 0.000
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+report_timing_summary: Time (s): cpu = 00:00:20 ; elapsed = 00:00:12 . Memory (MB): peak = 2490.277 ; gain = 129.062
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+Command: report_drc -no_waivers -file C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559/postextract_route_drc.rpt
+INFO: [IP_Flow 19-1839] IP Catalog is up to date.
+INFO: [DRC 23-27] Running DRC with 2 threads
+INFO: [Vivado_Tcl 2-168] The results of DRC are in file C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559/postextract_route_drc.rpt.
+report_drc completed successfully
+Command: report_methodology -no_waivers -file C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559/postextract_route_methodology.rpt
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [DRC 23-133] Running Methodology with 2 threads
+INFO: [Vivado_Tcl 2-1520] The results of Report Methodology are in file C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559/postextract_route_methodology.rpt.
+report_methodology completed successfully
+report_methodology: Time (s): cpu = 00:00:13 ; elapsed = 00:00:07 . Memory (MB): peak = 2510.219 ; gain = 1.004
+POSTROUTE_FCLK1=clk_fpga_1;PERIOD_NS:8.000;SEQ_CELLS:0;PATHS_FROM:0;PATHS_TO:0
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Wrote PlaceDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2510.219 ; gain = 0.000
+Wrote PulsedLatchDB: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2510.219 ; gain = 0.000
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Write ShapeDB Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.118 . Memory (MB): peak = 2551.645 ; gain = 41.426
+Writing XDEF routing special nets.
+Wrote RouteStorage: Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.413 . Memory (MB): peak = 2579.895 ; gain = 69.676
+Wrote PlaceStorage: Time (s): cpu = 00:00:05 ; elapsed = 00:00:02 . Memory (MB): peak = 2579.895 ; gain = 0.000
+Wrote Netlist Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.055 . Memory (MB): peak = 2579.895 ; gain = 0.000
+Wrote Device Cache: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.009 . Memory (MB): peak = 2579.895 ; gain = 0.000
+Write Physdb Complete: Time (s): cpu = 00:00:07 ; elapsed = 00:00:02 . Memory (MB): peak = 2579.895 ; gain = 69.676
+INFO: [Common 17-1381] The checkpoint 'C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559/postextract_routed.dcp' has been generated.
+POSTROUTE_ROUTE=routable:56054;fully_routed:56054;errors:0;boolean_full:1;boolean_partial:0;boolean_errors:0
+POSTROUTE_TIMING=WNS:0.243;TNS:0.000;WHS:0.017;THS:0.000;WPWS:3.750;TPWS:0.000;SETUP_PATH_SLACK:0.243;HOLD_PATH_SLACK:0.017
+POSTROUTE_CONSTRAINTS=no_clock:0;unconstrained_internal_endpoints:0;all_categories:0
+POSTROUTE_CLOCK=clk_fpga_0;PERIOD_NS:10.000
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/CTRL_s_axi_U/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/grp_binarize_core_Pipeline_col_loop_fu_226/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/grp_binarize_core_Pipeline_final_row_fu_278/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/grp_binarize_core_Pipeline_final_row_fu_278/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/regslice_both_bin_out_V_data_V_U/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/regslice_both_bin_out_V_keep_V_U/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/regslice_both_bin_out_V_last_V_U/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/binarize_core_0/inst/regslice_both_gray_in_V_data_V_U/ap_rst_n_inv;fanout:93
+POSTROUTE_RESET_NET=tme_bd_i/patch_extract_core_0/inst/ap_rst_n_inv;fanout:975
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/CTRL_s_axi_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/grp_correlation_core_Pipeline_load_seg_fu_4034/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/grp_correlation_core_Pipeline_load_seg_fu_4034/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/grp_correlation_core_Pipeline_mac_loop_fu_4536/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_correlation_core_fu_1779/grp_correlation_core_Pipeline_mac_loop_fu_4536/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_150_3_fu_1446/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_150_3_fu_1446/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_isq_init_fu_2066/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_isq_init_fu_2066/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_isq_slide_fu_2106/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_isq_slide_fu_2106/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_patch_VITIS_LOOP_96_1_fu_1269/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_patch_VITIS_LOOP_96_1_fu_1269/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_templ_VITIS_LOOP_107_2_fu_1321/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_load_templ_VITIS_LOOP_107_2_fu_1321/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_reset_acc_fu_1345/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_reset_acc_fu_1345/flow_control_loop_pipe_sequential_init_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/regslice_both_patch_stream_V_data_V_U/ap_rst_n_inv;fanout:348
+POSTROUTE_RESET_NET=tme_bd_i/tme_top_0/inst/regslice_both_templ_stream_V_data_V_U/ap_rst_n_inv;fanout:348
+POSTROUTE_WORST_SETUP=slack:0.243;levels:0;datapath_ns:9.131;from:tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_CS_fsm_reg[2]/C;to:tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/p_ZZ7tme_topRN3hls6streamINS_4axisI7ap_uintILi8EELm1ELm1ELm1ELh56ELb0EEELi0EEES6_49_reg_1819_reg[10]/CE
+POSTROUTE_DRC=total:17;fatal_error_or_critical:0;waivers_disabled:1
+POSTROUTE_METHODOLOGY=total:1;fatal_error_or_critical:0;waivers_disabled:1
+POSTROUTE_REPORTED_CONGESTION_MAX_LEVEL=LE3;GATE=PASS_NO_WINDOWS_ABOVE_LEVEL_3
+POSTROUTE_BRAM=RAMB36E1:120;FIFO36E1:0;RAMB18E1:21;FIFO18E1:0;BRAM18_EQ:261/280;BRAM18_EQ_HEADROOM:19
+POSTROUTE_BRAM_TILES=130.5/140.0;TILE_HEADROOM=9.5
+REPORT_DIR=C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559
+ROUTED_CHECKPOINT_COPY=C:/Users/lychee/Desktop/FPGA/combined_current_100/combined_current_100_route_reports_20260821_114559/postextract_routed.dcp
+BITSTREAM_GENERATED=0
+@@POSTEXTRACT_ROUTE_SIGNOFF_PASS@@
+INFO: [Common 17-206] Exiting Vivado at Fri Aug 21 11:46:43 2026...

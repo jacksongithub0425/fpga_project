@@ -1,0 +1,16 @@
+PRIORITY 6 (B0b) — shadow-comparison adequacy
+==========================================================================
+snapshot: C:\Users\lychee\Desktop\FPGA\hls\template_match\b0b_sources\tme_top.shadow.cpp
+suite:    csim_design -argv b1  (12 manifest + 2 direct)
+
+  none               must PASS    -> passed         OK
+  sub_off_by_one     must detect  -> detected       OK
+  add_off_by_one     must detect  -> detected       OK
+  no_set             must detect  -> detected       OK
+  sub_becomes_add    must detect  -> detected       OK
+  short_slide        must detect  -> detected       OK
+  swap_sub_add       must PASS    -> passed         OK
+
+all 7 verdicts as required — the shadow comparison
+detects every must-detect defect class on this suite, and passes
+the two controls.

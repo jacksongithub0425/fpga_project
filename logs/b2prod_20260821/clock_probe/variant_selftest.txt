@@ -1,0 +1,15 @@
+@@VARIANT_SELFTEST_BEGIN@@
+default_variant=baseline
+  default matcher_vlnv   = 'TermCount:hls:tme_top:0.2'
+  default fclk0_mhz      = '50'
+  default period_ns      = '20.0'
+  default fclk1_mhz      = ''
+  default div_product    = '32'
+  default report_prefix  = 'postextract'
+  default expected_clocks = {clk_fpga_0}
+BASELINE_DEFAULTS_RETAINED=PASS
+VARIANT baseline               vlnv=TermCount:hls:tme_top:0.2    fclk0=50   period=20.0  fclk1=off  clocks={clk_fpga_0} prefix=postextract predicted_board=31.2500MHz
+VARIANT combined_current_100   vlnv=TermCount:hls:tme_top:0.2    fclk0=100  period=10.0  fclk1=125  clocks={clk_fpga_0 clk_fpga_1} prefix=combined_current_100 predicted_board=100.0000MHz
+VARIANT combined_b2_100        vlnv=TermCountB2:hls:tme_top:0.2  fclk0=100  period=10.0  fclk1=125  clocks={clk_fpga_0 clk_fpga_1} prefix=combined_b2_100 predicted_board=100.0000MHz
+TYPO_IS_FATAL=PASS (unknown B2PROD_VARIANT 'combined_b2_1OO'; known: baseline combined_current_100 combined_b2_100)
+@@VARIANT_SELFTEST_END@@

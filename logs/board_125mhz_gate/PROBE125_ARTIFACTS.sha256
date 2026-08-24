@@ -1,0 +1,66 @@
+# SHA-256 of the Priority 2 / 125 MHz clock-probe overlay — the LOCAL PROBE PAIR
+# REPORTED AS UPLOADED AND CONFIGURED on 2026-08-17.  Same discipline as
+# sw/GATE4_VECTORS.sha256 and sw/GATE5_VECTORS.sha256.
+#
+# WHY THIS FILE EXISTS SEPARATELY.  The probe artifacts are BUILD OUTPUTS that
+# live outside the repository (Vivado build root below) and were RENAMED on
+# upload, so neither the repo tree nor the board's filenames identify them.
+# This manifest is the only record joining the two names to one pair of hashes.
+#
+# Build root : C:/Users/lychee/tc25/vivado_project/tme_standalone_125/overlay_output/
+# Built with : build_tme_standalone.tcl, TME_FCLK_MHZ=125  (unchanged RTL,
+#              TermCount:hls:tme_top:0.2, xc7z020clg400-1)
+# Routed     : 8.000 ns constraint, WNS +0.063836 ns, all constraints met
+#              (post_route_wns.txt in the same build root)
+# Board dest : /home/xilinx/jupyter_notebooks/tme_probe125/
+#              tme_standalone.bit -> tme_probe125.bit
+#              tme_standalone.hwh -> tme_probe125.hwh
+#
+# Verify locally (from the build root):
+#     sha256sum -c /c/Users/lychee/Desktop/FPGA/logs/board_125mhz_gate/PROBE125_ARTIFACTS.sha256
+#
+# ---------------------------------------------------------------------------
+# WHAT THE BOARD-SIDE HASH DOES AND DOES NOT ESTABLISH
+# ---------------------------------------------------------------------------
+# The hashes below are of the LOCAL files.  The gate session verified the
+# uploaded copies by sha256 before configuring the PL, but that comparison was
+# not written into the retained transcripts (00..03_*.txt).
+#
+# Re-hashing the board-side copies now yields POST-HOC CORROBORATION, NOT
+# CLOSURE OF THE HISTORICAL CHAIN.  It shows that files with these hashes are
+# present at that path today; it cannot show that these were the bytes the PL
+# was configured from on 2026-08-17, because nothing in the retained record
+# binds the configure step to a hash taken at that moment.  STRICT CLOSURE
+# WOULD REQUIRE HASHING IMMEDIATELY BEFORE A REPEATED GATE RUN, in the same
+# transcript as the configure and the vectors.
+#
+# The operational gate stands on its own (9/9 vectors, measured 125.0 MHz).
+#
+# Corroboration command — run from the workspace root in PowerShell.  Do not
+# use a `| tee` pipeline in Git Bash: it reports the exit status of tee, so a
+# failing board call can still look successful.
+#
+#   & .\.venv\Scripts\python.exe sw\board.py sh "set -eu; date -u '+%Y-%m-%dT%H:%M:%SZ'; hostname; stat -c '%n|%s|%y' /home/xilinx/jupyter_notebooks/tme_probe125/tme_probe125.bit /home/xilinx/jupyter_notebooks/tme_probe125/tme_probe125.hwh; sha256sum /home/xilinx/jupyter_notebooks/tme_probe125/tme_probe125.bit /home/xilinx/jupyter_notebooks/tme_probe125/tme_probe125.hwh" 2>&1 |
+#       Tee-Object -FilePath logs\board_125mhz_gate\04_artifact_checksums.txt
+#
+# The retained output is acceptable only if it contains BOTH expected hashes
+# below AND the line `__EXIT__ 0`.  If the probe artifacts have since been
+# removed from the board, do not back-fill: re-upload and re-run the gate.
+#
+# CORROBORATION OBTAINED 2026-08-18T05:39:08Z -> 04_artifact_checksums.txt
+#   host pynq; both hashes match; both sizes match (4,045,690 / 395,091 B);
+#   __EXIT__ 0 present.  Board-side mtimes are 2026-08-18 04:48:59.926 and
+#   04:49:01.416 UTC, which fall inside the gate session window (the board had
+#   booted at 04:42 UTC per 00_preexisting_state.txt and the PL was configured
+#   after the upload per 01_load_and_clock.txt).
+#
+#   That timestamp agreement is consistent with these having been the
+#   configured bytes, and it is still not proof: nothing in the retained record
+#   binds the configure step to a hash taken at that moment, and an mtime is
+#   not an integrity witness.  This remains POST-HOC CORROBORATION.  The
+#   historical chain closes only by hashing immediately before a repeated gate
+#   run, in the same transcript as the configure and the vectors.
+# ---------------------------------------------------------------------------
+#
+fdebaf75597a4e43e2a3bc590e2d7395e4fd03584962f90ac4e047e3a126c6c1  tme_standalone.bit
+614a8bb7580f368cdef1489a7e8c67411c4e13d328cef9cf78a5881fdd8a06f9  tme_standalone.hwh

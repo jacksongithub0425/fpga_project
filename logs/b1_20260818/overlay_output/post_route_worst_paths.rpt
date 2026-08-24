@@ -1,0 +1,1069 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Tue Aug 18 21:44:19 2026
+| Host         : DESKTOP-KG9P5J1 running 64-bit major release  (build 9200)
+| Command      : report_timing -delay_type max -sort_by slack -max_paths 20 -nworst 1 -file C:/Users/lychee/tc25/vivado_project/tme_b1_125/overlay_output/post_route_worst_paths.rpt
+| Design       : tme_bd_wrapper
+| Device       : 7z020-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Routed
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (MET) :             0.135ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_178_fu_1060_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.589ns  (logic 2.454ns (32.338%)  route 5.135ns (67.662%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.071ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.788ns = ( 10.788 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.135    10.576    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X99Y98         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_178_fu_1060_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.609    10.788    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X99Y98         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_178_fu_1060_reg[3]/C
+                         clock pessimism              0.129    10.917    
+                         clock uncertainty           -0.125    10.792    
+    SLICE_X99Y98         FDRE (Setup_fdre_C_D)       -0.081    10.711    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_178_fu_1060_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.711    
+                         arrival time                         -10.576    
+  -------------------------------------------------------------------
+                         slack                                  0.135    
+
+Slack (MET) :             0.157ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_113_fu_1320_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.774ns  (logic 2.454ns (31.567%)  route 5.320ns (68.433%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.102ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.960ns = ( 10.960 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.320    10.762    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X96Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_113_fu_1320_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.781    10.960    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X96Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_113_fu_1320_reg[3]/C
+                         clock pessimism              0.129    11.089    
+                         clock uncertainty           -0.125    10.964    
+    SLICE_X96Y108        FDRE (Setup_fdre_C_D)       -0.045    10.919    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_113_fu_1320_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.919    
+                         arrival time                         -10.762    
+  -------------------------------------------------------------------
+                         slack                                  0.157    
+
+Slack (MET) :             0.216ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_112_fu_1324_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.677ns  (logic 2.454ns (31.968%)  route 5.223ns (68.032%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.099ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.957ns = ( 10.957 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.223    10.664    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X97Y112        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_112_fu_1324_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.778    10.957    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X97Y112        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_112_fu_1324_reg[3]/C
+                         clock pessimism              0.129    11.086    
+                         clock uncertainty           -0.125    10.961    
+    SLICE_X97Y112        FDRE (Setup_fdre_C_D)       -0.081    10.880    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_112_fu_1324_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.880    
+                         arrival time                         -10.664    
+  -------------------------------------------------------------------
+                         slack                                  0.216    
+
+Slack (MET) :             0.267ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_145_fu_1192_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.625ns  (logic 2.454ns (32.183%)  route 5.171ns (67.817%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.099ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.957ns = ( 10.957 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.171    10.613    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X93Y109        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_145_fu_1192_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.778    10.957    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X93Y109        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_145_fu_1192_reg[3]/C
+                         clock pessimism              0.129    11.086    
+                         clock uncertainty           -0.125    10.961    
+    SLICE_X93Y109        FDRE (Setup_fdre_C_D)       -0.081    10.880    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_145_fu_1192_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.880    
+                         arrival time                         -10.613    
+  -------------------------------------------------------------------
+                         slack                                  0.267    
+
+Slack (MET) :             0.270ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.560ns  (logic 0.918ns (12.142%)  route 6.642ns (87.858%))
+  Logic Levels:           2  (MUXF7=1 MUXF8=1)
+  Clock Path Skew:        -0.109ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.817ns = ( 10.817 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.055ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.761     3.055    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X90Y75         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X90Y75         FDRE (Prop_fdre_C_Q)         0.518     3.573 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/Q
+                         net (fo=177, routed)         6.642    10.215    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509[2]
+    SLICE_X37Y123        MUXF7 (Prop_muxf7_S_O)       0.296    10.511 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]_i_2/O
+                         net (fo=1, routed)           0.000    10.511    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]_i_2_n_2
+    SLICE_X37Y123        MUXF8 (Prop_muxf8_I0_O)      0.104    10.615 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]_i_1/O
+                         net (fo=1, routed)           0.000    10.615    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]_i_1_n_2
+    SLICE_X37Y123        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.638    10.817    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X37Y123        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]/C
+                         clock pessimism              0.129    10.946    
+                         clock uncertainty           -0.125    10.821    
+    SLICE_X37Y123        FDRE (Setup_fdre_C_D)        0.064    10.885    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[24]
+  -------------------------------------------------------------------
+                         required time                         10.885    
+                         arrival time                         -10.615    
+  -------------------------------------------------------------------
+                         slack                                  0.270    
+
+Slack (MET) :             0.282ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_150_fu_1172_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.648ns  (logic 2.454ns (32.089%)  route 5.194ns (67.911%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.100ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.958ns = ( 10.958 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.194    10.635    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X92Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_150_fu_1172_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.779    10.958    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X92Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_150_fu_1172_reg[3]/C
+                         clock pessimism              0.129    11.087    
+                         clock uncertainty           -0.125    10.962    
+    SLICE_X92Y108        FDRE (Setup_fdre_C_D)       -0.045    10.917    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_150_fu_1172_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.917    
+                         arrival time                         -10.635    
+  -------------------------------------------------------------------
+                         slack                                  0.282    
+
+Slack (MET) :             0.288ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_161_fu_1128_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.658ns  (logic 2.454ns (32.044%)  route 5.204ns (67.956%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.100ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.958ns = ( 10.958 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.204    10.646    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X90Y103        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_161_fu_1128_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.779    10.958    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X90Y103        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_161_fu_1128_reg[3]/C
+                         clock pessimism              0.129    11.087    
+                         clock uncertainty           -0.125    10.962    
+    SLICE_X90Y103        FDRE (Setup_fdre_C_D)       -0.028    10.934    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_161_fu_1128_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.934    
+                         arrival time                         -10.646    
+  -------------------------------------------------------------------
+                         slack                                  0.288    
+
+Slack (MET) :             0.289ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_2_fu_1764_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.414ns  (logic 2.454ns (33.101%)  route 4.960ns (66.899%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.091ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.886ns = ( 10.886 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.960    10.506    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X64Y117        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_2_fu_1764_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.707    10.886    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X64Y117        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_2_fu_1764_reg[2]/C
+                         clock pessimism              0.115    11.001    
+                         clock uncertainty           -0.125    10.876    
+    SLICE_X64Y117        FDRE (Setup_fdre_C_D)       -0.081    10.795    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_2_fu_1764_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.795    
+                         arrival time                         -10.506    
+  -------------------------------------------------------------------
+                         slack                                  0.289    
+
+Slack (MET) :             0.294ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.540ns  (logic 0.918ns (12.175%)  route 6.622ns (87.825%))
+  Logic Levels:           2  (MUXF7=1 MUXF8=1)
+  Clock Path Skew:        -0.105ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.821ns = ( 10.821 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.055ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.761     3.055    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X90Y75         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X90Y75         FDRE (Prop_fdre_C_Q)         0.518     3.573 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/Q
+                         net (fo=177, routed)         6.622    10.195    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509[2]
+    SLICE_X37Y119        MUXF7 (Prop_muxf7_S_O)       0.296    10.491 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]_i_2/O
+                         net (fo=1, routed)           0.000    10.491    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]_i_2_n_2
+    SLICE_X37Y119        MUXF8 (Prop_muxf8_I0_O)      0.104    10.595 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]_i_1/O
+                         net (fo=1, routed)           0.000    10.595    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]_i_1_n_2
+    SLICE_X37Y119        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.642    10.821    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X37Y119        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]/C
+                         clock pessimism              0.129    10.950    
+                         clock uncertainty           -0.125    10.825    
+    SLICE_X37Y119        FDRE (Setup_fdre_C_D)        0.064    10.889    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[20]
+  -------------------------------------------------------------------
+                         required time                         10.889    
+                         arrival time                         -10.595    
+  -------------------------------------------------------------------
+                         slack                                  0.294    
+
+Slack (MET) :             0.296ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_182_fu_1044_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.418ns  (logic 2.454ns (33.082%)  route 4.964ns (66.918%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.080ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.897ns = ( 10.897 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.964    10.510    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X85Y109        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_182_fu_1044_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.718    10.897    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X85Y109        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_182_fu_1044_reg[2]/C
+                         clock pessimism              0.115    11.012    
+                         clock uncertainty           -0.125    10.887    
+    SLICE_X85Y109        FDRE (Setup_fdre_C_D)       -0.081    10.806    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_182_fu_1044_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.806    
+                         arrival time                         -10.510    
+  -------------------------------------------------------------------
+                         slack                                  0.296    
+
+Slack (MET) :             0.298ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_121_fu_1288_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.633ns  (logic 2.454ns (32.149%)  route 5.179ns (67.851%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.102ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.960ns = ( 10.960 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.179    10.621    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X96Y107        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_121_fu_1288_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.781    10.960    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X96Y107        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_121_fu_1288_reg[3]/C
+                         clock pessimism              0.129    11.089    
+                         clock uncertainty           -0.125    10.964    
+    SLICE_X96Y107        FDRE (Setup_fdre_C_D)       -0.045    10.919    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_121_fu_1288_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.919    
+                         arrival time                         -10.621    
+  -------------------------------------------------------------------
+                         slack                                  0.298    
+
+Slack (MET) :             0.299ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_153_fu_1160_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.428ns  (logic 2.454ns (33.036%)  route 4.974ns (66.964%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.080ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.897ns = ( 10.897 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.974    10.521    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X85Y110        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_153_fu_1160_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.718    10.897    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X85Y110        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_153_fu_1160_reg[2]/C
+                         clock pessimism              0.115    11.012    
+                         clock uncertainty           -0.125    10.887    
+    SLICE_X85Y110        FDRE (Setup_fdre_C_D)       -0.067    10.820    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_153_fu_1160_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.820    
+                         arrival time                         -10.521    
+  -------------------------------------------------------------------
+                         slack                                  0.299    
+
+Slack (MET) :             0.300ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_118_fu_1300_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.632ns  (logic 2.454ns (32.155%)  route 5.178ns (67.845%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.102ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.960ns = ( 10.960 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.178    10.619    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X94Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_118_fu_1300_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.781    10.960    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X94Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_118_fu_1300_reg[3]/C
+                         clock pessimism              0.129    11.089    
+                         clock uncertainty           -0.125    10.964    
+    SLICE_X94Y108        FDRE (Setup_fdre_C_D)       -0.045    10.919    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_118_fu_1300_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.919    
+                         arrival time                         -10.619    
+  -------------------------------------------------------------------
+                         slack                                  0.300    
+
+Slack (MET) :             0.300ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_11_fu_1728_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.414ns  (logic 2.454ns (33.097%)  route 4.960ns (66.903%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.093ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.884ns = ( 10.884 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.960    10.507    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X67Y118        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_11_fu_1728_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.705    10.884    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X67Y118        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_11_fu_1728_reg[2]/C
+                         clock pessimism              0.115    10.999    
+                         clock uncertainty           -0.125    10.874    
+    SLICE_X67Y118        FDRE (Setup_fdre_C_D)       -0.067    10.807    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_11_fu_1728_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.807    
+                         arrival time                         -10.507    
+  -------------------------------------------------------------------
+                         slack                                  0.300    
+
+Slack (MET) :             0.302ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_32_fu_1644_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.407ns  (logic 2.454ns (33.132%)  route 4.953ns (66.868%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.085ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.892ns = ( 10.892 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.953    10.499    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X61Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_32_fu_1644_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.713    10.892    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X61Y108        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_32_fu_1644_reg[2]/C
+                         clock pessimism              0.115    11.007    
+                         clock uncertainty           -0.125    10.882    
+    SLICE_X61Y108        FDRE (Setup_fdre_C_D)       -0.081    10.801    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_32_fu_1644_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.801    
+                         arrival time                         -10.499    
+  -------------------------------------------------------------------
+                         slack                                  0.302    
+
+Slack (MET) :             0.302ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_164_fu_1116_reg[3]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.629ns  (logic 2.454ns (32.168%)  route 5.175ns (67.832%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.101ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.959ns = ( 10.959 - 8.000 ) 
+    Source Clock Delay      (SCD):    2.987ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.693     2.987    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X2Y18         RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X2Y18         RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.441 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_3/DOBDO[0]
+                         net (fo=216, routed)         5.175    10.616    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[3]
+    SLICE_X90Y101        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_164_fu_1116_reg[3]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.780    10.959    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X90Y101        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_164_fu_1116_reg[3]/C
+                         clock pessimism              0.129    11.088    
+                         clock uncertainty           -0.125    10.963    
+    SLICE_X90Y101        FDRE (Setup_fdre_C_D)       -0.045    10.918    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_164_fu_1116_reg[3]
+  -------------------------------------------------------------------
+                         required time                         10.918    
+                         arrival time                         -10.616    
+  -------------------------------------------------------------------
+                         slack                                  0.302    
+
+Slack (MET) :             0.304ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.586ns  (logic 0.930ns (12.259%)  route 6.656ns (87.741%))
+  Logic Levels:           2  (MUXF7=1 MUXF8=1)
+  Clock Path Skew:        -0.098ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.828ns = ( 10.828 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.055ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.761     3.055    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X90Y75         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X90Y75         FDRE (Prop_fdre_C_Q)         0.518     3.573 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/Q
+                         net (fo=177, routed)         6.656    10.229    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509[2]
+    SLICE_X34Y114        MUXF7 (Prop_muxf7_S_O)       0.314    10.543 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]_i_2/O
+                         net (fo=1, routed)           0.000    10.543    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]_i_2_n_2
+    SLICE_X34Y114        MUXF8 (Prop_muxf8_I0_O)      0.098    10.641 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]_i_1/O
+                         net (fo=1, routed)           0.000    10.641    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]_i_1_n_2
+    SLICE_X34Y114        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.649    10.828    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X34Y114        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]/C
+                         clock pessimism              0.129    10.957    
+                         clock uncertainty           -0.125    10.832    
+    SLICE_X34Y114        FDRE (Setup_fdre_C_D)        0.113    10.945    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[8]
+  -------------------------------------------------------------------
+                         required time                         10.945    
+                         arrival time                         -10.641    
+  -------------------------------------------------------------------
+                         slack                                  0.304    
+
+Slack (MET) :             0.304ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_159_fu_1136_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.423ns  (logic 2.454ns (33.059%)  route 4.969ns (66.941%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.080ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.897ns = ( 10.897 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.969    10.516    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X84Y110        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_159_fu_1136_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.718    10.897    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X84Y110        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_159_fu_1136_reg[2]/C
+                         clock pessimism              0.115    11.012    
+                         clock uncertainty           -0.125    10.887    
+    SLICE_X84Y110        FDRE (Setup_fdre_C_D)       -0.067    10.820    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_159_fu_1136_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.820    
+                         arrival time                         -10.516    
+  -------------------------------------------------------------------
+                         slack                                  0.304    
+
+Slack (MET) :             0.306ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+                            (rising edge-triggered cell RAMB36E1 clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_79_fu_1456_reg[2]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.403ns  (logic 2.454ns (33.147%)  route 4.949ns (66.853%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.098ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.879ns = ( 10.879 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.092ns
+    Clock Pessimism Removal (CPR):    0.115ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.798     3.092    tme_bd_i/tme_top_0/inst/templ_buf_U/ap_clk
+    RAMB36_X0Y9          RAMB36E1                                     r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/CLKBWRCLK
+  -------------------------------------------------------------------    -------------------
+    RAMB36_X0Y9          RAMB36E1 (Prop_ramb36e1_CLKBWRCLK_DOBDO[0])
+                                                      2.454     5.546 r  tme_bd_i/tme_top_0/inst/templ_buf_U/ram_reg_0_2/DOBDO[0]
+                         net (fo=216, routed)         4.949    10.496    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/q0[2]
+    SLICE_X56Y119        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_79_fu_1456_reg[2]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.700    10.879    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/ap_clk
+    SLICE_X56Y119        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_79_fu_1456_reg[2]/C
+                         clock pessimism              0.115    10.994    
+                         clock uncertainty           -0.125    10.869    
+    SLICE_X56Y119        FDRE (Setup_fdre_C_D)       -0.067    10.802    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_VITIS_LOOP_181_3_fu_1446/t_row_79_fu_1456_reg[2]
+  -------------------------------------------------------------------
+                         required time                         10.802    
+                         arrival time                         -10.496    
+  -------------------------------------------------------------------
+                         slack                                  0.306    
+
+Slack (MET) :             0.312ns  (required time - arrival time)
+  Source:                 tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]/D
+                            (rising edge-triggered cell FDRE clocked by clk_fpga_0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_fpga_0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_fpga_0 rise@8.000ns - clk_fpga_0 rise@0.000ns)
+  Data Path Delay:        7.527ns  (logic 0.918ns (12.196%)  route 6.609ns (87.804%))
+  Logic Levels:           2  (MUXF7=1 MUXF8=1)
+  Clock Path Skew:        -0.100ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    2.826ns = ( 10.826 - 8.000 ) 
+    Source Clock Delay      (SCD):    3.055ns
+    Clock Pessimism Removal (CPR):    0.129ns
+  Clock Uncertainty:      0.125ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.240ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_fpga_0 rise edge)
+                                                      0.000     0.000 r  
+    PS7_X0Y0             PS7                          0.000     0.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.193     1.193    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.101     1.294 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.761     3.055    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X90Y75         FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X90Y75         FDRE (Prop_fdre_C_Q)         0.518     3.573 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509_reg[2]/Q
+                         net (fo=177, routed)         6.609    10.182    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/u_reg_1509[2]
+    SLICE_X35Y116        MUXF7 (Prop_muxf7_S_O)       0.296    10.478 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]_i_2/O
+                         net (fo=1, routed)           0.000    10.478    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]_i_2_n_2
+    SLICE_X35Y116        MUXF8 (Prop_muxf8_I0_O)      0.104    10.582 r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]_i_1/O
+                         net (fo=1, routed)           0.000    10.582    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]_i_1_n_2
+    SLICE_X35Y116        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_fpga_0 rise edge)
+                                                      8.000     8.000 r  
+    PS7_X0Y0             PS7                          0.000     8.000 r  tme_bd_i/processing_system7_0/inst/PS7_i/FCLKCLK[0]
+                         net (fo=1, routed)           1.088     9.088    tme_bd_i/processing_system7_0/inst/FCLK_CLK_unbuffered[0]
+    BUFGCTRL_X0Y16       BUFG (Prop_bufg_I_O)         0.091     9.179 r  tme_bd_i/processing_system7_0/inst/buffer_fclk_clk_0.FCLK_CLK_0_BUFG/O
+                         net (fo=19675, routed)       1.647    10.826    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/ap_clk
+    SLICE_X35Y116        FDRE                                         r  tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]/C
+                         clock pessimism              0.129    10.955    
+                         clock uncertainty           -0.125    10.830    
+    SLICE_X35Y116        FDRE (Setup_fdre_C_D)        0.064    10.894    tme_bd_i/tme_top_0/inst/grp_tme_top_Pipeline_norm_cols_fu_1670/sti_reg_2004_reg[11]
+  -------------------------------------------------------------------
+                         required time                         10.894    
+                         arrival time                         -10.582    
+  -------------------------------------------------------------------
+                         slack                                  0.312    
+
+
+
+

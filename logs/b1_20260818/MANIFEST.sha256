@@ -1,0 +1,70 @@
+# Priority 4 (B1) evidence manifest
+# sha256 of each artifact; text is EOL-normalised to LF first.
+# Verify with: python tme_b1_manifest.py --verify
+#
+# This binds files, not claims.  tme_b1_ab.py --assert and
+# tme_cycle_model.py --assert are what say the numbers are right;
+# this says they are the same numbers.
+
+9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  hls/template_match/b1_sources/correlation_core.cur.cpp  # source cur
+e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/b1_sources/correlation_core.b1.cpp  # source b1
+17e3b1ec8169c61d8e91c6ed005cb8e53e5afc7d4bd590ec32dcc254f9519242  hls/template_match/b1_sources/correlation_core.b1b.cpp  # source b1b
+483493e8583126f244ddddb01600ebd0915d4be45e9aae94e991e57395a1ffcb  hls/template_match/correlation_core.cpp  # source shipped
+50457ed35da2a28fe6c150e90c4c8b4d6f4a0acb39e2520291be01755a3bfd5f  logs/b1_20260818/correlation_core.cpp.b1_break  # source cosimmed b1
+9ca36c4733a93302121a6e0aceeb57085d41047d6b84c05c3f9bc8aacb699d2b  logs/b1_20260818/correlation_core.cpp.pre_b1  # source pre-B1
+79a006c562c69858a5de551cfe16baf9df027d4ac2e3dcb0fdd34f3e9431ebe0  hls/template_match/template_match_b1_cur/cur/sim/report/verilog/result.transaction.rpt  # cosim cur
+222e5d7704debcf15bc3f3373987681d0f67801d6e4791850a96ed99a8863178  hls/template_match/template_match_b1_b1/b1/sim/report/verilog/result.transaction.rpt  # cosim b1
+222e5d7704debcf15bc3f3373987681d0f67801d6e4791850a96ed99a8863178  hls/template_match/template_match_b1_b1b/b1b/sim/report/verilog/result.transaction.rpt  # cosim b1b
+a4c0040827ce14e52ffd1ac988da1b81add8cbe5bb4312d2f08e4fc2fe48988f  hls/template_match/template_match_b1_cur/cur/syn/report/csynth.rpt  # csynth cur
+5e82ca5719df662bfbc4758ebc07b86f2f7e5f786c1107484d341acd35ec5fa4  hls/template_match/template_match_b1_b1/b1/syn/report/csynth.rpt  # csynth b1
+08876cd35f5f814725eb4a6bcbb3092ab1038ea4eeb0d2b24e099cbae460679d  hls/template_match/template_match_b1_b1b/b1b/syn/report/csynth.rpt  # csynth b1b
+6bda782422c4672f51b670ca7afb107278d43491aadd9c1be70f5c74d6b0a8f2  logs/b1_20260818/b1_post_route_wns.txt  # routed wns
+74eb429ba0c0cab18896e2e4c22015c4fc2c67f560c5026a7bb219536a8c1e9f  logs/b1_20260818/b1_post_route_utilization.rpt  # routed utilisation
+335a3d2c140ba9dcdff7d2514fb72fa2e5771d0fff839bdd9fca815c0fc2d79e  logs/b1_20260818/overlay_output/post_route_timing_summary.rpt  # routed timing summary
+a0bb9edfb65d7e4c6475395d8c961026627944b40c004deca8fe5971c3e31f3c  logs/b1_20260818/overlay_output/post_route_worst_paths.rpt  # routed worst paths
+2cd4a2b0fe696bc67585e6c79ce5d488151522b45f02e9050ea73bc9d98370a7  logs/b1_20260818/overlay_output/tme_standalone.bit  # bitstream
+ffa94282d5ad458abf24a51861da7bc276369b17d6fee3c42ef66cf196af8716  logs/b1_20260818/overlay_output/tme_standalone.hwh  # hardware handoff
+26cc727c874b3515da4043f83d06deb3cc0f3790bfb76806762045596da95a08  vivado/tme_standalone/build_tme_standalone.tcl  # build script
+2bca7fd95fe8d34935a4e15201486098b5816ad3526e6ed1dd6ddb3ec1cc0b5b  hls/template_match/template_match_b1/b1/impl/ip/component.xml  # packaged IP (re-export)
+532e476b1343d24eeec27d9213ef767d10aba379ff4c0f54ce31a38ca2604b6a  hls/template_match/template_match_b1/b1/impl/ip/TermCountB1_hls_tme_top_0_2.zip  # packaged IP archive (re-export)
+839a93e53dd341aba2354468aadec363708405b370f0ddb10b136ba0c2fa9702  hls/template_match/template_match_b1/SUPERSEDED.md  # superseded project marker
+257c5bc8c258338591acb5d23debb2f9d484200b058be18ec61640575992e8b1  logs/b1_rerun_20260818/rerun_all.sh  # rerun driver
+736f0c76d871beac819d9723c536d36b6dbe04038100b93c3adc4543d916fcc6  logs/b1_rerun_20260818/rerun_status.txt  # rerun status
+c9cc770ba94369f83c4f93fe53784dda260f78979267963f889498423aaaab7b  logs/b1_rerun_20260818/run_cur.log  # rerun log cur
+f28df2b86c1f6363ae5251c3b7809661ae3f147fbb91d5cf3cac7f33ce140758  logs/b1_rerun_20260818/run_b1.log  # rerun log b1
+8314d42efa10f82029def525f0ac9619fd5ac14f36a4fd9b4c57416f69db4109  logs/b1_rerun_20260818/run_b1b.log  # rerun log b1b
+959eb3c9488f00951c192fc037bc50ab27d55d04acfb66a7e46a1d65916ef479  sw/tme_cycle_model.py  # model
+e08fdb32f32fd0e01d60acab0a90ed37a6d37c6ce3fec1be4db7c919d15463c4  logs/b1_20260818/tme_cycle_model.py.pre_b1  # model pre-B1
+f381eab2273210a1360fe7db04819430a6f463e119ea87ed6cd12d77ef130693  sw/tme_b1_ab.py  # adjudicator
+12c79a802217faab1169ff0ab0fdd2dcbb0991b9585aae22a80723768b3e08b8  sw/tme_scale_policy.py  # scale policy
+8ea4224eb10a5756e47c5ecc4f8ec603ac097b2b9a9ae3d3ce9e0d3f4e7bc13a  sw/tme_b1_manifest.py  # manifest tool
+c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
+5b988234c300a7ef9c321f5c39b8e8204038fd434150d5812113bbc2f91aa29f  hls/template_match/tme_tb.cpp  # testbench
+b73605cb9de997d0d477e9e57651902e30ce871caf4e7bf1f0db0d22f45e069c  hls/template_match/run_hls_b1.tcl  # ab project script
+3237e72d649c64586675004c68ada40c715c8db6bcccd1ed07d73c7c9a654e74  hls/template_match/package_b1.tcl  # packaging script
+1c1d14c916fd9a61b80a6df9db3950832c50e8172221d1859b1885510d6e3461  hls/template_match/csim_prod_b1.tcl  # prod csim script
+a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
+cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
+e73d1d25f8f70c801382e98da32c2fdd8fdf79367e69d4fff8519ebe524dea88  logs/b1_20260818/run_cur.log  # log cur
+d781c6e658ac02f6311bd2eb30061781d0623c4380ffa1d4185b9c7f3c0722db  logs/b1_20260818/run_b1.log  # log b1
+964776c811e0cc54fa0818377aebc748149dbd9b8f7176920726dc0de2985b92  logs/b1_20260818/run_b1b.log  # log b1b
+e459d5a94e52b9d73c07113be083d0c958c87eee0af3da91f1f602ea8dd92d0d  logs/b1_20260818/csim_prod.log  # log prod csim
+a35e7597e9fdf9e1f46e1cc58d97dd2624c205898d2235da8d2f7d17b641b30c  logs/b1_20260818/package_b1.log  # log packaging
+c9567b5d69e27a0f2ccad458c0b1c45ecd30376cbc2234f24b19be1acd179248  logs/b1_20260818/vivado_b1_125.log  # log vivado
+fb359241e82d5c5e0717e1f37b7fe7f534e2fc8f82d7e91c0ff9c725ee56b8d0  logs/b1_board_20260818/00_prestate.txt  # board prestate
+434cf7c8d1956db8e8d26806dd9818d5d8ac5d6e69b7ca2c91b0b3ef832f691f  logs/b1_board_20260818/01_hashes_local.txt  # board hashes host
+e736521980d4c25fc1c4f214d6285fe7ff387ea0ffc7b3664107edc3e9e6dfcd  logs/b1_board_20260818/02_hashes_remote.txt  # board hashes remote
+011321a5d0308acb48ff8e9ff99f1fae86abb4e5e330cc02ab6df7504de46fb7  logs/b1_board_20260818/03_run.txt  # board run
+4a107e5d45b4e9e347d922a50173932a970d986345d1216977ce50db69426e5b  logs/b1_board_20260818/04_restore.txt  # board restore
+4a698e5c3af52da9c74805a561a02a8856aa07c403763eb24ed728a344ddddad  logs/b1_board_20260818/B1_BOARD_SESSION.md  # board session
+02da06beb8d9618f738893a44fedc7fcfeb06db13f5a1dd1ca736c9ae0e5627e  logs/b1_board_20260818/00_prestate.sh  # board prestate script
+685434b7a4512227da8ce0543ae537d3837853d5c1d99136b0eac5a31bd10d98  logs/b1_board_20260818/04_restore.sh  # board restore script
+0487970183bcb4b64d1569303f7f2a44015fb0c82c4585f57152c14746d937c9  logs/b1_board_20260818/tme_standalone_bringup.py.as_run  # board runner as-run
+ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  sw/tme_standalone_bringup.py  # board runner current
+8eabf33aec39ea791a98f85ed6d4257deba4d11a86f104409369f08f5bd783a7  hls/template_match/tb_tme_cases_phase_s.txt  # board vectors cases
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  hls/template_match/tb_tme_patches_phase_s.bin  # board vectors patches
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  hls/template_match/tb_tme_templs_phase_s.bin  # board vectors templates
+b338e54b5f91c1441085a4ec930b8b69ec9ef149a142c48ad8a70c16386ff6d0  hls/template_match/tb_tme_phase_s.sha256  # board vector record
+5ee61bdac75bc3a70d23ac183a932d446d88c45a58fa3b0f73aa6381f6b86f64  logs/b1_20260818/PRIORITY4_EVIDENCE.md  # evidence
+6a40c544ccf125d569fb988d239431baf921673dc3b0787dba19c771037d273c  hls/template_match/b1_sources/README.md  # pinned-source README
+276f995594b7a9c7dfe97a05f232e76a5dc58fb08a1e4eb0f3cb15c6851e58f0  trace_20260818b/B1_COLUMN_STALE.md  # stale-column marker

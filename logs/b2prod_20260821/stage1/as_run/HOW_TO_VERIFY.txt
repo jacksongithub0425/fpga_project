@@ -1,0 +1,26 @@
+`sha256sum -c PAYLOAD.sha256` DOES NOT RUN HERE, and never did.
+
+PAYLOAD.sha256 hashes the whole uploaded board payload under the payload's
+own BARE names (32 entries, e.g. `board_expect.py`).  This directory holds a
+RENAMED SUBSET of that payload -- 9 files, each `<name>.as_run` -- kept
+because they are the scripts the transcripts were produced by.  So `-c`
+reports every line as "No such file or directory"; that is the naming, not
+a corruption.
+
+What verifies these files, and does pass for all 9:
+
+    for f in *.as_run; do
+        bare=${f%.as_run}
+        want=$(grep -E "[*]${bare}$" PAYLOAD.sha256 | cut -d' ' -f1)
+        got=$(sha256sum "$f" | cut -d' ' -f1)
+        [ "$want" = "$got" ] && echo "OK   $bare" || echo "FAIL $bare"
+    done
+
+The remaining PAYLOAD.sha256 entries name files that were uploaded but not
+snapshotted here; they are the board payload's record, not a claim about
+this directory's contents.
+
+This file was ADDED BY THE MIRROR (it is not in the out-of-repository
+original at C:/Users/lychee/Desktop/FPGA/logs/b2prod_20260821/).  The
+bytes it describes are untouched -- see .gitattributes, which marks this
+whole tree `-text` so a checkout cannot rewrite them.

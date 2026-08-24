@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Does the injected 1.19.2 actually DO the three things the pipeline needs?
+
+`detect_page()` needs `fitz` for three INPUTS, not just for drawing:
+
+    render_page                       page.get_pixmap()  (+ samples_mv)
+    extract_words                     page.get_text("words")
+    extract_horizontal_segments_vector  page.get_drawings()
+
+An import that succeeds and a `get_drawings()` that raises would be a
+feasibility PASS that fails on the first real page, so all three are
+exercised here.
+
+THE PAGE IS SYNTHETIC AND THAT LIMITS WHAT THIS PROVES.  It is built by
+this script so that no corpus page has to be put on the board for a
+feasibility check.  What it establishes is that the three APIs function and
+that a rendered buffer reaches NumPy without a copy.  It establishes
+NOTHING about whether MuPDF 1.19 renders a corpus page the way 1.29 did --
+that is the semantic rebase, and it is a different exercise.
+
+Exit status 0 only if every assertion holds.
+"""
+import hashlib
+import sys
+
+import numpy as np
+import fitz
+
+path = sys.argv[1]
+zoom = 4.0
+
+print("fitz            %s / mupdf %s" % (fitz.VersionBind, fitz.VersionFitz))
+print("fitz.__file__   %s" % fitz.__file__)
+print("numpy           %s" % np.__version__)
+
+# -- build a small page ------------------------------------------------
+doc = fitz.open()
+page = doc.new_page(width=200, height=150)
+page.insert_text((20, 40), "TERMINAL A1 B2", fontsize=11)
+page.draw_line(fitz.Point(10, 80), fitz.Point(190, 80))
+page.draw_line(fitz.Point(10, 100), fitz.Point(120, 100))
+page.draw_rect(fitz.Rect(30, 110, 90, 135))
+doc.save(path)
+doc.close()
+print("built           %s" % path)
+
+# -- 1. rendering ------------------------------------------------------
+doc = fitz.open(path)
+page = doc[0]
+irect = (page.rect * fitz.Matrix(zoom, zoom)).irect
+predicted = (int(irect.height), int(irect.width), 3)
+
+pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+print("pixmap          %dx%d n=%d stride=%d"
+      % (pix.width, pix.height, pix.n, pix.stride))
+assert (pix.height, pix.width, pix.n) == predicted, (
+    "rendered_shape() derivation disagrees with the pixmap: %r vs %r"
+    % (predicted, (pix.height, pix.width, pix.n)))
+
+# samples_mv is the zero-copy path.  1.18.17+ has it; without it every page
+# costs a full extra copy of the RGB buffer, which is the difference
+# between fitting and not on this board.
+assert hasattr(pix, "samples_mv"), "no Pixmap.samples_mv on this build"
+mv = pix.samples_mv
+rgb = np.frombuffer(mv, dtype=np.uint8).reshape(pix.height, pix.stride)
+rgb = rgb[:, :pix.width * pix.n].reshape(pix.height, pix.width, pix.n)
+assert rgb.base is not None, "the RGB array copied instead of viewing"
+print("samples_mv      %d bytes, ndarray %s, zero-copy=%s"
+      % (len(mv), rgb.shape, rgb.base is not None))
+print("render sha256   %s" % hashlib.sha256(bytes(mv)).hexdigest())
+
+# -- 2. words ----------------------------------------------------------
+words = page.get_text("words")
+assert words, "get_text('words') returned nothing on a page with text"
+assert len(words[0]) >= 5, words[0]
+print("words           %d, first=%r" % (len(words), words[0][:5]))
+
+# -- 3. drawings -------------------------------------------------------
+drawings = page.get_drawings()
+assert drawings, "get_drawings() returned nothing on a page with 3 paths"
+items = sum(len(d.get("items", ())) for d in drawings)
+kinds = sorted({it[0] for d in drawings for it in d.get("items", ())})
+assert "l" in kinds, ("no line items in get_drawings(); the vector segment "
+                      "extractor reads exactly these: %r" % (kinds,))
+print("drawings        %d dicts, %d items, kinds=%s"
+      % (len(drawings), items, ",".join(kinds)))
+
+# The vector segment extractor reads `Point`/`Rect` off the items, so the
+# object model has to be there and not just the dict.
+pts = [it for d in drawings for it in d.get("items", ()) if it[0] == "l"]
+p0, p1 = pts[0][1], pts[0][2]
+assert hasattr(p0, "x") and hasattr(p1, "y"), (type(p0), type(p1))
+print("line item       (%.1f,%.1f)-(%.1f,%.1f)" % (p0.x, p0.y, p1.x, p1.y))
+
+doc.close()
+print("FUNC OK")

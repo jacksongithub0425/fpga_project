@@ -1,0 +1,18 @@
+3.10.4 (main, Apr  2 2022, 09:04:19) [GCC 11.2.0]
+pynq 3.1.1
+numpy 1.21.5
+
+/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/pl_server/device.py:56: UserWarning: No devices found, is the XRT environment sourced?
+  warnings.warn(
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/ps.py", line 165, in fclk0_mhz
+    return cls._instance.get_pl_clk(0)
+  File "/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/ps.py", line 313, in _instance
+    cls.device = Device.active_device
+  File "/usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/pl_server/device.py", line 71, in active_device
+    raise RuntimeError("No Devices Found")
+RuntimeError: No Devices Found
+
+__EXIT__ 1
+

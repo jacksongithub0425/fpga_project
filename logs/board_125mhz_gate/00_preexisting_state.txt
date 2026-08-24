@@ -1,0 +1,13 @@
+fclk0_mhz  = 100.0
+fclk1_mhz  = 142.857143
+PL.bitfile = None
+PL.timestamp= None
+--- fpga_manager ---
+operating
+--- cma ---
+CmaTotal:         229376 kB
+CmaFree:           60840 kB
+
+
+__EXIT__ 0
+

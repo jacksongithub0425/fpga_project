@@ -1,0 +1,9 @@
+population: 706 histograms
+shipped transcription: 0 mismatch(es)
+  [OK  ] tie rule `>=` (last maximiser wins)    caught by 303 case(s) e.g. tied maxima
+  [MISS] DBL_EPSILON instead of FLT_EPSILON     caught by   0 case(s)
+  [OK  ] no degenerate-tail guards at all       caught by   1 case(s) e.g. sparse[55]
+  [MISS] float32 accumulators                   caught by   0 case(s)
+  [MISS] mu1 recomputed rather than running     caught by   0 case(s)
+
+OTSU MUTATION CONTROL FAILED: 3 variant(s) undetected

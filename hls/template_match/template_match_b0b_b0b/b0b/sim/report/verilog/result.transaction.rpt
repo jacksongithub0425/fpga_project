@@ -1,0 +1,15 @@
+                             latency        interval
+transaction       0:            4188            4209
+transaction       1:             558             585
+transaction       2:           51887           51905
+transaction       3:           54085           54103
+transaction       4:           54242           54260
+transaction       5:           66879           66906
+transaction       6:           88909           88927
+transaction       7:           89250           89268
+transaction       8:          106871          106895
+transaction       9:          141363          141381
+transaction      10:          141896          141920
+transaction      11:           34566           34581
+transaction      12:           34566           34593
+transaction      13:          231697               x

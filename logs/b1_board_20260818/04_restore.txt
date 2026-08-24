@@ -1,0 +1,27 @@
+=== RESTORE ===
+2026-08-19T05:16:09Z
+pynq
+--- clocks BEFORE restore ---
+fclk0_mhz 125.0
+fclk1_mhz 100.0
+fclk2_mhz 100.0
+fclk3_mhz 100.0
+--- loading base.bit ---
+base.bit loaded
+clocks written
+--- clocks AFTER restore (must match pre-state) ---
+fclk0_mhz 100.0  want 100.0  OK
+fclk1_mhz 142.857143  want 142.857143  OK
+fclk2_mhz 200.0  want 200.0  OK
+fclk3_mhz 100.0  want 100.0  OK
+RESTORE_VERIFIED
+--- shipping artifacts untouched? ---
+drwxr-xr-x 2 root root 4096 Aug 19 05:16 /home/xilinx/jupyter_notebooks/tme_b1
+drwxr-xr-x 2 root root 4096 Aug 19 02:04 /home/xilinx/jupyter_notebooks/tme_phase_s
+drwxr-xr-x 2 root root 4096 Aug 18 04:51 /home/xilinx/jupyter_notebooks/tme_probe125
+drwxr-xr-x 2 root root 4096 Aug  9 21:40 /home/xilinx/jupyter_notebooks/tme_test
+=== RESTORE END ===
+
+
+__EXIT__ 0
+

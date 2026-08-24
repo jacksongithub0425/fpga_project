@@ -1,0 +1,9 @@
+0
+/usr/local/share/pynq-venv/bin/python3
+/usr/local/share/pynq-venv/bin/python3
+pynq 3.1.1
+XILINX_XRT=/usr
+ 19:56:07 up 5 min,  1 user,  load average: 0.66, 1.03, 0.55
+
+
+__EXIT__ 0

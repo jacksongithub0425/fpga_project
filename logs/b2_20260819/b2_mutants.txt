@@ -1,0 +1,63 @@
+PADDING ARGUMENT: 0 unmasked lane(s) read past the patch row (must be 0)
+  largest index the `idx < pw` guard stops: 834 against patch_line[820] -- the guard is required for MEMORY SAFETY,
+  the value it substitutes is unreachable
+
+SELF-HEALING ARGUMENT: a cross-invocation reuse defect can damage AT MOST the
+output columns u < tw - 1, however many tiles the map has.  That CONTAINMENT is
+derived, and it proves one direction: a case detects this defect ONLY IF its
+argmax lies there.  `max damaged u` < `tw-1` is the derived claim being checked.
+The `conjecture` column applies the CONVERSE too, which is NOT derived -- it
+is reported because it matches `observed` on every case, not because the
+geometry requires it.  This is what explains the `no-full-tile0` column below.
+
+  case                    tw-1  max damaged u  argmax u  conjecture  observed
+  b1-w001-tw216            215              0         0    detects   detects
+  b1-w015-tw216            215             14        14    detects   detects
+  b1-w016-tw216            215             15        15    detects   detects
+  b1-w017-tw216            215             16        16    detects   detects
+  b1-w031-tw100             99             30        30    detects   detects
+  b1-w032-tw100             99             31        31    detects   detects
+  b1-w033-tw100             99             32        32    detects   detects
+  b1-w095-tw020             19             18        94      blind     blind
+  b1-w096-tw020             19             18        95      blind     blind
+  b1-tie-samerow            15             14         5    detects   detects
+  b1-tie-rowmajor           15             14        31      blind     blind
+  b1-lane15                 23             20        31      blind     blind
+
+HONEST B2 against the pinned `b1` suite
+  12/12 cases: the overlap-reuse map equals the direct cross-correlation, is
+  independent of the stale fill, and reproduces the golden (x, y) and score.
+
+  case                     rw  T      shift_by=15      shift_by=17      refill_n=15    refill_off=+1    refill_u0=-16    no-full-tile0  unguarded-shift        pad=clamp
+  b1-w001-tw216             1  1                -                -                -                -                -          ALL 256                -                -
+  b1-w015-tw216            15  1                -                -                -                -                -          ALL 256                -                -
+  b1-w016-tw216            16  1                -                -                -                -                -          ALL 256                -                -
+  b1-w017-tw216            17  2          ALL 256          ALL 256                -          ALL 256          ALL 256          ALL 256                -                -
+  b1-w031-tw100            31  2          ALL 256          ALL 256                -          ALL 256          ALL 256          ALL 256                -                -
+  b1-w032-tw100            32  2          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256                -                -
+  b1-w033-tw100            33  3          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256                -                -
+  b1-w095-tw020            95  6          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256                -                -                -
+  b1-w096-tw020            96  6          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256                -                -                -
+  b1-tie-samerow           32  2                -                -                -                -                -          ALL 256                -                -
+  b1-tie-rowmajor          32  2                -                -          ALL 256          ALL 256          ALL 256                -                -                -
+  b1-lane15                65  5          ALL 256          ALL 256          ALL 256          ALL 256          ALL 256                -                -                -
+
+  A cell counts the UNIFORM stale fills for which the case FAILS the testbench
+  check -- every register set to the same byte, that byte swept 0..255.
+  `ALL 256` means no such fill lets the defect through.
+  It is NOT a sweep over the 256**231 arbitrary register states, and does not claim to be.
+
+  DEFECT shift_by=15     best case breaks 256/256 fills
+  DEFECT shift_by=17     best case breaks 256/256 fills
+  DEFECT refill_n=15     best case breaks 256/256 fills
+  DEFECT refill_off=+1   best case breaks 256/256 fills
+  DEFECT refill_u0=-16   best case breaks 256/256 fills
+  DEFECT no-full-tile0   best case breaks 256/256 fills
+  INERT  unguarded-shift confirmed inert -- changes no result on any case
+  INERT  pad=clamp       confirmed inert -- changes no result on any case
+
+[44.2s]
+OK -- the pinned suite detects all 6 B2 defect classes unconditionally, the two inert
+variations are inert, and the honest implementation reproduces every golden.
+This is a property of the PYTHON transcription and of the SUITE.  It says nothing
+about what Vitis compiled -- that is what csim and cosim are for.

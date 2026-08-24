@@ -1,0 +1,418 @@
+#!/usr/bin/env python3
+"""Board preflight for one build variant -- run it after a FRESH BOOT.
+
+    sudo -E python3 board_preflight.py --variant combined_b2_100
+
+Runs the preflight checklist in order, stops at the first failure, and prints
+one verdict.  Nothing here is new logic: it verifies the payload's bytes and
+then runs the three existing gates as separate processes, in the order their
+preconditions require.  Each gate keeps its own exit-code meaning and its own
+transcript; this script exists so that "the preflight passed" is a single
+reproducible statement rather than four commands someone ran by hand.
+
+    step 0   payload identity     bit/hwh digests vs the pinned variant AND
+                                  vs the BUILD_INFO.txt shipped beside them
+    step 1   platform             CmaTotal >= 192 MiB (gated); uptime against
+                                  the fresh-boot bound; CmaFree recorded
+    step 2   CMA gate             probe_cma_budget.py -- the DRIVER-ORDER
+                                  allocation with the overlay resident
+    step 3   overlay              inspect_overlay.py --variant -- ip_dict,
+                                  register addresses and offsets, matcher
+                                  VLNV, and the LIVE Clocks.fclk0_mhz gate
+    step 4   reset and idle       board_idle_check.py --variant -- quiescent
+                                  before any DMA traffic, and a PL reload
+                                  proved to return power-on state
+
+THE STOP RULE IS NOT ADVISORY.  If the CMA allocation or the live clock check
+fails, staged board qualification does not start.  Both failures invalidate
+everything downstream rather than just the step that failed: a short CMA pool
+turns every later gate into a test of the pool, and a wrong fclk0 scales every
+wall time and every cycle figure by a factor nothing in the Vivado reports can
+reveal -- they all say 10.000 ns whether the board runs 100 MHz or 62.5.
+
+FRESH BOOT IS A REQUIREMENT, NOT A FIELD IN THE TRANSCRIPT
+----------------------------------------------------------
+The governing plan requires this to be performed after a fresh boot, and
+completion condition 4 is worded the same way.  An earlier version of this
+script recorded `uptime` and then printed `PREFLIGHT=PASS` regardless, which
+made a warm-boot run indistinguishable from a compliant one in the only line
+anybody greps.  It now reports two statuses:
+
+    WARM_BOOT_TECHNICAL_PREFLIGHT   the six technical checks
+    FORMAL_FRESH_BOOT_PREFLIGHT     those checks AND a fresh boot
+
+`PREFLIGHT=PASS` is emitted only when both hold.  A warm-boot run that passes
+everything technical prints `FORMAL_FRESH_BOOT_PREFLIGHT=HOLD` and exits 3 --
+a distinct code, because it is not a technical failure and must not be
+confused with one.  `--max-uptime-s` moves the threshold and
+`--allow-warm-boot` accepts the run as technically sufficient while still
+refusing to call it formally complete.
+
+**Grep `^PREFLIGHT=` anchored.** `WARM_BOOT_TECHNICAL_PREFLIGHT=PASS` contains
+the substring `PREFLIGHT=PASS`, so an unanchored search reads a warm-boot HOLD
+as a pass -- the exact confusion the two statuses exist to prevent.  The
+verdict is always the line that STARTS with `PREFLIGHT=`.
+
+The uptime bound is a PROXY.  The property that matters is "nothing has run
+on this board since it booted", which no single counter reports; uptime
+approximates it and the CmaFree reading beside it is the cross-check.
+
+Exit status: 0 = formally complete, 1 = a step failed, 2 = could not run,
+3 = every technical check passed but the fresh-boot requirement did not.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import board_expect as X                                        # noqa: E402
+# Imported, not re-transcribed: step 1 reports the pool size and step 2's gate
+# enforces it, and two copies of that threshold is how they drift apart.  This
+# module only touches argparse/sys/pathlib at import time, so it is safe to
+# pull in without PYNQ or numpy.
+from probe_cma_budget import REQUIRED_CMA_BYTES                 # noqa: E402
+
+MIB = 1024 * 1024
+
+# More than this much CMA already gone before we start means something else
+# holds buffers -- a stale kernel, another notebook.  A warning, not a gate:
+# the amount PYNQ itself has taken by this point is not a fixed number, and a
+# gate that guesses it would fail honest boots.
+CMA_IN_USE_WARN = 8 * MIB
+
+
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest().upper()
+
+
+def read_build_info(path: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for line in path.read_text(encoding="ascii", errors="replace").splitlines():
+        key, sep, value = line.partition("=")
+        if sep:
+            out[key.strip()] = value.strip()
+    return out
+
+
+def step0_payload(d: Path, cfg: dict, bitname: str) -> list[str]:
+    """The digests, against the repo's pinned values AND against BUILD_INFO.
+
+    Both, not either.  The pinned value ties the board result to a build this
+    repository knows about; BUILD_INFO.txt ties it to the record shipped
+    beside the bytes.  Checking only the pinned value would accept a
+    BUILD_INFO from another build, and checking only BUILD_INFO would accept
+    any self-consistent pair someone dropped in the directory.
+    """
+    bad: list[str] = []
+    bit = d / bitname
+    hwh = d / (Path(bitname).stem + ".hwh")
+    info = d / "BUILD_INFO.txt"
+
+    print(f"=== step 0: payload identity ({d}) ===")
+    for f in (bit, hwh, info):
+        if not f.is_file():
+            bad.append(f"missing payload file: {f.name}")
+    if bad:
+        return bad
+
+    if cfg["bit_sha256"] is None or cfg["hwh_sha256"] is None:
+        bad.append(f"variant {cfg['name']} pins no bitstream digests -- it "
+                   f"was never built as a board bundle and must not be "
+                   f"qualified on silicon")
+        return bad
+
+    got = {"bit": sha256(bit), "hwh": sha256(hwh)}
+    rec = read_build_info(info)
+    for kind, path in (("bit", bit), ("hwh", hwh)):
+        pinned = cfg[f"{kind}_sha256"].upper()
+        shipped = rec.get(f"{kind}_sha256", "").upper()
+        print(f"  {path.name:<28} {got[kind]}")
+        print(f"    pinned  ({cfg['name']:<20}) {pinned} "
+              f"-> {'OK' if got[kind] == pinned else 'MISMATCH'}")
+        print(f"    BUILD_INFO.txt                 {shipped or '(absent)'} "
+              f"-> {'OK' if got[kind] == shipped else 'MISMATCH'}")
+        if got[kind] != pinned:
+            bad.append(f"{path.name}: sha256 {got[kind]} != the digest "
+                       f"pinned for variant {cfg['name']}")
+        if got[kind] != shipped:
+            bad.append(f"{path.name}: sha256 {got[kind]} != BUILD_INFO.txt's "
+                       f"{kind}_sha256 {shipped or '(absent)'}")
+
+    want_variant = cfg["build_info_variant"]
+    if want_variant is not None:
+        got_variant = rec.get("variant")
+        print(f"  BUILD_INFO variant={got_variant} "
+              f"(expect {want_variant}) -> "
+              f"{'OK' if got_variant == want_variant else 'MISMATCH'}")
+        if got_variant != want_variant:
+            bad.append(f"BUILD_INFO.txt says variant={got_variant!r}, "
+                       f"expected {want_variant!r}")
+        got_matcher = rec.get("matcher_core")
+        print(f"  BUILD_INFO matcher_core={got_matcher} "
+              f"(expect {cfg['matcher_vlnv']}) -> "
+              f"{'OK' if got_matcher == cfg['matcher_vlnv'] else 'MISMATCH'}")
+        if got_matcher != cfg["matcher_vlnv"]:
+            bad.append(f"BUILD_INFO.txt says matcher_core={got_matcher!r}, "
+                       f"expected {cfg['matcher_vlnv']!r}")
+        # The divisor product the build recorded must be the one this board
+        # check expects.  It is a PREDICTION until step 3 measures fclk0; both
+        # are kept because they fail differently -- a wrong divisor is a build
+        # mistake, a wrong measurement is a platform one.
+        for field, want in (("hwh_fclk0_div_product", cfg["div_product"]),
+                            ("hwh_fclk1_div_product",
+                             cfg["fclk1_div_product"])):
+            if want is None:
+                continue
+            got_v = rec.get(field)
+            print(f"  BUILD_INFO {field}={got_v} (expect {want}) -> "
+                  f"{'OK' if got_v == str(want) else 'MISMATCH'}")
+            if got_v != str(want):
+                bad.append(f"BUILD_INFO.txt {field}={got_v!r}, expected "
+                           f"{want!r}")
+    return bad
+
+
+def _meminfo_cma() -> dict[str, int]:
+    out: dict[str, int] = {}
+    try:
+        with open("/proc/meminfo", encoding="ascii") as fh:
+            for line in fh:
+                key, _, rest = line.partition(":")
+                if key in ("CmaTotal", "CmaFree"):
+                    out[key] = int(rest.strip().split()[0]) * 1024
+    except OSError:
+        pass
+    return out
+
+
+def read_uptime_s() -> float:
+    """Seconds since boot.  Its own function so a test can replace it."""
+    with open("/proc/uptime", encoding="ascii") as fh:
+        return float(fh.read().split()[0])
+
+
+def step1_platform(max_uptime_s: float) -> tuple[list[str], list[str], bool]:
+    """(fatal, warnings, fresh_boot).  Fresh-boot state plus the CMA pool."""
+    fatal: list[str] = []
+    warn: list[str] = []
+    fresh = False
+    print("\n=== step 1: platform ===")
+    try:
+        up = read_uptime_s()
+        fresh = up <= max_uptime_s
+        print(f"  uptime {up:,.0f} s ({up / 60:.1f} min); fresh-boot bound "
+              f"{max_uptime_s:,.0f} s -> "
+              f"{'FRESH' if fresh else 'WARM (not a fresh boot)'}")
+        print(f"UPTIME_S={up:.2f};MAX_UPTIME_S={max_uptime_s:.0f};"
+              f"GATE=fresh_boot;RESULT={'PASS' if fresh else 'HOLD'}")
+        if not fresh:
+            warn.append(
+                f"uptime {up / 3600:.1f} h exceeds the {max_uptime_s / 3600:.1f} h "
+                f"fresh-boot bound. The technical checks still run and still "
+                f"mean what they say; what is withheld is the FORMAL verdict, "
+                f"because the plan requires this be performed after a fresh "
+                f"boot")
+    except OSError as exc:
+        print(f"  uptime unreadable ({exc})")
+        print("UPTIME_S=unreadable;GATE=fresh_boot;RESULT=HOLD")
+        warn.append("uptime could not be read, so the fresh-boot requirement "
+                    "is unverified -- withheld, not assumed")
+
+    cma = _meminfo_cma()
+    if "CmaTotal" not in cma:
+        fatal.append("/proc/meminfo carries no CmaTotal -- this kernel "
+                     "reports no CMA pool, so the pool cannot be verified")
+        print("  CmaTotal: UNAVAILABLE")
+        return fatal, warn, fresh
+
+    total, free = cma["CmaTotal"], cma.get("CmaFree", 0)
+    print(f"  CmaTotal {total:,} B ({total / MIB:.1f} MiB); "
+          f"required >= {REQUIRED_CMA_BYTES:,} B "
+          f"({REQUIRED_CMA_BYTES / MIB:.0f} MiB)")
+    print(f"  CmaFree  {free:,} B ({free / MIB:.1f} MiB), "
+          f"{(total - free) / MIB:.1f} MiB already in use")
+    print(f"CMA_TOTAL_BYTES={total};CMA_FREE_BYTES={free};"
+          f"GATE=cma_pool_size;"
+          f"RESULT={'PASS' if total >= REQUIRED_CMA_BYTES else 'FAIL'}")
+    if total < REQUIRED_CMA_BYTES:
+        fatal.append(
+            f"CmaTotal {total / MIB:.1f} MiB < the required "
+            f"{REQUIRED_CMA_BYTES / MIB:.0f} MiB. This is a MISCONFIGURED "
+            f"PLATFORM, not a capacity failure: set `cma=192M` in "
+            f"/boot/uEnv.txt bootargs and REBOOT. Do not record it as the "
+            f"contract 2.2 gate and do not let it trigger the tiling branch")
+    if total - free > CMA_IN_USE_WARN:
+        warn.append(
+            f"{(total - free) / MIB:.1f} MiB of CMA is already in use before "
+            f"the preflight allocates anything -- another notebook or a "
+            f"stale kernel may be holding buffers, which can fail a later "
+            f"gate for a reason that has nothing to do with the design")
+    return fatal, warn, fresh
+
+
+def run_gate(label: str, argv: list[str]) -> int:
+    print(f"\n{'=' * 72}\n=== {label}\n=== $ {' '.join(argv)}\n{'=' * 72}",
+          flush=True)
+    proc = subprocess.run(argv)
+    print(f"\n[{label}] exit={proc.returncode}", flush=True)
+    return proc.returncode
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--variant", default=X.DEFAULT_VARIANT,
+                    choices=sorted(X.VARIANTS))
+    ap.add_argument("--dir", default=".", metavar="PAYLOAD_DIR",
+                    help="directory holding the .bit/.hwh/BUILD_INFO.txt and "
+                         "the gate scripts (default: the current directory)")
+    ap.add_argument("--bit", default="three_stage_combined.bit")
+    ap.add_argument("--skip-cma", action="store_true",
+                    help="skip the driver-order CMA gate. For re-running the "
+                         "overlay and idle checks only; the result is NOT a "
+                         "preflight pass and is labelled as such")
+    ap.add_argument("--max-uptime-s", type=float, default=3600.0,
+                    metavar="S",
+                    help="uptime bound for the fresh-boot requirement, in "
+                         "seconds (default: 3600). A proxy for 'nothing has "
+                         "run since boot', which no counter reports directly")
+    ap.add_argument("--allow-warm-boot", action="store_true",
+                    help="do not treat a warm boot as blocking. The technical "
+                         "verdict is still reported and FORMAL_FRESH_BOOT_"
+                         "PREFLIGHT is still HOLD -- this only changes the "
+                         "exit code, never the wording")
+    args = ap.parse_args()
+
+    try:
+        cfg = X.variant(args.variant)
+    except Exception as exc:                           # noqa: BLE001
+        print(f"CANNOT RUN: {exc}")
+        return 2
+
+    here = Path(__file__).resolve().parent
+    d = Path(args.dir).resolve()
+    bit = d / args.bit
+
+    print(f"BOARD PREFLIGHT -- variant {cfg['name']}")
+    print(f"  matcher      {cfg['matcher_vlnv']}")
+    print(f"  Vivado       {cfg['period_ns']:.3f} ns "
+          f"({cfg['io_pll_mhz']:.0f} MHz IO PLL model / "
+          f"{cfg['div_product']})")
+    print(f"  board fclk0  {cfg['board_mhz']:.4f} MHz expected "
+          f"(1000 / {cfg['div_product']}) -- gated LIVE in step 3")
+    print()
+
+    bad = step0_payload(d, cfg, args.bit)
+    if bad:
+        print("\nPAYLOAD FAULTS:")
+        for b in bad:
+            print(f"  - {b}")
+        print("\nPREFLIGHT=FAIL;STEP=0;REASON=payload_identity")
+        return 1
+    print("  step 0 PASS")
+
+    fatal, warn, fresh_boot = step1_platform(args.max_uptime_s)
+    for w in warn:
+        print(f"  WARNING: {w}")
+    if fatal:
+        print("\nPLATFORM FAULTS:")
+        for b in fatal:
+            print(f"  - {b}")
+        print("\nPREFLIGHT=FAIL;STEP=1;REASON=platform")
+        return 1
+    print("  step 1 PASS")
+
+    if args.skip_cma:
+        print("\n=== step 2: SKIPPED (--skip-cma) ===")
+        print("  This run cannot be recorded as a preflight pass.")
+    else:
+        rc = run_gate("step 2: CMA gate (driver order, overlay resident)",
+                      [sys.executable, str(here / "probe_cma_budget.py"),
+                       "--overlay", str(bit)])
+        if rc != 0:
+            reason = ("cma_capacity" if rc == 1 else "cma_could_not_verify")
+            print(f"\nPREFLIGHT=FAIL;STEP=2;REASON={reason}")
+            print("\nSTOP. The CMA allocation did not pass, so staged board "
+                  "qualification must not start.")
+            if rc == 2:
+                print("exit 2 is INCONCLUSIVE, not a capacity failure -- do "
+                      "not trigger the tiling branch on it.")
+            return 1
+
+    rc = run_gate(f"step 3: overlay + LIVE clock ({cfg['name']})",
+                  [sys.executable, str(here / "inspect_overlay.py"),
+                   "--overlay", str(bit), "--variant", cfg["name"]])
+    if rc != 0:
+        print(f"\nPREFLIGHT=FAIL;STEP=3;REASON="
+              f"{'overlay_mismatch' if rc == 1 else 'overlay_could_not_run'}")
+        print("\nSTOP. If the LIVE clock line reads anything other than "
+              f"{cfg['board_mhz']:.4f} MHz, staged board qualification must "
+              f"not start: every wall time and every modelled cycle count "
+              f"downstream is scaled by that number, and no Vivado report in "
+              f"the build can reveal it.")
+        return 1
+
+    rc = run_gate(f"step 4: reset and idle, before DMA traffic ({cfg['name']})",
+                  [sys.executable, str(here / "board_idle_check.py"),
+                   "--overlay", str(bit), "--variant", cfg["name"]])
+    if rc != 0:
+        print(f"\nPREFLIGHT=FAIL;STEP=4;REASON="
+              f"{'not_quiescent' if rc == 1 else 'idle_check_could_not_run'}")
+        return 1
+
+    print("\n" + "=" * 72)
+    if args.skip_cma:
+        print(f"PREFLIGHT=INCOMPLETE;VARIANT={cfg['name']};"
+              f"REASON=cma_gate_skipped")
+        print("Steps 3 and 4 passed, but the CMA gate was skipped, so this "
+              "is NOT a preflight pass.")
+        return 1
+
+    # Every technical check passed by the time we get here.  What remains is
+    # whether the run satisfies the plan's fresh-boot requirement, and the two
+    # are reported separately so neither can be read off the other.
+    print(f"WARM_BOOT_TECHNICAL_PREFLIGHT=PASS;VARIANT={cfg['name']};"
+          f"BOARD_FCLK0_MHZ={cfg['board_mhz']!r}")
+    print(f"FORMAL_FRESH_BOOT_PREFLIGHT="
+          f"{'PASS' if fresh_boot else 'HOLD'};VARIANT={cfg['name']}")
+    if not fresh_boot:
+        print(f"PREFLIGHT=HOLD;VARIANT={cfg['name']};REASON=not_a_fresh_boot")
+        # `WARM_BOOT_TECHNICAL_PREFLIGHT=PASS` CONTAINS the substring
+        # `PREFLIGHT=PASS`, and this project greps banner lines.  Anchor the
+        # pattern or you will read a warm-boot hold as a pass.
+        print("GREP NOTE: the line above is the verdict. "
+              "'WARM_BOOT_TECHNICAL_PREFLIGHT=PASS' contains the substring "
+              "'PREFLIGHT=PASS' -- match '^PREFLIGHT=' anchored, or you will "
+              "misread this run as a pass.")
+        print("\nAll six technical checks passed and each means exactly what "
+              "it says. What is NOT satisfied is the plan's requirement that "
+              "the preflight be performed after a fresh boot, which is also "
+              "the wording of completion condition 4 -- so condition 4 stays "
+              "OPEN and B2/100's remaining blockers are 4-7, not 5-7.")
+        print("\nReboot the board and re-run this command unchanged. Nothing "
+              "else needs to be done first.")
+        print("=" * 72)
+        return 0 if args.allow_warm_boot else 3
+
+    print(f"PREFLIGHT=PASS;VARIANT={cfg['name']};"
+          f"BOARD_FCLK0_MHZ={cfg['board_mhz']!r}")
+    print(f"All four steps passed after a fresh boot. The board is cleared "
+          f"for staged qualification of {cfg['name']}, and completion "
+          f"condition 4 is closed.")
+    print("This is evidence for THIS boot only -- CMA contiguity degrades "
+          "with use, so re-run it after any reboot or power cycle.")
+    print("=" * 72)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

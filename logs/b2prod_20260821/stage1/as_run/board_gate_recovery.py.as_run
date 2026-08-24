@@ -1,0 +1,545 @@
+#!/usr/bin/env python3
+"""Board gate 7: timeout and reset RECOVERY — the failure path, on silicon.
+
+RUN THIS ON THE BOARD, after board_gate_protocol.py PASSES:
+
+    sudo -E python3 board_gate_recovery.py --overlay three_stage_combined.bit \
+                                           --data-dir .
+
+WHAT THIS CLOSES.  Gates 1-6 are all happy-path gates, and the runbook says so
+in as many words: passing them "does not validate any failure-recovery path".
+Every one of them proves the hardware does the right thing when nothing goes
+wrong.  None of them has ever let anything go wrong on purpose.
+
+That matters because the recovery path is not incidental — it is the documented
+contract of this driver.  `PLPipeline._require_usable` states it:
+
+    There is no in-process recovery from that and this driver does not pretend
+    otherwise. ... The only sound reset is reloading the overlay, which means
+    building a new PLPipeline.
+
+and `safe_teardown` is built around it: retain the CMA pages, reprogram the PL
+while they are still held, and only then let them go.  A 36-page corpus run
+WILL eventually hit a timeout, and at that moment the whole of that machinery
+executes for the first time.  This gate makes that first time a deliberate,
+observed one, on a page whose right answer is already pinned.
+
+FIVE PHASES, each gating the next.
+
+  R0  baseline.  The nine-case `hw` manifest, before anything is broken.  So a
+      failure in R4 or R5 is attributable to the recovery and not to a board
+      that was already wrong.
+
+  R1  the deadline is enforced.  A HEALTHY long transaction (820x307 / 216x96,
+      ~2.57 s of fabric time at 100 MHz) is run on a pipeline whose deadline
+      is 0.5 s.  Required: `TimeoutError`, raised bounded — not a hang, not a
+      silent wrong answer, and demonstrably BEFORE the transaction would have
+      finished on its own.  Nothing about the hardware is broken here; what is
+      tested is that the driver's own bound is real.
+
+  R2  the poison latch holds.  On that same pipeline every entry point must
+      REFUSE — `RuntimeError`, naming the outstanding transfer — rather than
+      arm a second set of transfers alongside the stale ones or hand CMA pages
+      back while a DMA still targets them.  Checked on the matcher, the
+      binarizer and the extractor, because the latch lives in one place and a
+      path that skipped it would be the one that corrupts memory.
+
+  R3  retention, then reset.  `close()` must return FALSE and retain the
+      buffers — freeing them here is the precise corruption `_RETAINED_BUFFERS`
+      exists to prevent — and `safe_teardown.reset_pl` must then reprogram the
+      PL successfully.  A close() that returned True would be a FAILURE of this
+      gate, which is the one place in the suite where that is so.
+
+  R4  correctness after recovery.  A fresh `PLPipeline` — which reloads the
+      overlay — must run the same nine cases to the same golden results.  This
+      is the phase that distinguishes "the board survived" from "the board
+      recovered": liveness is not correctness, and a fabric left with stale
+      `static` BRAM would answer here.
+
+  R5  a genuinely WEDGED core, which R1 does not produce.  R1's core would have
+      completed on its own; this one cannot.  `tme_top` is started directly
+      through its AXI-Lite control register at the 820x307 geometry with NO
+      MM2S armed, so it blocks on its first stream read needing 251,740 beats
+      that will never come.  Three things are then required:
+
+        - the wedge is real: `ap_done` never rises and `ap_idle` stays clear
+          across a bounded observation window;
+        - `PLPipeline` REFUSES to start a new invocation on it.  `_start`'s
+          idle check is the guard against the worst silent failure this
+          hardware has — under `ap_ctrl_hs`, writing `ap_start` to a busy core
+          leaves the bit pending and the still-running invocation eats the
+          beats armed for the new one, registering a fine-looking result
+          computed from the wrong pixels.  That guard has never been exercised
+          on silicon;
+        - the same retain/reset/re-verify recovery works from a wedge, not
+          just from a deadline.
+
+      Starting the core behind the driver's back is deliberate and is the only
+      place in this suite that does it; it is the only way to produce a stall
+      the driver cannot itself have caused.  No DMA is armed at the moment of
+      the wedge, so no CMA page is targeted by it.
+
+WHAT THIS GATE DOES NOT ESTABLISH.  It exercises two stall shapes — a deadline
+that fires on a healthy transaction, and a core blocked on a starved input
+stream.  It does not exercise a DMA error interrupt, an AXI decode error, a
+bitstream that fails to program, or a core that hangs mid-write to an S2MM.
+`reset_pl` returning False (the fail-stop path) is deliberately NOT provoked:
+that path exists for a board that cannot be reprogrammed, and provoking it
+would leave a board that cannot be reprogrammed.
+
+Needs on the board, the same directory as gates 4-6:
+
+    three_stage_combined.bit / .hwh
+    board_gate_extract.py, tme_driver.py, tme_standalone_bringup.py,
+    safe_teardown.py
+    GATE4_VECTORS.sha256, tb_tme_cases_hw.txt, tb_tme_patches_hw.bin,
+    tb_tme_templs_hw.bin
+
+Exit status: 0 = every phase passed, 1 = a phase FAILED, 2 = could not run.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+
+import safe_teardown
+
+try:
+    from board_gate_extract import (GateError, Report, SetupError,
+                                    load_hw_manifest, verify_fixtures)
+except Exception as _exc:                                    # noqa: BLE001
+    print(f"CANNOT RUN: board_gate_extract.py did not import "
+          f"({type(_exc).__name__}: {_exc}) — gate 7 reuses its Report, its "
+          f"fixture verification and its manifest loader, so copy it next to "
+          f"this script.")
+    raise SystemExit(2)
+
+
+# ---------------------------------------------------------------------------
+# Constants.
+# ---------------------------------------------------------------------------
+
+SCORE_TOL = 0.005                       # 4.6, the same tolerance as gate 4
+
+# The stall geometry: the manifest's maximum envelope.  Chosen for R5 because
+# a wedged core must stay wedged even after a later, smaller invocation arms
+# an MM2S at it — 251,740 beats cannot be satisfied by the 3,072 the probe
+# in R5 sends, so the "core is not idle" observation is deterministic and not
+# a race against a short feed draining the stall.
+STALL_GEOM = (820, 307, 216, 96)
+
+# The deadline R1 imposes, in seconds.  Well under the ~2.57 s the stall
+# geometry needs at 100 MHz (and ~2.06 s at 125), so the timeout provably cuts
+# a running transaction short rather than arriving after it finished.
+DEADLINE_S = 0.5
+
+# How late the raise may be.  The wait loop polls every 0.5 ms and does one
+# AXI-Lite read per pass, so a correct implementation lands within a few
+# milliseconds; 250 ms is generous and still an order of magnitude inside the
+# transaction it must have interrupted.
+DEADLINE_SLACK_S = 0.25
+
+# R5's observation window: how long the wedged core must stay wedged.  Long
+# enough that a core which was merely slow would have finished, short enough
+# not to pad the gate.
+WEDGE_OBSERVE_S = 0.30
+
+# AXI-Lite ap_ctrl, mirrored from tme_driver rather than imported so that a
+# renamed private constant there is a loud failure here rather than a silent
+# import of the wrong offset.
+AP_CTRL_OFF = 0x00
+AP_START = 1 << 0
+AP_DONE = 1 << 1
+AP_IDLE = 1 << 2
+
+
+# ---------------------------------------------------------------------------
+# Shared helpers.
+# ---------------------------------------------------------------------------
+
+def pick_case(cases, geom, what: str):
+    """The manifest case with exactly this geometry.  Ambiguity is fatal."""
+    hits = [c for c in cases if (c.pw, c.ph, c.tw, c.th) == geom]
+    if len(hits) != 1:
+        raise SetupError(
+            f"the hw manifest holds {len(hits)} cases at {geom[0]}x{geom[1]} "
+            f"/ {geom[2]}x{geom[3]} ({what}); this gate needs exactly one.")
+    return hits[0]
+
+
+def case_arrays(c, patches: bytes, templs: bytes):
+    patch = np.frombuffer(patches, dtype=np.uint8, count=c.patch_bytes,
+                          offset=c.patch_off).reshape(c.ph, c.pw)
+    templ = np.frombuffer(templs, dtype=np.uint8, count=c.templ_bytes,
+                          offset=c.templ_off).reshape(c.th, c.tw)
+    return patch, templ
+
+
+def run_hw_suite(pl, cases, patches, templs, rep: Report, label: str) -> None:
+    """The nine-case `hw` manifest, score and exact location on every case."""
+    for c in cases:
+        patch, templ = case_arrays(c, patches, templs)
+        score, x, y, secs = pl.match_template(patch, templ)
+        ok = abs(score - c.score) <= SCORE_TOL and (x, y) == (c.x, c.y)
+        rep.require(ok, f"{label} [{c.index}] {c.tag} "
+                        f"({c.pw}x{c.ph} / {c.tw}x{c.th})",
+                    f"dut {score:+.6f} @({x},{y}) vs gold {c.score:+.6f} "
+                    f"@({c.x},{c.y}), {secs:.3f} s")
+
+
+# ---------------------------------------------------------------------------
+# Phases.
+# ---------------------------------------------------------------------------
+
+def phase_r0_baseline(make_pipeline, cases, patches, templs, rep: Report):
+    """The suite passes before anything is deliberately broken."""
+    print("\n--- phase R0: baseline, before anything is broken ---")
+    pl = make_pipeline(120.0)
+    try:
+        run_hw_suite(pl, cases, patches, templs, rep, "R0")
+    except BaseException:
+        _discard(pl)
+        raise
+    return pl
+
+
+def phase_r1_deadline(pl_short, stall_case, patches, templs, rep: Report,
+                      deadline_s: float, natural_s: float) -> None:
+    """A healthy long transaction against a deliberately short deadline."""
+    print(f"\n--- phase R1: the {deadline_s:g} s deadline is enforced ---")
+    patch, templ = case_arrays(stall_case, patches, templs)
+    print(f"  running {stall_case.pw}x{stall_case.ph} / "
+          f"{stall_case.tw}x{stall_case.th} — modelled {natural_s:.3f} s of "
+          f"fabric time — with timeout_s={deadline_s:g}")
+
+    t0 = time.monotonic()
+    outcome = None
+    try:
+        pl_short.match_template(patch, templ)
+        outcome = "returned"
+    except TimeoutError as exc:
+        outcome = "TimeoutError"
+        detail = str(exc)
+    except Exception as exc:                                 # noqa: BLE001
+        outcome = type(exc).__name__
+        detail = str(exc)
+    elapsed = time.monotonic() - t0
+
+    rep.require(outcome == "TimeoutError",
+                "the overrun raises TimeoutError, not a result and not "
+                "another error",
+                outcome if outcome == "returned"
+                else f"{outcome}: {detail[:120]}")
+    print(f"  raised after {elapsed:.3f} s: {detail[:160]}")
+    rep.require(deadline_s <= elapsed <= deadline_s + DEADLINE_SLACK_S,
+                f"the raise is bounded: within {DEADLINE_SLACK_S * 1e3:.0f} ms "
+                f"of the {deadline_s:g} s deadline",
+                f"{elapsed:.3f} s")
+    rep.require(elapsed < natural_s * 0.5,
+                "the deadline cut a RUNNING transaction short (not one that "
+                "had already finished)",
+                f"{elapsed:.3f} s vs {natural_s:.3f} s modelled")
+
+
+def phase_r2_latch(pl_short, cases, patches, templs, rep: Report) -> None:
+    """Every entry point refuses while a transfer is outstanding."""
+    print("\n--- phase R2: the poison latch holds ---")
+    rep.require(getattr(pl_short, "_transfers_outstanding", False) is True,
+                "the pipeline is marked in-flight after the failed run",
+                str(getattr(pl_short, "_transfers_outstanding", None)))
+
+    tiny = cases[0]
+    patch, templ = case_arrays(tiny, patches, templs)
+    gray = np.zeros((8, 8), dtype=np.uint8)
+
+    attempts = (
+        ("match_template", lambda: pl_short.match_template(patch, templ)),
+        ("binarize_page", lambda: pl_short.binarize_page(gray, 128)),
+        ("extract_candidates",
+         lambda: pl_short.extract_candidates(
+             [{"endpoint": (4, 4), "side": "left"}],
+             {"left": {"alpha": [np.full((4, 4), 200, dtype=np.uint8)]}},
+             (1.0,))),
+    )
+    for name, call in attempts:
+        try:
+            call()
+            got, msg = "returned", ""
+        except RuntimeError as exc:
+            got, msg = "RuntimeError", str(exc)
+        except Exception as exc:                             # noqa: BLE001
+            got, msg = type(exc).__name__, str(exc)
+        rep.require(got == "RuntimeError" and "outstanding" in msg,
+                    f"{name}() refuses with a RuntimeError naming the "
+                    f"outstanding transfer",
+                    f"{got}: {msg[:120]}" if got != "returned"
+                    else "it returned a result")
+
+
+def phase_r3_reset(pl_short, bitfile: str, rep: Report, reset_fn) -> None:
+    """close() must retain, and the PL must then reprogram."""
+    print("\n--- phase R3: retention, then reset ---")
+    freed = pl_short.close()
+    rep.require(freed is False,
+                "close() REFUSED to free the buffers (a True here would hand "
+                "CMA pages back with a DMA command possibly still against "
+                "them)",
+                f"close() returned {freed!r}")
+    rep.require(pl_short.close() is False,
+                "close() is idempotent and repeats its verdict",
+                "second close() disagreed with the first")
+
+    ok = reset_fn(bitfile)
+    rep.require(ok is True,
+                "reprogramming the PL succeeded, so the retained pages are no "
+                "longer targeted by any command",
+                f"reset_pl returned {ok!r}")
+
+
+def phase_r4_after(make_pipeline, cases, patches, templs, rep: Report,
+                   label: str) -> None:
+    """A fresh pipeline gives the golden results again."""
+    print(f"\n--- phase {label}: correctness after recovery ---")
+    pl = make_pipeline(120.0)
+    try:
+        run_hw_suite(pl, cases, patches, templs, rep, label)
+    finally:
+        _discard(pl)
+
+
+def phase_r5_wedge(make_pipeline, cases, patches, templs, stall_case,
+                   bitfile: str, rep: Report, reset_fn,
+                   observe_s: float = WEDGE_OBSERVE_S):
+    """Start the core with nothing armed, then recover from the wedge."""
+    print("\n--- phase R5: a genuinely wedged core ---")
+    pl = make_pipeline(120.0)
+    core = pl._tme
+
+    ctrl = core.read(AP_CTRL_OFF)
+    rep.require(bool(ctrl & AP_IDLE),
+                "the matcher is idle before the wedge is induced",
+                f"AP_CTRL=0x{ctrl:08X}")
+
+    # Deliberately behind the driver's back: geometry straight into the
+    # scalars, then ap_start, with no MM2S armed at all.  tme_top reads
+    # patch_w*patch_h beats by construction, so it blocks on the first one.
+    rm = core.register_map
+    rm.patch_w, rm.patch_h = stall_case.pw, stall_case.ph
+    rm.templ_w, rm.templ_h = stall_case.tw, stall_case.th
+    print(f"  starting tme_top at {stall_case.pw}x{stall_case.ph} / "
+          f"{stall_case.tw}x{stall_case.th} with NO MM2S armed — it needs "
+          f"{stall_case.pw * stall_case.ph:,} beats that will never arrive")
+    core.write(AP_CTRL_OFF, AP_START)
+
+    # -- the wedge is real ---------------------------------------------------
+    end = time.monotonic() + observe_s
+    saw_done = False
+    saw_idle = False
+    samples = 0
+    last = 0
+    while time.monotonic() < end:
+        last = core.read(AP_CTRL_OFF)
+        samples += 1
+        if last & AP_DONE:
+            saw_done = True
+            break
+        if last & AP_IDLE:
+            saw_idle = True
+            break
+        time.sleep(0.002)
+    rep.require(not saw_done and not saw_idle,
+                f"the core stays busy for {observe_s * 1e3:.0f} ms "
+                f"({samples} samples): ap_done never rose and ap_idle never "
+                f"returned",
+                f"AP_CTRL=0x{last:08X} after {samples} samples "
+                f"(done={saw_done}, idle={saw_idle})")
+
+    # -- the driver refuses to start on top of it ---------------------------
+    tiny = cases[0]
+    patch, templ = case_arrays(tiny, patches, templs)
+    try:
+        pl.match_template(patch, templ)
+        got, msg = "returned", ""
+    except RuntimeError as exc:
+        got, msg = "RuntimeError", str(exc)
+    except Exception as exc:                                 # noqa: BLE001
+        got, msg = type(exc).__name__, str(exc)
+    rep.require(got == "RuntimeError" and "not idle" in msg,
+                "PLPipeline refuses to start a new invocation on a busy core "
+                "(the ap_ctrl_hs pending-start corruption guard)",
+                f"{got}: {msg[:140]}" if got != "returned"
+                else "it ran the invocation anyway and returned a result")
+
+    # -- recover -------------------------------------------------------------
+    freed = pl.close()
+    rep.require(freed is False,
+                "close() retained the buffers after the wedge too",
+                f"close() returned {freed!r}")
+    ok = reset_fn(bitfile)
+    rep.require(ok is True, "reprogramming the PL cleared the wedge",
+                f"reset_pl returned {ok!r}")
+    return pl
+
+
+def _discard(pl) -> None:
+    """close() a pipeline whose phases finished, without judging the verdict.
+
+    The interesting close() verdicts are asserted in R3 and R5.  This is for
+    the healthy pipelines, where a False would mean an unsafe teardown that
+    `safe_teardown` has to handle — so it is reported, not swallowed.
+    """
+    try:
+        if not pl.close():
+            print("  [note] close() retained buffers on a healthy pipeline; "
+                  "they are held for the life of this process.")
+    except Exception as exc:                                 # noqa: BLE001
+        print(f"  [note] close() raised {type(exc).__name__}: {exc}")
+
+
+# ---------------------------------------------------------------------------
+
+def run_all(make_pipeline, bitfile: str, cases, patches, templs,
+            rep: Report, reset_fn=None, deadline_s: float = DEADLINE_S,
+            natural_s: float = 2.5715,
+            observe_s: float = WEDGE_OBSERVE_S) -> None:
+    """Every phase, in order.  Split out so the off-board suite can drive it."""
+    reset_fn = reset_fn or safe_teardown.reset_pl
+    stall_case = pick_case(cases, STALL_GEOM, "stall geometry")
+
+    pl0 = phase_r0_baseline(make_pipeline, cases, patches, templs, rep)
+    _discard(pl0)
+
+    pl_short = make_pipeline(deadline_s)
+    try:
+        phase_r1_deadline(pl_short, stall_case, patches, templs, rep,
+                          deadline_s, natural_s)
+        phase_r2_latch(pl_short, cases, patches, templs, rep)
+        phase_r3_reset(pl_short, bitfile, rep, reset_fn)
+    except BaseException:
+        # A phase failed with the pipeline still poisoned.  Reprogramming is
+        # the recovery the driver documents, and it happens here rather than
+        # being left to the caller for the same reason safe_teardown does it
+        # in-process: the CMA references are this process's.
+        try:
+            pl_short.close()
+        except Exception:                                    # noqa: BLE001
+            pass
+        reset_fn(bitfile)
+        raise
+
+    phase_r4_after(make_pipeline, cases, patches, templs, rep, "R4")
+
+    pl5 = phase_r5_wedge(make_pipeline, cases, patches, templs, stall_case,
+                         bitfile, rep, reset_fn, observe_s)
+    del pl5
+    phase_r4_after(make_pipeline, cases, patches, templs, rep, "R5-after")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--overlay", default="three_stage_combined.bit")
+    ap.add_argument("--data-dir", default=".",
+                    help="directory holding the tb_tme_*_hw.* vectors")
+    ap.add_argument("--deadline", type=float, default=DEADLINE_S,
+                    help="the short deadline R1 imposes, in seconds")
+    ap.add_argument("--natural", type=float, default=2.5715,
+                    help="modelled fabric time for the stall geometry at this "
+                         "build's clock, in seconds (B2 at 100 MHz by default)")
+    args = ap.parse_args()
+
+    try:
+        verify_fixtures(Path(args.data_dir))
+        cases, patches, templs = load_hw_manifest(Path(args.data_dir))
+    except SetupError as exc:
+        print(f"CANNOT RUN: {exc}")
+        return 2
+
+    try:
+        import tme_driver as driver
+    except Exception as exc:                                 # noqa: BLE001
+        print(f"CANNOT RUN: tme_driver.py did not import "
+              f"({type(exc).__name__}: {exc})")
+        return 2
+
+    print(f"board_gate_recovery — overlay {args.overlay}")
+    print(f"{len(cases)} hw cases; stall geometry "
+          f"{STALL_GEOM[0]}x{STALL_GEOM[1]}/{STALL_GEOM[2]}x{STALL_GEOM[3]}, "
+          f"modelled {args.natural:.4f} s; R1 deadline {args.deadline:g} s")
+    print("This gate DELIBERATELY breaks things. Every phase leaves the PL "
+          "reprogrammed behind it.")
+
+    loads = {"n": 0}
+
+    def make_pipeline(timeout_s: float):
+        loads["n"] += 1
+        print(f"  [overlay load {loads['n']}] PLPipeline(timeout_s="
+              f"{timeout_s:g})")
+        return driver.PLPipeline(args.overlay, timeout_s=timeout_s)
+
+    try:
+        probe = make_pipeline(120.0)
+    except Exception as exc:                                 # noqa: BLE001
+        print(f"CANNOT RUN: the overlay would not load "
+              f"({type(exc).__name__}: {exc}).")
+        return 2
+    _discard(probe)
+    del probe
+
+    try:
+        armed = safe_teardown.arm_teardown_protection()
+    except safe_teardown.TeardownUnprotected as exc:
+        print(f"CANNOT RUN: {exc}")
+        return 2
+    print(f"  teardown protection: ignoring {', '.join(armed)}")
+
+    rep = Report()
+    status = 0
+    try:
+        run_all(make_pipeline, args.overlay, cases, patches, templs, rep,
+                deadline_s=args.deadline, natural_s=args.natural)
+    except GateError as exc:
+        print(f"\nPHASE ABORTED at: {exc}")
+        print("The phases after this one did not run — they did not pass.")
+        status = 1
+    except SetupError as exc:
+        print(f"\nCANNOT RUN: {exc}")
+        status = 2
+    except Exception as exc:                                 # noqa: BLE001
+        print(f"\nERROR {type(exc).__name__}: {exc}")
+        status = 1
+
+    # No safe_teardown.teardown() call here, and that is deliberate: this gate
+    # owns several pipelines rather than one, every phase reprograms the PL
+    # behind it, and the close()/reset decisions ARE the assertions.  A final
+    # reprogram leaves the fabric in its power-on state for the next gate.
+    if not safe_teardown.reset_pl(args.overlay):
+        print("\nCANNOT LEAVE THE BOARD CLEAN: the final reprogram failed.")
+        status = status or 1
+
+    print("\n" + "=" * 72)
+    if status == 0 and not rep.failures:
+        print(f"RECOVERY GATE PASSED (0 failures, {rep.checks} checks): a "
+              f"{args.deadline:g} s deadline interrupts a running "
+              f"transaction and raises TimeoutError; every entry point then "
+              f"refuses; close() retains the CMA pages rather than freeing "
+              f"them; reprogramming the PL recovers, and a fresh pipeline "
+              f"returns 9/9 golden results. The same holds from a genuinely "
+              f"wedged core, whose busy state the driver's ap_ctrl_hs guard "
+              f"refuses to start on top of.")
+        print("Two stall shapes only — a deadline on a healthy transaction "
+              "and a starved input stream. DMA error interrupts, AXI decode "
+              "errors and a failed reprogram are NOT exercised.")
+        return 0
+    print(f"RECOVERY GATE FAILED ({len(rep.failures)} of {rep.checks} "
+          f"checks): " + "; ".join(rep.failures[:6])
+          + (" ..." if len(rep.failures) > 6 else ""))
+    return status or 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

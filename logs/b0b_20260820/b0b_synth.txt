@@ -1,0 +1,180 @@
+PRIORITY 6 (B0b) — synthesis, three solutions
+==========================================================================
+present: b2ctl, shadow, b0b
+
+TOP LEVEL
+--------------------------------------------------------------------------
+                                 b2ctl          shadow             b0b
+timing estimate ns               6.547           6.547           6.547
+latency min                        517             589             458
+BRAM18K                            224             288             224
+DSP                                 33              51              48
+FF                               24669           32516           26431
+LUT                              46429           53288           47683
+
+  csynth's `latency max` is omitted: it is driven by
+  LOOP_TRIPCOUNT pragmas wherever a bound is runtime, so it is a
+  pragma-derived figure and not comparable across a source change
+  that alters loop structure.  The cycle claims come from cosim.
+
+MODULES
+--------------------------------------------------------------------------
+  correlation_core             present in: b2ctl, shadow, b0b
+  correlation_core_Pipeline_load_seg present in: b2ctl, shadow, b0b
+  correlation_core_Pipeline_mac_loop present in: b2ctl, shadow, b0b
+  correlation_core_Pipeline_refill_seg present in: b2ctl, shadow, b0b
+  tme_top_Pipeline_VITIS_LOOP_181_3 present in: b2ctl
+  tme_top_Pipeline_VITIS_LOOP_366_3 present in: b0b
+  tme_top_Pipeline_VITIS_LOOP_396_3 present in: shadow
+  tme_top_Pipeline_isq_init    present in: b2ctl, shadow
+  tme_top_Pipeline_isq_slide   present in: b2ctl, shadow
+  tme_top_Pipeline_load_patch_VITIS_LOOP_116_1 present in: b2ctl
+  tme_top_Pipeline_load_patch_VITIS_LOOP_279_1 present in: b0b
+  tme_top_Pipeline_load_patch_VITIS_LOOP_303_1 present in: shadow
+  tme_top_Pipeline_load_templ_VITIS_LOOP_127_2 present in: b2ctl
+  tme_top_Pipeline_load_templ_VITIS_LOOP_290_2 present in: b0b
+  tme_top_Pipeline_load_templ_VITIS_LOOP_314_2 present in: shadow
+  tme_top_Pipeline_norm_cols   present in: b2ctl, shadow, b0b
+  tme_top_Pipeline_reset_acc   present in: b2ctl, shadow, b0b
+  window_row_scan              present in: shadow, b0b
+  window_row_scan_Pipeline_scan_init present in: shadow, b0b
+  window_row_scan_Pipeline_scan_slide present in: shadow, b0b
+
+LOOP SCHEDULES
+--------------------------------------------------------------------------
+  correlation_core/tile_loop
+      b2ctl    II    -  iter-lat         54 ~ 510  lat       54 ~      26520  trip     1 ~ 52  pipelined no
+      shadow   II    -  iter-lat         54 ~ 510  lat       54 ~      26520  trip     1 ~ 52  pipelined no
+      b0b      II    -  iter-lat         54 ~ 510  lat       54 ~      26520  trip     1 ~ 52  pipelined no
+  correlation_core_Pipeline_load_seg/load_seg
+      b2ctl    II    1  iter-lat                4  lat       21 ~        233  trip   19 ~ 231  pipelined yes
+      shadow   II    1  iter-lat                4  lat       21 ~        233  trip   19 ~ 231  pipelined yes
+      b0b      II    1  iter-lat                4  lat       21 ~        233  trip   19 ~ 231  pipelined yes
+  correlation_core_Pipeline_mac_loop/mac_loop
+      b2ctl    II    1  iter-lat                6  lat        8 ~        220  trip    4 ~ 216  pipelined yes
+      shadow   II    1  iter-lat                6  lat        8 ~        220  trip    4 ~ 216  pipelined yes
+      b0b      II    1  iter-lat                6  lat        8 ~        220  trip    4 ~ 216  pipelined yes
+  correlation_core_Pipeline_refill_seg/refill_seg
+      b2ctl    II    1  iter-lat                5  lat       19 ~         19  trip         16  pipelined yes
+      shadow   II    1  iter-lat                5  lat       19 ~         19  trip         16  pipelined yes
+      b0b      II    1  iter-lat                5  lat       19 ~         19  trip         16  pipelined yes
+  tme_top/accum_rows
+      b2ctl    II    -  iter-lat      97 ~ 158654  lat      388 ~   15230784  trip     4 ~ 96  pipelined no
+      shadow   II    -  iter-lat      97 ~ 158654  lat      388 ~   15230784  trip     4 ~ 96  pipelined no
+      b0b      II    -  iter-lat      65 ~ 157601  lat      260 ~   15129696  trip     4 ~ 96  pipelined no
+  tme_top/b0b_init_rows
+      b2ctl    —
+      shadow   II    -  iter-lat        36 ~ 1066  lat      144 ~     102336  trip     4 ~ 96  pipelined no
+      b0b      II    -  iter-lat        36 ~ 1066  lat      144 ~     102336  trip     4 ~ 96  pipelined no
+  tme_top/slide_v
+      b2ctl    II    -  iter-lat   495 ~ 15299691  lat      496 ~ 4651106065  trip    1 ~ 304  pipelined no
+      shadow   II    -  iter-lat   567 ~ 15402032  lat      568 ~ 4682217729  trip    1 ~ 304  pipelined no
+      b0b      II    -  iter-lat   436 ~ 15300941  lat      437 ~ 4651486065  trip    1 ~ 304  pipelined no
+  tme_top_Pipeline_VITIS_LOOP_181_3/VITIS_LOOP_181_3
+      b2ctl    II    2  iter-lat                4  lat        1 ~     131071  trip  0 ~ 65535  pipelined yes
+      shadow   —
+      b0b      —
+  tme_top_Pipeline_VITIS_LOOP_366_3/VITIS_LOOP_366_3
+      b2ctl    —
+      shadow   —
+      b0b      II    2  iter-lat                4  lat        1 ~     131071  trip  0 ~ 65535  pipelined yes
+  tme_top_Pipeline_VITIS_LOOP_396_3/VITIS_LOOP_396_3
+      b2ctl    —
+      shadow   II    2  iter-lat                4  lat        1 ~     131071  trip  0 ~ 65535  pipelined yes
+      b0b      —
+  tme_top_Pipeline_isq_init/isq_init
+      b2ctl    II    1  iter-lat                7  lat        9 ~        221  trip    4 ~ 216  pipelined yes
+      shadow   II    1  iter-lat                7  lat        9 ~        221  trip    4 ~ 216  pipelined yes
+      b0b      —
+  tme_top_Pipeline_isq_slide/isq_slide
+      b2ctl    II    1  iter-lat               14  lat       13 ~        820  trip    1 ~ 808  pipelined yes
+      shadow   II    1  iter-lat               14  lat       13 ~        820  trip    1 ~ 808  pipelined yes
+      b0b      —
+  tme_top_Pipeline_load_patch_VITIS_LOOP_116_1/load_patch_VITIS_LOOP_116_1
+      b2ctl    II    1  iter-lat                5  lat        0 ~ 4294836228  trip 0 ~ 4294836225  pipelined yes
+      shadow   —
+      b0b      —
+  tme_top_Pipeline_load_patch_VITIS_LOOP_279_1/load_patch_VITIS_LOOP_279_1
+      b2ctl    —
+      shadow   —
+      b0b      II    1  iter-lat                5  lat        0 ~ 4294836228  trip 0 ~ 4294836225  pipelined yes
+  tme_top_Pipeline_load_patch_VITIS_LOOP_303_1/load_patch_VITIS_LOOP_303_1
+      b2ctl    —
+      shadow   II    1  iter-lat                5  lat        0 ~ 4294836228  trip 0 ~ 4294836225  pipelined yes
+      b0b      —
+  tme_top_Pipeline_load_templ_VITIS_LOOP_127_2/load_templ_VITIS_LOOP_127_2
+      b2ctl    II    1  iter-lat                5  lat        1 ~ 4294836228  trip 0 ~ 4294836225  pipelined yes
+      shadow   —
+      b0b      —
+  tme_top_Pipeline_load_templ_VITIS_LOOP_290_2/load_templ_VITIS_LOOP_290_2
+      b2ctl    —
+      shadow   —
+      b0b      II    1  iter-lat                5  lat        1 ~ 4294836228  trip 0 ~ 4294836225  pipelined yes
+  tme_top_Pipeline_load_templ_VITIS_LOOP_314_2/load_templ_VITIS_LOOP_314_2
+      b2ctl    —
+      shadow   II    1  iter-lat                5  lat        1 ~ 4294836228  trip 0 ~ 4294836225  pipelined yes
+      b0b      —
+  tme_top_Pipeline_norm_cols/norm_cols
+      b2ctl    II    4  iter-lat               98  lat       97 ~       3361  trip    1 ~ 817  pipelined yes
+      shadow   II    4  iter-lat               98  lat       99 ~       3363  trip    1 ~ 817  pipelined yes
+      b0b      II    4  iter-lat               98  lat       97 ~       3361  trip    1 ~ 817  pipelined yes
+  tme_top_Pipeline_reset_acc/reset_acc
+      b2ctl    II    1  iter-lat                2  lat        0 ~      65536  trip  0 ~ 65536  pipelined yes
+      shadow   II    1  iter-lat                2  lat        0 ~      65536  trip  0 ~ 65536  pipelined yes
+      b0b      II    1  iter-lat                2  lat        0 ~      65536  trip  0 ~ 65536  pipelined yes
+  window_row_scan_Pipeline_scan_init/scan_init
+      b2ctl    —
+      shadow   II    1  iter-lat                7  lat        9 ~        221  trip    4 ~ 216  pipelined yes
+      b0b      II    1  iter-lat                7  lat        9 ~        221  trip    4 ~ 216  pipelined yes
+  window_row_scan_Pipeline_scan_slide/scan_slide
+      b2ctl    —
+      shadow   II    1  iter-lat               14  lat       13 ~        828  trip    1 ~ 816  pipelined yes
+      b0b      II    1  iter-lat               14  lat       13 ~        828  trip    1 ~ 816  pipelined yes
+
+SHARED MODULE LATENCY
+--------------------------------------------------------------------------
+  same     correlation_core                             b2ctl=58~26524  shadow=58~26524  b0b=58~26524
+  same     correlation_core_Pipeline_load_seg           b2ctl=23~235  shadow=23~235  b0b=23~235
+  same     correlation_core_Pipeline_mac_loop           b2ctl=10~222  shadow=10~222  b0b=10~222
+  same     correlation_core_Pipeline_refill_seg         b2ctl=21~21  shadow=21~21  b0b=21~21
+  same     tme_top_Pipeline_isq_init                    b2ctl=11~223  shadow=11~223
+  same     tme_top_Pipeline_isq_slide                   b2ctl=15~822  shadow=15~822
+  DIFFERS  tme_top_Pipeline_norm_cols                   b2ctl=99~3363  shadow=101~3365  b0b=99~3363
+  same     tme_top_Pipeline_reset_acc                   b2ctl=2~65538  shadow=2~65538  b0b=2~65538
+  same     window_row_scan                              shadow=33~1063  b0b=33~1063
+  same     window_row_scan_Pipeline_scan_init           shadow=11~223  b0b=11~223
+  same     window_row_scan_Pipeline_scan_slide          shadow=15~830  b0b=15~830
+
+DID ANY SHARED PIPELINED LOOP MOVE?
+--------------------------------------------------------------------------
+  YES.  Shared PIPELINED leaf loops that differ:
+    tme_top_Pipeline_norm_cols/norm_cols   latency_min        b2ctl=97 shadow=99   [recorded]
+    tme_top_Pipeline_norm_cols/norm_cols   latency_max        b2ctl=3361 shadow=3363   [recorded]
+
+  WHAT THAT MEANS FOR THE HALVES.  norm_cols is the loop the
+  shadow's per-position comparison lives in, and it runs once
+  per OUTPUT ROW.  So `shadow - b2ctl` is the hoisted pass
+  PLUS 2*rh, and `b0b - shadow` is the removal MINUS 2*rh.
+  Neither half is the thing its name says it is.
+
+  WHAT IT DOES NOT TOUCH.  b2ctl and b0b agree on norm_cols,
+  so `b0b - b2ctl` carries none of this.  The frozen net law
+  is unaffected; only its split is.
+
+  Module wrappers that differ (the same question, read from the
+  submodule reports rather than the top-level loop table):
+    tme_top_Pipeline_norm_cols: b2ctl=99~3363  shadow=101~3365
+
+  Non-pipelined CONTAINER loops that changed, as they must:
+    tme_top/accum_rows iteration_latency: b2ctl=97 ~ 158654 b0b=65 ~ 157601
+    tme_top/accum_rows latency_min: b2ctl=388 b0b=260
+    tme_top/accum_rows latency_max: b2ctl=15230784 b0b=15129696
+    tme_top/slide_v iteration_latency: b2ctl=495 ~ 15299691 shadow=567 ~ 15402032
+    tme_top/slide_v latency_min: b2ctl=496 shadow=568
+    tme_top/slide_v latency_max: b2ctl=4651106065 shadow=4682217729
+    tme_top/slide_v iteration_latency: b2ctl=495 ~ 15299691 b0b=436 ~ 15300941
+    tme_top/slide_v latency_min: b2ctl=496 b0b=437
+    tme_top/slide_v latency_max: b2ctl=4651106065 b0b=4651486065
+  Their iteration latency is the sum of what is inside them,
+  so a pass added to or removed from slide_v changes them by
+  definition.  That is the change being measured.

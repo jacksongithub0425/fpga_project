@@ -1,0 +1,51 @@
+=== PRE-STATE: B2 board session ===
+2026-08-20T05:52:09Z
+pynq
+Linux pynq 6.6.10-xilinx-v2024.1-g916a1f7c7222 #1 SMP PREEMPT Sat Apr 27 05:22:24 UTC 2024 armv7l armv7l armv7l GNU/Linux
+--- uptime ---
+ 05:52:09 up  1:04,  1 user,  load average: 0.37, 0.24, 0.13
+--- clocks BEFORE (must be restored to these) ---
+fclk0_mhz 100.0
+fclk1_mhz 142.857143
+fclk2_mhz 200.0
+fclk3_mhz 100.0
+PRESTATE_SAVED /home/xilinx/jupyter_notebooks/tme_b2/prestate_fclks.json
+--- memory ---
+               total        used        free      shared  buff/cache   available
+Mem:             491         134         125           1         232         344
+Swap:            511           0         511
+--- CMA ---
+CmaTotal:         229376 kB
+CmaFree:           63844 kB
+--- existing tme dirs: shipping artifacts, MUST NOT BE TOUCHED ---
+drwxr-xr-x 2 root root 4096 Aug 19 05:16 /home/xilinx/jupyter_notebooks/tme_b1
+drwxr-xr-x 2 root root 4096 Aug 20 05:46 /home/xilinx/jupyter_notebooks/tme_b2
+drwxr-xr-x 2 root root 4096 Aug 19 02:04 /home/xilinx/jupyter_notebooks/tme_phase_s
+drwxr-xr-x 2 root root 4096 Aug 18 04:51 /home/xilinx/jupyter_notebooks/tme_probe125
+drwxr-xr-x 2 root root 4096 Aug  9 21:40 /home/xilinx/jupyter_notebooks/tme_test
+--- contents of the NEW session dir (should hold only this script) ---
+total 5256
+drwxr-xr-x  2 root   root      4096 Aug 20 05:46 .
+drwxrwxrwx 16 xilinx xilinx    4096 Aug 20 05:43 ..
+-rw-r--r--  1 root   root      1202 Aug 20 05:43 00_prestate.sh
+-rw-r--r--  1 root   root       326 Aug 20 05:46 02_hashes_remote.txt
+-rw-r--r--  1 root   root      3359 Aug 20 05:45 03_run.sh
+-rw-r--r--  1 root   root      2143 Aug 20 05:45 04_restore.sh
+-rw-r--r--  1 root   root       868 Aug 20 05:47 04_restore.txt
+-rw-r--r--  1 root   root       879 Aug 20 05:45 B2_BOARD_INPUTS.sha256
+-rw-r--r--  1 root   root      3803 Aug 20 05:47 loaded.xclbin
+-rw-r--r--  1 root   root        86 Aug 20 05:52 prestate_fclks.json
+-rw-r--r--  1 root   root       683 Aug 20 05:45 tb_tme_cases_hw.txt
+-rw-r--r--  1 root   root       555 Aug 20 05:45 tb_tme_cases_phase_s.txt
+-rw-r--r--  1 root   root    524520 Aug 20 05:45 tb_tme_patches_hw.bin
+-rw-r--r--  1 root   root    178423 Aug 20 05:45 tb_tme_patches_phase_s.bin
+-rw-r--r--  1 root   root     30648 Aug 20 05:45 tb_tme_templs_hw.bin
+-rw-r--r--  1 root   root     53424 Aug 20 05:45 tb_tme_templs_phase_s.bin
+-rw-r--r--  1 root   root   4045690 Aug 20 05:45 tme_standalone.bit
+-rw-r--r--  1 root   root     86733 Aug 20 05:45 tme_standalone_bringup.py
+-rw-r--r--  1 root   root    395091 Aug 20 05:45 tme_standalone.hwh
+=== PRE-STATE END ===
+
+
+__EXIT__ 0
+

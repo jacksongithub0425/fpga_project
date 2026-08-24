@@ -1,0 +1,40 @@
+PS7 FCLK0 CLOCK PROBE -- PREDICTION RECORDED BEFORE THE RUN
+Phase 0, Priority B2-PROD.  Written 2026-08-21, before invoking Vivado.
+
+QUESTION
+  For CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ = 100 on a preset-less PS7
+  (xc7z020clg400-1, processing_system7 5.5, apply_board_preset 0), what does
+  Vivado's PS7 solver choose for
+      PCW_IO_IO_PLL_FREQMHZ, PCW_FCLK0_PERIPHERAL_DIVISOR0/1 ?
+
+WHY IT MATTERS
+  Vivado constrains clk_fpga_0 at  PCW_IO_IO_PLL_FREQMHZ / (div0*div1).
+  The BOARD runs at                1000 MHz / (div0*div1),
+  because PYNQ writes the HWH's raw divisors against the real 1000 MHz IO PLL
+  (the PYNQ boot image sets the PLL; our bitstream cannot).
+  The task needs BOTH a 10.000 ns Vivado constraint AND live fclk0 == 100.0,
+  which is only self-consistent if Vivado's model ALSO says 1000 MHz.
+
+OBSERVED DATA POINTS THIS MUST REPRODUCE (from shipped HWH files)
+  req  50 -> IO PLL 1600.000, div 8 x 4 = 32 -> Vivado 50 MHz,  board 31.25 MHz
+  req 125 -> IO PLL 1000.000, div 4 x 2 =  8 -> Vivado 125 MHz, board 125.0 MHz
+
+PREDICTION (mine, stated to be falsifiable)
+  The solver appears to prefer IO PLL = 1600 and only moves to 1000 when 1600
+  admits no integer divisor product (1600/125 = 12.8 is not an integer).
+  Since 1600/16 = 100 IS exact, I predict for req 100:
+      IO PLL 1600.000, div product 16  ->  Vivado 100 MHz (10.000 ns)
+                                       ->  BOARD 1000/16 = 62.5 MHz
+  i.e. the 10.000 ns constraint is obtained but the live-clock gate FAILS.
+
+  Confidence: moderate.  The competing hypothesis is that the solver minimises
+  the PLL frequency or is driven by other peripheral requests, in which case it
+  picks 1000/10 and everything is consistent.
+
+FALSIFICATION
+  If the probe returns IO PLL 1000.000 with div product 10, this prediction is
+  WRONG and B2/100 needs no PS7 workaround.
+
+SWEEP: 50, 100, 125, 160 MHz.  50 and 125 are controls -- if they do not
+reproduce the shipped HWH values exactly, the probe itself is invalid and its
+100 MHz answer must not be used.

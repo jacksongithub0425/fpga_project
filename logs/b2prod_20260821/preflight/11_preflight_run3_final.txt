@@ -1,0 +1,276 @@
+BOARD PREFLIGHT -- variant combined_b2_100
+  matcher      TermCountB2:hls:tme_top:0.2
+  Vivado       10.000 ns (1000 MHz IO PLL model / 10)
+  board fclk0  100.0000 MHz expected (1000 / 10) -- gated LIVE in step 3
+
+=== step 0: payload identity (/home/xilinx/jupyter_notebooks/b2prod_preflight) ===
+  three_stage_combined.bit     C9E6EE67F07531CA187DA84798E422990EC9A5A23FC90011325D94866DD6FDE8
+    pinned  (combined_b2_100     ) C9E6EE67F07531CA187DA84798E422990EC9A5A23FC90011325D94866DD6FDE8 -> OK
+    BUILD_INFO.txt                 C9E6EE67F07531CA187DA84798E422990EC9A5A23FC90011325D94866DD6FDE8 -> OK
+  three_stage_combined.hwh     32AC478E76F72F85F939CAF206F3CDD84BF27EB0B4A4DDD044559EAD459CF5B7
+    pinned  (combined_b2_100     ) 32AC478E76F72F85F939CAF206F3CDD84BF27EB0B4A4DDD044559EAD459CF5B7 -> OK
+    BUILD_INFO.txt                 32AC478E76F72F85F939CAF206F3CDD84BF27EB0B4A4DDD044559EAD459CF5B7 -> OK
+  BUILD_INFO variant=combined_b2_100 (expect combined_b2_100) -> OK
+  BUILD_INFO matcher_core=TermCountB2:hls:tme_top:0.2 (expect TermCountB2:hls:tme_top:0.2) -> OK
+  BUILD_INFO hwh_fclk0_div_product=10 (expect 10) -> OK
+  BUILD_INFO hwh_fclk1_div_product=8 (expect 8) -> OK
+  step 0 PASS
+
+=== step 1: platform ===
+  uptime 29,249 s (487.5 min) -- fresh-boot evidence, recorded not gated
+  CmaTotal 234,881,024 B (224.0 MiB); required >= 201,326,592 B (192 MiB)
+  CmaFree  123,981,824 B (118.2 MiB), 105.8 MiB already in use
+CMA_TOTAL_BYTES=234881024;CMA_FREE_BYTES=123981824;GATE=cma_pool_size;RESULT=PASS
+  WARNING: 105.8 MiB of CMA is already in use before the preflight allocates anything -- another notebook or a stale kernel may be holding buffers, which can fail a later gate for a reason that has nothing to do with the design
+  step 1 PASS
+
+========================================================================
+=== step 2: CMA gate (driver order, overlay resident)
+=== $ /usr/local/share/pynq-venv/bin/python3 /home/xilinx/jupyter_notebooks/b2prod_preflight/probe_cma_budget.py --overlay /home/xilinx/jupyter_notebooks/b2prod_preflight/three_stage_combined.bit
+========================================================================
+contract §2.2 CMA probe
+  target: 2 x 63,078,400 B (60.2 MiB)  (image 9856 x 6400)
+  required pool: cma=192M (201,326,592 B (192.0 MiB))
+  CmaTotal: 234,881,024 B (224.0 MiB)
+  CmaFree : 120,344,576 B (114.8 MiB)
+
+  overlay loaded: /home/xilinx/jupyter_notebooks/b2prod_preflight/three_stage_combined.bit
+  CmaFree after overlay: 71,053,312 B (67.8 MiB)
+
+  allocation plan — driver order: 5 smaller buffers (525,752 B (0.5 MiB) total) before the two full-page ones
+    cand_buf       512 B (0.0 MiB)
+    meta_buf       1,024 B (0.0 MiB)
+    patch_rx_buf   251,740 B (0.2 MiB)
+    tme_patch_buf  251,740 B (0.2 MiB)
+    tme_templ_buf  20,736 B (0.0 MiB)
+    grayscale      63,078,400 B (60.2 MiB)
+    binary         63,078,464 B (60.2 MiB)
+
+  cand_buf       allocated  phys=0xF84A000..0xF84A1FF  512 B (0.0 MiB)
+
+  meta_buf       allocated  phys=0xF84C000..0xF84C3FF  1,024 B (0.0 MiB)
+
+  patch_rx_buf   allocated  phys=0xF880000..0xF8BD75B  251,740 B (0.2 MiB)
+
+  tme_patch_buf  allocated  phys=0xF8C0000..0xF8FD75B  251,740 B (0.2 MiB)
+
+  tme_templ_buf  allocated  phys=0xF850000..0xF8550FF  20,736 B (0.0 MiB)
+
+  grayscale      allocated  phys=0xF900000..0x13527FFF  63,078,400 B (60.2 MiB)
+
+  binary         allocated  phys=0x17100000..0x1AD2803F  63,078,464 B (60.2 MiB)
+
+  no overlap between any pair; gap between the two full-page regions: 0x3BD8000 B
+  (they need not be adjacent — §2.2 requires two separately contiguous regions, not one 120.3 MiB region)
+
+  stamping one byte per 4096 B page across all 7 buffers...
+  flushed and invalidated all 7 buffers
+  cand_buf       verified  (1 pages)
+  meta_buf       verified  (1 pages)
+  patch_rx_buf   verified  (61 pages)
+  tme_patch_buf  verified  (61 pages)
+  tme_templ_buf  verified  (5 pages)
+  grayscale      verified  (15,400 pages)
+  binary         verified  (15,400 pages)
+
+  CmaFree with both held: 26,189,824 B (25.0 MiB)
+
+§2.2 GATE PASSES — for this boot, this pool state, and the driver's own allocation order.
+The driver allocates its image buffers lazily, at the actual page size, so a page smaller than the §2 maximum probed here asks less of the pool than this run did.
+
+[step 2: CMA gate (driver order, overlay resident)] exit=0
+
+========================================================================
+=== step 3: overlay + LIVE clock (combined_b2_100)
+=== $ /usr/local/share/pynq-venv/bin/python3 /home/xilinx/jupyter_notebooks/b2prod_preflight/inspect_overlay.py --overlay /home/xilinx/jupyter_notebooks/b2prod_preflight/three_stage_combined.bit --variant combined_b2_100
+========================================================================
+variant=combined_b2_100  matcher=TermCountB2:hls:tme_top:0.2  expected board fclk0=100.0000 MHz (div product 10), Vivado period 10.000 ns
+
+PL clock (measured): 100.0 MHz = 100.0000 MHz (10.000 ns)
+  variant combined_b2_100: divisor product 10 -> 1000/10 = 100.0000 MHz expected on the board; Vivado constrained 10.000 ns against a 1000 MHz IO PLL model
+  measured 100.0000 MHz is 1000/10 (= 100.0000); delta from expected 0.000000 MHz, tolerance 1e-06
+LIVE_FCLK0_MHZ=100.0;EXPECTED=100.0;DIV_PRODUCT=10;GATE=live_clock;RESULT=PASS
+PL fclk1 (measured): 125.0 MHz; variant expects 125.0000 MHz (1000/8). PYNQ's default is 142.857143, so this reading is positive evidence that THIS overlay's divisors were applied -- which fclk0 cannot give when its target equals the board default.
+LIVE_FCLK1_MHZ=125.0;EXPECTED=125.0;DIV_PRODUCT=8;GATE=live_fclk1;RESULT=PASS
+
+=== overlay.ip_dict ===
+  axi_dma_binarize             xilinx.com:ip:axi_dma:7.1                    base=0x41E20000 range=0x10000
+  axi_dma_patch                xilinx.com:ip:axi_dma:7.1                    base=0x41E00000 range=0x10000
+  axi_dma_templ                xilinx.com:ip:axi_dma:7.1                    base=0x41E10000 range=0x10000
+  binarize_core_0              TermCount:hls:binarize_core:2.0              base=0x40010000 range=0x10000
+  dma_pe_data                  xilinx.com:ip:axi_dma:7.1                    base=0x41E30000 range=0x10000
+  dma_pe_meta                  xilinx.com:ip:axi_dma:7.1                    base=0x41E40000 range=0x10000
+  patch_extract_core_0         TermCount:hls:patch_extract_core:0.1         base=0x40020000 range=0x10000
+  processing_system7_0         xilinx.com:ip:processing_system7:5.5         base=0x00000000 range=0x0
+  tme_top_0                    TermCountB2:hls:tme_top:0.2                  base=0x40000000 range=0x10000
+
+=== overlay.hierarchy_dict ===
+  (flat design -- no hierarchies)
+
+=== HLS core register maps ===
+
+--- tme_top_0 ---
+RegisterMap {
+  CTRL = Register(AP_START=0, AP_DONE=0, AP_IDLE=1, AP_READY=0, RESERVED_1=0, AUTO_RESTART=0, RESERVED_2=0, INTERRUPT=0, RESERVED_3=0),
+  GIER = Register(Enable=0, RESERVED=0),
+  IP_IER = Register(CHAN0_INT_EN=0, CHAN1_INT_EN=0, RESERVED_0=0),
+  IP_ISR = Register(CHAN0_INT_ST=0, CHAN1_INT_ST=0, RESERVED_0=0),
+  patch_w = Register(patch_w=write-only, RESERVED=write-only),
+  patch_h = Register(patch_h=write-only, RESERVED=write-only),
+  templ_w = Register(templ_w=write-only, RESERVED=write-only),
+  templ_h = Register(templ_h=write-only, RESERVED=write-only),
+  result_score = Register(result_score=0),
+  result_score_ctrl = Register(result_score_ap_vld=0, RESERVED=0),
+  result_x = Register(result_x=0, RESERVED=0),
+  result_x_ctrl = Register(result_x_ap_vld=0, RESERVED=0),
+  result_y = Register(result_y=0, RESERVED=0),
+  result_y_ctrl = Register(result_y_ap_vld=0, RESERVED=0)
+}
+
+--- binarize_core_0 ---
+RegisterMap {
+  CTRL = Register(AP_START=0, AP_DONE=0, AP_IDLE=1, AP_READY=0, RESERVED_1=0, AUTO_RESTART=0, RESERVED_2=0, INTERRUPT=0, RESERVED_3=0),
+  GIER = Register(Enable=0, RESERVED=0),
+  IP_IER = Register(CHAN0_INT_EN=0, CHAN1_INT_EN=0, RESERVED_0=0),
+  IP_ISR = Register(CHAN0_INT_ST=0, CHAN1_INT_ST=0, RESERVED_0=0),
+  img_w = Register(img_w=write-only, RESERVED=write-only),
+  img_h = Register(img_h=write-only, RESERVED=write-only),
+  threshold = Register(threshold=write-only, RESERVED=write-only)
+}
+
+--- patch_extract_core_0 ---
+RegisterMap {
+  CTRL = Register(AP_START=0, AP_DONE=0, AP_IDLE=1, AP_READY=0, RESERVED_1=0, AUTO_RESTART=0, RESERVED_2=0, INTERRUPT=0, RESERVED_3=0),
+  GIER = Register(Enable=0, RESERVED=0),
+  IP_IER = Register(CHAN0_INT_EN=0, CHAN1_INT_EN=0, RESERVED_0=0),
+  IP_ISR = Register(CHAN0_INT_ST=0, CHAN1_INT_ST=0, RESERVED_0=0),
+  bin_image_1 = Register(bin_image=write-only),
+  bin_image_2 = Register(bin_image=write-only),
+  img_w = Register(img_w=write-only, RESERVED=write-only),
+  img_h = Register(img_h=write-only, RESERVED=write-only),
+  stride_bytes = Register(stride_bytes=write-only),
+  buffer_bytes = Register(buffer_bytes=write-only),
+  num_cands = Register(num_cands=write-only, RESERVED=write-only),
+  sts_flags = Register(sts_flags=0),
+  sts_flags_ctrl = Register(sts_flags_ap_vld=0, RESERVED=0),
+  sts_rejected = Register(sts_rejected=0),
+  sts_rejected_ctrl = Register(sts_rejected_ap_vld=0, RESERVED=0),
+  sts_processed = Register(sts_processed=0),
+  sts_processed_ctrl = Register(sts_processed_ap_vld=0, RESERVED=0)
+}
+
+matcher VLNV: TermCountB2:hls:tme_top:0.2
+MATCHER_VLNV=TermCountB2:hls:tme_top:0.2;EXPECTED=TermCountB2:hls:tme_top:0.2;GATE=matcher_vlnv;RESULT=PASS
+
+=== address map (pinned) ===
+  axi_dma_binarize         base=0x41E20000 range=0x10000 expect base=0x41E20000 range=0x10000 -> OK
+  axi_dma_patch            base=0x41E00000 range=0x10000 expect base=0x41E00000 range=0x10000 -> OK
+  axi_dma_templ            base=0x41E10000 range=0x10000 expect base=0x41E10000 range=0x10000 -> OK
+  binarize_core_0          base=0x40010000 range=0x10000 expect base=0x40010000 range=0x10000 -> OK
+  dma_pe_data              base=0x41E30000 range=0x10000 expect base=0x41E30000 range=0x10000 -> OK
+  dma_pe_meta              base=0x41E40000 range=0x10000 expect base=0x41E40000 range=0x10000 -> OK
+  patch_extract_core_0     base=0x40020000 range=0x10000 expect base=0x40020000 range=0x10000 -> OK
+  tme_top_0                base=0x40000000 range=0x10000 expect base=0x40000000 range=0x10000 -> OK
+
+=== register offsets (pinned) ===
+  tme_top_0                14 pinned offsets -> OK
+  binarize_core_0          7 pinned offsets -> OK
+  patch_extract_core_0     17 pinned offsets -> OK
+
+=== DMA engines ===
+  (resolving these constructs PYNQ's DMA driver, which STARTS each channel; the idle gate reloads the overlay for that reason)
+  axi_dma_binarize   sendchannel=yes recvchannel=yes buffer_max_size=67108863
+  dma_pe_data        sendchannel=yes recvchannel=yes buffer_max_size=262143
+  dma_pe_meta        sendchannel=no  recvchannel=yes buffer_max_size=262143
+  axi_dma_patch      sendchannel=yes recvchannel=no  buffer_max_size=262143
+  axi_dma_templ      sendchannel=yes recvchannel=no  buffer_max_size=262143
+
+axi_dma_binarize single-transfer bound: 67,108,863 B vs full page 63,078,400 B -> OK
+
+PASS: overlay matches variant combined_b2_100 and tme_driver.py's expectations.
+
+[step 3: overlay + LIVE clock (combined_b2_100)] exit=0
+
+========================================================================
+=== step 4: reset and idle, before DMA traffic (combined_b2_100)
+=== $ /usr/local/share/pynq-venv/bin/python3 /home/xilinx/jupyter_notebooks/b2prod_preflight/board_idle_check.py --overlay /home/xilinx/jupyter_notebooks/b2prod_preflight/three_stage_combined.bit --variant combined_b2_100
+========================================================================
+variant=combined_b2_100  overlay=/home/xilinx/jupyter_notebooks/b2prod_preflight/three_stage_combined.bit
+
+=== phase 1: state after a fresh overlay load ===
+
+--- phase 1: HLS cores ---
+  tme_top_0                CTRL=0x00000004 start=0 done=0 idle=1 ready=0  -> IDLE
+  binarize_core_0          CTRL=0x00000004 start=0 done=0 idle=1 ready=0  -> IDLE
+  patch_extract_core_0     CTRL=0x00000004 start=0 done=0 idle=1 ready=0  -> IDLE
+
+--- phase 1: ap_vld sideband registers ---
+  tme_top_0.result_score_ctrl    = 0x00000000 -> clear
+  tme_top_0.result_x_ctrl        = 0x00000000 -> clear
+  tme_top_0.result_y_ctrl        = 0x00000000 -> clear
+  patch_extract_core_0.sts_flags_ctrl       = 0x00000000 -> clear
+  patch_extract_core_0.sts_rejected_ctrl    = 0x00000000 -> clear
+  patch_extract_core_0.sts_processed_ctrl   = 0x00000000 -> clear
+
+--- phase 1: DMA channels (read-only) ---
+  axi_dma_binarize.MM2S    DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  axi_dma_binarize.S2MM    DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  dma_pe_data.MM2S         DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  dma_pe_data.S2MM         DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  dma_pe_meta.S2MM         DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  axi_dma_patch.MM2S       DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  axi_dma_templ.MM2S       DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+
+  read-only confirmed: a second full read returned identical words.
+
+phase 1 OK: every core idle, every DMA channel halted, no stale ap_vld.
+
+--- phase 2a: perturb GIER (inert: interrupt ports are unconnected) ---
+  tme_top_0                wrote GIER=1, read back 0x00000001 -> OK
+  binarize_core_0          wrote GIER=1, read back 0x00000001 -> OK
+  patch_extract_core_0     wrote GIER=1, read back 0x00000001 -> OK
+
+--- phase 2b: reprogram the PL ---
+  reloaded /home/xilinx/jupyter_notebooks/b2prod_preflight/three_stage_combined.bit
+
+--- phase 2c: perturbation must be gone ---
+  tme_top_0                GIER=0x00000000 -> cleared by reset
+  binarize_core_0          GIER=0x00000000 -> cleared by reset
+  patch_extract_core_0     GIER=0x00000000 -> cleared by reset
+
+--- phase 2: HLS cores ---
+  tme_top_0                CTRL=0x00000004 start=0 done=0 idle=1 ready=0  -> IDLE
+  binarize_core_0          CTRL=0x00000004 start=0 done=0 idle=1 ready=0  -> IDLE
+  patch_extract_core_0     CTRL=0x00000004 start=0 done=0 idle=1 ready=0  -> IDLE
+
+--- phase 2: ap_vld sideband registers ---
+  tme_top_0.result_score_ctrl    = 0x00000000 -> clear
+  tme_top_0.result_x_ctrl        = 0x00000000 -> clear
+  tme_top_0.result_y_ctrl        = 0x00000000 -> clear
+  patch_extract_core_0.sts_flags_ctrl       = 0x00000000 -> clear
+  patch_extract_core_0.sts_rejected_ctrl    = 0x00000000 -> clear
+  patch_extract_core_0.sts_processed_ctrl   = 0x00000000 -> clear
+
+--- phase 2: DMA channels (read-only) ---
+  axi_dma_binarize.MM2S    DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  axi_dma_binarize.S2MM    DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  dma_pe_data.MM2S         DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  dma_pe_data.S2MM         DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  dma_pe_meta.S2MM         DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  axi_dma_patch.MM2S       DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+  axi_dma_templ.MM2S       DMACR=0x00010002 DMASR=0x00000001 halted=1 rs=0 -> HALTED
+
+PASS: quiescent after load, AXI-Lite live in both directions, and a PL reload returns the fabric to power-on state.
+IDLE_CHECK=PASS
+
+[step 4: reset and idle, before DMA traffic (combined_b2_100)] exit=0
+
+========================================================================
+PREFLIGHT=PASS;VARIANT=combined_b2_100;BOARD_FCLK0_MHZ=100.0
+All four steps passed. The board is cleared for staged qualification of combined_b2_100.
+This is evidence for THIS boot only -- CMA contiguity degrades with use, so re-run it after any reboot or power cycle.
+========================================================================
+
+
+__EXIT__ 0
+

@@ -1,0 +1,76 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Mon Aug 17 23:39:56 2026
+| Host         : DESKTOP-KG9P5J1 running 64-bit major release  (build 9200)
+| Command      : report_design_analysis -congestion -extend -file C:/Users/lychee/tc25/vivado_project/tme_standalone_125/timing_evidence/congestion.rpt
+| Design       : tme_bd_wrapper
+| Device       : xc7z020
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Design Analysis
+
+Table of Contents
+-----------------
+1. Setup Path Characteristics 1-1
+2. Placer Final Level Congestion Reporting
+3. Initial Estimated Router Congestion Reporting
+
+1. Setup Path Characteristics 1-1
+---------------------------------
+
+Setup Characteristics for Path #1
++---------------------------+-----------------------------------------+---------------------------------+-----------------------------------------------------------------+
+|      Characteristics      |             WorstPath to Src            |             Path #1             |                        WorstPath from Dst                       |
++---------------------------+-----------------------------------------+---------------------------------+-----------------------------------------------------------------+
+| Requirement               | 8.000                                   | 8.000                           | 8.000                                                           |
+| Path Delay                | 4.862                                   | 7.642                           | 6.299                                                           |
+| Logic Delay               | 0.434(9%)                               | 2.454(33%)                      | 1.783(29%)                                                      |
+| Net Delay                 | 4.428(91%)                              | 5.188(67%)                      | 4.516(71%)                                                      |
+| Clock Skew                | -0.353                                  | -0.064                          | -0.299                                                          |
+| Slack                     | 2.093                                   | 0.064                           | 1.182                                                           |
+| Clock Uncertainty         | 0.125                                   | 0.125                           | 0.125                                                           |
+| Clock Pair Classification | Partial False Path                      | Partial False Path              | Partial False Path                                              |
+| Clock Delay Group         | Same Clock                              | Same Clock                      | Same Clock                                                      |
+| Logic Levels              | 0                                       | 0                               | 6                                                               |
+| Routes                    | 1                                       | 1                               | 4                                                               |
+| Logical Path              | DSP48E1/CLK-(8)-RAMB36E1/ADDRARDADDR[6] | RAMB36E1/CLKBWRCLK-(216)-FDRE/D | FDRE/C-(1)-LUT6-(1)-MUXF7-MUXF8-LUT6-(1)-MUXF7-LUT5-(16)-FDRE/D |
+| Start Point Clock         | clk_fpga_0                              | clk_fpga_0                      | clk_fpga_0                                                      |
+| End Point Clock           | clk_fpga_0                              | clk_fpga_0                      | clk_fpga_0                                                      |
+| DSP Block                 | Seq                                     | None                            | None                                                            |
+| RAM Registers             | None-None                               | DO_REG(0)-None                  | None-None                                                       |
+| IO Crossings              | 0                                       | 0                               | 0                                                               |
+| Config Crossings          | 0                                       | 0                               | 0                                                               |
+| SLR Crossings             | 0                                       | 0                               | 0                                                               |
+| PBlocks                   | 0                                       | 0                               | 0                                                               |
+| High Fanout               | 8                                       | 216                             | 16                                                              |
+| ASYNC REG                 | 0                                       | 0                               | 0                                                               |
+| Dont Touch                | 0                                       | 0                               | 0                                                               |
+| Mark Debug                | 0                                       | 0                               | 0                                                               |
+| Start Point Pin Primitive | DSP48E1/CLK                             | RAMB36E1/CLKBWRCLK              | FDRE/C                                                          |
+| End Point Pin Primitive   | RAMB36E1/ADDRARDADDR[6]                 | FDRE/D                          | FDRE/D                                                          |
+| Start Point Pin           | p_reg_reg/CLK                           | ram_reg_0_0/CLKBWRCLK           | t_row_81_fu_1448_reg[0]/C                                       |
+| End Point Pin             | ram_reg_0_0/ADDRARDADDR[6]              | t_row_81_fu_1448_reg[0]/D       | p_reg_reg_i_8__14_psdsp_1/D                                     |
++---------------------------+-----------------------------------------+---------------------------------+-----------------------------------------------------------------+
+* Bounding box calculated as % of dimensions for the target device (308, 299)
+
+
+2. Placer Final Level Congestion Reporting
+------------------------------------------
+
++-----------+------+-------+------------+--------+---------------+----------------+-----+--------+------+------+------+-----+-------+-----+------------+
+| Direction | Type | Level | Congestion | Window | Combined LUTs | Avg LUT Inputs | LUT | LUTRAM | Flop | MUXF | RAMB | DSP | CARRY | SRL | Cell Names |
++-----------+------+-------+------------+--------+---------------+----------------+-----+--------+------+------+------+-----+-------+-----+------------+
+* No congestion windows are found above level 5
+
+
+3. Initial Estimated Router Congestion Reporting
+------------------------------------------------
+
++-----------+------+-------+------------------+--------+---------------+----------------+-----+--------+------+------+------+-----+-------+-----+------------+
+| Direction | Type | Level | Percentage Tiles | Window | Combined LUTs | Avg LUT Inputs | LUT | LUTRAM | Flop | MUXF | RAMB | DSP | CARRY | SRL | Cell Names |
++-----------+------+-------+------------------+--------+---------------+----------------+-----+--------+------+------+------+-----+-------+-----+------------+
+* No initial estimated congestion windows are found above level 5
+
+

@@ -1,0 +1,9 @@
+@@PROBE3_BEGIN@@
+ROW ctl-req100               xtal=33.333333  fbdiv=48  io_pll=1600.000  div=4x4=16  echo=100   VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz
+ROW ctl-req125               xtal=33.333333  fbdiv=30  io_pll=1000.000  div=4x2=8   echo=125   VIVADO=125.0000MHz/8.0000ns BOARD=125.0000MHz
+ROW e-fbdiv30-req100         xtal=33.333333  fbdiv=48  io_pll=1600.000  div=4x4=16  echo=100   VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz
+ROW e2-req100-fbdiv30        xtal=33.333333  fbdiv=48  io_pll=1600.000  div=4x4=16  echo=100   VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz
+ROW b-force-div52            xtal=33.333333  fbdiv=48  io_pll=1600.000  div=4x4=16  echo=100   VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz
+ROW c-fclk1_125-fclk0_100    xtal=33.333333  fbdiv=30  io_pll=1000.000  div=5x2=10  echo=100   VIVADO=100.0000MHz/10.0000ns BOARD=100.0000MHz
+ROW d-xtal50-req100          xtal=50         fbdiv=32  io_pll=1600.000  div=4x4=16  echo=100   VIVADO=100.0000MHz/10.0000ns BOARD=62.5000MHz
+@@PROBE3_END@@

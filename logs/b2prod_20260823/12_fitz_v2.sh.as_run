@@ -1,0 +1,224 @@
+#!/bin/bash
+# ===========================================================================
+# FORMAL PyMuPDF PROTOCOL v2
+#
+# The protocol and its ten predictions were registered and committed BEFORE
+# this ran: logs/b2prod_20260823/11_protocol_v2_PREREGISTERED.md.
+#
+# v2 = v1 + the two missing shared libraries in the same throwaway root,
+# reached with LD_LIBRARY_PATH.  Both variables are process-scoped; nothing
+# is installed and nothing outlives the run.
+#
+# Retained from v1: unprivileged as `xilinx`; `apt download` + `dpkg-deb -x`
+# only; a throwaway root under /home/xilinx/b2prod_fitz_probe.*; the root
+# removed and its absence proved; `dpkg -s` confirming nothing installed.
+#
+# Fails closed.
+# ===========================================================================
+set -u
+
+PYBIN=/usr/local/share/pynq-venv/bin/python3
+HELPERS=${HELPERS:-/home/xilinx/jupyter_notebooks}
+SW=${SW:-/home/xilinx/jupyter_notebooks/b2prod_v2_sw}
+FAILED=0
+FAILED_GATES=""
+
+gate() {
+    local name=$1 ok=$2
+    shift 2
+    if [ "$ok" -eq 0 ]; then
+        echo "GATE $name: PASS $*"
+    else
+        echo "GATE $name: FAIL $*"
+        FAILED=1
+        FAILED_GATES="$FAILED_GATES $name"
+    fi
+}
+
+absorb() {   # absorb the gate lines a helper script printed
+    while IFS= read -r line; do
+        echo "    $line"
+        case "$line" in
+            "GATE "*": FAIL"*)
+                FAILED=1
+                n=${line#GATE }; n=${n%%:*}
+                FAILED_GATES="$FAILED_GATES $n";;
+        esac
+    done
+}
+
+jget() {
+    "$PYBIN" -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+for k in sys.argv[2].split("."):
+    d = d[k]
+print(d)' "$1" "$2" 2>/dev/null
+}
+
+echo "=== FORMAL PyMuPDF PROTOCOL v2 ==="
+echo "predictions registered in 11_protocol_v2_PREREGISTERED.md before this run"
+date -u +"utc              %Y-%m-%dT%H:%M:%SZ"
+echo "host             $(hostname)  $(uname -m)  $(uname -r)"
+echo "whoami           $(whoami)  uid=$(id -u)"
+[ "$(id -u)" -ne 0 ]; gate unprivileged $? "uid=$(id -u)"
+[ "$(whoami)" = "xilinx" ]; gate running_as_xilinx $? "$(whoami)"
+echo
+
+# --- payload attestation, read back FROM the board ---------------------
+echo "--- 0. payload digests, read off this board before anything runs"
+for f in "$HELPERS/fitz_probe_env.py" "$HELPERS/fitz_v2_detector.py" \
+         "$HELPERS/fitz_probe_func.py" "$0"; do
+    [ -f "$f" ] && echo "    $(sha256sum "$f")"
+done
+echo "--- project modules staged for the detector test"
+if [ -d "$SW" ]; then
+    ( cd "$SW" && sha256sum ./*.py 2>/dev/null | sed 's/^/    /' )
+    gate sw_payload_present 0 "$(ls -1 "$SW"/*.py 2>/dev/null | wc -l) module(s)"
+else
+    gate sw_payload_present 1 "$SW missing"
+fi
+echo
+
+# --- baseline ----------------------------------------------------------
+echo "--- 1. clean baseline (nothing injected)"
+BASE=/tmp/v2_baseline.json
+"$PYBIN" "$HELPERS/fitz_probe_env.py" > "$BASE" 2>/dev/null
+for m in numpy cv2 pynq fitz; do
+    echo "    $m  import=$(jget "$BASE" $m.import)  ver=$(jget "$BASE" $m.version)"
+done
+[ "$(jget "$BASE" fitz.import)" = "FAILED" ]
+gate fitz_absent_before $?
+EXTSUF=$(jget "$BASE" ext_suffix)
+echo "    interpreter $(jget "$BASE" python) / $(jget "$BASE" machine) / $EXTSUF"
+echo
+
+# --- root + download ---------------------------------------------------
+ROOT=$(mktemp -d /home/xilinx/b2prod_fitz_probe.XXXXXXXX) || exit 1
+trap 'rm -rf "$ROOT"' EXIT
+mkdir -p "$ROOT/deb" "$ROOT/x"
+echo "--- 2. apt download (NOT apt install)"
+echo "root             $ROOT"
+( cd "$ROOT/deb" && apt-get download python3-fitz libgumbo1 libmujs1 ) 2>&1 |
+    sed 's/^/    /'
+N=$(ls -1 "$ROOT"/deb/*.deb 2>/dev/null | wc -l)
+[ "$N" -eq 3 ]; gate three_debs_downloaded $? "$N"
+if [ "$N" -ne 3 ]; then
+    rm -rf "$ROOT"; trap - EXIT
+    echo "=== VERDICT"; echo "PROTOCOL V2: FAIL --$FAILED_GATES three_debs_downloaded"
+    echo "__PROBE_EXIT__ 1"; exit 1
+fi
+ARCHBAD=0
+for d in "$ROOT"/deb/*.deb; do
+    echo "    $(basename "$d")"
+    echo "      version      $(dpkg-deb -f "$d" Version)"
+    echo "      architecture $(dpkg-deb -f "$d" Architecture)"
+    echo "      bytes        $(stat -c %s "$d")"
+    echo "      sha256       $(sha256sum "$d" | cut -d' ' -f1)"
+    [ "$(dpkg-deb -f "$d" Architecture)" = "armhf" ] || ARCHBAD=1
+done
+gate deb_arch_usable $ARCHBAD "all armhf"
+echo
+
+# --- extract -----------------------------------------------------------
+echo "--- 3. dpkg-deb -x all three into one throwaway root"
+XBAD=0
+for d in "$ROOT"/deb/*.deb; do dpkg-deb -x "$d" "$ROOT/x" || XBAD=1; done
+gate all_extracted $XBAD
+PKGDIR="$ROOT/x/usr/lib/python3/dist-packages"
+LIBDIR="$ROOT/x/usr/lib/arm-linux-gnueabihf"
+SO="$PKGDIR/fitz/_fitz.cpython-310-arm-linux-gnueabihf.so"
+echo "PYTHONPATH       $PKGDIR"
+echo "LD_LIBRARY_PATH  $LIBDIR"
+ls -1 "$LIBDIR" 2>/dev/null | sed 's/^/    /'
+[ -f "$SO" ]; gate extension_found $? "$(basename "$SO")"
+case "$(basename "$SO")" in
+    *cpython-310*arm-linux-gnueabihf*)
+        gate abi_tag_matches 0 "vs interpreter $EXTSUF";;
+    *)  gate abi_tag_matches 1 "vs interpreter $EXTSUF";;
+esac
+echo
+
+# --- ldd ---------------------------------------------------------------
+echo "--- 4. ldd with the libraries on the path"
+LD_LIBRARY_PATH="$LIBDIR" ldd "$SO" 2>&1 | sed 's/^/    /'
+TOTAL=$(LD_LIBRARY_PATH="$LIBDIR" ldd "$SO" 2>&1 | grep -c '=>')
+MISSING=$(LD_LIBRARY_PATH="$LIBDIR" ldd "$SO" 2>&1 | grep -c 'not found')
+[ "$MISSING" -eq 0 ]; gate ldd_complete $? "$MISSING unresolved of $TOTAL"
+echo
+
+# --- injected environment ----------------------------------------------
+echo "--- 5. injected environment"
+INJ=/tmp/v2_injected.json
+PYTHONPATH="$PKGDIR" LD_LIBRARY_PATH="$LIBDIR" "$PYBIN" \
+    "$HELPERS/fitz_probe_env.py" > "$INJ" 2>/tmp/v2_inj.err
+sed 's/^/    stderr: /' /tmp/v2_inj.err
+BIND=$(jget "$INJ" fitz_detail.VersionBind)
+MUPDF=$(jget "$INJ" fitz_detail.VersionFitz)
+FILE=$(jget "$INJ" fitz_detail.file)
+ONCLASS=$(jget "$INJ" fitz_detail.samples_mv)
+echo "    fitz bind=$BIND mupdf=$MUPDF"
+echo "    fitz.__file__ $FILE"
+echo "    hasattr(fitz.Pixmap,'samples_mv') = $ONCLASS   (predicted False)"
+[ "$(jget "$INJ" fitz.import)" = "ok" ]; gate fitz_imports $?
+case "$BIND" in 1.19.2*) gate bind_is_1_19_2 0 "$BIND";;
+                *) gate bind_is_1_19_2 1 "${BIND:-none}";; esac
+case "$MUPDF" in 1.19.0*) gate mupdf_is_1_19_0 0 "$MUPDF";;
+                 *) gate mupdf_is_1_19_0 1 "${MUPDF:-none}";; esac
+case "$FILE" in "$ROOT"/*) gate fitz_from_throwaway_root 0;;
+                *) gate fitz_from_throwaway_root 1 "${FILE:-none}";; esac
+for mod in numpy cv2 pynq; do
+    ok=0
+    for field in import file version; do
+        [ "$(jget "$BASE" "$mod.$field")" = "$(jget "$INJ" "$mod.$field")" ] || ok=1
+    done
+    gate "${mod}_resolution_unchanged" $ok
+done
+echo
+
+# --- raw fitz still works (v1's functional test, retained) --------------
+echo "--- 6. raw fitz: rendering, words, drawings"
+PYTHONPATH="$PKGDIR" LD_LIBRARY_PATH="$LIBDIR" "$PYBIN" \
+    "$HELPERS/fitz_probe_func.py" "$ROOT/v2_raw.pdf" > /tmp/v2_func.out 2>&1
+RC=$?
+sed 's/^/    /' /tmp/v2_func.out
+[ "$RC" -eq 0 ]; gate raw_fitz_functional $? "rc=$RC"
+echo
+
+# --- THE v2 addition: this project's renderer --------------------------
+echo "--- 7. this project's renderer under the injected runtime"
+PYTHONPATH="$PKGDIR:$SW" LD_LIBRARY_PATH="$LIBDIR" "$PYBIN" \
+    "$HELPERS/fitz_v2_detector.py" "$ROOT/v2_detector.pdf" \
+    > /tmp/v2_det.out 2>&1
+DRC=$?
+absorb < /tmp/v2_det.out
+[ "$DRC" -eq 0 ]; gate detector_suite_exit $? "rc=$DRC"
+echo
+
+# --- teardown ----------------------------------------------------------
+echo "--- 8. teardown"
+rm -rf "$ROOT"; trap - EXIT
+[ ! -e "$ROOT" ]; gate root_removed $? "$ROOT"
+LEFT=$(ls -d /home/xilinx/b2prod_fitz_probe.* 2>/dev/null | wc -l)
+[ "$LEFT" -eq 0 ]; gate no_probe_roots_left $? "$LEFT remaining"
+"$PYBIN" -c "import fitz" 2>/dev/null; [ $? -ne 0 ]; gate fitz_absent_after $?
+for p in python3-fitz libgumbo1 libmujs1; do
+    dpkg -s "$p" >/dev/null 2>&1; [ $? -ne 0 ]
+    gate "nothing_installed_$p" $?
+done
+rm -f /tmp/v2_baseline.json /tmp/v2_injected.json /tmp/v2_inj.err \
+      /tmp/v2_func.out /tmp/v2_det.out
+echo
+
+echo "=== VERDICT"
+if [ "$FAILED" -eq 0 ]; then
+    echo "PROTOCOL V2: PASS"
+    echo "  Reads: this board runs THIS PROJECT'S renderer under a locally"
+    echo "  staged PyMuPDF 1.19.2 / MuPDF 1.19.0, unprivileged, nothing"
+    echo "  installed, taking the zero-copy pixmap path."
+    echo "  Does NOT read: Stage 2, or any agreement with MuPDF 1.29."
+    echo "  The page rendered was synthetic and no parity was compared."
+else
+    echo "PROTOCOL V2: FAIL --$FAILED_GATES"
+fi
+echo "__PROBE_EXIT__ $FAILED"
+exit $FAILED

@@ -1,0 +1,42 @@
+numpy            1.21.5
+pynq             3.1.1
+
+--- the raw buffers
+cma_gray         type=PynqBuffer nbytes=6144 physical=0xf84a000
+                 chain: PynqBuffer(nbytes=6144,len=6144) -> memoryview(nbytes=8192,len=8192)
+cma_binary       type=PynqBuffer nbytes=10240 physical=0xf84c000
+                 chain: PynqBuffer(nbytes=10240,len=10240) -> memoryview(nbytes=10240,len=10240)
+
+--- binary_view()
+view             shape=(64, 96) nbytes=6144
+view chain:      ndarray(nbytes=6144,len=64) -> ndarray(nbytes=6144,len=6144) -> PynqBuffer(nbytes=10240,len=10240) -> memoryview(nbytes=10240,len=10240)
+
+--- what mem_sampler charges
+root             PynqBuffer nbytes=10240
+provider         {'type': 'memoryview', 'bytes': 10240}
+distinct_bytes   10240
+
+GATE root_is_the_pynq_buffer: PASS PynqBuffer
+GATE charges_the_whole_buffer_not_the_window: PASS 10240 vs buffer 10240, window 6144
+--- describe_arrays over the driver's own set
+  clean_bin   group=1 bytes=6144 group_bytes=10240 depth=4 provider={'type': 'memoryview', 'bytes': 10240}
+  cma_binary  group=1 bytes=10240 group_bytes=10240 depth=2 provider={'type': 'memoryview', 'bytes': 10240}
+  cma_gray    group=0 bytes=6144 group_bytes=6144 depth=2 provider={'type': 'memoryview', 'bytes': 8192}
+  page_bin    group=1 bytes=6144 group_bytes=10240 depth=4 provider={'type': 'memoryview', 'bytes': 10240}
+  alias_groups   [['cma_binary', 'clean_bin', 'page_bin']]
+  view_bytes     28672
+  distinct_bytes 16384
+  distinct_unknown 0
+
+GATE view_aliases_its_buffer: PASS clean_bin group 1, cma_binary group 1
+GATE gray_is_its_own_allocation: PASS 
+GATE no_unknown_sizes: PASS 0 unknown
+GATE distinct_is_the_two_buffers: PASS 16384 vs 16384
+GATE sampler_kept_no_reference_to_the_view: PASS 
+buffers freed
+
+PYNQ ALIAS PROBE: PASS -- mem_sampler charges the PynqBuffer, not the window and not the mapping
+
+
+__EXIT__ 0
+

@@ -1,0 +1,79 @@
+PAIRED RTL CO-SIMULATION -- template_match_b1_{b1,b2}
+
+   # case                       patch    templ   rw   T  seg   measured b1     model b1    d
+   0 direct flat-templ-4x4    12x10     4x4       9   1   19         4,568        4,568    0
+   1 direct min-nonflat dt=15    4x4      4x4       1   1   19           536          536    0
+   2 b1-w001-tw216           216x13   216x8       1   1  231        59,040       59,040    0
+   3 b1-w015-tw216           230x13   216x8      15   1  231        61,658       61,658    0
+   4 b1-w016-tw216           231x13   216x8      16   1  231        61,845       61,845    0
+   5 b1-w017-tw216           232x13   216x8      17   2  231        84,736       84,736    0
+   6 b1-w031-tw100           130x21   100x12     31   2  115       114,374      114,374    0
+   7 b1-w032-tw100           131x21   100x12     32   2  115       114,805      114,805    0
+   8 b1-w033-tw100           132x21   100x12     33   3  115       144,156      144,156    0
+   9 b1-w095-tw020           114x27    20x12     95   6   35       178,366      178,366    0
+  10 b1-w096-tw020           115x27    20x12     96   6   35       179,049      179,049    0
+  11 b1-tie-samerow           47x21    16x12     32   2   31        42,481       42,481    0
+  12 b1-tie-rowmajor          47x21    16x12     32   2   31        42,481       42,481    0
+  13 b1-lane15                88x39    24x16     65   5   39       300,096      300,096    0
+
+  the `b1` control reproduces its published term on 14/14 transactions -- this is what makes a `b2` residual
+  attributable to the overlap reuse and not to the harness
+
+  TWO INDEPENDENT CHECKS.  `declared` is tme_cycle_model's published B2 term; `fitted`
+  is this suite's own two-parameter fit of the shortfall.  Neither is derived from
+  the other, and they fail for different reasons.
+
+   # case                    measured b2     declared      d       fitted      d      x
+   0 direct flat-templ-4x4         4,568        4,568      0        4,568      0  1.000
+   1 direct min-nonflat dt=15          536          536      0          536      0  1.000
+   2 b1-w001-tw216                59,040       59,040      0       59,040      0  1.000
+   3 b1-w015-tw216                61,658       61,658      0       61,658      0  1.000
+   4 b1-w016-tw216                61,845       61,845      0       61,845      0  1.000
+   5 b1-w017-tw216                74,512       74,512      0       74,512      0  1.137
+   6 b1-w031-tw100               102,734      102,734      0      102,734      0  1.113
+   7 b1-w032-tw100               103,165      103,165      0      103,165      0  1.113
+   8 b1-w033-tw100               120,876      120,876      0      120,876      0  1.193
+   9 b1-w095-tw020               162,046      162,046      0      162,046      0  1.101
+  10 b1-w096-tw020               162,729      162,729      0      162,729      0  1.100
+  11 b1-tie-samerow               40,921       40,921      0       40,921      0  1.038
+  12 b1-tie-rowmajor              40,921       40,921      0       40,921      0  1.038
+  13 b1-lane15                   267,840      267,840      0      267,840      0  1.120
+
+  DECLARED model (tme_cycle_model B2): 14/14 exact
+  FITTED   form  (this suite alone)  : 14/14 exact
+  fitted constants: +2 per tile, -2 per call
+
+  case                    naive saving     measured   shortfall         fit    ok
+  direct flat-templ-4x4              0            0           0           0    ok
+  direct min-nonflat dt=15             0            0           0           0    ok
+  b1-w001-tw216                      0            0           0           0    ok
+  b1-w015-tw216                      0            0           0           0    ok
+  b1-w016-tw216                      0            0           0           0    ok
+  b1-w017-tw216                 10,320       10,224          96          96    ok
+  b1-w031-tw100                 11,880       11,640         240         240    ok
+  b1-w032-tw100                 11,880       11,640         240         240    ok
+  b1-w033-tw100                 23,760       23,280         480         480    ok
+  b1-w095-tw020                 18,240       16,320       1,920       1,920    ok
+  b1-w096-tw020                 18,240       16,320       1,920       1,920    ok
+  b1-tie-samerow                 1,800        1,560         240         240    ok
+  b1-tie-rowmajor                1,800        1,560         240         240    ok
+  b1-lane15                     35,328       32,256       3,072       3,072    ok
+
+  implied tile term minus tme_cycle_model's declared B2 term: [0.0]
+  ({0.0} means the model already carries the measured term; any other single
+  value means the correction is one constant shape across every geometry)
+
+  suite total: 1,388,191 -> 1,263,391 cycles (1.099x on this suite).  The suite is NOT the workload;
+  the page figure comes from tme_cycle_model over the 20,680-trial trace, not from here.
+
+  DECOMPOSITION  miss vs pre-RTL projection = rh*th*(3T-1) = rh*th*((T+1) + 2*(T-1)) : 14/14 exact
+                 of which T = 1, where the whole miss is B1's (T+1)      : 5/5 exact
+
+OK -- four independent checks passed:
+  1. the `b1` control still reproduces its published tile term;
+  2. every measured B2 latency matches the DECLARED model in tme_cycle_model;
+  3. every shortfall against the naive reuse arithmetic fits one rh*th*(a*T + b),
+     fitted here and not read from the model;
+  4. the miss against the pre-RTL projection is rh*th*((T+1) + 2*(T-1)) --
+     B1's correction RECURS and a further 2*(T-1) is added to it.
+Cycle counts only.  No page time and no clock is measured by this file.

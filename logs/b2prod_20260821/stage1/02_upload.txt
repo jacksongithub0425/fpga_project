@@ -1,0 +1,105 @@
+
+
+__EXIT__ 0
+
+  [ 1/33] binarize_dma_checks.py              29,040 B
+  [ 2/33] board_expect.py                     10,759 B
+  [ 3/33] board_gate_clock.py                 20,720 B
+  [ 4/33] board_gate_extract.py               46,218 B
+  [ 5/33] board_gate_full_dma.py              23,296 B
+  [ 6/33] board_gate_protocol.py              43,264 B
+  [ 7/33] board_gate_recovery.py              24,264 B
+  [ 8/33] board_idle_check.py                 21,123 B
+  [ 9/33] board_preflight.py                  20,069 B
+  [10/33] BUILD_INFO.txt                       1,401 B
+  [11/33] GATE4_VECTORS.sha256                 2,904 B
+  [12/33] GATE5_VECTORS.sha256                 1,790 B
+  [13/33] inspect_overlay.py                  19,542 B
+  [14/33] PAYLOAD.sha256                       2,797 B
+  [15/33] probe_cma_budget.py                 21,633 B
+  [16/33] safe_teardown.py                    16,542 B
+  [17/33] tb_bpe_tme_bin.bin                     480 B
+  [18/33] tb_bpe_tme_cases.txt                   141 B
+  [19/33] tb_bpe_tme_gray.bin                    480 B
+  [20/33] tb_bpe_tme_patch.bin                   168 B
+  [21/33] tb_bpe_tme_templs.bin                   16 B
+  [22/33] tb_proto_bin.bin                     6,144 B
+  [23/33] tb_proto_cases.txt                     890 B
+  [24/33] tb_proto_gray.bin                    6,144 B
+  [25/33] tb_proto_patches.bin                 2,674 B
+  [26/33] tb_proto_templs.bin                    240 B
+  [27/33] tb_tme_cases_hw.txt                    683 B
+  [28/33] tb_tme_patches_hw.bin              524,520 B
+  [29/33] tb_tme_templs_hw.bin                30,648 B
+  [30/33] three_stage_combined.bit         4,045,690 B
+  [31/33] three_stage_combined.hwh           926,777 B
+  [32/33] tme_driver.py                       91,540 B
+  [33/33] tme_standalone_bringup.py           86,733 B
+
+33 files, 6,029,330 bytes uploaded
+inspect_overlay.py
+: FAILED open or read
+sha256sum: 'probe_cma_budget.py'$'\r': No such file or directory
+probe_cma_budget.py
+: FAILED open or read
+sha256sum: 'safe_teardown.py'$'\r': No such file or directory
+safe_teardown.py
+: FAILED open or read
+sha256sum: 'tb_bpe_tme_bin.bin'$'\r': No such file or directory
+tb_bpe_tme_bin.bin
+: FAILED open or read
+sha256sum: 'tb_bpe_tme_cases.txt'$'\r': No such file or directory
+tb_bpe_tme_cases.txt
+: FAILED open or read
+sha256sum: 'tb_bpe_tme_gray.bin'$'\r': No such file or directory
+tb_bpe_tme_gray.bin
+: FAILED open or read
+sha256sum: 'tb_bpe_tme_patch.bin'$'\r': No such file or directory
+tb_bpe_tme_patch.bin
+: FAILED open or read
+sha256sum: 'tb_bpe_tme_templs.bin'$'\r': No such file or directory
+tb_bpe_tme_templs.bin
+: FAILED open or read
+sha256sum: 'tb_proto_bin.bin'$'\r': No such file or directory
+tb_proto_bin.bin
+: FAILED open or read
+sha256sum: 'tb_proto_cases.txt'$'\r': No such file or directory
+tb_proto_cases.txt
+: FAILED open or read
+sha256sum: 'tb_proto_gray.bin'$'\r': No such file or directory
+tb_proto_gray.bin
+: FAILED open or read
+sha256sum: 'tb_proto_patches.bin'$'\r': No such file or directory
+tb_proto_patches.bin
+: FAILED open or read
+sha256sum: 'tb_proto_templs.bin'$'\r': No such file or directory
+tb_proto_templs.bin
+: FAILED open or read
+sha256sum: 'tb_tme_cases_hw.txt'$'\r': No such file or directory
+tb_tme_cases_hw.txt
+: FAILED open or read
+sha256sum: 'tb_tme_patches_hw.bin'$'\r': No such file or directory
+tb_tme_patches_hw.bin
+: FAILED open or read
+sha256sum: 'tb_tme_templs_hw.bin'$'\r': No such file or directory
+tb_tme_templs_hw.bin
+: FAILED open or read
+sha256sum: 'three_stage_combined.bit'$'\r': No such file or directory
+three_stage_combined.bit
+: FAILED open or read
+sha256sum: 'three_stage_combined.hwh'$'\r': No such file or directory
+three_stage_combined.hwh
+: FAILED open or read
+sha256sum: 'tme_driver.py'$'\r': No such file or directory
+tme_driver.py
+: FAILED open or read
+sha256sum: 'tme_standalone_bringup.py'$'\r': No such file or directory
+tme_standalone_bringup.py
+: FAILED open or read
+sha256sum: WARNING: 32 listed files could not be read
+--- count ---
+33
+
+
+__EXIT__ 0
+

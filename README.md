@@ -16,26 +16,38 @@ build artifacts are intentionally excluded from this public repository.
 
 ## System Overview
 
-The pipeline keeps file handling, PDF rendering, text/vector extraction, and
-final post-processing in the processing system (PS). The programmable logic
-(PL) accelerates the streaming image kernels and per-candidate classification.
+The pipeline keeps file handling, PDF rendering, text/vector extraction,
+classification, and final post-processing in the processing system (PS). The
+programmable logic (PL) accelerates the streaming image kernels: binarization,
+patch extraction, and template-match scoring. Classification — the
+per-candidate score reduction and box construction — is deliberately PS-side
+in the MVP (decision 2026-08-11, `docs/pl_interface_contract.md` §10 items
+4–5): the PS sequences one matcher invocation per (candidate, template, scale)
+trial, keeps a strictly-greater running argmax over a frozen trial order, and
+builds the detection box from the patch origin plus the matcher's reported
+location.
 
 ```text
-PS: ARM Linux / Python                  PL: FPGA fabric
+PS: ARM Linux / Python                  PL: FPGA fabric (three_stage_combined)
 
 PDF input
   |
   v
-page_render_ps      ---- gray image DMA ----> binarize_core
-text/vector logic   <--- binary image DDR ---
+page_render_ps      ---- gray image MM2S ---> binarize_core
+text/vector logic   <--- binary image S2MM --
   |
   v
-candidate_gen_ps    ---- candidates DMA ----> patch_extract_core
-                                         --> template_match_core
-                                         --> class_score_core
-                                         --> result buffer
+candidate_gen_ps    ---- candidates MM2S ---> patch_extract_core
+                    <--- patch pixels S2MM --
+                    <--- metadata S2MM ------
   |
   v
+match sequencer     ---- patch MM2S --------> template_match_core (tme_top)
+(per trial)         ---- template MM2S ----->
+                    <--- score/x/y regs -----
+  |
+  v
+classify_ps: per-kind argmax, box construction
 postprocess_ps: heuristics, NMS, annotation, reporting
 ```
 
@@ -49,21 +61,30 @@ hls/
   binarize/         HLS grayscale-to-binary image core and testbench
   patch_extract/    HLS patch extraction core
   template_match/   HLS template matching engine
-  class_score/      HLS score ranking and classification core
+  class_score/      parked — removed from the MVP (2026-08-11)
+  integration/      binarize -> extract -> match C/golden harness
 
 sw/
   terminal_counter_endpoint_first.py   CPU baseline and integration target
-  tme_driver.py                        PYNQ/PL driver work
-  *_terminal_*.py                      batch, sweep, and evaluation utilities
+  tme_driver.py                        PYNQ driver for the combined overlay
+  tme_standalone_bringup.py            matcher standalone bring-up (silicon 9/9)
+  BOARD_RUNBOOK.md                     ordered board gates
+  probe_cma_budget.py                  gate 1: CMA budget (contract 2.2)
+  inspect_overlay.py                   gate 2: overlay vs driver cross-check
+  board_gate_full_dma.py               gate 3: full-size DMA transfer
+  test_*.py                            host-side tests, no board required
   *_ter/                               small template assets
   old_code/                            archived Python experiments
 
-rtl/
-  Reserved for Phase B SystemVerilog implementations
+docs/
+  pl_interface_contract.md   the binding PS/PL interface contract
 
-data/, docs/, tb/
-  Reserved project folders
+vivado/
+  three_stage_combined/      overlay reconstruction Tcl + board bundle
 ```
+
+Phase B SystemVerilog (`rtl/`) has no sources yet; the directory appears when
+the first one lands.
 
 ## Implemented Accelerator Blocks
 
@@ -71,9 +92,9 @@ data/, docs/, tb/
 |---|---|---|
 | `binarize_core` | Applies a 3x3 Gaussian blur and threshold to a grayscale page image. | Streams pixels row by row and writes a binary page buffer. |
 | `patch_extract_core` | Builds candidate-centered search windows from the binary page image. | Matches the patch boundary logic used by the Python pipeline. |
-| `template_match` / `tme_top` | Computes template-match scores over a search patch. | Uses a pipelined MAC-based correlation path. |
-| `class_score_core` | Ranks template scores and emits a tentative class result. | Applies threshold and score-margin logic. |
-| `tme_driver.py` | Coordinates software/accelerator handoff. | Intended for PYNQ buffer allocation, DMA, and register control. |
+| `template_match` / `tme_top` | Computes template-match scores over a search patch. | Exact-integer TM_CCOEFF_NORMED; standalone silicon bring-up passed 9/9 (2026-08-07). |
+| `class_score_core` | (Parked — removed from the MVP, 2026-08-11.) | Classification and box construction run on the PS; revisit only if benchmarking the completed PS classification shows a bottleneck. |
+| `tme_driver.py` | Coordinates software/accelerator handoff. | Per-core register windows against the `three_stage_combined` overlay; explicit CPU/PL backend selection, no silent fallback. |
 
 ## Toolchain
 
@@ -98,16 +119,17 @@ The local virtual environment should not be committed.
 
 ## Running HLS Builds
 
-Each HLS block has its own `run_hls.tcl` script. For example:
+Each HLS block has its own `run_hls.tcl` script. Vitis HLS 2025.2 ships no
+standalone `vitis_hls` launcher — runs go through `vitis-run --mode hls`:
 
 ```powershell
 cd hls\binarize
-vitis_hls -f run_hls.tcl
+vitis-run --mode hls -f run_hls.tcl
 ```
 
 ```powershell
 cd hls\template_match
-vitis_hls -f run_hls.tcl
+vitis-run --mode hls -f run_hls.tcl
 ```
 
 Some testbench scripts generate raw `.bin` vectors from private drawing data.
@@ -121,7 +143,10 @@ This public repository excludes:
 - Confidential source drawings and sample PDFs
 - Rendered/debug drawing images
 - Raw `.bin` image buffers and template-match test vectors
-- Vitis/Vivado generated project outputs
+- Vitis/Vivado generated project outputs — with one deliberate exception:
+  `vivado/three_stage_combined/board_bundle/` carries the deployable
+  `.bit`/`.hwh` pair (SHA-256 recorded in its `BUILD_INFO.txt`) so the
+  board results stay reproducible from the repository alone
 - Local virtual environments and Python caches
 
 The ignore rules are kept in `.gitignore` so future commits do not accidentally
@@ -129,15 +154,26 @@ include those files.
 
 ## Roadmap
 
-- Complete PS/PL integration through PYNQ buffers and DMA.
-- Validate HLS cores against CPU baseline behavior.
-- Package HLS cores into a Vivado block design.
-- Replace selected HLS modules with optimizied SystemVerilog:
+- ~~Package HLS cores into a Vivado block design~~ — done: the
+  `three_stage_combined` overlay (binarize, patch extract, template match,
+  five AXI DMAs) is routed with a matching `.bit`/`.hwh` (2026-08-11).
+- Board gates, in order (each PASS is a precondition of the next — see
+  [sw/BOARD_RUNBOOK.md](sw/BOARD_RUNBOOK.md), which is authoritative):
+  1. CMA budget probe (contract §2.2);
+  2. overlay introspection (`ip_dict`, `register_map`) against the driver;
+  3. the full-size 63,078,400-byte DMA transfer, verified bit-exactly.
+
+  Then per-stage driver bring-up (`binarize_page`, `extract_candidates`,
+  `match_template`) with explicit CPU-parity checks.
+- Integrate `detect_page()` one PL stage at a time behind explicit detector
+  backends (CPU / PL-binarize / PL-extract / PL-all) — no silent
+  FPGA-to-CPU fallback during validation.
+- Benchmark the completed PS classification; reconsider `class_score_core`
+  only if that measurement identifies classification as a bottleneck.
+- Replace selected HLS modules with optimized SystemVerilog (Phase B):
   - `template_match_core.sv`
   - `binarize_core.sv`
   - `patch_extract_core.sv`
-  - AXI DMA reader/writer blocks
-  - AXI-Lite control register block
 
 ## Project Goal
 

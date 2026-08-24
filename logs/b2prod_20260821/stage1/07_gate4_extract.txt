@@ -1,0 +1,99 @@
+--- fixtures (GATE4_VECTORS.sha256) ---
+  [OK  ] tb_bpe_tme_cases.txt           141 B  ed90565eec56a4aa816d7ba12f64a146cabb95b58548254f304d65ba111a740b
+  [OK  ] tb_bpe_tme_gray.bin            480 B  ede44a0efa7757102f18bd583983d4b262a6e5f7141bd5a13302d8be555573b3
+  [OK  ] tb_bpe_tme_bin.bin             480 B  118ac39fb5cfed72a7e024cddee9045ae43157710600e0772f91fe50bd829a57
+  [OK  ] tb_bpe_tme_patch.bin           168 B  3a97be1698cea0fc1805683ccba6f2e62b4ed1742196023b561e7b9e5ba47c0d
+  [OK  ] tb_bpe_tme_templs.bin           16 B  f00dc88ec2407e1e83e7a0c43949506f46f526b586c2bcc7c2990c35b5d24f8f
+  [OK  ] tb_tme_cases_hw.txt            683 B  378d4d6e3559b4afb1d1f22f7e618d3eb011c49f0b523226588a6ed7b6f6ad6e
+  [OK  ] tb_tme_patches_hw.bin      524,520 B  5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53
+  [OK  ] tb_tme_templs_hw.bin        30,648 B  026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350
+  8 fixtures verified, 557,136 B total
+board_gate_extract — overlay three_stage_combined.bit
+page 24x20 threshold 140, descriptor ep(12,10) left 4x4, patch 14x12 @(3,4)
+  teardown protection: ignoring SIGINT, SIGTERM, SIGHUP, SIGQUIT
+
+--- phase A: binarize the 24x20 page ---
+  [PASS] binarize_page published transfer stats
+  [PASS] MM2S programmed 480 B: 480 B
+  [PASS] S2MM received 480 B: 480 B
+  [PASS] no 0xAA sentinel survives in the page: 0 unwritten bytes
+  [PASS] the 64-byte guard tail is intact: 0 clobbered
+  [PASS] binary page is 24x20: (20, 24)
+  [PASS] all 480 binary bytes match the golden
+  480 B in 0.022 s
+
+--- phase B: extract one candidate ---
+  [PASS] one record per descriptor: 1
+  [PASS] extract_candidates published status stats
+  [PASS] sts_flags == 0: 0x0
+  [PASS] sts_rejected == 0: 0
+  [PASS] sts_processed == 1: 1
+  [PASS] §6.2 record: valid == 1: True
+  [PASS] §6.2 record: origin (3,4): (3,4)
+  [PASS] §6.2 record: patch 14x12: 14x12
+  [PASS] patch S2MM moved exactly 168 B: [168]
+  [PASS] patch array is 14x12: (12, 14)
+  [PASS] all 168 patch bytes match the golden
+  168 B in 0.027 s
+
+--- phase C: the 9-case matcher manifest through tme_top_0 ---
+  [PASS] the hw manifest carries 9 cases: 9
+  [PASS] the maximum-envelope case programs a 251,740 B transfer: 251,740 B
+  [PASS] [0] cosim-eq-identical (64x48 / 64x48): dut +1.000000 @(0,0) vs gold +1.000000 @(0,0), 0.002 s
+  [PASS] [1] cosim-final-corner (80x56 / 20x14): dut +1.000000 @(60,42) vs gold +1.000000 @(60,42), 0.005 s
+  [PASS] [2] cosim-interior (64x48 / 16x12): dut +1.000000 @(23,17) vs gold +1.000000 @(23,17), 0.004 s
+  [PASS] [3] cosim-blank (64x48 / 16x12): dut +0.000000 @(0,0) vs gold +0.000000 @(0,0), 0.004 s
+  [PASS] [4] cosim-min-4x4 (40x30 / 4x4): dut +1.000000 @(17,9) vs gold +1.000000 @(17,9), 0.002 s
+  [PASS] [5] equality-different (64x48 / 64x48): dut +0.009578 @(0,0) vs gold +0.009578 @(0,0), 0.002 s
+  [PASS] [6] equality-negative (64x48 / 64x48): dut -0.732374 @(0,0) vs gold -0.732374 @(0,0), 0.002 s
+  [PASS] [7] stress-max-envelope (820x307 / 216x96): dut +1.000000 @(604,211) vs gold +1.000000 @(604,211), 2.573 s
+  [PASS] [8] stress-max-result (820x307 / 4x4): dut +1.000000 @(816,303) vs gold +1.000000 @(816,303), 0.077 s
+  [PASS] re-invocation of cosim-eq-identical after the 251,740 B case: dut +1.000000 @(0,0) — stale BRAM would show here
+
+  §3.1: 251,740 B programmed as a single MM2S transfer; the core completed (ap_done) and both DMA channels became idle without error. NOT a received-byte measurement — both matcher channels are MM2S, so no engine wrote a received count.
+
+--- phase D: match_candidate (golden) ---
+  [PASS] two trials in the frozen order: 2
+  [PASS] trial order is alpha, then beta: ['alpha', 'beta']
+  [PASS] both templates are legal (§4.6)
+  [PASS] per-kind reduction kept both kinds: ['alpha', 'beta']
+  [PASS] alpha score is 1.0: +1.000000
+  [PASS] alpha peak at local (4, 1): (4,1)
+  [PASS] alpha box is absolute page (7, 5) + 4x4: (7, 5, 4, 4)
+  [PASS] beta score is 1.0: +1.000000
+  [PASS] beta peak at local (3, 8): (3,8)
+  [PASS] beta box is absolute page (6, 12) + 4x4: (6, 12, 4, 4)
+  [PASS] the two kinds score identically — a real tie: 1.0 vs 1.0
+  [PASS] the tie goes to the FIRST trial (strict >, §6.4): best kind=alpha
+  [PASS] control: reversing the trial order moves the tie to beta: best kind=beta
+  [PASS] an empty trial list returns without running anything: {'best': None, 'by_kind': {}}
+
+--- phase E: the chain, on the PL's own patch ---
+  [PASS] the extractor's patch equals the golden patch
+
+--- phase D: match_candidate (chained) ---
+  [PASS] two trials in the frozen order: 2
+  [PASS] trial order is alpha, then beta: ['alpha', 'beta']
+  [PASS] both templates are legal (§4.6)
+  [PASS] per-kind reduction kept both kinds: ['alpha', 'beta']
+  [PASS] alpha score is 1.0: +1.000000
+  [PASS] alpha peak at local (4, 1): (4,1)
+  [PASS] alpha box is absolute page (7, 5) + 4x4: (7, 5, 4, 4)
+  [PASS] beta score is 1.0: +1.000000
+  [PASS] beta peak at local (3, 8): (3,8)
+  [PASS] beta box is absolute page (6, 12) + 4x4: (6, 12, 4, 4)
+  [PASS] the two kinds score identically — a real tie: 1.0 vs 1.0
+  [PASS] the tie goes to the FIRST trial (strict >, §6.4): best kind=alpha
+  [PASS] control: reversing the trial order moves the tie to beta: best kind=beta
+  [PASS] an empty trial list returns without running anything: {'best': None, 'by_kind': {}}
+  [PASS] chained alpha result is identical to the golden-fed run: +1.000000 @(4,1) (7, 5, 4, 4)
+  [PASS] chained beta result is identical to the golden-fed run: +1.000000 @(3,8) (6, 12, 4, 4)
+
+  CHAIN: 480 gray bytes -> 480 binary bytes -> 168 patch bytes at (3,4) -> page (7, 5)
+
+========================================================================
+EXTRACTOR GATE PASSED (0 failures, 61 checks): 480 gray -> 480 binary -> 168 patch bytes at (3,4) -> matcher +1.000000 at page (7, 5); 9/9 hw cases through PLPipeline in the combined overlay, the 251,740 B envelope case programmed and completed without error
+Quote it as the first extractor run through PLPipeline in the combined overlay — both cores have silicon results of their own in standalone images.
+
+
+__EXIT__ 0

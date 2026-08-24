@@ -1,0 +1,73 @@
+TEMPLATE-MATCHING ENGINE - FROZEN EVIDENCE
+==============================================================================
+templates      imported from terminal_counter_endpoint_first
+  left         4 templates: 74x45 70x47 80x63 109x28
+  right        3 templates: 74x45 70x47 109x26
+scales         8: 0.70, 0.80, 0.90, 1.00, 1.10, 1.20, 1.35, 1.50
+workload       371 left + 367 right candidates over 36 pages
+               20680 initial trials, 808 refinement calls
+
+VALIDATION (silicon-backed)
+------------------------------------------------------------------------------
+  cosim              9 transactions reproduced exactly
+  board wall time    unchanged standalone matcher, 4 runs at 2 clocks:
+    stress-max-envelope  820x307/216x96 @  31.25 MHz  model  13.3606s  meas 13.362s  +1.376 ms +0.0103%
+    stress-max-result    820x307/  4x4  @  31.25 MHz  model   0.6740s  meas  0.676s  +2.004 ms +0.2973%
+    stress-max-envelope  820x307/216x96 @ 125.00 MHz  model   3.3402s  meas  3.342s  +1.844 ms +0.0552%
+    stress-max-result    820x307/  4x4  @ 125.00 MHz  model   0.1685s  meas  0.171s  +2.501 ms +1.4842%
+  clock linearity    derived from the rows above; only the compute-dominated case is 4x:
+    stress-max-envelope  ratio 3.998205  vs 4  ->  -0.0449%   tracks the clock
+    stress-max-result    ratio 3.953216  vs 4  ->  -1.1696%   FIXED OVERHEAD visible
+  full envelope      417,519,492 cycles
+  Phase S 311x159    23,476,737 cycles  = 17.784x
+  B2 board session   the B2 image itself, 125.0 MHz gated, TermCountB2:hls:tme_top:0.2:
+    phase-s-min-templ       99x67 /  4x4  T=6   model   0.0016s  meas  0.004s  +2.4 ms
+    phase-s-origin         147x94 / 52x31 T=6   model   0.0179s  meas  0.020s  +2.1 ms
+    phase-s-workload-mode  147x94 / 52x31 T=6   model   0.0179s  meas  0.020s  +2.1 ms
+    phase-s-workload-wide  259x105/164x42 T=6   model   0.0483s  meas  0.050s  +1.7 ms
+    phase-s-final-cell     215x157/120x94 T=6   model   0.0864s  meas  0.088s  +1.6 ms
+    phase-s-workload-max   215x157/120x94 T=6   model   0.0864s  meas  0.088s  +1.6 ms
+    phase-s-max            311x159/216x96 T=6   model   0.1355s  meas  0.138s  +2.5 ms
+    stress-max-envelope    820x307/216x96 T=38  model   2.0572s  meas  2.059s  +1.8 ms
+    stress-max-result      820x307/  4x4  T=52  model   0.0608s  meas  0.063s  +2.2 ms
+    residuals are all positive and trendless -- CONSISTENT WITH fixed
+    per-invocation overhead, though nothing here isolates its cause.
+    phase_s totals, same stimulus and clock (runner differs outside the
+    timed path): B1 0.544s -> B2 0.408s (0.136s saved)
+    tile counts SAMPLED by the 16 cases: [1, 3, 4, 6, 38, 52] -- vs T=6 alone in the
+    cosim and in B1's session.  Six values, not a sweep of 1..52.
+
+PROJECTION - initial trials only, s/page @ 125 MHz
+------------------------------------------------------------------------------
+  The CLOCK is board-demonstrated (above), and so is B1's ARCHITECTURE.
+  What is NOT demonstrated is any PAGE, for any variant:
+  Phase S is a driver change with no RTL; B0b is unimplemented RTL.
+  B2 IS implemented: cycle term cosim-measured against B1, 14/14 exact,
+  and RUN ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s 7/7 and
+  hw 9/9, reaching T = 52 where the cosim reached only T = 6.
+  B1 IS implemented: cycle term cosim-measured, routed at 8.000 ns, and RUN
+  ON THE BOARD at its OWN observed 125.0000 MHz -- phase_s only, so T = 6.
+  Neither borrows the unmodified core's clock.  Every s/page below is still
+  a projection: NO PAGE HAS BEEN RUN, for any variant, at any clock.
+  TODAY'S PL: side-common full context    631.931     2527.7 @31.25MHz   deployed; 622x300 / 622x224
+  CPU per-base context patch policy       333.413     1333.7 @31.25MHz   silicon-anchored formula
+  Phase S, per-base ROI, int() quirk       60.764      243.1 @31.25MHz   historical figure only
+  Phase S, per-base ROI, rounded           61.301      245.2 @31.25MHz   no RTL; corrected
+  Phase S, one ROI per side                94.697      378.8 @31.25MHz   no RTL; side-common reading
+  Phase S, per-trial ROI                   36.476      145.9 @31.25MHz   no RTL; needs driver change
+    + B1 runtime segment width             26.334      105.3 @31.25MHz   cosim-validated TERM; page projected
+    + B2 overlap reuse                     20.405       81.6 @31.25MHz   cosim+board TERM to T=52; page projected
+    + B0b, stats term deleted              17.598       70.4 @31.25MHz   deletion only, no count pass
+    + B0b count pass @ II=1                17.744       71.0 @31.25MHz   iterations derived; II projected
+    + B0b count pass @ II=3                18.036       72.1 @31.25MHz   iterations derived; II projected
+
+  Excludes refinement, DMA, extraction and PS work.
+  10 s/page is not reached by any modelled matcher change at the current trial count.
+  Neither the combined image nor an end-to-end page has been demonstrated at 125 MHz.
+
+frozen evidence re-proved: cosim x9, 4 board runs at 2 clocks, clock linearity, workload, Phase S, ROI variants, B1 EXACT aggregate + phase-s-max delta, B2 EXACT aggregate + routed WNS, B0b decomposition + both endpoints
+source corroboration: 42 value(s) re-read from source
+  B1 routed + board (logs/b1_*/)                 READ
+  B2 routed + board, 2 suites (logs/b2_*/)       READ
+  P2 board transcripts (logs/board_125mhz_gate/) READ
+  P2 routed report (post_route_wns.txt)          READ

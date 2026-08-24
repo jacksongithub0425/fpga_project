@@ -1,0 +1,9 @@
+fclk0 100.0 fclk1 125.0
+CmaTotal:         229376 kB
+CmaFree:          100980 kB
+ 00:32:25 up 10 min,  1 user,  load average: 0.59, 0.51, 0.36
+192.168.2.99 10.0.0.20 2601:646:8902:5240:d85d:27ff:fe7b:9f36 
+
+
+__EXIT__ 0
+

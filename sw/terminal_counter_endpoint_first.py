@@ -1,7 +1,9 @@
 import argparse
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import re
+import time
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import cv2
@@ -14,19 +16,135 @@ import numpy as np
 # ---------------------------
 
 
-def render_page(page: fitz.Page, zoom: float = 4.0) -> Tuple[np.ndarray, np.ndarray, float]:
+#: What `hasattr(fitz.Pixmap, "samples_mv")` answers on THIS build.  It is
+#: NOT the guard any more, and the reason is measured rather than argued:
+#: on the board's candidate runtime, PyMuPDF 1.19.2 / MuPDF 1.19.0 armhf,
+#: it answers **False while every pixmap instance has the attribute**,
+#: because 1.19.2 assigns `samples_mv` in `Pixmap.__init__` -- it lands in
+#: `pix.__dict__` and never appears on the class or in `dir(fitz.Pixmap)`.
+#: On the dev 1.28.0 it is a class attribute and answers True.
+#:
+#: Believing the class answer on the board would have silently taken the
+#: `pix.samples` path, which builds a `bytes` COPY of the whole pixmap --
+#: 186,126,336 B on a production page, for a buffer that is read once, on a
+#: board with roughly 290 MiB of userspace.  That is very plausibly the
+#: difference between fitting and an OOM kill, and it would have been
+#: attributed to the pipeline rather than to a `hasattr` on the wrong
+#: object.  Measured 2026-08-23; see logs/b2prod_20260823/08_samples_mv.txt.
+#:
+#: Kept, because it is what earlier records mean by `samples_mv`, and
+#: because the disagreement between it and `SAMPLES_MV_PATH` is itself the
+#: signal that the runtime was rebased.
+HAVE_SAMPLES_MV_ON_CLASS = hasattr(fitz.Pixmap, "samples_mv")
+
+#: Backwards-compatible alias.  Nothing may branch on it.
+HAVE_SAMPLES_MV = HAVE_SAMPLES_MV_ON_CLASS
+
+#: Which buffer the last `_pixmap_view()` actually used: "samples_mv" (zero
+#: copy) or "samples" (a full `bytes` copy).  Set per render, so a run says
+#: which path it took rather than which path its version implies.
+SAMPLES_MV_PATH = "not-yet-rendered"
+
+#: How much of the rendered RGB to convert to grey at a time, in bytes.  Only
+#: the conversion is striped, never the RENDER -- see `render_page`.
+GRAY_STRIPE_BYTES = 8 << 20
+
+
+def _pixmap_view(pix) -> np.ndarray:
+    """A NumPy view of the pixmap, without the bytes copy where possible.
+
+    Read-only, and only valid while `pix` is alive: it aliases MuPDF's own
+    buffer. Every caller here drops it before the pixmap goes.
+    """
+    # Asked of the INSTANCE, not of the class.  1.19.2 puts `samples_mv` in
+    # `pix.__dict__`, so the class-level question answers False on a build
+    # that supports it perfectly well -- see HAVE_SAMPLES_MV_ON_CLASS.  The
+    # cost of asking here is one `hasattr` per rendered page.
+    global SAMPLES_MV_PATH
+    if hasattr(pix, "samples_mv"):
+        SAMPLES_MV_PATH = "samples_mv"
+        buf = pix.samples_mv
+    else:
+        SAMPLES_MV_PATH = "samples"
+        buf = pix.samples
+    return np.frombuffer(buf, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+
+
+def _to_bgr(img: np.ndarray, n: int) -> np.ndarray:
+    if n == 4:
+        return cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
+    if n == 3:
+        return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+
+def render_page(page: fitz.Page, zoom: float = 4.0,
+                keep_bgr: bool = True) -> Tuple[np.ndarray, np.ndarray, float]:
+    """The page as (BGR or None, grey, zoom).
+
+    WHY THIS IS SHAPED THE WAY IT IS.  At zoom 4 a production page is
+    9792x6336, and the original four-array form held all of these at once:
+
+        pixmap 186,126,336 + samples copy 186,126,336
+        + BGR 186,126,336 + grey 62,042,112  =  620,421,120 B
+
+    against roughly 290 MiB of userspace once `cma=192M` is reserved out of
+    512 MiB. Dropping BGR after this function RETURNS is far too late; the
+    peak is inside it.
+
+    Two changes, and between them they cost nothing in arithmetic:
+
+    **The `samples` copy goes** (`samples_mv`), which is 186 MB of pure
+    duplication.
+
+    **With `keep_bgr=False` the BGR array is never built.** The grey page is
+    filled a band at a time straight from the rendered pixmap. Striping the
+    CONVERSION is exact by construction -- `RGB2BGR` is a channel swap and
+    `BGR2GRAY` a weighted sum, both strictly per-pixel with no neighbourhood
+    -- so every band gives the same bytes as converting the whole page at
+    once. Verified over the corpus at several band heights all the same.
+
+    **What was tried and REJECTED, because neither is byte-identical:**
+
+    * *Native grayscale rendering* (`colorspace=fitz.csGRAY`) would have been
+      the cheapest of all -- 124 MB total -- but MuPDF rasterises *into* grey
+      rather than converting afterwards, and its weights are not OpenCV's.
+      Measured over all 36 corpus pages: **0/36 identical**, up to 23 grey
+      levels apart. The thresholds happened not to move on this corpus, which
+      is luck, not a guarantee: a single level moves Otsu and every detection
+      downstream.
+    * *Striping the RENDER* with `clip=` tiles exactly in geometry -- every
+      band's irect came back as asked -- but not in pixels. MuPDF antialiases
+      content against the clip edge, so the last ~15 rows of each band differ
+      by up to 24 levels. An overlap margin makes that smaller but not zero
+      (16 and 64 rows still differed; 256 happened to be enough on the pages
+      tried), and there is no bound on how far a clipped object's coverage
+      reaches. A margin that is "big enough so far" is not a correctness
+      argument, so the render stays whole-page and only the conversion is
+      striped.
+
+    The peak with `keep_bgr=False` is the pixmap plus the grey page, about
+    248 MB, and the pixmap is released when this returns -- leaving 62 MB
+    held. This is a bound on THIS function, not on the process.
+    """
     mat = fitz.Matrix(zoom, zoom)
     pix = page.get_pixmap(matrix=mat, alpha=False)
-    img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+    src = _pixmap_view(pix)
+    h, w, n = pix.height, pix.width, pix.n
 
-    if pix.n == 4:
-        bgr = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
-    elif pix.n == 3:
-        bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    if keep_bgr:
+        bgr = _to_bgr(src, n)
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     else:
-        bgr = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        bgr = None
+        gray = np.empty((h, w), dtype=np.uint8)
+        rows = max(1, GRAY_STRIPE_BYTES // max(1, w * n))
+        for y0 in range(0, h, rows):
+            y1 = min(y0 + rows, h)
+            gray[y0:y1, :] = cv2.cvtColor(_to_bgr(src[y0:y1], n),
+                                          cv2.COLOR_BGR2GRAY)
 
-    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    del src                      # aliases the pixmap; must go with it
     return bgr, gray, zoom
 
 
@@ -502,20 +620,33 @@ def side_template_anchor(template: np.ndarray, side: str) -> Tuple[float, float]
 def build_endpoint_patch(endpoint_x: float, endpoint_y: float, side: str,
                          img_w: int, img_h: int,
                          max_template_w: int, max_template_h: int) -> Tuple[int, int, int, int]:
-    outward_w = int(max_template_w * 2.4)
-    inward_w = int(max_template_w * 1.4)
-    patch_h = int(max_template_h * 3.2)
+    # Match the integer endpoint coordinates packed for patch_extract_core.
+    endpoint_x_i = int(round(endpoint_x))
+    endpoint_y_i = int(round(endpoint_y))
+
+    # Use the same exact rational integer math as patch_extract_core.
+    outward_w = (max_template_w * 12) // 5
+    inward_w = (max_template_w * 7) // 5
+    patch_h = (max_template_h * 16) // 5
 
     if side == "left":
-        x0 = endpoint_x - outward_w
-        x1 = endpoint_x + inward_w
+        x0 = endpoint_x_i - outward_w
+        x1 = endpoint_x_i + inward_w
     else:
-        x0 = endpoint_x - inward_w
-        x1 = endpoint_x + outward_w
+        x0 = endpoint_x_i - inward_w
+        x1 = endpoint_x_i + outward_w
 
-    y0 = endpoint_y - patch_h / 2
-    y1 = endpoint_y + patch_h / 2
-    x0, y0, _, _ = clamp_box(x0, y0, 1, 1, img_w, img_h)
+    # A half-open interval derived from y0 contains exactly patch_h rows
+    # before image-boundary clipping, including when patch_h is odd.
+    y0 = endpoint_y_i - patch_h // 2
+    y1 = y0 + patch_h
+    # Clamp inline rather than via clamp_box(): x0/y0 cap at img_w-2/img_h-2
+    # instead of img_w-1/img_h-1, so the minimum-size bump below cannot push
+    # x1/y1 past the image edge.  patch_extract_core.cpp indexes a fixed-size
+    # BRAM array and must never address outside it, and numpy's silent slice
+    # clipping would otherwise hide the difference here.
+    x0 = max(0, min(int(round(x0)), img_w - 2))
+    y0 = max(0, min(int(round(y0)), img_h - 2))
     x1 = max(x0 + 2, min(int(round(x1)), img_w))
     y1 = max(y0 + 2, min(int(round(y1)), img_h))
     return x0, y0, x1, y1
@@ -647,7 +778,14 @@ def classify_endpoint(endpoint_xy: Tuple[float, float], side: str, page_bin: np.
 
 def refine_misaligned_terminal_boxes(page_bin: np.ndarray,
                                      detections: Sequence[dict],
-                                     side_templates: Dict[str, Dict[str, Sequence[np.ndarray]]]) -> List[dict]:
+                                     side_templates: Dict[str, Dict[str, Sequence[np.ndarray]]],
+                                     backend=None) -> List[dict]:
+    # Refinement runs on the HOST under every backend, and that is a stated
+    # boundary of this RTL rather than a fallback: prefer_local_alignment
+    # takes the argmax of the anchor-adjusted correlation MAP, and tme_top
+    # reports only a scalar argmax of the RAW map.  Routing it through the
+    # backend anyway is what makes the hop counted and printable instead of
+    # invisible -- see pl_backends.Backend.refine_hit.
     refined: List[dict] = []
 
     for det in detections:
@@ -662,20 +800,24 @@ def refine_misaligned_terminal_boxes(page_bin: np.ndarray,
             refined.append(updated)
             continue
 
-        best_hit: Optional[dict] = None
-        for templ in side_templates[det["side"]][det["kind"]]:
-            hit = best_template_match_local(
-                page_bin,
-                templ,
-                det["endpoint"],
-                det["side"],
-                scales=MATCH_SCALES,
-                prefer_local_alignment=True,
-            )
-            if hit is None:
-                continue
-            if best_hit is None or hit["score"] > best_hit["score"]:
-                best_hit = hit
+        if backend is None:
+            best_hit: Optional[dict] = None
+            for templ in side_templates[det["side"]][det["kind"]]:
+                hit = best_template_match_local(
+                    page_bin,
+                    templ,
+                    det["endpoint"],
+                    det["side"],
+                    scales=MATCH_SCALES,
+                    prefer_local_alignment=True,
+                )
+                if hit is None:
+                    continue
+                if best_hit is None or hit["score"] > best_hit["score"]:
+                    best_hit = hit
+        else:
+            best_hit = backend.refine_hit(page_bin, det, side_templates,
+                                          MATCH_SCALES)
 
         if best_hit is None:
             refined.append(updated)
@@ -1097,39 +1239,180 @@ def build_side_templates(male_left, male_right,
 
 
 
+def rendered_shape(page: fitz.Page, zoom: float) -> Tuple[int, int, int]:
+    """The shape `render_page` would produce, without rendering it.
+
+    `(page.rect * Matrix(zoom, zoom)).irect` is how PyMuPDF sizes the pixmap
+    itself, so this is a derivation rather than an estimate; it is checked
+    against the real array on every run that keeps one, and against all 72
+    pages of the sample corpus in `test_pl_backends.py`.
+
+    It exists so a production page can be processed WITHOUT holding 186 MB of
+    BGR alive across binarise/extract/match purely to supply three integers
+    to `annotate_page`.
+    """
+    irect = (page.rect * fitz.Matrix(zoom, zoom)).irect
+    return (int(irect.height), int(irect.width), 3)
+
+
+def _backend_arrays(backend) -> Dict[str, object]:
+    """The backend's own page-sized allocations, for the memory sampler.
+
+    WHY THIS IS NOT OPTIONAL.  The host arrays a checkpoint passes in —
+    `gray`, `page_bin`, `clean_bin` — are what the CPU path holds, and on a
+    `pl-*` backend they are not what the PROCESS holds.  The driver keeps
+    two CMA buffers alive for the whole page: a full-page grey buffer the
+    MM2S reads from, and a full-page binary buffer (plus its guard tail)
+    the S2MM writes into and the extractor reads by physical address.  The
+    binary one reaches the record already, because `page_bin`/`clean_bin`
+    are VIEWS of it and `describe_arrays` walks to the backing allocation.
+    The grey one is referenced by nothing the detector holds, so it was
+    missing from the explanatory totals entirely — 62 MB of a ~290 MiB
+    budget, absent from the arithmetic while `VmRSS` and `CmaFree` saw it.
+
+    Returns an empty dict for the CPU path (there is no such buffer), and
+    `None` values for buffers not yet allocated — which is honest, and
+    distinguishable from "the backend does not have one".
+
+    Keeps no reference: the dict is handed straight to `mark()` and dies
+    with the caller's statement.
+    """
+    if backend is None:
+        return {}
+    fn = getattr(backend, "sampler_arrays", None)
+    return dict(fn()) if fn is not None else {}
+
+
 def detect_page(page: fitz.Page,
                 side_templates: Dict[str, Dict[str, Sequence[np.ndarray]]],
                 zoom: float,
                 score_thresh: float,
                 ferrule_score_thresh: float,
-                score_margin: float) -> Tuple[np.ndarray, List[dict], List[dict]]:
-    bgr, gray, _ = render_page(page, zoom=zoom)
+                score_margin: float,
+                backend=None,
+                keep_bgr: bool = True,
+                observer=None) -> Tuple[np.ndarray, List[dict], List[dict]]:
+    # `backend is None` is the frozen CPU path, byte-for-byte: the calls
+    # below are the ones this function has always made.  A backend routes
+    # the three heavy stages elsewhere and is required to be explicit
+    # about it — see pl_backends.py, which also explains why `cpu` and
+    # `pl-binarize` are NOT expected to agree pixel-for-pixel.
+    # `keep_bgr` is passed DOWN, not applied afterwards: the 186 MB BGR array
+    # and the 186 MB `samples` copy are both built inside `render_page`, so
+    # deleting them here would not lower the peak that matters.  The only
+    # thing the rest of this function ever wanted from BGR is its shape.
+    #
+    # `observer` is a `mem_sampler.MemorySampler` or None, and it is READ-
+    # ONLY: it takes scalars off the arrays and keeps no reference to any of
+    # them, because an instrument that holds the grey page alive adds 62 MB
+    # to the number it is reporting.  `None` is the un-instrumented path and
+    # costs nothing.
+    bgr, gray, _ = render_page(page, zoom=zoom, keep_bgr=keep_bgr)
     img_h, img_w = gray.shape[:2]
+    if observer is not None:
+        # The CMA buffers are listed here too, before anything has been
+        # binarised.  On page 1 they read `null` — nothing allocated yet —
+        # and on page 2 they do not, because `_ensure_image_bufs` keeps
+        # them across pages.  That difference is worth being able to see.
+        observer.mark("render_complete",
+                      arrays=dict({"bgr": bgr, "gray": gray},
+                                  **_backend_arrays(backend)),
+                      counts={"img_w": int(img_w), "img_h": int(img_h)},
+                      flags={"keep_bgr": bool(keep_bgr),
+                             # What the render ACTUALLY did, and what the
+                             # class-level question would have said.  They
+                             # disagree on 1.19.2, and the disagreement is
+                             # worth 186 MB on a production page.
+                             "samples_mv": SAMPLES_MV_PATH == "samples_mv",
+                             "samples_mv_path": SAMPLES_MV_PATH,
+                             "samples_mv_on_class": bool(
+                                 HAVE_SAMPLES_MV_ON_CLASS)})
     words = extract_words(page, zoom)
-    page_bin = to_binary_inv(gray)
-    clean_bin = build_text_suppressed_binary(page_bin, words, expand=max(2, int(round(zoom))))
+    expand = max(2, int(round(zoom)))
+    if backend is None:
+        page_bin = to_binary_inv(gray)
+        clean_bin = build_text_suppressed_binary(page_bin, words, expand=expand)
+    else:
+        page_bin = backend.binarize_inv(gray)
+        clean_bin = backend.suppress_text(page_bin, words, expand)
+    if observer is not None:
+        # `page_bin` and `clean_bin` are the pair to watch.  On a CPU
+        # backend the suppression returns a COPY, so this is 62 MB twice; on
+        # `pl-extract`/`pl-all` it hands back a view of the DDR buffer the
+        # extractor reads, so the two alias and the second 62 MB is not
+        # there.  `alias_groups` says which of the two happened rather than
+        # leaving it to be inferred from the backend name.
+        observer.mark("preprocess_complete",
+                      arrays=dict({"bgr": bgr, "gray": gray,
+                                   "page_bin": page_bin,
+                                   "clean_bin": clean_bin},
+                                  **_backend_arrays(backend)),
+                      counts={"words": len(words)},
+                      flags={"expand": int(expand),
+                             "backend": None if backend is None
+                                        else backend.name})
 
     segments = extract_horizontal_segments_vector(page, zoom, img_w)
+    vector_segments = len(segments)
+    segments_source = "vector"
     if len(segments) < 10:
         segments = extract_horizontal_segments_raster(clean_bin)
+        segments_source = "raster"
+
+    if observer is not None:
+        # WHICH SOURCE, recorded per page.  `extract_horizontal_segments_
+        # vector` swallows every exception from `get_drawings()` and returns
+        # [], and this caller then drops to the raster path on fewer than 10
+        # segments.  Under a MuPDF rebase that fallback is the failure mode
+        # that looks like success: different segments produce different
+        # candidates, which reads downstream as a silicon disagreement.  A
+        # source that moves between the oracle run and the board run is a
+        # FAIL, not a difference to be explained afterwards.
+        observer.mark("segments_complete",
+                      counts={"segments": len(segments),
+                              "vector_segments": vector_segments},
+                      flags={"segments_source": segments_source,
+                             "vector_fallback": segments_source == "raster"})
 
     candidates = collect_endpoint_candidates(segments, clean_bin, words, img_w, img_h)
 
+    if backend is not None:
+        # One batch, before any classification: the PL extractor emits its
+        # metadata records with TLAST at batch end, so the batch — not the
+        # candidate — is the unit the hardware framing is built around.
+        backend.begin_page(clean_bin, side_templates, MATCH_SCALES, candidates)
+
+    if observer is not None:
+        # The extractor's retention, which is the one page-level allocation
+        # that scales with CANDIDATE COUNT rather than with page size, and
+        # the one the corpus maximum (82 candidates) applies to.
+        retained = ({"records": 0, "patch_view_bytes": 0,
+                     "patch_backing_bytes": 0, "batches": 0}
+                    if backend is None else backend.retained_bytes())
+        observer.mark("extraction_complete",
+                      arrays=dict({"gray": gray, "page_bin": page_bin,
+                                   "clean_bin": clean_bin},
+                                  **_backend_arrays(backend)),
+                      counts=dict(retained, candidates=len(candidates)))
+
     raw_detections: List[dict] = []
-    counters = {"male": 1, "female": 1, "ferrule": 1, "unknown": 1}
 
     def build_detection(cand: dict) -> Optional[dict]:
         side = cand["side"]
         endpoint = cand["endpoint"]
-        result = classify_endpoint(
-            endpoint_xy=endpoint,
-            side=side,
-            page_bin=clean_bin,
-            templates=side_templates[side],
-            score_thresh=score_thresh,
-            ferrule_score_thresh=ferrule_score_thresh,
-            score_margin=score_margin,
-        )
+        if backend is None:
+            result = classify_endpoint(
+                endpoint_xy=endpoint,
+                side=side,
+                page_bin=clean_bin,
+                templates=side_templates[side],
+                score_thresh=score_thresh,
+                ferrule_score_thresh=ferrule_score_thresh,
+                score_margin=score_margin,
+            )
+        else:
+            result = backend.classify(cand, score_thresh,
+                                      ferrule_score_thresh, score_margin)
 
         if result["box"] is None:
             return None
@@ -1218,7 +1501,7 @@ def detect_page(page: fitz.Page,
             "pin": pin,
             "pin_label": pin_label,
             "wire_label": wire_label,
-            "id": det_id,
+            "id": None,  # assigned after dedupe by the renum loop below
             "side": side,
             "male_score": result["male_score"],
             "female_score": result["female_score"],
@@ -1239,7 +1522,23 @@ def detect_page(page: fitz.Page,
         if det is not None:
             raw_detections.append(det)
 
-    raw_detections = refine_misaligned_terminal_boxes(clean_bin, raw_detections, side_templates)
+    if observer is not None:
+        # `initial_match_complete`, not `match_complete`: this mark is
+        # placed between the classification loop above and
+        # `refine_misaligned_terminal_boxes` below, so it closes the
+        # INITIAL match — the pass a `pl-*` backend runs on the fabric —
+        # and everything after it is ARM work.  The old name read as
+        # "matching is finished", which is exactly the split it exists to
+        # deny.  The placement is unchanged; only the name is.
+        observer.mark("initial_match_complete",
+                      arrays=dict({"gray": gray, "page_bin": page_bin,
+                                   "clean_bin": clean_bin},
+                                  **_backend_arrays(backend)),
+                      counts={"candidates": len(candidates),
+                              "raw_detections": len(raw_detections)})
+
+    raw_detections = refine_misaligned_terminal_boxes(clean_bin, raw_detections, side_templates,
+                                                     backend=backend)
     detections = dedupe_detections(raw_detections, endpoint_dist_thresh=max(18.0, img_w * 0.006), iou_thresh=0.20)
     detections = sorted(detections, key=lambda d: (d["y"], d["x"]))
 
@@ -1259,8 +1558,90 @@ def detect_page(page: fitz.Page,
             det["id"] = f"U{renum['unknown']}"
             renum["unknown"] += 1
 
+    if backend is not None:
+        backend.end_page()
+
+    if observer is not None:
+        # AFTER end_page().  This is the checkpoint that answers whether the
+        # per-page retention was actually released: `patch_backing_bytes`
+        # back to zero here and an RSS that does not fall means glibc kept
+        # the arena, which is a different (and much less alarming) finding
+        # than records still being held.
+        retained = ({"records": 0, "patch_view_bytes": 0,
+                     "patch_backing_bytes": 0, "batches": 0}
+                    if backend is None else backend.retained_bytes())
+        observer.mark("page_complete",
+                      arrays=dict({"bgr": bgr, "gray": gray,
+                                   "page_bin": page_bin,
+                                   "clean_bin": clean_bin},
+                                  **_backend_arrays(backend)),
+                      counts=dict(retained,
+                                  candidates=len(candidates),
+                                  detections=len(detections),
+                                  refine_calls=(0 if backend is None
+                                                else backend.refine_calls)))
+
     return bgr, candidates, detections
 
+
+
+#: The fields `annotate_page` reads off a detection.  A geometry record that
+#: carries these can reproduce the annotated PDF with no image and no
+#: detection run -- which is the point: the board emits geometry, and the
+#: drawing happens off-board from the source PDF.
+GEOMETRY_FIELDS = ("id", "kind", "score", "x", "y", "w", "h", "pin")
+
+
+def geometry_record(page_index: int, page_shape, detections) -> dict:
+    """One page's annotation geometry, as plain JSON-able data."""
+    return {
+        "page": page_index + 1,
+        "shape": [int(page_shape[0]), int(page_shape[1]), 3],
+        "detections": [
+            {k: (float(d[k]) if k == "score"
+                 else int(d[k]) if k in ("x", "y", "w", "h")
+                 else d[k])
+             for k in GEOMETRY_FIELDS}
+            for d in detections],
+    }
+
+
+def annotate_from_geometry(input_pdf: str, output_pdf: str,
+                           geometry_path: str) -> None:
+    """Redraw an annotated PDF from the source plus recorded geometry.
+
+    The off-board half of the board's JSON-only output. No rendering, no
+    detection, no backend -- `annotate_page` only ever needed the page shape
+    and the boxes, and both are in the record.
+    """
+    with open(geometry_path, "r", encoding="utf-8") as fh:
+        rec = json.load(fh)
+    doc = fitz.open(input_pdf)
+    try:
+        if len(rec["pages"]) != len(doc):
+            raise SystemExit(
+                f"{geometry_path} holds {len(rec['pages'])} page(s) but "
+                f"{input_pdf} has {len(doc)}; refusing to annotate a "
+                f"different document than the one that was measured")
+        totals = [0, 0, 0, 0]
+        for entry in rec["pages"]:
+            page = doc[entry["page"] - 1]
+            shape = tuple(entry["shape"])
+            want = rendered_shape(page, float(rec["zoom"]))
+            if shape != want:
+                raise SystemExit(
+                    f"page {entry['page']}: geometry was recorded at "
+                    f"{shape} but this PDF renders {want} at zoom "
+                    f"{rec['zoom']}; the boxes would land in the wrong place")
+            counts = annotate_page(page, entry["detections"], shape)
+            for i in range(4):
+                totals[i] += counts[i]
+        doc.save(output_pdf)
+    finally:
+        doc.close()
+    print(f"Redrew {output_pdf} from {geometry_path}: "
+          f"male={totals[0]}, female={totals[1]}, ferrule={totals[2]}, "
+          f"unknown={totals[3]}")
 
 
 def process_pdf(input_pdf: str,
@@ -1275,7 +1656,12 @@ def process_pdf(input_pdf: str,
                 debug_dir: str,
                 score_thresh: float,
                 ferrule_score_thresh: float,
-                score_margin: float) -> None:
+                score_margin: float,
+                backend=None,
+                debug_images: bool = True,
+                geometry_json: str = "",
+                annotate: bool = True,
+                observer=None) -> None:
     input_pdf = str(input_pdf)
     output_pdf = str(output_pdf)
     debug_dir_path = Path(debug_dir)
@@ -1300,14 +1686,42 @@ def process_pdf(input_pdf: str,
     )
 
     doc = fitz.open(input_pdf)
+    geometry = {"pdf": str(input_pdf), "zoom": float(zoom), "pages": []}
 
     total_male = 0
     total_female = 0
     total_ferrule = 0
     total_unknown = 0
+    page_wall_s: List[float] = []
+
+    if observer is not None:
+        # The baseline every later delta is measured against: templates
+        # loaded, backend built, overlay programmed, document open, and
+        # nothing page-sized allocated yet.
+        observer.mark("pipeline_ready",
+                      counts={"pages_in_document": len(doc),
+                              "template_variants": (
+                                  len(male_left) + len(male_right) +
+                                  len(female_left) + len(female_right) +
+                                  len(ferrule_left) + len(ferrule_right))},
+                      flags={"pdf": str(input_pdf), "zoom": float(zoom),
+                             "backend": None if backend is None
+                                        else backend.name,
+                             "debug_images": bool(debug_images),
+                             "annotate": bool(annotate)})
 
     for page_index in range(len(doc)):
         page = doc[page_index]
+        if observer is not None:
+            # VmHWM never falls, so a second page in this process inherits
+            # the first page's peak.  Labelling the records is what lets the
+            # summariser REFUSE to attribute a peak, rather than quietly
+            # attributing it to the wrong page: peak attribution needs one
+            # page per process, and the small-page re-invocation is a
+            # separate run for exactly this reason.
+            observer.page_label = "%s#p%d" % (Path(input_pdf).name,
+                                              page_index + 1)
+        t_page = time.perf_counter()
         bgr, candidates, detections = detect_page(
             page,
             side_templates=side_templates,
@@ -1315,25 +1729,103 @@ def process_pdf(input_pdf: str,
             score_thresh=score_thresh,
             ferrule_score_thresh=ferrule_score_thresh,
             score_margin=score_margin,
+            backend=backend,
+            keep_bgr=debug_images,
+            observer=observer,
         )
 
-        male_count, female_count, ferrule_count, unknown_count, _ = annotate_page(page, detections, bgr.shape)
+        # The page shape, not the page: `annotate_page` only ever wanted
+        # `bgr.shape`, and holding 186 MB of BGR to supply three integers is
+        # what makes a production page infeasible on the board.
+        page_shape = rendered_shape(page, zoom)
+        if bgr is not None:
+            # Fail closed rather than trust the derivation: whenever the real
+            # array is here, it is the authority AND the check.  A drift
+            # between the two would move every annotation rectangle, which is
+            # not the kind of error that announces itself.
+            if tuple(bgr.shape) != tuple(page_shape):
+                raise RuntimeError(
+                    f"page {page_index + 1}: rendered_shape() says "
+                    f"{page_shape} but the pixmap is {bgr.shape}; the "
+                    f"annotation geometry cannot be derived for a "
+                    f"BGR-free run on this page")
+            page_shape = bgr.shape
+        if geometry_json:
+            geometry["pages"].append(
+                geometry_record(page_index, page_shape, detections))
+
+        if annotate:
+            male_count, female_count, ferrule_count, unknown_count, _ = annotate_page(page, detections, page_shape)
+        else:
+            # The counts without the drawing. `annotate_page` computes them by
+            # summing over `detections` and then draws; on the board only the
+            # first half is wanted, and the annotated PDF is reproduced
+            # off-board from the geometry record.
+            male_count = sum(1 for d in detections if d["kind"] == "male")
+            female_count = sum(1 for d in detections if d["kind"] == "female")
+            ferrule_count = sum(1 for d in detections if d["kind"] == "ferrule")
+            unknown_count = sum(1 for d in detections if d["kind"] == "unknown")
         total_male += male_count
         total_female += female_count
         total_ferrule += ferrule_count
         total_unknown += unknown_count
 
-        draw_debug_image(bgr, detections, candidates, debug_dir_path / f"page_{page_index + 1:03d}.png")
+        if bgr is not None:
+            draw_debug_image(bgr, detections, candidates,
+                             debug_dir_path / f"page_{page_index + 1:03d}.png")
+            del bgr
 
+        # WALL TIME, not hardware cycles: this RTL has no page-level cycle
+        # counter, so anything cycle-shaped downstream is modelled or
+        # inferred and must be labelled that way.
+        wall_s = time.perf_counter() - t_page
+        page_wall_s.append(wall_s)
         print(
             f"Page {page_index + 1}: male={male_count}, female={female_count}, "
-            f"ferrule={ferrule_count}, unknown={unknown_count}, candidates={len(candidates)}"
+            f"ferrule={ferrule_count}, unknown={unknown_count}, candidates={len(candidates)}, "
+            f"wall={wall_s:.3f}s"
         )
 
-    doc.save(output_pdf)
+    if annotate:
+        doc.save(output_pdf)
     doc.close()
 
-    print(f"Saved: {output_pdf}")
+    geometry_bytes = 0
+    if geometry_json:
+        with open(geometry_json, "w", encoding="utf-8") as fh:
+            json.dump(geometry, fh, indent=1)
+        # The file's OWN size, not `len(payload)`.  Text mode translates
+        # newlines on Windows, so the encoded string is shorter than the
+        # bytes on disk by one per line -- 415 B on a 40-detection page.  A
+        # memory record that reports a number the filesystem disagrees with
+        # is the kind of small wrongness that survives for months.
+        geometry_bytes = Path(geometry_json).stat().st_size
+        print(f"Wrote geometry: {geometry_json} "
+              f"({sum(len(p['detections']) for p in geometry['pages'])} "
+              f"detection(s) over {len(geometry['pages'])} page(s), "
+              f"{geometry_bytes} B)")
+    if observer is not None:
+        observer.mark("geometry_flushed",
+                      counts={"geometry_bytes": geometry_bytes,
+                              "geometry_pages": len(geometry["pages"]),
+                              "geometry_detections": sum(
+                                  len(p["detections"])
+                                  for p in geometry["pages"])},
+                      flags={"geometry_json": str(geometry_json)})
+    if annotate:
+        print(f"Saved: {output_pdf}")
+    else:
+        print("Annotation SKIPPED (--no-annotate): reproduce the annotated "
+              "PDF off-board with --from-geometry")
+    if page_wall_s:
+        print(
+            f"Wall time per page (PS-side, MEASURED; not hardware cycles): "
+            f"mean={sum(page_wall_s) / len(page_wall_s):.3f}s "
+            f"max={max(page_wall_s):.3f}s "
+            f"total={sum(page_wall_s):.3f}s over {len(page_wall_s)} page(s)"
+        )
+    if backend is not None:
+        print(f"Backend: {backend.describe()}")
     print(
         f"Document total: male={total_male}, female={total_female}, "
         f"ferrule={total_ferrule}, unknown={total_unknown}, total={total_male + total_female + total_ferrule}"
@@ -1363,24 +1855,209 @@ def main() -> None:
                         help="Minimum adjusted score for ferrule")
     parser.add_argument("--score-margin", type=float, default=0.03,
                         help="Minimum gap between best and second-best class")
+    parser.add_argument("--backend", default="cpu",
+                        help="cpu | pl-binarize | pl-extract | pl-all "
+                             "(plus the cpu-sidebank diagnostic). Stated "
+                             "explicitly per run; a pl-* backend that "
+                             "cannot reach the fabric FAILS the run and "
+                             "never falls back to the CPU")
+    parser.add_argument("--overlay", default="three_stage_combined.bit",
+                        help="bitstream for the pl-* backends")
+    parser.add_argument("--pl-timeout", type=float, default=120.0,
+                        help="per-transaction deadline for the PL driver")
+    parser.add_argument("--geometry-json", default="",
+                        help="write the annotation geometry here as JSON. "
+                             "This is what a board run emits: the boxes, "
+                             "classes and page shape, with no image")
+    parser.add_argument("--no-annotate", action="store_true",
+                        help="skip drawing into the PDF and saving it. The "
+                             "counts are still reported; reproduce the "
+                             "annotated PDF off-board with --from-geometry")
+    parser.add_argument("--from-geometry", default="",
+                        help="redraw the annotated PDF from the source plus a "
+                             "geometry JSON, with no detection and no "
+                             "backend. The off-board half of a board run")
+    parser.add_argument("--variant", default="baseline",
+                        help="which build the board must be running, from "
+                             "board_expect.VARIANTS. A pl-* run gates the "
+                             "matcher VLNV and the LIVE fclk0/fclk1 against "
+                             "this before the first page; a B2/100 run must "
+                             "pass --variant combined_b2_100")
+    parser.add_argument("--debug-images", choices=("auto", "on", "off"),
+                        default="auto",
+                        help="write the per-page debug PNG. 'auto' is OFF "
+                             "for pl-* backends: the debug image is the only "
+                             "reason to hold 186 MB of BGR alive across the "
+                             "whole page, and on the board that does not fit")
+    parser.add_argument("--rung-c-inline", action="store_true",
+                        help="pl-all only: also run the CPU reduction over "
+                             "the SAME extracted patch, so rung C is proved "
+                             "within one run instead of by comparing two "
+                             "separate extractions")
+    parser.add_argument("--mem-sampler", default="",
+                        help="write a checkpoint memory sampler JSONL here. "
+                             "One flushed+fsynced record per phase, so the "
+                             "run that gets OOM-killed still names the "
+                             "phase it died in. Summarise with "
+                             "`python mem_sampler.py FILE`. Peak "
+                             "attribution needs ONE PAGE PER PROCESS: "
+                             "VmHWM never falls, so a second page in the "
+                             "same process inherits the first page's peak")
+    parser.add_argument("--mem-sampler-note", default="",
+                        help="free text recorded in the sampler header, "
+                             "e.g. which board boot this run belongs to")
+    parser.add_argument("--mem-sampler-per-phase-peak", action="store_true",
+                        help="reset VmHWM after each checkpoint, so the "
+                             "peak column reports each PHASE rather than "
+                             "the running maximum. Without it the render's "
+                             "~247 MiB peak masks every later phase's own "
+                             "transient. Needs /proc/self/clear_refs "
+                             "(CONFIG_PROC_PAGE_MONITOR); where it is "
+                             "absent the records say so and stay 'run'")
+    parser.add_argument("--mem-sampler-no-fsync", action="store_true",
+                        help="flush but do not fsync each record. Faster on "
+                             "a slow SD card and enough to survive a "
+                             "process kill; NOT enough to survive a board "
+                             "reset with the write still in page cache")
+    parser.add_argument("--require-pl-refine", action="store_true",
+                        help="fail instead of refining on the host. This "
+                             "RTL cannot refine (it reports no correlation "
+                             "map), so the flag exists to make a future one "
+                             "fail loudly rather than be missed")
 
     args = parser.parse_args()
 
-    process_pdf(
-        input_pdf=args.input_pdf,
-        output_pdf=args.output,
-        male_left_template_path=args.male_left_template,
-        male_right_template_path=args.male_right_template,
-        female_left_template_path=args.female_left_template,
-        female_right_template_path=args.female_right_template,
-        ferrule_left_template_path=args.ferrule_left_template,
-        ferrule_right_template_path=args.ferrule_right_template,
-        zoom=args.zoom,
-        debug_dir=args.debug_dir,
-        score_thresh=args.score_thresh,
-        ferrule_score_thresh=args.ferrule_score_thresh,
-        score_margin=args.score_margin,
-    )
+    if args.from_geometry:
+        # Nothing else runs: no render, no backend, no fabric.
+        annotate_from_geometry(args.input_pdf, args.output, args.from_geometry)
+        return
+
+    if args.no_annotate and not args.geometry_json:
+        raise SystemExit(
+            "--no-annotate without --geometry-json would run the whole "
+            "detection and keep none of it; give --geometry-json PATH")
+
+    if args.debug_images == "auto":
+        debug_images = not args.backend.startswith("pl-")
+    else:
+        debug_images = args.debug_images == "on"
+
+    # Opened BEFORE the backend, so its header records the environment that
+    # a failed overlay load happened in — the run that cannot even reach the
+    # fabric is still a run whose memory state is worth having.
+    observer = None
+    if args.mem_sampler:
+        import mem_sampler
+        observer = mem_sampler.MemorySampler(
+            args.mem_sampler,
+            page_label="",
+            note=args.mem_sampler_note,
+            fsync=not args.mem_sampler_no_fsync,
+            per_phase_peak=args.mem_sampler_per_phase_peak)
+        observer.header(backend=args.backend, variant=args.variant,
+                        zoom=args.zoom, input_pdf=str(args.input_pdf))
+
+    # Built BEFORE the PDF is opened: a pl-* backend that cannot reach the
+    # fabric must fail with nothing done, not half a document in.
+    backend = None
+    teardown = None
+    if args.backend != "cpu":
+        import pl_backends
+        backend = pl_backends.make_backend(
+            args.backend, overlay=args.overlay,
+            require_pl_refine=args.require_pl_refine,
+            timeout_s=args.pl_timeout,
+            rung_c_inline=args.rung_c_inline)
+        print(f"Backend: {backend.describe()}")
+        if backend.pl is not None:
+            import safe_teardown as teardown
+
+    status = 0
+    failure = None
+    try:
+        if teardown is not None:
+            # BEFORE the first transfer, not at teardown.  A SIGTERM or a
+            # closed notebook (SIGHUP) arriving during a page kills this
+            # process outright, and process death with a DMA in flight hands
+            # its CMA pages back with an engine still writing into them.
+            # Ctrl-C stops working from here on; that is the trade this run
+            # is making, and `safe_teardown` explains why.
+            armed = teardown.arm_teardown_protection()
+            print(f"  teardown protection: ignoring {', '.join(armed)}")
+
+            # And before the first PAGE: the board must be running the build
+            # this run claims.  A wrong VLNV means the numbers describe a
+            # different matcher; a wrong clock means every timing figure is
+            # scaled by a factor nobody recorded.
+            import inspect_overlay
+            gate = inspect_overlay.gate_identity_and_clock(
+                backend.overlay, args.variant)
+            if gate:
+                raise RuntimeError(
+                    "build identity/clock gate FAILED, so no page was "
+                    "processed: " + "; ".join(gate))
+
+        process_pdf(
+            input_pdf=args.input_pdf,
+            output_pdf=args.output,
+            male_left_template_path=args.male_left_template,
+            male_right_template_path=args.male_right_template,
+            female_left_template_path=args.female_left_template,
+            female_right_template_path=args.female_right_template,
+            ferrule_left_template_path=args.ferrule_left_template,
+            ferrule_right_template_path=args.ferrule_right_template,
+            zoom=args.zoom,
+            debug_dir=args.debug_dir,
+            score_thresh=args.score_thresh,
+            ferrule_score_thresh=args.ferrule_score_thresh,
+            score_margin=args.score_margin,
+            backend=backend,
+            debug_images=debug_images,
+            geometry_json=args.geometry_json,
+            annotate=not args.no_annotate,
+            observer=observer,
+        )
+    except BaseException as exc:                             # noqa: BLE001
+        # Held, not re-raised here: the teardown below has to run first, and
+        # it is the thing that reprograms the PL or holds the pages.  A bare
+        # `raise` from a page failure used to skip it entirely.
+        failure = exc
+        status = 1
+    finally:
+        if teardown is not None:
+            # NOT `backend.close()` on its own.  A close() that refuses is
+            # exactly the state where exiting is the corruption: the pages
+            # stay retained and the fabric may still target them.
+            # `teardown()` reprograms the PL from inside this process, and
+            # fail-stops rather than returning if even that fails.
+            status = teardown.teardown(backend.pl, args.overlay, status)
+        elif backend is not None and not backend.close():
+            status = status or 1
+
+        if observer is not None:
+            # Inside the `finally`, after the teardown, so the last record
+            # exists even when the page raised.  The teardown status goes in
+            # with it: a run that ends holding CMA pages is a different
+            # memory result from one that ends clean, and the sampler file
+            # is where that has to be readable months later.
+            observer.page_label = ""
+            observer.mark("teardown_complete",
+                          counts={"teardown_status": int(status)},
+                          flags={"teardown_ran": teardown is not None,
+                                 "failed": failure is not None,
+                                 "failure": None if failure is None
+                                            else repr(failure)})
+            observer.close(teardown_status=int(status),
+                           failed=failure is not None)
+
+    if backend is not None:
+        print(f"Backend: {backend.describe()}")
+    if failure is not None:
+        raise failure
+    if status:
+        raise SystemExit(
+            f"PL teardown did not complete cleanly (status {status}) - see "
+            f"the driver's output; this run FAILS")
 
 
 if __name__ == "__main__":

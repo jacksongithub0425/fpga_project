@@ -1,0 +1,17 @@
+#!/bin/sh
+# Refuse a push that would publish a corpus drawing identifier.
+#
+# git feeds this hook one line per ref on stdin:
+#     <local ref> <local sha> <remote ref> <remote sha>
+# which is passed straight through -- the scanner works out the commit range,
+# because a new branch publishes its whole unpushed ancestry and not just its
+# tip.  See sw/pre_push_scan.py.
+#
+# ENABLE IT (hooks are not cloned):
+#     git config core.hooksPath .githooks
+#
+# The scanner needs a python with this repository's sw/ importable; set
+# TME_PYTHON if `python` is not it.
+set -e
+PY="${TME_PYTHON:-python}"
+exec "$PY" "$(dirname "$0")/../sw/pre_push_scan.py"

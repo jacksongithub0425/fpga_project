@@ -1,0 +1,46 @@
+  page_001                           threshold 175
+  page_002                           threshold 155
+  page_003                           threshold 162
+  page_004                           threshold 165
+  page_005                           threshold 170
+  page_006                           threshold 171
+  page_007                           threshold 158
+  page_008                           threshold 174
+  page_009                           threshold 170
+  page_010                           threshold 173
+  page_011                           threshold 170
+  page_012                           threshold 173
+  page_013                           threshold 170
+  page_014                           threshold 167
+  page_015                           threshold 161
+  page_016                           threshold 175
+  page_017                           threshold 167
+  page_018                           threshold 175
+  page_019                           threshold 172
+  page_020                           threshold 173
+  page_021                           threshold 170
+  page_022                           threshold 169
+  page_023                           threshold 168
+  page_024                           threshold 170
+  page_025                           threshold 167
+  page_026                           threshold 167
+  page_027                           threshold 167
+  page_028                           threshold 170
+  page_029                           threshold 170
+  page_030                           threshold 164
+  page_031                           threshold 175
+  page_032                           threshold 173
+  page_033                           threshold 171
+  page_034                           threshold 171
+  page_035                           threshold 173
+  page_036                           threshold 168
+
+36 real page(s)
+shipped transcription: 0 disagreement(s) with cv2
+
+variants, on the corpus that decides this project:
+  [unfalsified] tie rule `>=` (last maximiser wins)    0 page(s)
+  [unfalsified] DBL_EPSILON instead of FLT_EPSILON     0 page(s)
+  [unfalsified] no degenerate-tail guards at all       0 page(s)
+  [unfalsified] float32 accumulators                   0 page(s)
+  [unfalsified] mu1 recomputed rather than running     0 page(s)

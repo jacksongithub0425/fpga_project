@@ -1,0 +1,30 @@
+MemFree:           62636 kB
+MemAvailable:     350816 kB
+CmaTotal:         229376 kB
+CmaFree:           31360 kB
+--- processes ---
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root       503 13.4 12.0 122992 60724 ?        Sl   19:51   0:19 /usr/local/share/pynq-venv/bin/python3 /usr/local/share/pynq-venv/bin/jupyter-notebook --no-browser --allow-root
+root      1084 95.3  7.8 141872 39604 ?        Ssl  19:53   0:07 /usr/local/share/pynq-venv/bin/python3 -m ipykernel_launcher -f /root/.local/share/jupyter/runtime/kernel-89770df1-d010-434b-9665-6c251b0335b2.json
+root       669  0.4  3.4  76408 17536 ?        Ss   19:51   0:00 /usr/sbin/smbd --foreground --no-process-group
+root       813  1.3  3.2  23876 16256 ?        S    19:52   0:01 python3 /usr/local/bin/redirect_server
+root       690  0.3  2.8  75740 14336 ?        S    19:51   0:00 /usr/lib/arm-linux-gnueabihf/samba/samba-bgqd --ready-signal-fd=46 --parent-watch-fd=-1 --debuglevel=0 -F
+root       638  0.5  2.8  34452 14208 ?        Ssl  19:51   0:00 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+root       945  0.4  2.8  90548 14208 ?        Ssl  19:52   0:00 /usr/libexec/packagekitd
+root        80  0.8  2.5  35604 12672 ?        S<s  19:51   0:01 /lib/systemd/systemd-journald
+root       225  0.5  2.4  22172 12160 ?        Ss   19:51   0:00 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+root       628  0.4  2.0  62124 10496 ?        Ss   19:51   0:00 /usr/sbin/nmbd --foreground --no-process-group
+root       681  0.0  1.9  74480 10032 ?        S    19:51   0:00 /usr/sbin/smbd --foreground --no-process-group
+systemd+   143  0.5  1.8  18872  9284 ?        Ss   19:51   0:00 /lib/systemd/systemd-resolved
+root         1  4.8  1.5  31984  7660 ?        Ss   19:50   0:09 /sbin/init earlyprintk
+xilinx     665  0.6  1.2  12284  6400 ?        Ss   19:51   0:00 /lib/systemd/systemd --user
+--- kernels ---
+96
+--- uptime again ---
+ 19:54:01 up 3 min,  1 user,  load average: 1.93, 1.38, 0.57
+--- cma after 3s ---
+CmaTotal:         229376 kB
+CmaFree:           30944 kB
+
+
+__EXIT__ 0

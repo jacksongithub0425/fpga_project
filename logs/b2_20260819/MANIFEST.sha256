@@ -1,0 +1,72 @@
+# Priority 5 (B2) evidence manifest
+# sha256 of each artifact; text is EOL-normalised to LF first.
+# Verify with: python tme_b2_manifest.py --verify
+#
+# This binds files, not claims.  tme_b1_ab.py --assert and
+# tme_cycle_model.py --assert are what say the numbers are right;
+# this says they are the same numbers.
+
+c8c7b0882af33214da5f7bbedca9ff9b985629517ddada37a9eacaacaec5d8ce  hls/template_match/b1_sources/correlation_core.b2.cpp  # source b2
+483493e8583126f244ddddb01600ebd0915d4be45e9aae94e991e57395a1ffcb  hls/template_match/correlation_core.cpp  # source shipped
+e33fe219af77a0e4b79c225a0b7b60f8a3181a186012e87b8f08d303f54c4a51  hls/template_match/b1_sources/correlation_core.b1.cpp  # source b1 (control)
+bcccd44c187bd7c008d8de7bbd87dfa33c1d7bf72c1fbfbae1b8046bb30f59db  hls/template_match/b0b_sources/tme_top.b2.cpp  # build input tme_top.cpp (B2 snapshot)
+19b15033530f96ad7ad04b0ef24414428295ca02634faacab04751b541b2178b  hls/template_match/tme_top.h  # build input tme_top.h
+222e5d7704debcf15bc3f3373987681d0f67801d6e4791850a96ed99a8863178  hls/template_match/template_match_b1_b1/b1/sim/report/verilog/result.transaction.rpt  # cosim b1 (control)
+fafdeb5e3e61eb8783013f97f1ce4f3192526119b9cf2b5bdba2f46f84785d06  hls/template_match/template_match_b1_b2/b2/sim/report/verilog/result.transaction.rpt  # cosim b2
+5e82ca5719df662bfbc4758ebc07b86f2f7e5f786c1107484d341acd35ec5fa4  hls/template_match/template_match_b1_b1/b1/syn/report/csynth.rpt  # csynth b1 (control)
+45e9415399ae276ff0a372fbba75e7b761a44ee709931b88c23ed916fcf97727  hls/template_match/template_match_b1_b2/b2/syn/report/csynth.rpt  # csynth b2
+b63184fd5df94a589bd40bad0ac13597fbeae365093d40b3d7c49ec8cf893e97  logs/b2_20260819/b2_post_route_wns.txt  # routed wns
+429bfa8b267b62850793127a5128efc0316e44b564d828090e23f45a811d6421  logs/b2_20260819/b2_post_route_utilization.rpt  # routed utilisation
+8fad9a8996d5aa8c9181106cfd58368aacab431239af4f3022835792cd5bf3f8  logs/b2_20260819/post_route_timing_summary.rpt  # routed timing summary
+a5e3f6d89fb9734159e174d51f643fd39908a6a7d63ca40641c95a02812fbd9e  logs/b2_20260819/post_route_worst_paths.rpt  # routed worst paths
+1116891cdca9cd8a00b95d9a7e616383b99afc490f8c02170a8e576203aacdbf  logs/b2_20260819/tme_standalone.bit  # bitstream (as run, 2026-08-20)
+11abec6a303418e35989ee40fcecf367445400b6d554f8eb1adaa5fcc0d36744  logs/b2_20260819/tme_standalone.hwh  # hardware handoff
+ca62cbbc675ef2ea1130498bec9fb286700cfd9165e603865fefad2f5a4c2777  sw/tme_standalone_bringup.py  # board runner
+8eabf33aec39ea791a98f85ed6d4257deba4d11a86f104409369f08f5bd783a7  hls/template_match/tb_tme_cases_phase_s.txt  # board phase-s cases
+3c22a42208d3535bcf9dd141b75803501570f8df229a335ae3305f190bb58a72  hls/template_match/tb_tme_patches_phase_s.bin  # board phase-s patches
+9fd283bf3ee8af91c3ede289c17905d8e69e62361376ef48871566b313a361bd  hls/template_match/tb_tme_templs_phase_s.bin  # board phase-s templates
+cf581e4b88bc2dcb079bbfbe1fb3b081276991c2dd16a304bae03f1ef1157fc9  hls/template_match/tb_tme_cases_hw.txt  # board hw cases
+5c5c987b3332ef2f3b7da4de5ad8c4b4cbc0f527cf6b042b1502ccd0a9b9ee53  hls/template_match/tb_tme_patches_hw.bin  # board hw patches
+026dcc6a68461036bcfa0b17c5e1ed4f4f90f9080b5d9c55a220151d852d1350  hls/template_match/tb_tme_templs_hw.bin  # board hw templates
+4c8a06d6b46a85084fd66cb61bdf100c904e9694abbc03f5ffa2392f005648a7  logs/b2_board_20260819/B2_BOARD_SESSION_PLAN.md  # board plan
+ea88a30131a83f84bf34aefbd7844132b01d054a125e6c715b873d7258eb32ba  logs/b2_board_20260819/00_prestate.sh  # board prestate script
+92578a6ede5dc96a438a2232727b5fba4e174fc3da48b6c640e0d5f216f9cb49  logs/b2_board_20260819/B2_BOARD_INPUTS.sha256  # board input checksum gate
+09d1749d98d10b1fde33978d09a6d5d6bd59e31138550f0ca9a6ed070533f0a0  logs/b2_board_20260819/01_hashes_local.txt  # board host hash record
+77073871fd97b7885c2258f2287639b6f3d34c8b38943d3f24af1cc041224638  logs/b2_board_20260819/03_run.sh  # board run wrapper
+99bac0dc2d9582a51abbfb9044633f49498efc5dc93943c283449b3c3ae764b3  logs/b2_board_20260819/04_restore.sh  # board restore script
+4474ed569e9ebf1ce9624d94289da947bdb10f10b5cf6b7f12a0346a1a5e67e0  logs/b2_board_20260819/B2_BOARD_SESSION.md  # board session record
+020b1ad601fc64b3ee472b7c10df497c690ecf4c5badcbbb23ed53f0b1628533  logs/b2_board_20260819/00_prestate.txt  # board prestate
+2243237ed5ae17d0631e52bc42a8a0fd0c7d8aab2d5eb6d581046e632689c187  logs/b2_board_20260819/02_hashes_remote.txt  # board remote hashes
+d0c1b15cb176abc7d92f5f8c323144a29bd55686d5fd328025a5141f8cb7da53  logs/b2_board_20260819/03_run.txt  # board run transcript
+6b0d3dd4cc8f1604daf61ffa8bf30fb5e7c2e2644c2032610a569bfd9bbb357d  logs/b2_board_20260819/04_restore.txt  # board restore transcript
+7ea0c23846a3b93e1bb601168e8fa1853006541935c2f39a22138feae5580d5c  logs/b2_board_20260819/00_prestate_attempt1.txt  # board prestate (attempt 1)
+2243237ed5ae17d0631e52bc42a8a0fd0c7d8aab2d5eb6d581046e632689c187  logs/b2_board_20260819/02_hashes_remote_attempt1.txt  # board remote hashes (attempt 1)
+594edafa8c3f33d7560380c2e737ae98016a9708200b8b3b15e835b000c4c7ee  logs/b2_board_20260819/03_run_attempt1_TRUNCATED.txt  # board run transcript (attempt 1, TRUNCATED)
+76bff99155df5ce7b7987f0fd9bf689a7eb004412987788ff39eb9bcd5209361  logs/b2_board_20260819/04_restore_attempt1.txt  # board restore transcript (attempt 1)
+ea0d8a051812efef6fce51906ebd89b24a8a9aa185496ff72a18cd8cf9f771f4  hls/template_match/template_match_b1_b2/b2/impl/ip/component.xml  # packaged IP (the image's input)
+5d602b3e839a4c3cc4799c2da496c6ff560ce0bcc837a930f0854c7872a66eab  hls/template_match/template_match_b1_b2/b2/impl/ip/TermCountB2_hls_tme_top_0_2.zip  # packaged IP archive (the image's input)
+26cc727c874b3515da4043f83d06deb3cc0f3790bfb76806762045596da95a08  vivado/tme_standalone/build_tme_standalone.tcl  # build script
+c257b43da86f80909fba3024785b5e9b5f645c1783d1f4edea6ec1885c3903a2  hls/template_match/package_b2.tcl  # packaging script
+b73605cb9de997d0d477e9e57651902e30ce871caf4e7bf1f0db0d22f45e069c  hls/template_match/run_hls_b1.tcl  # ab project script
+025acd990adad2c7dc92c8fb2fe9cb268270033afd02aa216762bc0936bf8300  hls/template_match/csim_prod_b2.tcl  # prod csim script b2
+bd1759368aaf5b05423df1468ddd4f6b590d0fd4e047b83263786af996b75f92  logs/b2_20260819/csim_prod_b2.log  # prod csim log b2
+5b988234c300a7ef9c321f5c39b8e8204038fd434150d5812113bbc2f91aa29f  hls/template_match/tme_tb.cpp  # testbench
+c16b8f512afbb614dd8faf4544704c232a83e914961b3f954e9805cc45711524  hls/template_match/tme_generate_production.py  # generator
+a3b80613e6f77190a8fd910ddd5b858d06e4daa49a2b39728488116b59425093  hls/template_match/tb_tme_b1.sha256  # vector record b1
+cb81b45873623036e8e3b0087b67a7d868f3aa99716f5adce4e89d6e4ed238c0  hls/template_match/tb_tme_prod.sha256  # vector record prod
+959eb3c9488f00951c192fc037bc50ab27d55d04acfb66a7e46a1d65916ef479  sw/tme_cycle_model.py  # model
+6f9d6ea46a164c7f2c12e35e4287d3252e2d1335da466f4dac34c0e2e834882f  logs/b2_20260819/tme_cycle_model.py.pre_b2  # model pre-B2
+6a765f2da35af226a972c00cf80f49db087367d4a3b08c9c7f7dc637c8013327  sw/tme_b2_ab.py  # adjudicator
+8c0f48a94c329a4c8bcd893fd5963bc161385a5446f0c00f3707490d31beb338  sw/tme_b2_mutants.py  # mutant gate
+41015871c875beb6b9a26348e436ae62c201ac5979c31e827fc7d04fb4a0fc05  sw/tme_b2_manifest.py  # manifest tool
+8ea4224eb10a5756e47c5ecc4f8ec603ac097b2b9a9ae3d3ce9e0d3f4e7bc13a  sw/tme_b1_manifest.py  # manifest tool (imported)
+53d92ac02d507bb3d9c34657121815b8d5ddcaf67d541293179dfdc9fe13a63d  logs/b2_20260819/run_b2.log  # log b2
+a5f01c7bb0a7c60506b43f61593d7b88b0cf95443528c1aac04c992cb8c20b5c  logs/b2_20260819/package_b2.log  # log packaging
+792f1b5e313bff61d7d224d2e2406999daf2eb2ce9d63a8cb8dc0cd4fde4c137  logs/b2_20260819/vivado_b2_125.log  # log vivado
+c6182de9bbccffb24865c3a283de9146dc4e022cc2135c14bca60e28da65dcab  logs/b2_20260819/PREDICTION.txt  # pre-RTL baselines (reconstructed)
+a4b452a253224f849d998d3c8a0befb77572c1663fffd2db6fa4a4397e0e31ea  logs/b2_20260819/b2_mutants.txt  # mutant gate output
+4173d756cfd4c08ea16dc764b602d02627931613ee6e987b0c4c0b0e14613ac1  logs/b2_20260819/b2_ab.txt  # adjudicator output
+66992c5177ecb21f7c0888419927a5fd15ec833714d909770937a6ce7b842475  logs/b2_20260819/b2_ab_negative_control.txt  # adjudicator negative control
+4d128b17b0f64f243cd151a4a2be04706a23d08aa28081ef8a06f6981c906ce0  logs/b2_20260819/cycle_model_assert.txt  # cycle model output
+8851e2d1aa8ab274a63de7c7d2ecfa01f13c9022e3725612e29c75da80126775  logs/b2_20260819/PRIORITY5_EVIDENCE.md  # evidence
+6a40c544ccf125d569fb988d239431baf921673dc3b0787dba19c771037d273c  hls/template_match/b1_sources/README.md  # pinned-source README
