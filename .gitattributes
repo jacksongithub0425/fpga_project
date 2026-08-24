@@ -132,3 +132,25 @@ logs/b2prod_20260821/** -text
 logs/b2prod_20260822/** -text
 logs/b2prod_20260823/** -text
 logs/EVIDENCE_ALLOWLIST.txt -text
+
+# The sw/ modules whose sha256 is RECORDED AS AN IDENTITY, pinned for the same
+# reason tme_standalone_bringup.py above already was.
+#
+# logs/b2prod_20260823/03_script_identity.txt records five module digests taken
+# on the board with sha256sum over raw bytes, and 12_protocol_v2_RESULT.md
+# records a sixth for the module protocol v2 loaded. Those digests are the
+# recorded identity of a silicon run -- but only tme_standalone_bringup.py was
+# `-text`, so with core.autocrlf=true a Windows checkout produced CRLF copies
+# and FOUR of the six hashed to something else. The blobs were always right;
+# it was the checkout that diverged, which is the harder failure to notice
+# because `git status` stays clean throughout.
+#
+# Checked from a detached worktree, not assumed: before this stanza,
+# board_gate_recovery.py, safe_teardown.py, board_gate_extract.py and
+# terminal_counter_endpoint_first.py all mismatched their recorded digest on
+# checkout and matched it as blobs.
+sw/board_gate_extract.py -text
+sw/board_gate_recovery.py -text
+sw/safe_teardown.py -text
+sw/terminal_counter_endpoint_first.py -text
+sw/tme_driver.py -text
