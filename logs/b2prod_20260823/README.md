@@ -2,7 +2,9 @@
 
 An index, not a manifest. It answers "which of these is evidence of what,
 and how strongly", which is the question a reader arriving at a directory of
-twenty files actually has. The digest manifests that pin BYTES live in the
+twenty-nine tracked files actually has. (It said "twenty" while the directory
+grew to twenty-nine, which is what an index says when it is written once and
+then only appended to.) The digest manifests that pin BYTES live in the
 older evidence sets (`b1_20260818`, `b2_20260819`, `b0b_20260820`); this
 session deliberately does not add one — see `../EVIDENCE_ALLOWLIST.txt`.
 

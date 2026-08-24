@@ -225,15 +225,25 @@ happened.
   path, and never a digest — a hash of a secret is a token for the secret, and
   the labels already give a stable name. The gate's own source passes both
   passes: the examples in it are written `NNN-AAAAAA-NNN`, not spelled out.
-* **Encodings, explicitly.** BOM first, then UTF-16 **before** UTF-8 when NUL
-  bytes are present — UTF-8 accepts NUL, so BOM-less UTF-16 of ASCII decodes
-  "successfully" into a string whose identifiers are split by NULs and
-  invisible. Endianness is chosen by ASCII score, because byte-swapped ASCII
-  lands in CJK and passes any printability test. Then CP1252 (this project's
-  Windows transcripts carry a 0x97 em-dash), then `binary`, whose raw bytes are
-  still scanned. Nothing is decoded with `errors="replace"`. Missing,
-  unreadable and encoding-violating inputs are non-zero outcomes: "I could not
-  look" and "I looked and it was clean" are different answers.
+* **Encodings: scan every reading, do not choose one.** Choosing makes the
+  choice a security boundary, and it had two holes. UTF-8 accepts NUL, so
+  BOM-less UTF-16 of ASCII decodes *successfully* into a string whose
+  identifiers are NUL-split and invisible; and a file that is mostly CJK with
+  one ASCII identifier scores below any "looks like text" threshold, falls
+  through to `binary`, and the same thing happens there.
+
+  So `views()` returns BOM-honoured, UTF-8, CP1252 (this project's Windows
+  transcripts carry a 0x97 em-dash), UTF-16 at **both byte alignments** in
+  **both endiannesses**, and the raw bytes; `scan_bytes()` scans all of them,
+  de-duplicated by the hits they produce. Both alignments because a UTF-16
+  stream need not start at byte 0 or have even length: one leading byte pairs
+  every byte with the wrong neighbour, and one TRAILING byte makes `decode`
+  raise on truncated data and drops the view entirely. Each UTF-16 view is a
+  maximal even slice and its label carries the offset (`utf-16-le@1`).
+
+  Nothing is decoded with `errors="replace"`. Missing, unreadable and
+  encoding-violating inputs are non-zero outcomes: "I could not look" and "I
+  looked and it was clean" are different answers.
 * **Pathnames are scanned**, both file and directory components.
 * **Every evidence producer emits labels** — `gray_parity.py`,
   `otsu_corpus.py`, `render_parity.py`, `stripe_proto.py`,
@@ -255,7 +265,7 @@ happened.
   `HEAD~1..HEAD`), and scans tree contents, pathnames and commit messages,
   de-duplicated by object id. Enable with `git config core.hooksPath
   .githooks`; hooks are not cloned.
-* **23 synthetic tests**, `sw/test_corpus_labels.py`. Full, suffix-less,
+* **31 synthetic tests**, `sw/test_corpus_labels.py`. Full, suffix-less,
   fragment, pathname, directory component, UTF-16 both ways, CP1252, binary,
   missing, unreadable, violated-BOM, no-corpus, and the `14-versus-16`
   false-positive regression. Every planted value is read from the corpus at
@@ -263,7 +273,12 @@ happened.
   two-commit history where the tip is clean and the range is not, which is the
   claim the hook rests on. And every detection test asserts the diagnostics
   contain none of the planted values — `CL.scan()` over the tool's own output
-  must come back empty.
+  must come back empty. That obligation extends to the gate's own
+  ERROR paths: a corpus it could not make sense of used to raise
+  naming the documents responsible, so the one diagnostic printed by
+  the tool whose job is keeping filenames out of published output was
+  itself echoing them. Corpus failures now report by POSITION, and
+  callers print the exception TYPE and never its message.
 
 ## What is still not guarded
 

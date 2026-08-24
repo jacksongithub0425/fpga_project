@@ -204,8 +204,17 @@ def main(argv=None) -> int:
         try:
             lb = CL.labels(args.corpus)
         except Exception as exc:                             # noqa: BLE001
-            print("pre-push REFUSED: the corpus is unusable (%s), so the "
-                  "fragment pass cannot run." % exc)
+            # The exception TYPE only.  Labels.__init__ raises on a corpus it
+            # cannot make sense of, and that message used to name the files
+            # responsible -- so the one diagnostic printed by the tool whose
+            # entire job is to keep filenames out of published output was
+            # itself echoing them. Reproduced with a duplicate-key corpus
+            # before this was changed.
+            print("pre-push REFUSED: the corpus could not be read (%s), so "
+                  "the fragment pass cannot run. Run `python "
+                  "sw/corpus_labels.py --map` locally for the detail; that "
+                  "output is local-only by design."
+                  % type(exc).__name__)
             return 1
         if not lb.paths:
             print("pre-push REFUSED: no corpus at %s, so the fragment pass "

@@ -217,6 +217,67 @@ def test_mixed_script_utf16_without_a_bom_cannot_evade():
         "the byte view was expected to be blind to a wide-character identifier"
 
 
+def test_utf16_is_scanned_at_both_byte_alignments():
+    """A UTF-16 stream need not start at byte 0 or have even length.
+
+    One leading byte pairs every byte with the wrong neighbour; one TRAILING
+    byte makes `decode` raise on truncated data and drops the view entirely,
+    so the scanner looks at a UTF-16 payload and reports nothing. Four
+    shapes, both endiannesses: aligned, offset by one, one trailing byte, and
+    both at once.
+    """
+    full, _, _, _ = planted()
+    body = ("x" * 40) + full + ("y" * 40)
+    n = 0
+    for enc in ("utf-16-le", "utf-16-be"):
+        raw = body.encode(enc)
+        for tag, data in (("aligned", raw),
+                          ("offset1", b"\xef" + raw),
+                          ("tail1", raw + b"\x41"),
+                          ("both", b"\xef" + raw + b"\x41")):
+            n += 1
+            with tempfile.TemporaryDirectory() as d:
+                p = write(Path(d), "a%d.bin" % n, data)
+                rc, out = run_check(["--check", str(p)])
+            assert rc == 1, ("%s/%s was not found" % (enc, tag), out)
+            assert full not in out
+    assert n == 8
+
+
+def test_a_corpus_failure_is_reported_without_naming_the_files():
+    """The gate's own error path must obey the gate's own rule.
+
+    `Labels.__init__` raises on a corpus it cannot make sense of, and that
+    message used to name the documents responsible -- so the one diagnostic
+    printed by the tool whose job is keeping filenames out of published
+    output was itself echoing them.
+    """
+    lb = _labels()
+    base = lb.numbers[0].split("_", 1)[0]
+    with tempfile.TemporaryDirectory() as d:
+        # Two files whose numbers fold to the same lookup key.
+        for rev in ("A", "B"):
+            (Path(d) / ("%s_%s.pdf" % (base, rev))).write_bytes(b"x")
+        try:
+            CL._CACHE.pop(str(Path(d)), None)
+            CL.labels(d)
+        except RuntimeError as exc:
+            assert CL.find_identifiers(str(exc)) == [], \
+                "the corpus-failure message named the documents"
+            assert "#1 and #2" in str(exc), str(exc)
+        else:
+            raise AssertionError("a duplicate lookup key was accepted")
+
+        # And the CLI path that prints it.
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = CL.main(["--corpus", d, "--check", str(Path(d) / "x")])
+        out = buf.getvalue()
+    assert rc == 2, (rc, out)
+    assert CL.find_identifiers(out) == [], "the CLI echoed the exception text"
+    assert "CANNOT SCAN" in out, out
+
+
 def test_cp1252_content_is_decoded():
     """This project's Windows transcripts carry a 0x97 that is not UTF-8."""
     full, _, _, _ = planted()
@@ -442,6 +503,7 @@ def _tiny_repo(d, files, git_env, branch=None):
     """A one-commit repo, optionally on a named branch."""
     import subprocess
     repo = Path(d)
+    repo.mkdir(parents=True, exist_ok=True)
 
     def g(*a):
         r = subprocess.run(["git", "-C", str(repo)] + list(a),
@@ -476,6 +538,31 @@ def test_a_private_json_in_history_is_refused_by_name():
     assert rc == 1, (rc, out)
     assert "FORBIDDEN" in out, out
     assert "PUSH REFUSED" in out, out
+
+
+def test_the_hook_reports_a_corpus_failure_without_naming_the_files():
+    """Same rule, on the pre-push path, where the output reaches a terminal."""
+    lb = _labels()
+    base = lb.numbers[0].split("_", 1)[0]
+    git_env = dict(os.environ)
+    git_env.update(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@e",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@e")
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        bad = Path(d) / "corpus"
+        bad.mkdir()
+        for rev in ("A", "B"):
+            (bad / ("%s_%s.pdf" % (base, rev))).write_bytes(b"x")
+        repo, _ = _tiny_repo(str(Path(d) / "r"), {"a.txt": "clean\n"},
+                             git_env)
+        r = subprocess.run(
+            [sys.executable, str(HERE / "pre_push_scan.py"),
+             "--corpus", str(bad), "--range", "HEAD"],
+            capture_output=True, cwd=str(repo), env=git_env)
+        out = r.stdout.decode("utf-8", "replace")
+    assert r.returncode == 1, (r.returncode, out)
+    assert "REFUSED" in out, out
+    assert CL.find_identifiers(out) == [], "the hook echoed the exception text"
 
 
 def test_a_ref_name_is_scanned_and_never_echoed():

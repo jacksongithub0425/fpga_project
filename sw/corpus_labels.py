@@ -207,18 +207,29 @@ class Labels:
         for i, p in enumerate(self.paths, 1):
             num = self.number_of(p.name)
             if num is None:
+                # BY POSITION, NOT BY NAME.  This message is printed by
+                # callers -- the pre-push hook among them -- and a filename
+                # in it is the identifier the whole module exists to keep
+                # out of transcripts.  The position is enough to find the
+                # file locally, where the directory listing is right there.
                 raise RuntimeError(
-                    "corpus file does not carry a drawing number: %s\n"
-                    "Every file in %s must match IDENTIFIER_RE, or the label "
-                    "space would silently skip it."
-                    % (p.name, self.corpus_dir))
+                    "corpus file #%d of %d does not carry a drawing number; "
+                    "every file in the corpus directory must match "
+                    "IDENTIFIER_RE, or the label space would silently skip "
+                    "it. Listed in name order; look at it locally."
+                    % (i, len(self.paths)))
             k = self.key(num)
             if k in self._by_key:
+                # Positions again, and NOT the key: a lookup key is the
+                # drawing number up to its first underscore, which is most
+                # of the identifier.
+                first = self.numbers.index(self._by_key[k]) + 1
                 raise RuntimeError(
-                    "two corpus documents fold to the same lookup key %r: %s "
-                    "and %s.\nLabels.key() truncates at the first underscore, "
+                    "corpus documents #%d and #%d fold to the same lookup "
+                    "key. Labels.key() truncates at the first underscore, "
                     "which is unambiguous only while the truncated numbers "
-                    "stay distinct." % (k, self._by_key[k], num))
+                    "stay distinct -- run --map locally to see which two."
+                    % (first, i))
             dlab = "doc_{:03d}".format(i)
             self.numbers.append(num)
             self._by_key[k] = num
@@ -264,8 +275,10 @@ class Labels:
             parts = num.split("_", 1)[0].split("-")
             if len(parts) < 3:
                 raise RuntimeError(
-                    "drawing number %r does not have three dash-separated "
-                    "groups, so its distinctive middle cannot be taken." % num)
+                    "corpus document #%d: its drawing number does not have "
+                    "three dash-separated groups, so the distinctive middle "
+                    "cannot be taken from it."
+                    % (self.numbers.index(num) + 1))
             mid = parts[1]
             digits = sum(c.isdigit() for c in mid)
             if len(mid) < _FRAGMENT_MIN_LEN or digits < _FRAGMENT_MIN_DIGITS:
@@ -469,11 +482,34 @@ def views(data: bytes) -> List[Tuple[str, str, str]]:
     if b"\x00" in data:
         add("bytes", data.decode("latin-1"), "byte")
 
-    for enc in ("utf-8", "cp1252", "utf-16-le", "utf-16-be"):
+    for enc in ("utf-8", "cp1252"):
         try:
             add(enc, data.decode(enc), "character")
         except (UnicodeDecodeError, LookupError):
             pass
+
+    # UTF-16 at BOTH byte alignments, each truncated to a MAXIMAL EVEN SLICE.
+    #
+    # Decoding the whole buffer once assumes the stream starts at byte 0 and
+    # has even length. Neither is guaranteed. One leading byte -- a stray
+    # separator, a concatenation, a header -- pairs every byte with the wrong
+    # neighbour, and the identifier is not in the result. One TRAILING byte is
+    # worse: `decode` raises on truncated data and the view is dropped
+    # entirely, so the scanner looks at a UTF-16 payload and reports nothing.
+    # Both were reproduced against real corpus values before this was written.
+    #
+    # Offsets are relative to the slice, which is why the alignment is part of
+    # the label: `utf-16-le@1` means "skip one byte, then decode".
+    for off in (0, 1):
+        chunk = data[off:]
+        chunk = chunk[:len(chunk) - (len(chunk) % 2)]
+        if not chunk:
+            continue
+        for enc in ("utf-16-le", "utf-16-be"):
+            try:
+                add("%s@%d" % (enc, off), chunk.decode(enc), "character")
+            except (UnicodeDecodeError, LookupError):
+                pass
 
     add("bytes", data.decode("latin-1"), "byte")
     return out
@@ -687,8 +723,14 @@ def _cmd_check(paths: Sequence[str], corpus_dir: Optional[str],
     else:
         try:
             lb = labels(corpus_dir)
-        except Exception as exc:
-            print("CANNOT SCAN: %s" % exc)
+        except Exception as exc:                             # noqa: BLE001
+            # The TYPE, never the message.  A corpus-construction failure
+            # names the files that caused it, and this text goes wherever
+            # the caller's output goes.
+            print("CANNOT SCAN: the corpus could not be read (%s). Run "
+                  "`--map` locally to see what it says; that output is "
+                  "local-only by design."
+                  % type(exc).__name__)
             return 2
         if not lb.paths:
             print("CANNOT SCAN: no corpus at %s, so the fragment pass cannot "
