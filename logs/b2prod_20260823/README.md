@@ -68,6 +68,45 @@ commit rather than to a working copy.
 `.gitattributes` marks this whole tree `-text` so a checkout cannot rewrite
 the bytes these digests describe.
 
+## `03_script_identity.txt` — all five modules resolve
+
+The five digests in `03_script_identity.txt` are what was ON THE BOARD for the
+2026-08-23 gate-7 PASS. All five are now tied to a file in this repository:
+
+| module | tied to |
+|---|---|
+| `board_gate_recovery.py` | `sw/` blob |
+| `safe_teardown.py` | `sw/` blob |
+| `board_gate_extract.py` | `sw/` blob |
+| `tme_standalone_bringup.py` | `sw/` blob |
+| `tme_driver.py` | `03_tme_driver.py.as_run` |
+
+`tme_driver.py` is the one that needed a snapshot. The driver changed during
+the 2026-08-22/23 sampler and backend work, so `sw/tme_driver.py` is a later
+version (`daf315f3…`) and the 2026-08-21 snapshot under `b2prod_20260821` is
+an earlier one (`47d3ec98…`). The version the board actually ran,
+`4ca5bd5f…`, is committed here as `03_tme_driver.py.as_run`, taken from the
+staging directory the upload was made from. It matches that directory's
+`PAYLOAD.sha256` **and** the board-read digest on line 13 of
+`03_script_identity.txt` — two independent records, one taken before the
+upload and one read back from the board afterwards.
+
+**A correction.** An earlier version of this section said four of the five
+resolved and that the gap "cannot be repaired after the fact, only re-run".
+Both were wrong. The staging copy had not been looked for; it was there, and
+it verifies against both records. No board re-run is needed to close a
+historical attribution question — the thing to look for is the copy the
+upload was made FROM, and the mistake was concluding irrecoverable before
+checking it. What a re-run is still needed for is anything about the board's
+present state, which is a different claim.
+
+The `sw/` modules named here are marked `-text` in `.gitattributes`, and so is
+this whole tree. Until they were, a Windows checkout produced CRLF copies that
+hashed to something else, and a reader following the obvious procedure on a
+fresh clone would have seen four mismatches with no way to tell them from real
+ones.
+
+
 ## What none of this establishes
 
 Nothing about the board's memory: every sampler record here is off-board and

@@ -69,6 +69,12 @@ logs/b2prod_20260823/README.md
 logs/b2prod_20260823/01_preflight.txt
 logs/b2prod_20260823/02_gate7_recovery.txt
 logs/b2prod_20260823/03_script_identity.txt
+# The driver that was ON THE BOARD for the gate-7 PASS. Recovered from
+# the staging directory the upload was made from, and it matches BOTH
+# that directory's PAYLOAD.sha256 and the board-read digest on line 13
+# of 03_script_identity.txt. Without it, four of the five modules in
+# that record resolved to a committed file and the fifth did not.
+logs/b2prod_20260823/03_tme_driver.py.as_run
 logs/b2prod_20260823/04_counted_clock.txt
 logs/b2prod_20260823/05_board_environment.md
 logs/b2prod_20260823/06_memory_sampler.md
