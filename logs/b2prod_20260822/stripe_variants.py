@@ -144,6 +144,7 @@ root = Path(r"C:\Users\lychee\Desktop\FPGA\sample")
 # to catch it would match any `NN-wwwwww-NN` in ordinary prose.
 # doc_002 is the Stage 2 page, doc_003 the Stage 3 page, doc_035 the
 # small page -- which is why these three and not any three.
+labels = CL.labels(root)
 sample = [p for p in (CL.resolve(lab, root)
                       for lab in ("doc_002", "doc_003", "doc_035"))
           if p is not None]
@@ -153,7 +154,7 @@ for pdf in sample:
     doc = fitz.open(pdf)
     page = doc[0]
     ref = reference(page)
-    print(f"  {pdf.name:<34} {ref.shape[1]}x{ref.shape[0]}")
+    print(f"  {labels.doc(pdf.name):<34} {ref.shape[1]}x{ref.shape[0]}")
     for margin in (16, 64, 256):
         try:
             got = variant_a(page, 1024, margin)

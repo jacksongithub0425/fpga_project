@@ -2,11 +2,17 @@
 
 ## What was found
 
-An audit of the branch before its first push found **35 confidential drawing
-identifiers in 20 tracked files**, across the eight `B2-PROD` commits. The
-identifiers were the corpus filenames: the source documents' drawing numbers,
-in prose, in fixed-width transcripts, in JSON records, and hard-coded as paths
-in six Python sources.
+An audit of the branch before its first push found **35 distinct confidential
+drawing identifiers in 20 tracked files**, across the eight `B2-PROD` commits.
+The identifiers were the corpus filenames: the source documents' drawing
+numbers, in prose, in fixed-width transcripts, in JSON records, and hard-coded
+as paths in six Python sources.
+
+**352 structural occurrences**: 348 full tokens plus four written without the
+revision suffix — two in the plan, one in `STAGE1_EVIDENCE.md`, one in
+`AUDIT_CORRECTIONS.md`. The suffix-less form is why a grep for exact stems
+returns 19 files and the real answer is 20; it is also why the gate matches a
+SHAPE and not a list.
 
 `logs/b2prod_20260822/corpus_cpu_oracle_gap.json` carried more than names. Its
 `first_diff` fields held **58 exact detection records across 29 pages** — an
@@ -89,6 +95,16 @@ own sorted filenames:
 a label in a B2-PROD record and a label in a trace roll-up mean the same page.
 `sw/corpus_labels.py --check-trace` proves it rather than asserting it.
 
+**The two spaces are not interchangeable.** An earlier version of this note
+and of `corpus_labels.py` said they "agree wherever a document has one page".
+That is false. `doc_001` is the two-page document and covers `page_001` and
+`page_002`, so every document after it is offset by one: `doc_002` is
+`page_003`, and so on to `doc_035` / `page_036`. **All 34 documents after the
+first diverge** — the agreement holds for exactly one of the 35, the one that
+does not need it. There is no arithmetic that converts between the spaces;
+`corpus_labels.py --map` is the crosswalk, and it is local-only because that
+mapping is the thing the labels hide.
+
 | what | files | change |
 |---|---|---|
 | fixed-width transcripts | 7 `.txt` in `b2prod_20260822` | names → labels, columns held |
@@ -129,13 +145,129 @@ redundant** and says what it used to claim.
 
     python sw/corpus_labels.py --check <paths>
 
-Exit non-zero if any file carries something shaped like a drawing number. The
-gate is **corpus-independent by construction** — it matches the structure of a
+Exit non-zero if any file carries something shaped like a drawing number. That
+pass is **corpus-independent by construction** — it matches the structure of a
 drawing number, not a list of known ones — so it runs from a bare clone, in
-CI, and on a machine that has never held the drawings. A check that needs the
-secret in order to detect the secret fails open exactly where it matters, and
-this one does not.
+CI, and on a machine that has never held the drawings.
+
+It is not sufficient on its own, which the second finding below establishes: a
+FRAGMENT of a filename has no structure to match, and a second pass matching
+by value against the local corpus was added for it. That pass does need the
+corpus, and says so rather than reporting a scan it did not run.
 
 The producers call `scrub()` on the way in and `assert_clean()` on the way
 out, so a new evidence file cannot acquire a stem without the tool refusing to
 write it.
+
+---
+
+# Second finding, same day: fragments, and a five-commit suffix rewrite
+
+## What was found
+
+Three **six-digit fragments** of corpus filenames, in
+`logs/b2prod_20260822/stripe_variants.py`, which picked its three sample
+documents by testing whether each filename contained one of them.
+
+The structural gate could not see them, and it was right not to: a bare
+six-digit run is not shaped like a drawing number, and widening the shape to
+catch one matches `14-versus-16` in ordinary prose. That false positive
+already happened once during the first redaction, in a file present in every
+commit including the pushed base — which is exactly how a gate stops being
+run.
+
+A fragment is not less identifying than the whole number. The corpus is 35
+documents; six digits pick one out of it outright.
+
+## Why the tip was not enough
+
+The fragments entered at the fourth of the eight rewritten commits and were
+still there at the tip, so a scan of HEAD would have found them. The general
+case is worse: had a later commit rewritten that line, HEAD would have been
+clean and the push would still have published the fragment-bearing blob. **A
+push publishes history.** Fixing HEAD is not fixing the push, which is the
+same lesson as the first finding and the reason the gate now runs over a
+commit range.
+
+## What was done
+
+The five-commit suffix was rewritten — the fragment-bearing commit and its
+four descendants. The three preceding B2-PROD commits and the 25 before them
+were untouched.
+
+| was | now | | was | now |
+|---|---|---|---|---|
+| `fe3e621` | `9e3afda` | | `1589ee9` | `d3557f2` |
+| `22e6b5b` | `b22b370` | | `5246cab` | `18dec35` |
+| `6a28cda` | `8cd2b34` | | | |
+
+Exactly two paths differ across the rewrite: `stripe_variants.py`, which now
+selects its three documents by label (`doc_002`, `doc_003`, `doc_035`), and
+`12_protocol_v2_RESULT.md`, whose preregistration citation was retargeted.
+Preregistration remains the parent of the result. Messages, authorship and
+dates are byte-identical. The push is still a plain fast-forward.
+
+## The recurrence work, in a separate commit
+
+Deliberately not folded into a rewritten commit: a rewrite should contain the
+redaction and nothing else, or the history stops being a record of what
+happened.
+
+* **A second detection pass, by VALUE.** `corpus_labels.fragments()` derives
+  the distinctive middle group of each drawing number from the local corpus at
+  scan time. Nothing is hardcoded and the structural regex is unchanged. The
+  fragment pass needs the corpus, so `--check` exits non-zero and says which
+  pass it could not run rather than reporting a scan it did not perform.
+  `--structural-only` is the explicit, loud opt-out.
+* **Diagnostics that survive their own gate.** A finding names its input by
+  scrubbed path when that path verifies clean, and by ordinal when it does
+  not; it reports counts and offsets, never the matched text, never a raw
+  path, and never a digest — a hash of a secret is a token for the secret, and
+  the labels already give a stable name. The gate's own source passes both
+  passes: the examples in it are written `NNN-AAAAAA-NNN`, not spelled out.
+* **Encodings, explicitly.** BOM first, then UTF-16 **before** UTF-8 when NUL
+  bytes are present — UTF-8 accepts NUL, so BOM-less UTF-16 of ASCII decodes
+  "successfully" into a string whose identifiers are split by NULs and
+  invisible. Endianness is chosen by ASCII score, because byte-swapped ASCII
+  lands in CJK and passes any printability test. Then CP1252 (this project's
+  Windows transcripts carry a 0x97 em-dash), then `binary`, whose raw bytes are
+  still scanned. Nothing is decoded with `errors="replace"`. Missing,
+  unreadable and encoding-violating inputs are non-zero outcomes: "I could not
+  look" and "I looked and it was clean" are different answers.
+* **Pathnames are scanned**, both file and directory components.
+* **Every evidence producer emits labels** — `gray_parity.py`,
+  `otsu_corpus.py`, `render_parity.py`, `stripe_proto.py`,
+  `stripe_variants.py`, plus the three already converted. They now take their
+  corpus ordering from `CL.documents()` rather than each re-deriving it, so
+  the iteration order and the label numbering cannot drift apart. Re-running
+  them reproduces the committed transcripts byte-for-byte.
+* **`tme_backend_parity.py` has two serialisations.** `--json` writes the
+  PUBLIC record: labels, `first_diff` aggregated to `"REDACTED"` plus a count,
+  the inline rung-C mismatch list replaced by its count, every aggregate
+  verbatim. `--private-json` writes the full record with diagnostic geometry
+  and requires a name ending in `.private.json` — the anonymisation gate
+  cannot catch that file, because its boxes are already label-keyed and
+  nothing in it is shaped like a drawing number, so the name is the only
+  guard and it is made a precondition.
+* **A pre-push hook**, `.githooks/pre-push` → `sw/pre_push_scan.py`. It reads
+  the refs git puts on stdin, works out the commit range for each (a new ref
+  publishes its whole unpushed ancestry, so `--not --remotes`, not
+  `HEAD~1..HEAD`), and scans tree contents, pathnames and commit messages,
+  de-duplicated by object id. Enable with `git config core.hooksPath
+  .githooks`; hooks are not cloned.
+* **23 synthetic tests**, `sw/test_corpus_labels.py`. Full, suffix-less,
+  fragment, pathname, directory component, UTF-16 both ways, CP1252, binary,
+  missing, unreadable, violated-BOM, no-corpus, and the `14-versus-16`
+  false-positive regression. Every planted value is read from the corpus at
+  run time, so the test file itself carries none. One test builds a synthetic
+  two-commit history where the tip is clean and the range is not, which is the
+  claim the hook rests on. And every detection test asserts the diagnostics
+  contain none of the planted values — `CL.scan()` over the tool's own output
+  must come back empty.
+
+## What is still not guarded
+
+`.private.json` is kept out by naming and by this note, not by `.gitignore`:
+the working `.gitignore` carries unrelated uncommitted Priority 7A edits, and
+adding a line to it would have swept those into this commit. Add
+`*.private.json` to it when that work lands.

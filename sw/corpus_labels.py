@@ -6,71 +6,86 @@ WHY THIS EXISTS
 The corpus is 35 confidential drawings, 36 pages, and their FILENAMES are
 themselves identifying.  Two tools in this repository already said so --
 `tme_trace_capture.redact()` ("a source DRAWING FILENAME is itself
-identifying -- reducing a path to its basename does not redact it") and
-`tme_full_search_baseline.page_labels()` ("the stems are drawing filenames
-and must not appear in any committable output").  Both were right; neither
-was ENFORCED.  So eight commits of B2-PROD evidence carried 35 of those
+identifying") and `tme_full_search_baseline.page_labels()` ("the stems are
+drawing filenames and must not appear in any committable output").  Both were
+right; neither was ENFORCED.  Eight commits of B2-PROD evidence carried 35
 identifiers into 20 tracked files, and the branch was one `git push` from
-publishing them.  It was caught first and the eight commits were rewritten.
+publishing them.  It was caught first and the commits were rewritten.
 
-This module is the enforcement the two comments assumed.  The rule it
-implements is not new -- it is the existing rule, given an implementation.
+This module is the enforcement those two comments assumed.
 
-TWO LABEL SPACES, AND WHY NOT ONE
----------------------------------
+TWO KINDS OF LEAK, AND WHY ONE REGEX CANNOT FIND BOTH
+-----------------------------------------------------
+**Structural.** A whole drawing number, in any surface form.  Found by SHAPE,
+so `assert_clean()` needs no corpus and works from a bare clone.
+
+**Fragment.** A distinctive PIECE of one -- `stripe_variants.py` once picked
+its three sample documents by testing `<six digits of a filename> in p.name`,
+which left three such pieces in a tracked file.  The structural regex cannot
+see that, and MUST NOT BE WIDENED to try: a shape loose enough to match a bare
+six-digit run matches `14-versus-16` in ordinary prose, and a gate that cries
+wolf is a gate that gets switched off.  (The values are not written out here
+either -- this file passes its own `--check`, both passes.)
+
+So fragments are matched by VALUE, against a list derived from the corpus at
+scan time.  That pass needs the corpus and is therefore the one that cannot
+run from a clone -- `--check` says so out loud and exits non-zero rather than
+reporting a clean scan it did not perform.
+
+TWO LABEL SPACES, AND HOW THEY DIVERGE
+--------------------------------------
     doc_001 .. doc_035     one per FILE
     page_001 .. page_036   one per PAGE
 
-One space would be ambiguous.  Exactly one document has two pages, so a
-"name the document by its first page" rule would emit `{"page": 2, "pdf":
-"page_001"}` -- which reads as a contradiction.  Keeping the spaces apart
-costs one lookup table and buys records that cannot be misread.  Both are
-ordered by the SAME rule, so `doc_NNN` and `page_NNN` agree wherever a
-document has one page, and `--map` prints the correspondence.
+One space would be ambiguous.  Exactly one document has two pages, so naming a
+document by its first page would emit `{"page": 2, "pdf": "page_001"}`, which
+reads as a contradiction.
+
+**The two spaces are NOT interchangeable, and they do not "agree for
+single-page documents".**  `doc_001` is the two-page document and covers
+`page_001` and `page_002`; every document after it is offset by one, so
+`doc_002` is `page_003`, `doc_003` is `page_004`, and so on to `doc_035` /
+`page_036`.  All 34 documents after the first diverge.  Never convert between
+the spaces by arithmetic -- `--map` is the crosswalk, and it is LOCAL ONLY
+because it is the mapping the labels exist to hide.
 
 THE ORDERING RULE
 -----------------
 Sorted by `name.lower()`, numbered from 1, pages within a document in reading
-order.  This is deliberately the rule `page_labels()` already used, which
-sorts `*_trials.jsonl` basenames the same way: the trace stems and the corpus
-files carry the same names, so the two label spaces coincide -- and that
-coincidence is CHECKED, by `--check-trace`, rather than assumed.  A label
-therefore depends on nothing but which files are in the corpus directory: no
-stored map, nothing to keep in sync, and nothing secret to lose.
+order.  Deliberately the rule `page_labels()` already used, which sorts
+`*_trials.jsonl` basenames the same way: the trace stems and the corpus files
+carry the same names, so the two label spaces coincide -- and that coincidence
+is CHECKED by `--check-trace`, not assumed.  A label depends on nothing but
+which files are in the corpus directory: no stored map, nothing to keep in
+sync, nothing secret to lose.
 
-WHAT IS AND IS NOT CORPUS-DEPENDENT
------------------------------------
-`scrub()` needs the corpus: it cannot map an identifier to a label without
-knowing the file order.  With no corpus it RAISES rather than passing text
-through -- a scrubber that silently no-ops on an unconfigured machine would
-make the guarantee depend on the machine.
-
-`assert_clean()` does NOT need the corpus.  It matches the STRUCTURE of a
-drawing number, so it works from a bare clone, in CI, and on a machine that
-has never seen the corpus.  That is what makes it usable as a gate: the check
-that must never fail open is the one with no dependencies.  Its regex is
-generic (`<digits>-<alnum>-<digits>`) rather than a list of known prefixes,
-so the gate does not itself record the numbering scheme.
-
-Page counts need `fitz`, and are read LAZILY -- `resolve()` and the doc
-labels do not open a single PDF.  A test that only needs Stage 2's file pays
-nothing for the other 34.
+DIAGNOSTICS DO NOT REPEAT THE SECRET
+------------------------------------
+A gate that prints what it found writes the identifier into whatever captured
+its output -- a CI log, an evidence file, a terminal transcript.  So a finding
+names the input by LABEL if it is a corpus document and by ORDINAL otherwise
+(its position in the argument list), plus a count and offsets.  Never the
+matched text, and never the path: a path ends in a filename, and the filename
+is the identifier.  No digest either -- a hash of a secret is a token for the
+secret, and the labels already give a stable name.
 
 USING IT
 --------
     import corpus_labels as CL
 
     pdf = CL.resolve("doc_002", SAMPLES)     # a real path, for a real run
-    rec = CL.scrub_obj(rec)                  # labels in, stems out
+    lab = CL.labels(SAMPLES).page(name, 1)   # a label, for anything written
     CL.write_json_checked(path, rec)         # refuses to write a leak
 
-    python corpus_labels.py --check FILE...  # the gate; non-zero on a leak
-    python corpus_labels.py --map            # LOCAL ONLY: label -> number
+    python corpus_labels.py --check FILE...  # both passes; non-zero on a leak
+    python corpus_labels.py --check --structural-only FILE...
+    python corpus_labels.py --map            # LOCAL ONLY: the crosswalk
 """
 
 from __future__ import annotations
 
 import argparse
+import codecs
 import json
 import os
 import re
@@ -93,9 +108,8 @@ CORPUS_ENV = "TME_CORPUS_DIR"
 #:
 #: The middle group must CARRY DIGITS -- five or six of them, optionally
 #: behind one letter.  An earlier version allowed any alphanumerics there and
-#: matched `14-versus-16` in docs/pl_interface_contract.md, which is the
-#: failure mode that makes people switch a gate off.  Generic enough not to
-#: record the numbering scheme, specific enough not to cry wolf.
+#: matched `14-versus-16` in docs/pl_interface_contract.md.  Do not loosen it
+#: to chase fragments; that is what `fragments()` is for.
 IDENTIFIER_RE = re.compile(
     r"(?<![0-9A-Za-z_-])"
     r"[0-9]{2,3}-(?:[A-Za-z][0-9]{5}|[0-9]{5,6})-[0-9]{2,3}"
@@ -106,9 +120,9 @@ IDENTIFIER_RE = re.compile(
 #: A reference AS WRITTEN: the number, then optionally a copy marker, an
 #: extension, and a page.  The trailing groups must be consumed BY THIS MATCH
 #: -- if ` p1` were left behind, `<id>.PDF p1` would scrub to `doc_003 p1`,
-#: which names a page that `doc_003` may not have.  The whitespace classes are
-#: `[ \t]` and not `\s` deliberately: `\s` crosses newlines, and a document
-#: named at the end of one line must not absorb a `p3` opening the next.
+#: naming a page `doc_003` may not have.  The whitespace classes are `[ \t]`
+#: and not `\s` deliberately: `\s` crosses newlines, and a document named at
+#: the end of one line must not absorb a `p3` opening the next.
 _REFERENCE_RE = re.compile(
     r"(?<![0-9A-Za-z_-])"
     r"(?P<num>[0-9]{2,3}-(?:[A-Za-z][0-9]{5}|[0-9]{5,6})-[0-9]{2,3}"
@@ -121,9 +135,20 @@ _REFERENCE_RE = re.compile(
 
 _PDF_SUFFIXES = (".pdf",)
 
+#: A fragment is distinctive enough to match by value only if it is this long
+#: and carries this many digits.  The trailing group of a drawing number
+#: (`001`, `124`) fails both and is deliberately not a fragment: it occurs in
+#: ordinary text constantly.
+_FRAGMENT_MIN_LEN = 5
+_FRAGMENT_MIN_DIGITS = 4
+
 
 class CorpusUnavailable(RuntimeError):
-    """Scrubbing was asked for with no corpus to map identifiers against."""
+    """Scrubbing or a fragment scan was asked for with no corpus to map against."""
+
+
+class UnsupportedEncoding(RuntimeError):
+    """A file declared an encoding and then violated it; refuse to guess."""
 
 
 # ---------------------------------------------------------------------------
@@ -156,21 +181,23 @@ def documents(corpus_dir: Optional[Path] = None) -> List[Path]:
 class Labels:
     """The label tables for one corpus directory.
 
-    Document labels are built eagerly from filenames alone.  PAGE labels need
-    each document's page count, so they are built on first use and only then.
+    Document labels and fragments are built eagerly from filenames alone.
+    PAGE labels need each document's page count, so they are built on first
+    use and only then -- a test that wants Stage 2's file pays nothing for
+    the other 34.
     """
 
     def __init__(self, corpus_dir: Optional[Path] = None):
         self.corpus_dir = (Path(corpus_dir) if corpus_dir is not None
                            else default_corpus_dir())
         self.paths = documents(self.corpus_dir)
-        self.numbers: List[str] = []             # in label order
-        self.doc_label: Dict[str, str] = {}      # number -> doc_NNN
-        self.label_path: Dict[str, Path] = {}    # doc_NNN / page_NNN -> Path
-        self.label_page: Dict[str, int] = {}     # page_NNN -> 1-based page
+        self.numbers: List[str] = []
+        self.doc_label: Dict[str, str] = {}
+        self.label_path: Dict[str, Path] = {}
+        self.label_page: Dict[str, int] = {}
         self.page_label: Dict[Tuple[str, int], str] = {}
         self.npages: Dict[str, int] = {}
-        self._by_key: Dict[str, str] = {}        # lookup key -> number
+        self._by_key: Dict[str, str] = {}
         self._pages_built = False
 
         for i, p in enumerate(self.paths, 1):
@@ -194,6 +221,8 @@ class Labels:
             self.doc_label[num] = dlab
             self.label_path[dlab] = p
 
+        self.fragments = self._build_fragments()
+
     # -- extraction ---------------------------------------------------------
     @staticmethod
     def number_of(text: str) -> Optional[str]:
@@ -207,15 +236,45 @@ class Labels:
 
         Everything after the first `_` is a suffix somebody may or may not
         have written -- a revision (`_A`), a capture page (`_p0`), or further
-        drawing fields (`_NN_N` on one of them).  All of those must reach the
-        same document, and truncation is the only rule that folds the CORPUS
-        FILENAME and the REFERENCE identically without a table of which
-        suffix is which.
+        drawing fields.  All of those must reach the same document, and
+        truncation is the only rule that folds the CORPUS FILENAME and the
+        REFERENCE identically without a table of which suffix is which.
 
         Safe only while the truncated numbers stay distinct, so `__init__`
         checks exactly that instead of trusting it.
         """
         return number.lower().split("_", 1)[0]
+
+    def _build_fragments(self) -> List[str]:
+        """The distinctive pieces of the corpus numbers, lower-cased.
+
+        The MIDDLE group of each drawing number, which is what a person
+        reaches for when they want to name one document in a hurry.  Leading
+        and trailing groups are two or three characters and occur constantly
+        in ordinary text, so they are not fragments -- and a corpus whose
+        middles were that short would make this pass useless, which is why
+        the length and digit rules RAISE rather than silently dropping.
+        """
+        out = []
+        for num in self.numbers:
+            parts = num.split("_", 1)[0].split("-")
+            if len(parts) < 3:
+                raise RuntimeError(
+                    "drawing number %r does not have three dash-separated "
+                    "groups, so its distinctive middle cannot be taken." % num)
+            mid = parts[1]
+            digits = sum(c.isdigit() for c in mid)
+            if len(mid) < _FRAGMENT_MIN_LEN or digits < _FRAGMENT_MIN_DIGITS:
+                raise RuntimeError(
+                    "the middle group of a corpus drawing number is not "
+                    "distinctive enough to match by value (needs >= %d chars "
+                    "and >= %d digits). Matching it would flag ordinary text; "
+                    "the fragment pass must be rethought rather than run."
+                    % (_FRAGMENT_MIN_LEN, _FRAGMENT_MIN_DIGITS))
+            low = mid.lower()
+            if low not in out:
+                out.append(low)
+        return sorted(out)
 
     # -- page labels, built on demand ---------------------------------------
     def _build_pages(self) -> None:
@@ -257,6 +316,10 @@ class Labels:
         if label.startswith("page_"):
             self._build_pages()
         return self.label_path.get(label)
+
+    def label_of_path(self, path) -> Optional[str]:
+        """`doc_NNN` if this path is a corpus document, else None."""
+        return self.doc(Path(path).name)
 
 
 _CACHE: Dict[str, Labels] = {}
@@ -349,28 +412,152 @@ def scrub_obj(obj, corpus_dir: Optional[Path] = None):
 
 
 # ---------------------------------------------------------------------------
-# the gate -- corpus NOT required, never fails open
+# decoding
 # ---------------------------------------------------------------------------
+def decode(data: bytes) -> Tuple[str, str]:
+    """Bytes -> (text, encoding name).  Never uses `errors="replace"`.
+
+    Replacement characters would turn an undecodable byte into a legal one and
+    quietly change what the scanner sees, which is the wrong failure for a
+    gate.  The order is: honour a BOM, then UTF-8, then explicit BOM-less
+    UTF-16, then CP1252 (this project's Windows transcripts carry a 0x97
+    em-dash and are NOT valid UTF-8), then `binary`.
+
+    `binary` is a real answer, not a failure: an ASCII drawing number embedded
+    in a bitstream or a pickle is still a leak, and the caller scans the raw
+    bytes.  Only a file that DECLARES an encoding and then violates it raises
+    `UnsupportedEncoding` -- there is nothing safe to guess at that point.
+    """
+    for bom, enc in ((codecs.BOM_UTF8, "utf-8-sig"),
+                     (codecs.BOM_UTF32_LE, "utf-32-le"),
+                     (codecs.BOM_UTF32_BE, "utf-32-be"),
+                     (codecs.BOM_UTF16_LE, "utf-16-le"),
+                     (codecs.BOM_UTF16_BE, "utf-16-be")):
+        if data.startswith(bom):
+            try:
+                return data[len(bom):].decode(enc), enc
+            except UnicodeDecodeError as exc:
+                raise UnsupportedEncoding(
+                    "file starts with a %s BOM and then does not decode as "
+                    "%s (%s)" % (enc, enc, exc.reason)) from None
+
+    # NUL FIRST, before UTF-8.  UTF-8 accepts a NUL byte as U+0000, so
+    # BOM-less UTF-16 of ASCII text ("h\\x00e\\x00a\\x00d\\x00...") decodes as
+    # UTF-8 *successfully* -- into a string whose identifiers are split by NULs
+    # and which the scanner therefore cannot see.  Trying UTF-8 first is how a
+    # UTF-16 file silently passes a gate.  A real UTF-8 text file does not
+    # contain NUL.
+    if b"\x00" in data:
+        best, best_enc, best_score = None, None, 0.0
+        for enc in ("utf-16-le", "utf-16-be"):
+            try:
+                text = data.decode(enc)
+            except UnicodeDecodeError:
+                continue
+            score = _ascii_text_score(text)
+            if score > best_score:
+                best, best_enc, best_score = text, enc, score
+        # Endianness is chosen by which decoding yields more ASCII, not by
+        # trying LE first: byte-swapped ASCII lands in CJK, which "looks like
+        # text" to any printability test and would win by accident.
+        if best is not None and best_score >= 0.90:
+            return best, best_enc
+        return "", "binary"
+
+    try:
+        return data.decode("utf-8"), "utf-8"
+    except UnicodeDecodeError:
+        pass
+
+    try:
+        return data.decode("cp1252"), "cp1252"
+    except UnicodeDecodeError:
+        return "", "binary"
+
+
+def _ascii_text_score(text: str) -> float:
+    """Fraction of characters that are ordinary ASCII text."""
+    if not text:
+        return 0.0
+    good = sum(1 for c in text if c in "\t\n\r" or 0x20 <= ord(c) < 0x7F)
+    return good / len(text)
+
+
+# ---------------------------------------------------------------------------
+# the gate
+# ---------------------------------------------------------------------------
+class Hit:
+    """One finding.  Carries an offset, never the matched text."""
+
+    __slots__ = ("kind", "offset")
+
+    def __init__(self, kind: str, offset: int):
+        self.kind = kind
+        self.offset = offset
+
+    def __repr__(self):
+        return "Hit(%r, %d)" % (self.kind, self.offset)
+
+
 def find_identifiers(text: str) -> List[str]:
-    """Every structurally drawing-shaped token, in order, duplicates kept."""
+    """Every structurally drawing-shaped token, in order, duplicates kept.
+
+    Returns the matched text, so it is for callers that already hold the
+    secret (a producer scrubbing its own output). The GATE uses `scan()`,
+    which returns offsets only.
+    """
     return [m.group(0) for m in IDENTIFIER_RE.finditer(text)]
 
 
-def assert_clean(text: str, where: str = "<text>") -> None:
-    """Raise if `text` carries anything shaped like a drawing number."""
-    hits = find_identifiers(text)
+def scan(text: str, frags: Optional[Sequence[str]] = None) -> List[Hit]:
+    """Both passes over one string, offsets only.
+
+    `frags` omitted runs the structural pass alone -- the caller is telling
+    us there is no corpus, and the CLI is what refuses to call that a clean
+    scan.
+    """
+    hits = [Hit("structural", m.start()) for m in IDENTIFIER_RE.finditer(text)]
+    if frags:
+        low = text.lower()
+        for f in frags:
+            start = low.find(f)
+            while start != -1:
+                hits.append(Hit("fragment", start))
+                start = low.find(f, start + 1)
+    hits.sort(key=lambda h: (h.offset, h.kind))
+    return hits
+
+
+def assert_clean(text: str, where: str = "<text>",
+                 frags: Optional[Sequence[str]] = None) -> None:
+    """Raise if `text` carries an identifier or a corpus fragment.
+
+    The message counts and locates; it does not quote.  `where` is the
+    caller's own description and is printed verbatim, so a caller that passes
+    a path has chosen to print that path.
+    """
+    hits = scan(text, frags)
     if hits:
-        uniq = sorted(set(hits))
+        by_kind: Dict[str, List[int]] = {}
+        for h in hits:
+            by_kind.setdefault(h.kind, []).append(h.offset)
+        parts = ", ".join(
+            "%d %s at %s" % (len(v), k, ",".join(str(o) for o in v[:8]))
+            for k, v in sorted(by_kind.items()))
         raise RuntimeError(
-            "%s carries %d drawing identifier(s), %d distinct: %s\n"
+            "%s carries corpus identifiers: %s.\n"
             "Committable output names pages by label. Put the value through "
-            "corpus_labels.scrub() before writing it."
-            % (where, len(hits), len(uniq), ", ".join(uniq[:8])))
+            "corpus_labels.scrub() before writing it." % (where, parts))
 
 
 def write_text_checked(path, text: str, encoding: str = "utf-8") -> None:
     """`Path.write_text` that refuses to write a leak."""
-    assert_clean(text, str(path))
+    frags = None
+    try:
+        frags = labels().fragments
+    except Exception:
+        pass
+    assert_clean(text, "<output>", frags)
     Path(path).write_text(text, encoding=encoding)
 
 
@@ -387,26 +574,125 @@ def write_json_checked(path, obj, encoding: str = "utf-8", **kw) -> None:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
-def _cmd_check(paths: Sequence[str]) -> int:
-    bad = 0
-    for p in paths:
+def safe_name(path, frags: Optional[Sequence[str]] = None,
+              lb: Optional[Labels] = None) -> Optional[str]:
+    """A path fit to PRINT, or None if there isn't one.
+
+    Scrubbed, then re-scanned: a repository path carries no identifier and
+    comes back unchanged, a corpus filename comes back as its label, and
+    anything still dirty after both returns None so the caller falls back to
+    the ordinal.  Scrubbing is not trusted to have worked -- it is checked.
+
+    This is what keeps a diagnostic USABLE.  "Something under logs/ leaks" is
+    not an actionable message, and a gate nobody can act on gets bypassed.
+    """
+    s = str(path)
+    if lb is not None:
         try:
-            text = Path(p).read_text(encoding="utf-8", errors="replace")
-        except (OSError, UnicodeError) as exc:
-            print("SKIP  %s (%s)" % (p, exc))
+            s = scrub(s, lb.corpus_dir)
+        except CorpusUnavailable:
+            return None
+    return s if not scan(s, frags) else None
+
+
+def check_inputs(paths: Sequence[str], frags: Optional[Sequence[str]],
+                 lb: Optional[Labels], out=None) -> int:
+    """Scan files and their pathnames.  Returns the number of BAD inputs.
+
+    An input is bad if it leaks, is missing, is unreadable, or declares an
+    encoding it then violates.  Every one of those is a non-zero outcome:
+    "I could not look" and "I looked and it was clean" are different answers
+    and a gate must not print the second when it means the first.
+    """
+    out = out if out is not None else sys.stdout
+    bad = 0
+
+    def name(i: int, p: str) -> str:
+        safe = safe_name(p, frags, lb)
+        return "input #%d (%s)" % (i, safe) if safe else \
+               "input #%d (pathname withheld)" % i
+
+    def report(who: str, where: str, hits: List[Hit], basis: str) -> None:
+        by_kind: Dict[str, List[int]] = {}
+        for h in hits:
+            by_kind.setdefault(h.kind, []).append(h.offset)
+        for kind, offs in sorted(by_kind.items()):
+            shown = ",".join(str(o) for o in offs[:12])
+            more = "" if len(offs) <= 12 else ",... "
+            print("LEAK  %s: %s, %s, %d occurrence(s), %s offset(s) %s%s"
+                  % (who, where, kind, len(offs), basis, shown, more), file=out)
+
+    for i, p in enumerate(paths, 1):
+        who = name(i, p)
+
+        # The pathname itself.  A directory component or a filename can BE
+        # the identifier, which is why this is scanned and never printed.
+        path_hits = scan(str(p), frags)
+        if path_hits:
+            bad += 1
+            report(who, "pathname", path_hits, "character")
+
+        try:
+            data = Path(p).read_bytes()
+        except FileNotFoundError:
+            bad += 1
+            print("MISSING  %s" % who, file=out)
             continue
-        hits = find_identifiers(text)
+        except OSError as exc:
+            bad += 1
+            print("UNREADABLE  %s: %s" % (who, exc.__class__.__name__), file=out)
+            continue
+
+        try:
+            text, enc = decode(data)
+        except UnsupportedEncoding as exc:
+            bad += 1
+            print("UNSUPPORTED  %s: %s" % (who, exc), file=out)
+            continue
+
+        if enc == "binary":
+            hits = scan(data.decode("latin-1"), frags)
+            basis = "byte"
+        else:
+            hits = scan(text, frags)
+            basis = "character"
         if hits:
             bad += 1
-            uniq = sorted(set(hits))
-            print("LEAK  %s: %d occurrence(s), %d distinct"
-                  % (p, len(hits), len(uniq)))
-            for u in uniq[:10]:
-                print("        %s" % u)
+            report(who, "content (%s)" % enc, hits, basis)
+
+    return bad
+
+
+def _cmd_check(paths: Sequence[str], corpus_dir: Optional[str],
+               structural_only: bool) -> int:
+    frags: Optional[Sequence[str]] = None
+    lb: Optional[Labels] = None
+    if structural_only:
+        print("STRUCTURAL ONLY: the fragment pass was NOT performed. A clean "
+              "result here does not mean the inputs carry no piece of a "
+              "corpus filename.")
+    else:
+        try:
+            lb = labels(corpus_dir)
+        except Exception as exc:
+            print("CANNOT SCAN: %s" % exc)
+            return 2
+        if not lb.paths:
+            print("CANNOT SCAN: no corpus at %s, so the fragment pass cannot "
+                  "run. Set %s, or pass --structural-only and accept that the "
+                  "result is partial." % (lb.corpus_dir, CORPUS_ENV))
+            return 2
+        frags = lb.fragments
+
+    bad = check_inputs(paths, frags, lb)
     if bad:
-        print("\n%d file(s) carry drawing identifiers." % bad)
+        print("\n%d of %d input(s) failed. Offsets index the input; the "
+              "ordinal is its position in the argument list."
+              % (bad, len(paths)))
         return 1
-    print("clean: %d file(s), no drawing identifiers" % len(paths))
+    scope = "structural" if structural_only else "structural + fragment"
+    print("clean: %d input(s), %s, no corpus identifiers"
+          % (len(paths), scope))
     return 0
 
 
@@ -418,6 +704,9 @@ def _cmd_map(corpus_dir: Optional[str]) -> int:
     lb._build_pages()
     print("# LOCAL ONLY -- this mapping is the thing the labels hide.")
     print("# corpus: %s" % lb.corpus_dir)
+    print("# doc_NNN and page_NNN are NOT interchangeable: doc_001 spans two")
+    print("# pages, so every later document is offset by one. This is the")
+    print("# crosswalk; there is no arithmetic that replaces it.")
     for num in lb.numbers:
         pages = [lab for (n, _), lab in lb.page_label.items() if n == num]
         print("%-9s %-22s %s" % (lb.doc_label[num], ",".join(pages), num))
@@ -450,16 +739,29 @@ def _cmd_check_trace(trace_dir: str, corpus_dir: Optional[str]) -> int:
         expect = "page_{:03d}".format(i)
         m = re.search(r"_p(\d+)$", stem)
         page = int(m.group(1)) + 1 if m else 1
-        mine = lb.page(stem, page)
-        if mine != expect:
+        if lb.page(stem, page) != expect:
             bad += 1
-            print("MISMATCH %s: trace says %s, corpus says %s"
-                  % (expect, expect, mine))
+            print("MISMATCH at capture position %d: expected %s" % (i, expect))
     if bad:
         print("\n%d label(s) disagree." % bad)
         return 1
-    print("%d page labels agree between the corpus and %s"
-          % (len(files), trace_dir))
+    print("%d page labels agree between the corpus and the capture directory"
+          % len(files))
+    return 0
+
+
+def _cmd_fragments(corpus_dir: Optional[str]) -> int:
+    """How many fragments the value pass carries -- never which."""
+    lb = labels(corpus_dir)
+    if not lb.paths:
+        print("no corpus at %s" % lb.corpus_dir)
+        return 1
+    lens = sorted({len(f) for f in lb.fragments})
+    print("%d distinctive fragment(s) from %d document(s); length(s) %s"
+          % (len(lb.fragments), len(lb.paths),
+             ",".join(str(x) for x in lens)))
+    print("The values are not printed: they are pieces of the filenames the "
+          "labels exist to hide. `--map` is the local crosswalk.")
     return 0
 
 
@@ -468,20 +770,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--corpus", default=None,
                     help="corpus directory (default: $%s, else sample/ beside "
                          "the repository)" % CORPUS_ENV)
+    ap.add_argument("--structural-only", action="store_true",
+                    help="skip the fragment pass and say so; the only way to "
+                         "get a zero exit without a corpus")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--check", nargs="+", metavar="PATH",
-                   help="exit non-zero if any file carries a drawing "
-                        "identifier; needs no corpus")
+                   help="exit non-zero if any input leaks, is missing, is "
+                        "unreadable, or violates its declared encoding")
     g.add_argument("--map", action="store_true",
-                   help="print label -> drawing number (LOCAL ONLY)")
+                   help="print the doc/page/number crosswalk (LOCAL ONLY)")
     g.add_argument("--check-trace", metavar="DIR",
                    help="check these labels against page_labels()'s")
+    g.add_argument("--fragments", action="store_true",
+                   help="how many fragments the value pass carries")
     args = ap.parse_args(argv)
 
     if args.check:
-        return _cmd_check(args.check)
+        return _cmd_check(args.check, args.corpus, args.structural_only)
     if args.map:
         return _cmd_map(args.corpus)
+    if args.fragments:
+        return _cmd_fragments(args.corpus)
     return _cmd_check_trace(args.check_trace, args.corpus)
 
 

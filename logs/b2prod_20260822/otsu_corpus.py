@@ -25,11 +25,16 @@ import cv2
 import fitz
 import numpy as np
 
+import corpus_labels as CL
 import pl_backends as B
 from otsu_variants import VARIANTS, variant
 
 root = Path(r"C:\Users\lychee\Desktop\FPGA\sample")
-pdfs = sorted({str(p).lower(): p for p in root.glob("*.pdf")}.values())
+# CL.documents() IS the ordering this line always used -- sorted by
+# lower-cased name -- taken from one place now so the iteration order
+# and the label numbering cannot drift apart.
+pdfs = CL.documents(root)
+labels = CL.labels(root)
 
 shipped_bad = []
 variant_bad = {name: [] for name in VARIANTS}
@@ -57,7 +62,9 @@ for pdf in pdfs:
         hist_ref = np.bincount(blur.reshape(-1), minlength=256).astype(np.int64)
         del blur, gray
 
-        label = f"{pdf.name} p{pno + 1}"
+        # The LABEL, not the filename: this string is what reaches the
+        # committed transcript.
+        label = labels.page(pdf.name, pno + 1)
         pages += 1
         if not np.array_equal(hist, hist_ref):
             shipped_bad.append(f"{label}: streamed histogram differs")

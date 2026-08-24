@@ -260,11 +260,45 @@ logs/b2prod_20260821/stage1/as_run/tme_driver.py.as_run
 #     doc_001 .. doc_035     one per file
 #     page_001 .. page_036   one per page
 #
+# doc_NNN and page_NNN are NOT interchangeable and do NOT line up:
+# doc_001 spans two pages, so every later document is offset by one and
+# all 34 of them diverge. `--map` is the crosswalk and is LOCAL ONLY.
+#
 # sw/corpus_labels.py owns the label space and carries the gate:
 #
 #     python sw/corpus_labels.py --check <paths>   # non-zero on a leak
 #
-# The gate needs no corpus -- it matches the SHAPE of a drawing number --
-# so it runs from a bare clone and cannot fail open on a machine that
-# happens not to have the drawings.
+# TWO PASSES, and they fail in different directions:
+#
+#   structural  matches the SHAPE of a drawing number. Needs no corpus,
+#               so it runs from a bare clone. Cannot see a FRAGMENT.
+#   fragment    matches the distinctive middle of each corpus number, by
+#               value, derived from the corpus at scan time. Needs the
+#               corpus; without one the gate exits non-zero and names the
+#               pass it could not run rather than reporting a clean scan.
+#
+# Do not widen the structural regex to cover fragments. It was widened
+# once and matched `14-versus-16` in docs/pl_interface_contract.md, in a
+# file present in every commit including the pushed base.
+#
+# BEFORE PUSHING, the range matters and not the tip -- a push publishes
+# history, and both findings here were in commits behind HEAD:
+#
+#     git config core.hooksPath .githooks     # once; hooks are not cloned
+#
+# .githooks/pre-push runs sw/pre_push_scan.py over every ref git offers on
+# stdin: tree contents, pathnames AND commit messages, for every commit in
+# the range. `python sw/pre_push_scan.py --range A..B` is the same scan by
+# hand.
+#
+# NEVER COMMITTABLE, and the gate cannot catch it:
+#
+#     *.private.json
+#
+# `tme_backend_parity.py --private-json` writes per-detection geometry --
+# boxes and scores read off the drawings. It is already label-keyed, so
+# nothing in it is shaped like a drawing number and no scan will flag it.
+# The suffix is the only guard, which is why the tool refuses any other
+# name. It is not in .gitignore yet: that file carries unrelated
+# uncommitted work. Add `*.private.json` to it when that work lands.
 # -------------------------------------------------------------------

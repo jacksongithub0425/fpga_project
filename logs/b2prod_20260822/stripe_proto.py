@@ -21,6 +21,8 @@ import cv2
 import fitz
 import numpy as np
 
+import corpus_labels as CL
+
 ZOOM = 4.0
 
 
@@ -68,7 +70,11 @@ def striped_gray(page, zoom=ZOOM, rows=512, verbose=False):
 
 
 root = Path(r"C:\Users\lychee\Desktop\FPGA\sample")
-pdfs = sorted({str(p).lower(): p for p in root.glob("*.pdf")}.values())
+# CL.documents() IS the ordering this line always used -- sorted by
+# lower-cased name -- taken from one place now so the iteration order
+# and the label numbering cannot drift apart.
+pdfs = CL.documents(root)
+labels = CL.labels(root)
 sample = pdfs[:3] + pdfs[-1:]
 
 fails = 0
@@ -76,7 +82,7 @@ for pdf in sample:
     doc = fitz.open(pdf)
     page = doc[0]
     ref, n = whole_page_gray(page)
-    print(f"  {pdf.name:<34} {ref.shape[1]}x{ref.shape[0]} n={n}")
+    print(f"  {labels.doc(pdf.name):<34} {ref.shape[1]}x{ref.shape[0]} n={n}")
     for rows in (256, 512, 1024, 6336):
         try:
             got = striped_gray(page, rows=rows, verbose=(rows == 512))

@@ -65,10 +65,18 @@ five-minute redesign.
   MuPDF 1.19 across the 36-page corpus, the OpenCV 4.5.4 replay gate, the
   maximum-page whole-pipeline memory gate, then Stage 2, Stage 3 and
   Stage 4. Protocol v2 is discharged.
-* Undecided, and needed before Stage 2: whether the 1.19.2 runtime is staged
-  per run (23.1 MB downloaded and ~36 MB unpacked each time), kept in a
-  persistent root, or installed properly. Protocol v2 proves the staging
-  works; it does not choose the deployment.
+* Deployment is **decided and not yet executed**: board-native
+  `python3-fitz 1.19.2` from apt, installed properly. Per-run staging is
+  rejected as the deployment -- it was protocol v2's mechanism for proving
+  feasibility without touching the board, and a throwaway root that is
+  rebuilt every run makes the runtime an unrecorded variable of each run. A
+  persistent unpacked root is rejected for the same reason with less of the
+  benefit. The fallback, if the distro package cannot be made to work, is a
+  native build on the board behind a temporary 1 GiB SD swapfile -- hours,
+  and the 1.24+ rebased bindings are untested on 32-bit -- not a cross
+  toolchain and not an off-board wheel, because no supported ARMv7 wheel
+  exists. Protocol v2 proves the staging works; the deployment is the apt
+  install, and Stage 2 is blocked on doing it.
 
 ## Phase 0 — preserved input and clock configuration
 
@@ -364,10 +372,21 @@ patch. The off-board exact fake-fabric run already establishes that 36/36 is
 arithmetically reachable; it is a prediction, not silicon evidence.
 
 Do not construct `cpu-production` and `pl-all` concurrently on the 512 MiB
-board. Precompute and freeze the `cpu-production` page records off-board, then
-run one `pl-all` backend on the board with inline rung C and compare each
-checkpoint against those records. The current parity runner has no reference-
-record comparison/resume mode and must gain it before the corpus session.
+board. **Generate the `cpu-production` records ON THE BOARD**, one page per
+process, sequentially, freezing each page's record to disk; then run `pl-all`
+against those records in the identical binary environment, with inline rung C,
+comparing each checkpoint. The current parity runner has no reference-record
+comparison/resume mode and must gain it before the corpus session.
+
+This supersedes the earlier arrangement, which precomputed the oracle
+off-board. That would compare the wrong things. Ubuntu's `python3-fitz` links
+the distro `libmupdf` with the distro FreeType/HarfBuzz/OpenJPEG; a PyPI
+1.19.2 wheel bundles MuPDF's pinned thirdparty tree, and text rasterisation
+depends on the FreeType build. An off-board oracle "on 1.19.2" would make rung
+P a measurement of MuPDF packaging rather than of PL correctness. (PyPI 1.19.2
+also has no cp313 wheel, so the dev venv cannot run it at all.) The x86 1.28
+records are kept as labelled diagnostics, not as the oracle. Measure one page
+on the board before budgeting the corpus.
 
 Acceptance:
 

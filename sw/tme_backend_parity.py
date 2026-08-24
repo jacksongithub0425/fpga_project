@@ -185,6 +185,53 @@ def counts_of(dets: Sequence[dict]) -> Dict[str, int]:
     return c
 
 
+#: What the public record says in place of the detections it drops.
+PUBLIC_NOTE = (
+    "Pages and documents are anonymous labels. `first_diff` held the first "
+    "differing DETECTION on a page -- an id, a class, a score and a pixel box "
+    "read off a confidential drawing -- and is withheld: \"REDACTED\" where a "
+    "difference exists, null where none does, so \"withheld\" and \"identical\" "
+    "stay distinguishable. The inline rung-C mismatch list is replaced by its "
+    "count for the same reason. Every aggregate survives verbatim: "
+    "loc_mismatch, kind_mismatch, score_over_tol, max_abs_score_delta, the "
+    "class counts, the candidate counts and the rung-C trial totals."
+)
+
+
+def public_view(record: dict) -> dict:
+    """The committable projection of a run record.
+
+    TWO SERIALISATIONS, ON PURPOSE.  The private record keeps the first
+    differing detection and the inline rung-C mismatch list, because that is
+    what somebody debugging a real disagreement needs and it stays on this
+    machine.  The public one keeps every AGGREGATE and drops every individual
+    detection, because a box and a score are read off the drawing and a
+    label does not anonymise them.
+
+    Aggregating rather than deleting: the counts already in each result say
+    how big the difference is, so dropping the exemplar costs the reader the
+    example and not the argument.
+    """
+    import copy
+    pub = copy.deepcopy(record)
+
+    withheld = 0
+    for r in pub.get("results", []):
+        if r.get("first_diff") is not None:
+            r["first_diff"] = "REDACTED"
+            withheld += 1
+
+    cc = pub.get("rung_c_inline")
+    if isinstance(cc, dict) and "mismatches" in cc:
+        cc["mismatch_count"] = len(cc["mismatches"])
+        del cc["mismatches"]
+
+    pub["redacted"] = PUBLIC_NOTE
+    if withheld:
+        pub["first_diff_records_withheld"] = withheld
+    return pub
+
+
 def compare_page(a: dict, b: dict) -> dict:
     """One page under two backends.  Positional, by NMS output order.
 
@@ -244,7 +291,14 @@ def main() -> int:
     ap.add_argument("--score-margin", type=float, default=0.03)
     ap.add_argument("--overlay", default="three_stage_combined.bit")
     ap.add_argument("--pl-timeout", type=float, default=120.0)
-    ap.add_argument("--json", help="write the full record here")
+    ap.add_argument("--json", metavar="PATH",
+                    help="write the PUBLIC record here: labels only, with "
+                         "first_diff and the inline rung-C mismatches "
+                         "aggregated. This is the committable one")
+    ap.add_argument("--private-json", metavar="PATH",
+                    help="write the FULL record here, diagnostic geometry "
+                         "included. LOCAL ONLY -- the name must end in "
+                         "'.private.json'")
     ap.add_argument("--assert-rung-c", action="store_true",
                     help="exit non-zero if pl-extract and pl-all differ")
     ap.add_argument("--variant", default="baseline",
@@ -271,6 +325,17 @@ def main() -> int:
                          "the shape of each rung; proves NOTHING about "
                          "silicon")
     args = ap.parse_args()
+
+    # The suffix IS the guard.  A private record carries per-detection
+    # geometry and the anonymisation gate cannot catch it -- the boxes are
+    # already label-keyed, so nothing in the file is shaped like a drawing
+    # number.  Naming is the only thing that separates it from a committable
+    # record, so the name is made a precondition rather than a convention.
+    if args.private_json and not args.private_json.endswith(".private.json"):
+        raise SystemExit(
+            "--private-json must name a file ending in '.private.json'; that "
+            "suffix is what keeps a record full of detection geometry out of "
+            "the repository. Use --json for the committable projection.")
 
     if args.fake_pl:
         print("=" * 72)
@@ -425,11 +490,20 @@ def main() -> int:
         if pages_done != CORPUS_PAGES:
             corpus_bad.append(f"{pages_done} page(s), not {CORPUS_PAGES}")
 
+    if args.private_json:
+        # Written FIRST, so a run that produced diagnostics keeps them even
+        # if the public projection then refuses to write.
+        Path(args.private_json).write_text(json.dumps(record, indent=2),
+                                           encoding="utf-8")
+        print(f"\nwrote {args.private_json}")
+        print("  PRIVATE: carries per-detection geometry. Not committable, "
+              "and the '.private.json' suffix is what keeps it out.")
+
     if args.json:
         # The backstop, not the mechanism: the labels above are how the
         # record stays clean, and this is what makes that a property of
         # the tool rather than of whoever ran it.
-        CL.write_json_checked(args.json, record)
+        CL.write_json_checked(args.json, public_view(record))
         print(f"\nwrote {args.json}")
 
     if status:

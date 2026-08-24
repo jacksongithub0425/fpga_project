@@ -31,11 +31,16 @@ import cv2
 import fitz
 import numpy as np
 
+import corpus_labels as CL
 import pl_backends as B
 
 ZOOM = 4.0
 root = Path(r"C:\Users\lychee\Desktop\FPGA\sample")
-pdfs = sorted({str(p).lower(): p for p in root.glob("*.pdf")}.values())
+# CL.documents() IS the ordering this line always used -- sorted by
+# lower-cased name -- taken from one place now so the iteration order
+# and the label numbering cannot drift apart.
+pdfs = CL.documents(root)
+labels = CL.labels(root)
 
 mv_mismatch = []
 exact_pages = 0
@@ -48,7 +53,9 @@ for pdf in pdfs:
     doc = fitz.open(pdf)
     for pno in range(len(doc)):
         page = doc[pno]
-        label = f"{pdf.name} p{pno + 1}"
+        # The LABEL, not the filename: this string is what reaches the
+        # committed transcript.
+        label = labels.page(pdf.name, pno + 1)
         mat = fitz.Matrix(ZOOM, ZOOM)
 
         # -- the current path, exactly as render_page() does it -------------
